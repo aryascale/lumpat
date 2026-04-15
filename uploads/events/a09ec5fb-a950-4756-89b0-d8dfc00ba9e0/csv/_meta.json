@@ -1,0 +1,18 @@
+{
+  "master": {
+    "kind": "master",
+    "filename": "master - Sheet1.csv",
+    "path": "/Users/arya/Documents/project/BCR-2025/uploads/events/a09ec5fb-a950-4756-89b0-d8dfc00ba9e0/csv/master.csv",
+    "url": "http://localhost:3001/uploads/events/a09ec5fb-a950-4756-89b0-d8dfc00ba9e0/csv/master.csv",
+    "rows": 1830,
+    "updatedAt": 1775545286103
+  },
+  "finish": {
+    "kind": "finish",
+    "filename": "FINISH COT BCR 2025 1684.csv",
+    "path": "/Users/arya/Documents/project/BCR-2025/uploads/events/a09ec5fb-a950-4756-89b0-d8dfc00ba9e0/csv/finish.csv",
+    "url": "http://localhost:3001/uploads/events/a09ec5fb-a950-4756-89b0-d8dfc00ba9e0/csv/finish.csv",
+    "rows": 1684,
+    "updatedAt": 1775545318607
+  }
+}

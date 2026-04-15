@@ -1,0 +1,26 @@
+{
+  "master": {
+    "kind": "master",
+    "filename": "master.csv",
+    "path": "/Users/arya/Documents/project/BCR-2025/uploads/events/default/csv/master.csv",
+    "url": "http://localhost:3001/uploads/events/default/csv/master.csv",
+    "rows": 1,
+    "updatedAt": 1775975051988
+  },
+  "finish": {
+    "kind": "finish",
+    "filename": "FINISH COT BCR 2025 1684.csv",
+    "path": "/app/uploads/events/default/csv/finish.csv",
+    "url": "http://localhost:3001/uploads/events/default/csv/finish.csv",
+    "rows": 1684,
+    "updatedAt": 1768917364095
+  },
+  "checkpoint": {
+    "kind": "checkpoint",
+    "filename": "checkpoint-FINISH COT BCR 2025 1684.csv",
+    "path": "/app/uploads/events/default/csv/checkpoint.csv",
+    "url": "http://localhost:3001/uploads/events/default/csv/checkpoint.csv",
+    "rows": 1684,
+    "updatedAt": 1768917369657
+  }
+}

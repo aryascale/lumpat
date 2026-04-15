@@ -1,0 +1,18 @@
+{
+  "master": {
+    "kind": "master",
+    "filename": "master-Timing Chip Event BCR 2025 Master data - BIB CHECK.csv",
+    "path": "/Users/arya/Documents/project/BCR-2025/uploads/events/f9f2d751-5811-4dca-81a9-edab70853028/csv/master.csv",
+    "url": "http://localhost:3001/uploads/events/f9f2d751-5811-4dca-81a9-edab70853028/csv/master.csv",
+    "rows": 1830,
+    "updatedAt": 1775533440757
+  },
+  "finish": {
+    "kind": "finish",
+    "filename": "FINISH COT BCR 2025 1684.csv",
+    "path": "/Users/arya/Documents/project/BCR-2025/uploads/events/f9f2d751-5811-4dca-81a9-edab70853028/csv/finish.csv",
+    "url": "http://localhost:3001/uploads/events/f9f2d751-5811-4dca-81a9-edab70853028/csv/finish.csv",
+    "rows": 1684,
+    "updatedAt": 1775533448759
+  }
+}
