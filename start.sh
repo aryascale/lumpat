@@ -36,7 +36,7 @@ if [ ! -f ".env" ]; then
   echo "⚠️  No .env file found. Creating template..."
   cat > .env << 'EOF'
 NODE_ENV=production
-PORT=3001
+PORT=3069
 
 # Database — update with your MySQL/MariaDB credentials
 DATABASE_URL="mysql://bcr_user:bcr_password@localhost:3306/bcr_db"

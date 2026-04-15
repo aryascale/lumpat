@@ -48,10 +48,10 @@ COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
 # Set default port (Railways will override this with PORT env var)
-ENV PORT=3001
+ENV PORT=3069
 
 # Expose port
-EXPOSE 3001
+EXPOSE 3069
 
 # Start with entrypoint (runs migrations then server)
 ENTRYPOINT ["./docker-entrypoint.sh"]
