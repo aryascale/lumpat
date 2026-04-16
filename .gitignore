@@ -1,8 +1,6 @@
 .env
 node_modules/
 package-lock.json
-dist/
-build/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -15,4 +13,4 @@ Thumbs.db
 /src/generated/prisma
 /data/
 
-.\agent
+.agent

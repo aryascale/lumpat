@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'fs/promises';
+import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 
@@ -25,19 +25,12 @@ export async function getDefaultCategories(): Promise<string[]> {
 }
 
 export async function saveDefaultCategories(categories: string[]): Promise<string[]> {
-  try {
-    const dataDir = path.dirname(DEFAULT_CATEGORIES_FILE);
-    if (!existsSync(dataDir)) {
-      await writeFile(dataDir, '');
-    }
-
-    await writeFile(DEFAULT_CATEGORIES_FILE, JSON.stringify({ categories }, null, 2));
-    return categories;
-  } catch (error) {
-    throw error;
-  }
+  const dataDir = path.dirname(DEFAULT_CATEGORIES_FILE);
+  if (!existsSync(dataDir)) await mkdir(dataDir, { recursive: true });
+  await writeFile(DEFAULT_CATEGORIES_FILE, JSON.stringify({ categories }, null, 2));
+  return categories;
 }
 
 export async function resetDefaultCategories(): Promise<string[]> {
-  return await saveDefaultCategories(DEFAULT_CATEGORIES);
+  return saveDefaultCategories(DEFAULT_CATEGORIES);
 }

@@ -7,11 +7,12 @@
     "dev": "vite",
     "dev:full": "concurrently \"npm run dev\" \"npm run server\"",
     "build": "vite build",
+    "build:server": "tsc -p tsconfig.server.json && node scripts/fix-imports.mjs",
+    "build:all": "npm run build && npm run build:server",
+    "postinstall": "npx prisma generate || true",
     "preview": "vite preview",
     "server": "tsx server.ts",
-    "start": "NODE_ENV=production tsx server.ts",
-    "check:db": "tsx check-prisma-connection.ts",
-    "test:db": "tsx test-db.ts",
+    "start": "NODE_ENV=production node dist-server/server.js",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio"
@@ -34,7 +35,8 @@
     "react-leaflet": "^4.2.1",
     "react-router-dom": "^7.11.0",
     "tailwindcss": "^4.1.18",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
@@ -46,7 +48,6 @@
     "@vitejs/plugin-react": "^4.3.3",
     "concurrently": "^9.2.1",
     "tsx": "^4.21.0",
-    "typescript": "^5.6.3",
     "vite": "^6.0.1"
   }
 }

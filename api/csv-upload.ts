@@ -13,70 +13,38 @@ interface APIResponse {
   body: string;
 }
 
+const CORS_HEADERS = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+const VALID_KINDS = ['master', 'start', 'finish', 'checkpoint'];
+
 export default async function handler(event: APIEvent): Promise<APIResponse> {
-  const headers = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  };
-
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
-  }
-
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: 'Method tidak diizinkan' }),
-    };
-  }
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
+  if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Method not allowed' }) };
 
   try {
-    if (!event.body) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Missing request body' }),
-      };
-    }
+    if (!event.body) return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Missing request body' }) };
 
     const body = event.isBase64Encoded
       ? JSON.parse(Buffer.from(event.body as string, 'base64').toString())
       : JSON.parse(event.body);
 
     const { kind, filename, rows, eventId, content } = body;
-
     const effectiveEventId = eventId || 'default';
 
-    // Use eventId directly as folder name for consistency
-    const eventFolderName = effectiveEventId;
-
-    const validKinds = ['master', 'start', 'finish', 'checkpoint'];
-
-    if (!kind || !validKinds.includes(kind)) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          error: `Parameter kind harus salah satu dari: ${validKinds.join(', ')}`,
-        }),
-      };
+    if (!kind || !VALID_KINDS.includes(kind)) {
+      return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: `kind harus salah satu dari: ${VALID_KINDS.join(', ')}` }) };
     }
 
-    // Upload to local filesystem
-    const result = await uploadCsvFile(
-      eventFolderName,
-      kind,
-      content || '',
-      filename,
-      rows || 0
-    );
+    const result = await uploadCsvFile(effectiveEventId, kind, content || '', filename, rows || 0);
 
     return {
       statusCode: 200,
-      headers,
+      headers: CORS_HEADERS,
       body: JSON.stringify({
         kind,
         filename: result.filename,
@@ -88,13 +56,6 @@ export default async function handler(event: APIEvent): Promise<APIResponse> {
       }),
     };
   } catch (error: any) {
-    console.error('Upload CSV error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({
-        error: error.message || 'Gagal memproses upload CSV',
-      }),
-    };
+    return { statusCode: 500, headers: CORS_HEADERS, body: JSON.stringify({ error: error.message || 'Failed to upload CSV' }) };
   }
 }

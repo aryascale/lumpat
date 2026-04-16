@@ -52,20 +52,56 @@ function formatEvent(event: any): Event {
   };
 }
 
-export default async function handler(event: APIEvent): Promise<APIResponse> {
-  const headers = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  };
+const CORS_HEADERS = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
 
+function parseBody(event: APIEvent) {
+  if (!event.body) return null;
+  return event.isBase64Encoded
+    ? JSON.parse(Buffer.from(event.body, 'base64').toString())
+    : JSON.parse(event.body);
+}
+
+function resolveCoordinate(value: any): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  return parseFloat(value);
+}
+
+async function tryGeocode(location: string) {
+  try {
+    const { geocodeLocation } = await import('../src/lib/geocoding');
+    return await geocodeLocation(location);
+  } catch {
+    return null;
+  }
+}
+
+async function generateUniqueSlug(name: string): Promise<string> {
+  const baseSlug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+
+  let slug = baseSlug;
+  let counter = 1;
+  let existing = await prisma.event.findUnique({ where: { slug } });
+
+  while (existing) {
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+    existing = await prisma.event.findUnique({ where: { slug } });
+  }
+
+  return slug;
+}
+
+export default async function handler(event: APIEvent): Promise<APIResponse> {
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers,
-      body: '',
-    };
+    return { statusCode: 200, headers: CORS_HEADERS, body: '' };
   }
 
   try {
@@ -73,125 +109,52 @@ export default async function handler(event: APIEvent): Promise<APIResponse> {
       const eventId = event.queryStringParameters?.eventId;
 
       if (eventId) {
-        const eventRecord = await prisma.event.findUnique({
+        let record = await prisma.event.findUnique({
           where: { id: eventId },
-          include: {
-            categories: {
-              orderBy: { order: 'asc' },
-            },
-          },
+          include: { categories: { orderBy: { order: 'asc' } } },
         });
 
-        if (!eventRecord) {
-          const eventBySlug = await prisma.event.findUnique({
+        if (!record) {
+          record = await prisma.event.findUnique({
             where: { slug: eventId },
-            include: {
-              categories: {
-                orderBy: { order: 'asc' },
-              },
-            },
+            include: { categories: { orderBy: { order: 'asc' } } },
           });
-
-          if (!eventBySlug) {
-            return {
-              statusCode: 404,
-              headers,
-              body: JSON.stringify({ error: 'Event not found' }),
-            };
-          }
-
-          return {
-            statusCode: 200,
-            headers,
-            body: JSON.stringify(formatEvent(eventBySlug)),
-          };
         }
 
-        return {
-          statusCode: 200,
-          headers,
-          body: JSON.stringify(formatEvent(eventRecord)),
-        };
-      } else {
-        const events = await prisma.event.findMany({
-          include: {
-            categories: {
-              orderBy: { order: 'asc' },
-            },
-          },
-          orderBy: { createdAt: 'desc' },
-        });
+        if (!record) {
+          return { statusCode: 404, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Event not found' }) };
+        }
 
-        return {
-          statusCode: 200,
-          headers,
-          body: JSON.stringify(events.map(formatEvent)),
-        };
+        return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify(formatEvent(record)) };
       }
+
+      const events = await prisma.event.findMany({
+        include: { categories: { orderBy: { order: 'asc' } } },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify(events.map(formatEvent)) };
     }
 
     if (event.httpMethod === 'POST') {
-      if (!event.body) {
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ error: 'Missing request body' }),
-        };
-      }
-
-      const body = event.isBase64Encoded
-        ? JSON.parse(Buffer.from(event.body, 'base64').toString())
-        : JSON.parse(event.body);
+      const body = parseBody(event);
+      if (!body) return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Missing request body' }) };
 
       const { name, description, eventDate, location, latitude, longitude, isActive, categories } = body;
+      if (!name || !eventDate) return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Name and eventDate are required' }) };
 
-      if (!name || !eventDate) {
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ error: 'Name and eventDate are required' }),
-        };
-      }
+      let finalLat = resolveCoordinate(latitude);
+      let finalLon = resolveCoordinate(longitude);
 
-      // Use manual coordinates if provided, otherwise geocode from location
-      let finalLatitude = latitude !== null && latitude !== undefined && latitude !== '' ? parseFloat(latitude) : null;
-      let finalLongitude = longitude !== null && longitude !== undefined && longitude !== '' ? parseFloat(longitude) : null;
-
-      // Only geocode if coordinates not provided manually and location exists
-      if ((finalLatitude === null || finalLongitude === null) && location && location.trim().length > 0) {
-        try {
-          const { geocodeLocation } = await import('../src/lib/geocoding');
-          const coords = await geocodeLocation(location);
-          if (coords) {
-            finalLatitude = finalLatitude ?? coords.latitude;
-            finalLongitude = finalLongitude ?? coords.longitude;
-          }
-        } catch (error) {
-          console.error('Geocoding failed for location:', location, error);
-          // Continue without coordinates - event is still created
+      if ((finalLat === null || finalLon === null) && location?.trim()) {
+        const coords = await tryGeocode(location);
+        if (coords) {
+          finalLat = finalLat ?? coords.latitude;
+          finalLon = finalLon ?? coords.longitude;
         }
       }
 
-      const baseSlug = name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '');
-
-      let slug = baseSlug;
-      let counter = 1;
-
-      let existingEvent = await prisma.event.findUnique({
-        where: { slug },
-      });
-
-      while (existingEvent) {
-        slug = `${baseSlug}-${counter}`;
-        counter++;
-        existingEvent = await prisma.event.findUnique({
-          where: { slug },
-        });
-      }
-
+      const slug = await generateUniqueSlug(name);
       const defaultCategories = categories || ['10K Laki-laki', '10K Perempuan', '5K Laki-Laki', '5K Perempuan'];
 
       const newEvent = await prisma.event.create({
@@ -201,93 +164,47 @@ export default async function handler(event: APIEvent): Promise<APIResponse> {
           description,
           eventDate: new Date(eventDate),
           location,
-          latitude: finalLatitude,
-          longitude: finalLongitude,
+          latitude: finalLat,
+          longitude: finalLon,
           isActive: isActive !== undefined ? isActive : true,
           categories: {
-            create: defaultCategories.map((name: string, order: number) => ({
-              name,
-              order,
-            })),
+            create: defaultCategories.map((name: string, order: number) => ({ name, order })),
           },
         },
-        include: {
-          categories: {
-            orderBy: { order: 'asc' },
-          },
-        },
+        include: { categories: { orderBy: { order: 'asc' } } },
       });
 
-      return {
-        statusCode: 201,
-        headers,
-        body: JSON.stringify(formatEvent(newEvent)),
-      };
+      return { statusCode: 201, headers: CORS_HEADERS, body: JSON.stringify(formatEvent(newEvent)) };
     }
 
     if (event.httpMethod === 'PUT') {
       const eventId = event.queryStringParameters?.eventId;
+      if (!eventId) return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'eventId is required' }) };
 
-      if (!eventId) {
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ error: 'eventId is required' }),
-        };
-      }
-
-      if (!event.body) {
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ error: 'Missing request body' }),
-        };
-      }
-
-      const body = event.isBase64Encoded
-        ? JSON.parse(Buffer.from(event.body, 'base64').toString())
-        : JSON.parse(event.body);
+      const body = parseBody(event);
+      if (!body) return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Missing request body' }) };
 
       const { name, description, eventDate, location, latitude, longitude, isActive, status, gpxFile } = body;
 
-      // Handle coordinates - use manual if provided
-      let finalLatitude = undefined;
-      let finalLongitude = undefined;
+      let finalLat = latitude !== undefined ? resolveCoordinate(latitude) : undefined;
+      let finalLon = longitude !== undefined ? resolveCoordinate(longitude) : undefined;
 
-      // Check if manual coordinates provided
-      if (latitude !== undefined) {
-        finalLatitude = latitude !== null && latitude !== '' ? parseFloat(latitude) : null;
-      }
-      if (longitude !== undefined) {
-        finalLongitude = longitude !== null && longitude !== '' ? parseFloat(longitude) : null;
-      }
-
-      // If location is being updated and no manual coordinates, re-geocode
-      if (location !== undefined && finalLatitude === undefined && finalLongitude === undefined) {
-        // Get current event to check if location changed
+      if (location !== undefined && finalLat === undefined && finalLon === undefined) {
         const currentEvent = await prisma.event.findUnique({
           where: { id: eventId },
           select: { location: true },
         });
 
         if (currentEvent && currentEvent.location !== location) {
-          // Location changed, re-geocode
-          if (location && location.trim().length > 0) {
-            try {
-              const { geocodeLocation } = await import('../src/lib/geocoding');
-              const coords = await geocodeLocation(location);
-              if (coords) {
-                finalLatitude = coords.latitude;
-                finalLongitude = coords.longitude;
-              }
-            } catch (error) {
-              console.error('Geocoding failed for location:', location, error);
-              // Continue without updating coordinates
+          if (location?.trim()) {
+            const coords = await tryGeocode(location);
+            if (coords) {
+              finalLat = coords.latitude;
+              finalLon = coords.longitude;
             }
           } else {
-            // Location cleared, remove coordinates
-            finalLatitude = null;
-            finalLongitude = null;
+            finalLat = null;
+            finalLon = null;
           }
         }
       }
@@ -299,59 +216,29 @@ export default async function handler(event: APIEvent): Promise<APIResponse> {
           ...(description !== undefined && { description }),
           ...(eventDate && { eventDate: new Date(eventDate) }),
           ...(location !== undefined && { location }),
-          ...(finalLatitude !== undefined && { latitude: finalLatitude }),
-          ...(finalLongitude !== undefined && { longitude: finalLongitude }),
+          ...(finalLat !== undefined && { latitude: finalLat }),
+          ...(finalLon !== undefined && { longitude: finalLon }),
           ...(isActive !== undefined && { isActive }),
           ...(status !== undefined && { status }),
           ...(gpxFile !== undefined && { gpxFile }),
         },
-        include: {
-          categories: {
-            orderBy: { order: 'asc' },
-          },
-        },
+        include: { categories: { orderBy: { order: 'asc' } } },
       });
 
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify(formatEvent(updatedEvent)),
-      };
+      return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify(formatEvent(updatedEvent)) };
     }
 
     if (event.httpMethod === 'DELETE') {
       const eventId = event.queryStringParameters?.eventId;
+      if (!eventId) return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'eventId is required' }) };
 
-      if (!eventId) {
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ error: 'eventId is required' }),
-        };
-      }
-
-      await prisma.event.delete({
-        where: { id: eventId },
-      });
-
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({ success: true }),
-      };
+      await prisma.event.delete({ where: { id: eventId } });
+      return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify({ success: true }) };
     }
 
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: 'Method not allowed' }),
-    };
+    return { statusCode: 405, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Method not allowed' }) };
   } catch (error: any) {
     console.error('Events API error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: error.message || 'Internal server error' }),
-    };
+    return { statusCode: 500, headers: CORS_HEADERS, body: JSON.stringify({ error: error.message || 'Internal server error' }) };
   }
 }

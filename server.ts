@@ -9,13 +9,12 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3069;
-
-// Get upload directory from environment or use default
-const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, 'uploads');
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+const PROJECT_ROOT = IS_PRODUCTION ? path.resolve(__dirname, '..') : __dirname;
+const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(PROJECT_ROOT, 'uploads');
 
 app.use(cors());
 
-// Parse raw body for multipart form data
 app.use((req, res, next) => {
   const contentType = req.headers['content-type'] || '';
   if (contentType.includes('multipart/form-data')) {
@@ -32,30 +31,22 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-
-// Serve static files from dist (frontend build)
-app.use(express.static(path.join(__dirname, 'dist')));
-
-// Serve uploaded files (CSV, images, etc.)
+app.use(express.static(path.join(PROJECT_ROOT, 'dist')));
 app.use('/uploads', express.static(UPLOAD_DIR));
 
-// API handler
 const apiHandler = async (req: any, res: any) => {
   const url = new URL(req.originalUrl, `http://${req.headers.host}`);
-  const pathname = url.pathname;
+  let apiPath = url.pathname.replace('/api/', '').replace(/\//g, '-');
 
-  let apiPath = pathname.replace('/api/', '');
-  apiPath = apiPath.replace(/\//g, '-');
-
-  const apiFilePath = path.join(__dirname, 'api', `${apiPath}.ts`);
+  const ext = IS_PRODUCTION ? '.js' : '.ts';
+  const apiDir = IS_PRODUCTION ? path.join(__dirname, 'api') : path.join(PROJECT_ROOT, 'api');
+  const apiFilePath = path.join(apiDir, `${apiPath}${ext}`);
 
   try {
     const apiModule = await import(apiFilePath);
     const handler = apiModule.default;
 
-    if (!handler) {
-      throw new Error(`No default export found in ${apiFilePath}`);
-    }
+    if (!handler) throw new Error(`No default export found in ${apiFilePath}`);
 
     const contentType = req.headers['content-type'] || '';
     let body: string | null = null;
@@ -63,20 +54,17 @@ const apiHandler = async (req: any, res: any) => {
 
     if (contentType.includes('multipart/form-data') && (req as any).rawBody) {
       body = (req as any).rawBody.toString('binary');
-      isBase64Encoded = false;
     } else if (req.body && Object.keys(req.body).length > 0) {
       body = JSON.stringify(req.body);
     }
 
-    const event = {
+    const result = await handler({
       httpMethod: req.method,
       headers: req.headers,
       queryStringParameters: Object.fromEntries(url.searchParams),
       body,
       isBase64Encoded,
-    };
-
-    const result = await handler(event);
+    });
 
     res.status(result.statusCode);
     Object.entries(result.headers).forEach(([key, value]) => {
@@ -85,15 +73,14 @@ const apiHandler = async (req: any, res: any) => {
     res.send(result.body);
   } catch (error: any) {
     console.error('API Error:', error);
-    res.status(500).json({ error: error.message || 'Internal server error', stack: error.stack });
+    res.status(500).json({ error: error.message || 'Internal server error' });
   }
 };
 
 app.use('/api', apiHandler);
 
-// SPA fallback - serve index.html for all other routes
 app.use((_req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  res.sendFile(path.join(PROJECT_ROOT, 'dist', 'index.html'));
 });
 
 app.listen(PORT, () => {

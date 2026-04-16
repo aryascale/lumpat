@@ -1,7 +1,3 @@
-/**
- * Local JSON-file-based database for development without MySQL.
- * Mimics Prisma's API surface for Event, Category, Banner, and User models.
- */
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -12,9 +8,7 @@ const BANNERS_FILE = path.join(DATA_DIR, 'banners.json');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 
 function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
 function readJson<T>(filePath: string, fallback: T): T {
@@ -35,14 +29,12 @@ function uuid() {
   return crypto.randomUUID();
 }
 
-// --- Event with embedded categories ---
-
 interface StoredEvent {
   id: string;
   name: string;
   slug: string;
   description?: string;
-  eventDate: string; // ISO string
+  eventDate: string;
   location?: string;
   latitude?: number | null;
   longitude?: number | null;
@@ -84,7 +76,6 @@ interface StoredUser {
   updatedAt: string;
 }
 
-// Helper: convert stored event to Prisma-like shape (with Date objects)
 function toPrismaEvent(e: StoredEvent) {
   return {
     ...e,
@@ -97,10 +88,6 @@ function toPrismaEvent(e: StoredEvent) {
     })),
   };
 }
-
-// ============================================================
-// Event model
-// ============================================================
 
 function readEvents(): StoredEvent[] {
   return readJson<StoredEvent[]>(EVENTS_FILE, []);
@@ -201,11 +188,10 @@ const eventModel = {
       ...Object.fromEntries(
         Object.entries(args.data).filter(([_, v]) => v !== undefined)
       ),
-      categories: existing.categories, // preserve categories
+      categories: existing.categories,
       updatedAt: now,
     };
 
-    // Handle eventDate conversion
     if (args.data.eventDate && args.data.eventDate instanceof Date) {
       updated.eventDate = args.data.eventDate.toISOString();
     }
@@ -220,16 +206,11 @@ const eventModel = {
     events = events.filter(e => e.id !== args.where.id);
     writeEvents(events);
 
-    // Also delete associated banners
     let banners = readJson<StoredBanner[]>(BANNERS_FILE, []);
     banners = banners.filter(b => b.eventId !== args.where.id);
     writeJson(BANNERS_FILE, banners);
   },
 };
-
-// ============================================================
-// Category model
-// ============================================================
 
 const categoryModel = {
   async findMany(args?: { where?: any; orderBy?: any }) {
@@ -285,10 +266,6 @@ const categoryModel = {
     }
   },
 };
-
-// ============================================================
-// Banner model
-// ============================================================
 
 function readBanners(): StoredBanner[] {
   return readJson<StoredBanner[]>(BANNERS_FILE, []);
@@ -359,10 +336,6 @@ const bannerModel = {
   },
 };
 
-// ============================================================
-// User model
-// ============================================================
-
 function readUsers(): StoredUser[] {
   return readJson<StoredUser[]>(USERS_FILE, []);
 }
@@ -397,10 +370,6 @@ const userModel = {
     return newUser;
   },
 };
-
-// ============================================================
-// Export as Prisma-compatible client
-// ============================================================
 
 const localDb = {
   event: eventModel,
