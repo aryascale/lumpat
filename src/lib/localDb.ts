@@ -6,6 +6,8 @@ const DATA_DIR = path.join(process.cwd(), 'data');
 const EVENTS_FILE = path.join(DATA_DIR, 'events.json');
 const BANNERS_FILE = path.join(DATA_DIR, 'banners.json');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
+const REGISTRATIONS_FILE = path.join(DATA_DIR, 'registrations.json');
+const OTPS_FILE = path.join(DATA_DIR, 'otps.json');
 
 function ensureDataDir() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -69,11 +71,33 @@ interface StoredBanner {
 interface StoredUser {
   id: string;
   email: string;
-  password: string;
+  username: string;
+  password?: string;
   name?: string;
+  phoneNumber?: string;
+  isPhoneVerified: boolean;
+  googleId?: string;
   role: string;
   createdAt: string;
   updatedAt: string;
+}
+
+interface StoredEventRegistration {
+  id: string;
+  userId: string;
+  eventId: string;
+  categoryId: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface StoredOtp {
+  id: string;
+  phoneNumber: string;
+  code: string;
+  expiresAt: string;
+  createdAt: string;
 }
 
 function toPrismaEvent(e: StoredEvent) {
@@ -345,11 +369,13 @@ function writeUsers(users: StoredUser[]) {
 }
 
 const userModel = {
-  async findUnique(args: { where: { id?: string; email?: string } }) {
+  async findUnique(args: { where: { id?: string; email?: string; username?: string; googleId?: string } }) {
     const users = readUsers();
     return users.find(u =>
       (args.where.id && u.id === args.where.id) ||
-      (args.where.email && u.email === args.where.email)
+      (args.where.email && u.email === args.where.email) ||
+      (args.where.username && u.username === args.where.username) ||
+      (args.where.googleId && u.googleId === args.where.googleId)
     ) || null;
   },
 
@@ -359,9 +385,13 @@ const userModel = {
     const newUser: StoredUser = {
       id: uuid(),
       email: args.data.email,
+      username: args.data.username,
       password: args.data.password,
       name: args.data.name || '',
-      role: args.data.role || 'admin',
+      phoneNumber: args.data.phoneNumber,
+      isPhoneVerified: args.data.isPhoneVerified || false,
+      googleId: args.data.googleId,
+      role: args.data.role || 'user',
       createdAt: now,
       updatedAt: now,
     };
@@ -369,6 +399,95 @@ const userModel = {
     writeUsers(users);
     return newUser;
   },
+
+  async update(args: { where: { id: string }; data: any }) {
+    const users = readUsers();
+    const idx = users.findIndex(u => u.id === args.where.id);
+    if (idx < 0) throw new Error('User not found');
+    users[idx] = { ...users[idx], ...args.data, updatedAt: new Date().toISOString() };
+    writeUsers(users);
+    return users[idx];
+  }
+};
+
+function readRegistrations(): StoredEventRegistration[] {
+  return readJson<StoredEventRegistration[]>(REGISTRATIONS_FILE, []);
+}
+
+function writeRegistrations(regs: StoredEventRegistration[]) {
+  writeJson(REGISTRATIONS_FILE, regs);
+}
+
+const registrationModel = {
+  async findMany(args?: { where?: any }) {
+    let regs = readRegistrations();
+    if (args?.where) {
+      Object.entries(args.where).forEach(([k, v]) => {
+        regs = regs.filter((r: any) => r[k] === v);
+      });
+    }
+    return regs;
+  },
+  async findFirst(args: { where?: any }) {
+    let regs = readRegistrations();
+    if (args?.where) {
+      Object.entries(args.where).forEach(([k, v]) => {
+        regs = regs.filter((r: any) => r[k] === v);
+      });
+    }
+    return regs[0] || null;
+  },
+  async create(args: { data: any }) {
+    const regs = readRegistrations();
+    const now = new Date().toISOString();
+    const newReg: StoredEventRegistration = {
+      id: uuid(),
+      userId: args.data.userId,
+      eventId: args.data.eventId,
+      categoryId: args.data.categoryId,
+      status: args.data.status || 'registered',
+      createdAt: now,
+      updatedAt: now,
+    };
+    regs.push(newReg);
+    writeRegistrations(regs);
+    return newReg;
+  }
+};
+
+function readOtps(): StoredOtp[] {
+  return readJson<StoredOtp[]>(OTPS_FILE, []);
+}
+
+function writeOtps(otps: StoredOtp[]) {
+  writeJson(OTPS_FILE, otps);
+}
+
+const otpModel = {
+  async findFirst(args: { where: any }) {
+    let otps = readOtps();
+    if (args.where.phoneNumber) otps = otps.filter(o => o.phoneNumber === args.where.phoneNumber);
+    if (args.where.code) otps = otps.filter(o => o.code === args.where.code);
+    return otps[0] || null;
+  },
+  async create(args: { data: any }) {
+    const otps = readOtps();
+    const newOtp: StoredOtp = {
+      id: uuid(),
+      phoneNumber: args.data.phoneNumber,
+      code: args.data.code,
+      expiresAt: args.data.expiresAt instanceof Date ? args.data.expiresAt.toISOString() : args.data.expiresAt,
+      createdAt: new Date().toISOString(),
+    };
+    otps.push(newOtp);
+    writeOtps(otps);
+    return newOtp;
+  },
+  async deleteMany(args: { where: { phoneNumber: string } }) {
+    let otps = readOtps();
+    otps = otps.filter(o => o.phoneNumber !== args.where.phoneNumber);
+    writeOtps(otps);
+  }
 };
 
 const localDb = {
@@ -376,6 +495,8 @@ const localDb = {
   category: categoryModel,
   banner: bannerModel,
   user: userModel,
+  eventRegistration: registrationModel,
+  otp: otpModel,
 };
 
 export default localDb;

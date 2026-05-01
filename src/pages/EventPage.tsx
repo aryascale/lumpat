@@ -8,6 +8,8 @@ import LeaderboardTable, { LeaderRow } from "../components/LeaderboardTable";
 import ParticipantModal from "../components/ParticipantModal";
 import InteractiveRouteMap from "../components/InteractiveRouteMap";
 import Navbar from "../components/Navbar";
+import { useAuth } from "../contexts/AuthContext";
+import { message, Modal, Select, Button } from "antd";
 import {
   loadMasterParticipants,
   loadTimesMap,
@@ -73,6 +75,51 @@ export default function EventPage() {
   const [recalcTick, setRecalcTick] = useState(0);
   const [gpxTrackPoints, setGpxTrackPoints] = useState<Array<[number, number]>>([]);
 
+  const { user } = useAuth();
+  const [registerModalOpen, setRegisterModalOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [registering, setRegistering] = useState(false);
+  const [registeredParticipants, setRegisteredParticipants] = useState<any[]>([]);
+
+  const fetchRegisteredParticipants = async (eventId: string) => {
+    try {
+      const res = await fetch(`/api/registrations?eventId=${eventId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setRegisteredParticipants(data.participants);
+      }
+    } catch (err) {
+      console.error('Failed to load participants', err);
+    }
+  };
+
+  const handleRegister = async () => {
+    if (!selectedCategory) {
+      message.error('Pilih kategori terlebih dahulu');
+      return;
+    }
+    setRegistering(true);
+    try {
+      const res = await fetch('/api/registrations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId: event?.id, categoryId: selectedCategory })
+      });
+      if (res.ok) {
+        message.success('Berhasil mendaftar event!');
+        setRegisterModalOpen(false);
+        if (event?.id) fetchRegisteredParticipants(event.id);
+      } else {
+        const data = await res.json();
+        message.error(data.error || 'Gagal mendaftar');
+      }
+    } catch (err) {
+      message.error('Terjadi kesalahan');
+    } finally {
+      setRegistering(false);
+    }
+  };
+
   // Load event info
   useEffect(() => {
     if (!slug) return;
@@ -83,6 +130,7 @@ export default function EventPage() {
         if (response.ok) {
           const eventData = await response.json();
           setEvent(eventData);
+          fetchRegisteredParticipants(eventData.id);
         } else {
           setState({ status: "error", msg: "Event tidak ditemukan" });
         }
@@ -351,7 +399,7 @@ export default function EventPage() {
   }, []);
 
   const tabs = useMemo(() => {
-    const baseTabs = ["Participants"];
+    const baseTabs = ["Participants", "Registered"];
     // Add Route tab if GPX file exists, next to Participants
     if (event?.gpxFile || (event?.latitude && event?.longitude)) {
       baseTabs.push("Route");
@@ -454,6 +502,19 @@ export default function EventPage() {
                 {event.description && (
                   <p className="text-stone-300 text-sm md:text-base max-w-2xl font-medium tracking-wide mt-4 border-l-2 border-red-600 pl-4">{event.description}</p>
                 )}
+                
+                {user ? (
+                  <button 
+                    onClick={() => setRegisterModalOpen(true)}
+                    className="mt-6 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded uppercase tracking-widest text-sm transition-colors cursor-pointer"
+                  >
+                    Register Now
+                  </button>
+                ) : (
+                  <Link to="/login" className="inline-block mt-6 bg-stone-700 hover:bg-stone-600 text-white font-bold py-3 px-8 rounded uppercase tracking-widest text-sm transition-colors">
+                    Login to Register
+                  </Link>
+                )}
               </div>
             </div>
           </div>
@@ -529,7 +590,26 @@ export default function EventPage() {
             </div>
           )}
 
-          {activeTab !== "Participants" && activeTab !== "Results" && activeTab !== "Route" && (
+          {activeTab === "Registered" && (
+            <div className="space-y-8 bg-white p-6 shadow-sm border-t-4 border-red-600">
+              <h2 className="text-2xl font-black uppercase tracking-tighter mb-4">Registered Participants</h2>
+              {registeredParticipants.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {registeredParticipants.map((p: any) => (
+                    <div key={p.id} className="border border-stone-200 p-4 flex flex-col">
+                      <span className="font-bold text-lg">{p.user?.name || p.user?.username || 'Unknown User'}</span>
+                      <span className="text-sm text-stone-500">{p.category?.name || p.category || 'Unknown Category'}</span>
+                      <span className="text-xs text-stone-400 mt-2">{new Date(p.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-stone-500">Belum ada peserta yang mendaftar.</p>
+              )}
+            </div>
+          )}
+
+          {activeTab !== "Participants" && activeTab !== "Registered" && activeTab !== "Results" && activeTab !== "Route" && (
             <div className="space-y-8">
               <RaceClock cutoffMs={event?.cutoffMs} categoryStartTimes={event?.categoryStartTimes} />
               <CategorySection
@@ -592,6 +672,34 @@ export default function EventPage() {
             </div>
           )}
         </div>
+
+          <Modal
+            title="Daftar Event"
+            open={registerModalOpen}
+            onCancel={() => setRegisterModalOpen(false)}
+            footer={[
+              <Button key="back" onClick={() => setRegisterModalOpen(false)}>
+                Batal
+              </Button>,
+              <Button key="submit" type="primary" danger loading={registering} onClick={handleRegister}>
+                Daftar
+              </Button>
+            ]}
+          >
+            <div className="py-4">
+              <p className="mb-4">Pilih kategori yang ingin Anda ikuti untuk <strong>{event?.name}</strong>.</p>
+              <Select
+                className="w-full"
+                placeholder="Pilih Kategori"
+                value={selectedCategory || undefined}
+                onChange={setSelectedCategory}
+                options={event?.categories?.map((cat: any) => ({
+                  label: cat.name || cat,
+                  value: cat.name || cat,
+                })) || []}
+              />
+            </div>
+          </Modal>
 
         <ParticipantModal
           open={modalOpen}

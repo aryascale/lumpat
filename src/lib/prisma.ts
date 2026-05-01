@@ -12,7 +12,11 @@ if (process.env.DATABASE_URL) {
     const PrismaClient = prismaClient.PrismaClient || prismaClient.default?.PrismaClient;
     const PrismaMariadb = prismaAdapter.PrismaMariadb || prismaAdapter.PrismaMariaDb || prismaAdapter.default?.PrismaMariadb;
 
-    const pool = mariadb.createPool(process.env.DATABASE_URL!);
+    let dbUrl = process.env.DATABASE_URL!.replace(/^mysql:\/\//, 'mariadb://');
+    if (!dbUrl.includes('?')) dbUrl += '?allowPublicKeyRetrieval=true';
+    else dbUrl += '&allowPublicKeyRetrieval=true';
+    
+    const pool = mariadb.createPool(dbUrl);
     const adapter = new PrismaMariadb(pool);
     prisma = new PrismaClient({ adapter });
 

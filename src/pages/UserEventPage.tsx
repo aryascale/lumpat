@@ -98,12 +98,7 @@ export default function UserEventPage() {
             /* Main Leaderboard List */
             <div className="flex flex-col gap-6 max-w-5xl mx-auto">
               {events.map((event, eventIdx) => {
-                const fallbackImages = [
-                  '/images/events/dummy_marathon.png',
-                  '/images/events/dummy_triathlon.png',
-                  '/images/events/dummy_cycling.png'
-                ];
-                const bgImg = event.banner || event.imageUrl || fallbackImages[eventIdx % fallbackImages.length];
+
 
                 return (
                   <div

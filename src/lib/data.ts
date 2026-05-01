@@ -1,7 +1,7 @@
 import parseTimeToMs from "./time";
 import { parseCsv } from "./csvParse";
 import { getCsvFile } from "./idb";
-import { CATEGORY_KEYS, type CategoryKey } from "./config";
+import { type CategoryKey } from "./config";
 
 const headerAliases: Record<string, string[]> = {
   epc: ["epc", "uid", "tag", "rfid", "chip epc", "epc code"],
@@ -47,25 +47,6 @@ function normalizeGender(v: string): string {
   return v;
 }
 
-function normalizeCategoryFromMaster(args: {
-  rawCategory: string;
-  rawGender: string;
-}): CategoryKey {
-  const c = norm(args.rawCategory);
-  const g = norm(args.rawGender);
-
-  const is10k = c.includes("10") || c.includes("10k") || c.includes("10 km") || c.includes("10km");
-  const is5k = c.includes("5") || c.includes("5k") || c.includes("5 km") || c.includes("5km");
-
-  const female = g.includes("perempuan") || g.includes("wanita") || g === "f" || g.includes("female");
-
-  if (is10k) return female ? "10K Perempuan" : "10K Laki-laki";
-  if (is5k) return female ? "5K Perempuan" : "5K Laki-Laki";
-
-  // fallback: try to match directly
-  const direct = CATEGORY_KEYS.find((k) => norm(k) === c || norm(k).includes(c) || c.includes(norm(k)));
-  return (direct as CategoryKey) || "10K Laki-laki";
-}
 
 export type MasterParticipant = {
   epc: string;
@@ -148,7 +129,7 @@ export async function loadMasterParticipants(
       name: nameIdx >= 0 ? String(r[nameIdx] ?? "").trim() : "",
       gender,
       category: category,
-      sourceCategoryKey: category,
+      sourceCategoryKey: category as CategoryKey,
     };
 
     byEpc.set(epc, p);

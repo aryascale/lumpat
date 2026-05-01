@@ -1,0 +1,50 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: lumpat-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_DATABASE: lumpat_db
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: lumpat-phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: admin
+      PMA_PASSWORD: admin
+    ports:
+      - "8080:80"
+    depends_on:
+      - mysql
+
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: lumpat-app
+    restart: always
+    ports:
+      - "3069:3069"
+      - "5173:5173"
+    environment:
+      - DATABASE_URL=mysql://root:admin@mysql:3306/lumpat_db
+      - PORT=3069
+      - NODE_ENV=development
+    env_file:
+      - ../.env
+    depends_on:
+      - mysql
+    volumes:
+      - ../uploads:/app/uploads
+
+volumes:
+  mysql_data:

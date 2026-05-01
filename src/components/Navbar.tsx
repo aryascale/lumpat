@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 interface NavbarProps {
   showAdminButton?: boolean;
@@ -7,8 +8,10 @@ interface NavbarProps {
 
 export default function Navbar({ showAdminButton = false }: NavbarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { user, logout } = useAuth();
 
   const isLanding = location.pathname === '/';
   const isLeaderboard = location.pathname === '/leaderboard';
@@ -21,27 +24,7 @@ export default function Navbar({ showAdminButton = false }: NavbarProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Language translation handler
-  const [currentLang, setCurrentLang] = useState('ENG');
-  
-  useEffect(() => {
-    // Check current language from google translate cookie if present
-    const match = document.cookie.match(/(?:^|;)\s*googtrans=([^;]*)/);
-    if (match && match[1] === '/en/id') {
-      setCurrentLang('IDN');
-    }
-  }, []);
 
-  const toggleLanguage = (lang: 'ENG' | 'IDN') => {
-    if (lang === 'ENG') {
-      document.cookie = `googtrans=/en/en; path=/; domain=${window.location.hostname}`;
-      document.cookie = `googtrans=/en/en; path=/`;
-    } else {
-      document.cookie = `googtrans=/en/id; path=/; domain=${window.location.hostname}`;
-      document.cookie = `googtrans=/en/id; path=/`;
-    }
-    window.location.reload();
-  };
 
   // On landing page: transparent at top, solid on scroll
   // On other pages: always solid
@@ -49,7 +32,6 @@ export default function Navbar({ showAdminButton = false }: NavbarProps) {
 
   const navLinks = [
     { to: '/leaderboard', label: 'Leaderboard', isActive: isLeaderboard },
-    { to: '/apaya', label: 'Apa ya', isActive: isEvents },
   ];
 
   return (
@@ -75,29 +57,30 @@ export default function Navbar({ showAdminButton = false }: NavbarProps) {
               {link.label}
             </Link>
           ))}
-          {/* Language Toggle */}
-          <div className="flex items-center bg-stone-900 rounded-full p-1 ml-4 shadow-inner border border-stone-800">
-            <button
-              onClick={() => toggleLanguage('ENG')}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
-                currentLang === 'ENG' 
-                  ? 'bg-red-600 text-white shadow-md' 
-                  : 'text-stone-400 hover:text-white'
-              }`}
-            >
-              ENG
-            </button>
-            <button
-              onClick={() => toggleLanguage('IDN')}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
-                currentLang === 'IDN' 
-                  ? 'bg-red-600 text-white shadow-md' 
-                  : 'text-stone-400 hover:text-white'
-              }`}
-            >
-              IDN
-            </button>
-          </div>
+
+
+          {user ? (
+            <div className="flex items-center gap-4 ml-4">
+              <Link to="/profile" className={`navbar-sticky__link ${isTransparent ? 'navbar-sticky__link--light' : ''} font-bold`}>
+                Profile ({user.username || user.name || 'User'})
+              </Link>
+              <button
+                onClick={() => { logout(); navigate('/'); }}
+                className={`navbar-sticky__link ${isTransparent ? 'navbar-sticky__link--light' : ''} text-red-500 font-bold`}
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-4 ml-4">
+              <Link to="/login" className={`navbar-sticky__link ${isTransparent ? 'navbar-sticky__link--light' : ''} font-bold`}>
+                Login
+              </Link>
+              <Link to="/register" className="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-full text-sm font-bold transition-colors shadow-sm">
+                Register
+              </Link>
+            </div>
+          )}
 
           {showAdminButton && (
             <Link
@@ -141,6 +124,41 @@ export default function Navbar({ showAdminButton = false }: NavbarProps) {
             {link.label}
           </Link>
         ))}
+
+        {user ? (
+          <>
+            <Link
+              to="/profile"
+              onClick={() => setMobileMenuOpen(false)}
+              className="navbar-sticky__mobile-link"
+            >
+              Profile ({user.username || user.name || 'User'})
+            </Link>
+            <button
+              onClick={() => { logout(); setMobileMenuOpen(false); navigate('/'); }}
+              className="navbar-sticky__mobile-link text-red-500 font-bold w-full text-left"
+            >
+              Logout
+            </button>
+          </>
+        ) : (
+          <>
+            <Link
+              to="/login"
+              onClick={() => setMobileMenuOpen(false)}
+              className="navbar-sticky__mobile-link font-bold"
+            >
+              Login
+            </Link>
+            <Link
+              to="/register"
+              onClick={() => setMobileMenuOpen(false)}
+              className="navbar-sticky__mobile-link text-red-500 font-bold"
+            >
+              Register
+            </Link>
+          </>
+        )}
 
         {showAdminButton && (
           <Link

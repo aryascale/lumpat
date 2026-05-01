@@ -91,10 +91,10 @@ export default function LandingPage() {
   ];
 
   const hardwareImages = [
-    "/images/events/device_bib_tag.png",
-    "/images/events/device_ankle_tag.png",
-    "/images/events/device_bike_tag.png",
-    "/images/events/device_relay_baton.png"
+    "/images/events/device_bib_tag.webp",
+    "/images/events/device_ankle_tag.webp",
+    "/images/events/device_bike_tag.webp",
+    "/images/events/device_relay_baton.webp"
   ];
 
 
@@ -163,13 +163,13 @@ export default function LandingPage() {
         <div className="landing-container">
           <div className="landing-photo-grid scroll-reveal">
             <div className="landing-photo-grid__item landing-photo-grid__item--large landing-img-wrapper">
-              <img src="/Assets/landing/swim.png" alt="Triathlon swimming" loading="lazy" />
+              <img src="/Assets/landing/swim.webp" alt="Triathlon swimming" loading="lazy" />
             </div>
             <div className="landing-photo-grid__item landing-img-wrapper">
-              <img src="/Assets/landing/bike.png" alt="Triathlon cycling" loading="lazy" />
+              <img src="/Assets/landing/bike.webp" alt="Triathlon cycling" loading="lazy" />
             </div>
             <div className="landing-photo-grid__item landing-img-wrapper">
-              <img src="/Assets/landing/run.png" alt="Triathlon running" loading="lazy" />
+              <img src="/Assets/landing/run.webp" alt="Triathlon running" loading="lazy" />
             </div>
           </div>
 
@@ -189,7 +189,7 @@ export default function LandingPage() {
         <div
           className="landing-parallax-block"
           style={{
-            backgroundImage: "url('/Assets/landing/swim.png')",
+            backgroundImage: "url('/Assets/landing/swim.webp')",
             backgroundPositionY: `${(scrollY - 800) * 0.2}px`,
           }}
         >
@@ -208,7 +208,7 @@ export default function LandingPage() {
         <div
           className="landing-parallax-block"
           style={{
-            backgroundImage: "url('/Assets/landing/bike.png')",
+            backgroundImage: "url('/Assets/landing/bike.webp')",
             backgroundPositionY: `${(scrollY - 1400) * 0.2}px`,
           }}
         >
@@ -227,7 +227,7 @@ export default function LandingPage() {
         <div
           className="landing-parallax-block"
           style={{
-            backgroundImage: "url('/Assets/landing/run.png')",
+            backgroundImage: "url('/Assets/landing/run.webp')",
             backgroundPositionY: `${(scrollY - 2000) * 0.2}px`,
           }}
         >
@@ -292,142 +292,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ===================== SECTION 6: FOR PARTICIPANTS ===================== */}
-      <section className="landing-section landing-section--white" id="participants">
-        <div className="landing-container">
-          <div className="landing-split scroll-reveal">
-            <div className="landing-split__visual">
-              <div className="landing-leaderboard-mock">
-                <div className="landing-leaderboard-mock__header">
-                  <div className="landing-leaderboard-mock__dot landing-leaderboard-mock__dot--red" />
-                  <div className="landing-leaderboard-mock__dot landing-leaderboard-mock__dot--yellow" />
-                  <div className="landing-leaderboard-mock__dot landing-leaderboard-mock__dot--green" />
-                  <span>IJT Live Leaderboard</span>
-                </div>
-                <div className="landing-leaderboard-mock__body">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Name</th>
-                        <th>Swim</th>
-                        <th>Bike</th>
-                        <th>Run</th>
-                        <th>Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {[
-                        { rank: 1, name: "A. Rahman", swim: "24:12", bike: "1:02:34", run: "38:45", total: "2:05:31" },
-                        { rank: 2, name: "D. Pratama", swim: "25:08", bike: "1:01:12", run: "40:22", total: "2:06:42" },
-                        { rank: 3, name: "R. Santoso", swim: "23:45", bike: "1:04:18", run: "39:51", total: "2:07:54" },
-                        { rank: 4, name: "M. Wijaya", swim: "26:33", bike: "1:00:45", run: "41:10", total: "2:08:28" },
-                        { rank: 5, name: "B. Kusuma", swim: "24:56", bike: "1:03:22", run: "41:33", total: "2:09:51" },
-                      ].map((row) => (
-                        <tr key={row.rank}>
-                          <td>
-                            <span className={`mock-rank mock-rank--${row.rank}`}>
-                              {row.rank}
-                            </span>
-                          </td>
-                          <td className="mock-name">{row.name}</td>
-                          <td>{row.swim}</td>
-                          <td>{row.bike}</td>
-                          <td>{row.run}</td>
-                          <td className="mock-total">{row.total}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <div className="landing-split__content">
-              <span className="landing-section-header__tag">FOR PARTICIPANTS</span>
-              <h2 className="landing-section-header__title" style={{ textAlign: "left" }}>
-                TRACK YOUR RACE.
-                <br />
-                OWN YOUR RESULT.
-              </h2>
-              <p className="landing-split__text">
-                Monitor your ranking in real-time on the live leaderboard. Download
-                your official finisher certificate after every event.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-1 gap-4 mb-8">
-                {[
-                  "Live leaderboard with split times",
-                  "Shareable Finisher Certificate for IG Stories",
-                  "Race history & profile",
-                  "Results verified from official timing system"
-                ].map((feature, i) => (
-                  <div key={i} className="bg-white border-2 border-red-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow flex items-start gap-3">
-                    <span className="text-sm font-bold text-stone-800 leading-tight">{feature}</span>
-                  </div>
-                ))}
-              </div>
-              <button
-                onClick={() => navigate("/leaderboard")}
-                className="landing-btn landing-btn--primary"
-              >
-                VIEW LEADERBOARD
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ===================== SECTION 7: FOR ORGANIZERS ===================== */}
-      <section className="landing-section landing-section--dark" id="organizers">
-        <div className="landing-container">
-          <div className="landing-section-header scroll-reveal">
-            <span className="landing-section-header__tag landing-section-header__tag--light">
-              FOR EVENT ORGANIZERS
-            </span>
-            <h2 className="landing-section-header__title landing-section-header__title--light">
-              COMPLETE TIMING SOLUTION
-              <br />
-              FOR YOUR NEXT EVENT
-            </h2>
-            <p className="landing-section-header__subtitle landing-section-header__subtitle--light">
-              From transponders to live scoring software — everything in one platform.
-            </p>
-          </div>
-
-          <div className="landing-org-grid scroll-reveal">
-            {[
-              {
-                title: "Participant Management",
-                desc: "Handle registration, categories, and BIB number assignment automatically.",
-              },
-              {
-                title: "Real-time Timing",
-                desc: "UHF transponder system with 0.2-second accuracy and live split tracking.",
-              },
-              {
-                title: "Results & Certificates",
-                desc: "Auto-generate race results and finisher certificates for every participant.",
-              },
-            ].map((item, idx) => (
-              <div key={idx} className="landing-org-card">
-                <h4 className="landing-org-card__title">{item.title}</h4>
-                <p className="landing-org-card__desc">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="landing-org-cta scroll-reveal">
-            <button className="landing-btn landing-btn--white">CONTACT SALES TEAM</button>
-            <button
-              onClick={() => setIsSearchOpen(true)}
-              className="landing-btn landing-btn--outline-light"
-            >
-              VIEW DEMO
-            </button>
-          </div>
-        </div>
-      </section>
-
       {/* ===================== SECTION 8: FAQ ===================== */}
       <section className="landing-section landing-section--gray" id="faq">
         <div className="landing-container landing-container--narrow">
@@ -472,31 +336,6 @@ export default function LandingPage() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===================== SECTION 9: FINAL CTA ===================== */}
-      <section className="landing-final-cta" id="cta">
-        <div className="landing-container scroll-reveal">
-          <h2 className="landing-final-cta__title">
-            READY TO POWER YOUR
-            <br />
-            NEXT TRIATHLON EVENT?
-          </h2>
-          <p className="landing-final-cta__subtitle">
-            Get the most reliable timing system for your participants today.
-          </p>
-          <div className="landing-final-cta__buttons">
-            <button className="landing-btn landing-btn--white landing-btn--large">
-              REQUEST A QUOTE
-            </button>
-            <button
-              onClick={() => navigate("/leaderboard")}
-              className="landing-btn landing-btn--outline-light landing-btn--large"
-            >
-              VIEW LEADERBOARD
-            </button>
           </div>
         </div>
       </section>

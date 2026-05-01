@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
 }
 
 model Event {
@@ -23,6 +22,7 @@ model Event {
   categoryStartTimes Json?      // JSON object: { "10K Laki-laki": "2025-11-23 07:00:00.000", ... }
   categories         Category[]
   banners            Banner[]
+  registrations      EventRegistration[]
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 }
@@ -33,6 +33,7 @@ model Category {
   eventId   String
   event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   order     Int      @default(0)
+  registrations EventRegistration[]
   createdAt DateTime @default(now())
 
   @@unique([eventId, name])
@@ -53,11 +54,44 @@ model Banner {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String?
-  role      String   @default("admin")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(uuid())
+  email           String   @unique
+  username        String   @unique
+  password        String?
+  name            String?
+  phoneNumber     String?
+  isPhoneVerified Boolean  @default(false)
+  googleId        String?  @unique
+  role            String   @default("user")
+  registrations   EventRegistration[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model EventRegistration {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId    String
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  status     String   @default("registered") // registered, cancelled
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, eventId]) // A user can only register once per event
+  @@index([eventId])
+  @@index([categoryId])
+  @@index([userId])
+}
+
+model Otp {
+  id          String   @id @default(uuid())
+  phoneNumber String
+  code        String
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([phoneNumber])
 }

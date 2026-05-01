@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -13,7 +14,8 @@ const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const PROJECT_ROOT = IS_PRODUCTION ? path.resolve(__dirname, '..') : __dirname;
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(PROJECT_ROOT, 'uploads');
 
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
+app.use(cookieParser());
 
 app.use((req, res, next) => {
   const contentType = req.headers['content-type'] || '';
@@ -61,6 +63,7 @@ const apiHandler = async (req: any, res: any) => {
     const result = await handler({
       httpMethod: req.method,
       headers: req.headers,
+      cookies: req.cookies,
       queryStringParameters: Object.fromEntries(url.searchParams),
       body,
       isBase64Encoded,
