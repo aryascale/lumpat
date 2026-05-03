@@ -3,11 +3,8 @@ services:
     image: mysql:8.0
     container_name: lumpat-mysql
     restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: lumpat2026
-      MYSQL_DATABASE: lumpat_db
-      MYSQL_USER: lumpat2026
-      MYSQL_PASSWORD: lumpat2026
+    env_file:
+      - ../.env
     ports:
       - "127.0.0.1:3306:3306"
     volumes:
@@ -19,8 +16,8 @@ services:
     restart: always
     environment:
       PMA_HOST: mysql
-      PMA_USER: lumpat2026
-      PMA_PASSWORD: lumpat2026
+    env_file:
+      - ../.env
     ports:
       - "127.0.0.1:8080:80"
     depends_on:
