@@ -13,8 +13,10 @@ RUN npx prisma generate
 # Copy the rest of the application
 COPY . .
 
-# Build is skipped because the user prefers running in dev mode locally
-EXPOSE 3069 5173
+# Build the frontend for production
+RUN npm run build
 
-# Start the dev server for both FE and BE
-CMD ["npm", "run", "dev:full"]
+EXPOSE 3069
+
+# Start the production backend server (which will also serve the static frontend)
+CMD ["npm", "run", "server"]
