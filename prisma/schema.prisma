@@ -1,5 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "darwin-arm64"]
+  engineType    = "binary"
 }
 
 datasource db {
@@ -61,6 +63,7 @@ model User {
   name            String?
   phoneNumber     String?
   isPhoneVerified Boolean  @default(false)
+  isEmailVerified Boolean  @default(false)
   googleId        String?  @unique
   role            String   @default("user")
   registrations   EventRegistration[]

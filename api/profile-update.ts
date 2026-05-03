@@ -1,51 +1,41 @@
+import { query } from '../src/lib/db';
 import { verifyToken } from '../src/lib/jwt';
-import prisma from '../src/lib/prisma';
+import { successResponse, errorResponse, parseBody, CORS_HEADERS } from '../src/lib/api-utils';
 
 export default async function handler(req: any) {
-  if (req.httpMethod !== 'PUT') {
-    return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }), headers: {} };
-  }
+  if (req.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
+  if (req.httpMethod !== 'PUT') return errorResponse('Method not allowed', 405);
 
   try {
-    const cookies = req.headers.cookie || '';
-    const tokenCookie = cookies.split(';').find((c: string) => c.trim().startsWith('token='));
-    const token = tokenCookie ? tokenCookie.split('=')[1] : null;
+    const token = req.cookies?.token;
+    if (!token) return errorResponse('Unauthorized', 401);
 
-    if (!token) {
-      return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }), headers: {} };
-    }
+    const payload: any = verifyToken(token);
+    if (!payload || !payload.id) return errorResponse('Invalid token', 401);
 
-    const payload = verifyToken(token) as any;
-    if (!payload || !payload.userId) {
-      return { statusCode: 401, body: JSON.stringify({ error: 'Invalid token' }), headers: {} };
-    }
+    const { username, name } = parseBody(req);
 
-    const { username, name } = JSON.parse(req.body || '{}');
+    const fields: string[] = [];
+    const values: any[] = [];
 
-    const dataToUpdate: any = {};
-    if (username !== undefined) dataToUpdate.username = username;
-    if (name !== undefined) dataToUpdate.name = name;
+    if (username !== undefined) { fields.push('username = ?'); values.push(username); }
+    if (name !== undefined) { fields.push('name = ?'); values.push(name); }
 
-    const updatedUser = await prisma.user.update({
-      where: { id: payload.userId },
-      data: dataToUpdate,
-    });
+    if (fields.length === 0) return errorResponse('No fields to update', 400);
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        message: 'Profile updated successfully',
-        user: {
-          id: updatedUser.id,
-          username: updatedUser.username,
-          name: updatedUser.name,
-          email: updatedUser.email,
-        }
-      }),
-      headers: { 'Content-Type': 'application/json' },
-    };
-  } catch (error) {
-    console.error('Profile update error:', error);
-    return { statusCode: 500, body: JSON.stringify({ error: 'Internal server error' }), headers: {} };
+    fields.push('updatedAt = NOW()');
+    values.push(payload.id);
+
+    await query(`UPDATE User SET ${fields.join(', ')} WHERE id = ?`, values);
+
+    const users: any = await query(
+      'SELECT id, username, name, email FROM User WHERE id = ? LIMIT 1',
+      [payload.id]
+    );
+
+    return successResponse({ message: 'Profile updated successfully', user: users[0] });
+  } catch (error: any) {
+    console.error('[PROFILE] Update error:', error);
+    return errorResponse(error.message || 'Internal server error');
   }
 }

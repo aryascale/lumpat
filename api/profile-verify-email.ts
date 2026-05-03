@@ -13,23 +13,23 @@ export default async function handler(req: any) {
     const decoded: any = verifyToken(token);
     if (!decoded?.id) return errorResponse('Invalid token', 401);
 
-    const { phoneNumber, code } = parseBody(req);
-    if (!phoneNumber || !code) return errorResponse('Phone number and code are required', 400);
+    const { email, code } = parseBody(req);
+    if (!email || !code) return errorResponse('Email and code are required', 400);
 
     const otps: any = await query(
       'SELECT * FROM Otp WHERE phoneNumber = ? AND code = ? LIMIT 1',
-      [phoneNumber, code]
+      [email, code]
     );
 
     if (otps.length === 0) return errorResponse('Invalid or expired OTP', 400);
     if (new Date() > new Date(otps[0].expiresAt)) return errorResponse('OTP has expired', 400);
 
-    await query('UPDATE User SET isPhoneVerified = true, updatedAt = NOW() WHERE id = ?', [decoded.id]);
-    await query('DELETE FROM Otp WHERE phoneNumber = ?', [phoneNumber]);
+    await query('UPDATE User SET isEmailVerified = true, updatedAt = NOW() WHERE id = ?', [decoded.id]);
+    await query('DELETE FROM Otp WHERE phoneNumber = ?', [email]);
 
-    return successResponse({ message: 'Phone number verified successfully' });
+    return successResponse({ message: 'Email verified successfully' });
   } catch (error: any) {
-    console.error('[AUTH] Verify OTP error:', error);
+    console.error('[AUTH] Verify Email OTP error:', error);
     return errorResponse(error.message || 'Internal server error');
   }
 }

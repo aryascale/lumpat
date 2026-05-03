@@ -1,44 +1,19 @@
-import prisma from '../src/lib/prisma';
+import { query } from '../src/lib/db';
+import { successResponse, errorResponse, CORS_HEADERS } from '../src/lib/api-utils';
 
-interface APIEvent {
-  httpMethod: string;
-  headers: { [key: string]: string };
-  queryStringParameters?: { [key: string]: string };
-}
-
-interface APIResponse {
-  statusCode: number;
-  headers: { [key: string]: string };
-  body: string;
-}
-
-const CORS_HEADERS = {
-  'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
-
-export default async function handler(event: APIEvent): Promise<APIResponse> {
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers: CORS_HEADERS, body: '' };
-  }
-
-  if (event.httpMethod !== 'GET') {
-    return { statusCode: 405, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Method not allowed' }) };
-  }
+export default async function handler(event: any) {
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
+  if (event.httpMethod !== 'GET') return errorResponse('Method not allowed', 405);
 
   try {
     const eventId = event.queryStringParameters?.eventId;
-    const where = eventId ? { eventId } : {};
+    const banners: any = eventId
+      ? await query('SELECT * FROM Banner WHERE eventId = ? ORDER BY `order` ASC', [eventId])
+      : await query('SELECT * FROM Banner ORDER BY `order` ASC');
 
-    const banners = await prisma.banner.findMany({
-      where,
-      orderBy: { order: 'asc' },
-    });
-
-    return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify(banners) };
+    return successResponse(banners);
   } catch (error: any) {
-    return { statusCode: 500, headers: CORS_HEADERS, body: JSON.stringify({ error: error.message || 'Internal server error' }) };
+    console.error('[BANNERS] Error:', error);
+    return errorResponse(error.message || 'Internal server error');
   }
 }

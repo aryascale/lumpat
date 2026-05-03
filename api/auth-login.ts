@@ -1,46 +1,45 @@
-import prisma from '../src/lib/prisma';
+import { query } from '../src/lib/db';
 import bcrypt from 'bcryptjs';
 import { signToken } from '../src/lib/jwt';
+import { successResponse, errorResponse, parseBody, CORS_HEADERS } from '../src/lib/api-utils';
 
 export default async function handler(req: any) {
-  if (req.httpMethod !== 'POST') {
-    return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }), headers: {} };
-  }
+  if (req.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
+  if (req.httpMethod !== 'POST') return errorResponse('Method not allowed', 405);
 
   try {
-    const { email, password } = JSON.parse(req.body || '{}');
+    const { email, password } = parseBody(req);
 
     if (!email || !password) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Missing required fields' }), headers: {} };
+      return errorResponse('Missing required fields', 400);
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user || !user.password) {
-      return { statusCode: 401, body: JSON.stringify({ error: 'Invalid email or password' }), headers: {} };
+    const users: any = await query(
+      'SELECT id, email, username, password, role FROM User WHERE email = ? LIMIT 1',
+      [email]
+    );
+
+    if (users.length === 0 || !users[0].password) {
+      return errorResponse('Invalid email or password', 401);
     }
 
+    const user = users[0];
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
-      return { statusCode: 401, body: JSON.stringify({ error: 'Invalid email or password' }), headers: {} };
+      return errorResponse('Invalid email or password', 401);
     }
 
     const token = signToken({ id: user.id, email: user.email, role: user.role });
 
-    return {
-      statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Set-Cookie': `token=${token}; HttpOnly; Path=/; Max-Age=604800; SameSite=Strict${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`,
-      },
-      body: JSON.stringify({ 
-        user: { id: user.id, email: user.email, username: user.username, role: user.role } 
-      }),
-    };
+    const response = successResponse({
+      user: { id: user.id, email: user.email, username: user.username, role: user.role }
+    });
+
+    response.headers['Set-Cookie'] = `token=${token}; HttpOnly; Path=/; Max-Age=604800; SameSite=Strict${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
+
+    return response;
   } catch (error: any) {
-    return {
-      statusCode: 500,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: error.message || 'Internal server error' }),
-    };
+    console.error('[AUTH] Login error:', error);
+    return errorResponse(error.message || 'Internal server error');
   }
 }

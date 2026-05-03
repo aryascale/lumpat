@@ -1,94 +1,67 @@
-import prisma from '../src/lib/prisma';
+import { query } from '../src/lib/db';
+import { successResponse, errorResponse, parseBody, CORS_HEADERS } from '../src/lib/api-utils';
 
-interface APIEvent {
-  httpMethod: string;
-  headers: { [key: string]: string };
-  queryStringParameters?: { [key: string]: string };
-  body: string | null;
-  isBase64Encoded: boolean;
-}
-
-interface APIResponse {
-  statusCode: number;
-  headers: { [key: string]: string };
-  body: string;
-}
-
-interface TimingData {
-  cutoffMs: number | null;
-  categoryStartTimes: Record<string, string> | null;
-}
-
-const CORS_HEADERS = {
-  'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
-
-function parseBody(event: APIEvent) {
-  if (!event.body) return null;
-  return event.isBase64Encoded
-    ? JSON.parse(Buffer.from(event.body, 'base64').toString())
-    : JSON.parse(event.body);
-}
-
-export default async function handler(event: APIEvent): Promise<APIResponse> {
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers: CORS_HEADERS, body: '' };
-  }
+export default async function handler(event: any) {
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
 
   try {
     const eventId = event.queryStringParameters?.eventId;
-    if (!eventId) return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'eventId is required' }) };
+    if (!eventId) return errorResponse('eventId is required', 400);
 
     if (event.httpMethod === 'GET') {
-      const record = await prisma.event.findUnique({
-        where: { id: eventId },
-        select: { id: true, cutoffMs: true, categoryStartTimes: true },
-      });
+      const events: any = await query(
+        'SELECT id, cutoffMs, categoryStartTimes FROM Event WHERE id = ? LIMIT 1',
+        [eventId]
+      );
+      if (events.length === 0) return errorResponse('Event not found', 404);
 
-      if (!record) return { statusCode: 404, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Event not found' }) };
+      const record = events[0];
+      let categoryStartTimes = record.categoryStartTimes;
+      if (typeof categoryStartTimes === 'string') {
+        try { categoryStartTimes = JSON.parse(categoryStartTimes); } catch {}
+      }
 
-      return {
-        statusCode: 200,
-        headers: CORS_HEADERS,
-        body: JSON.stringify({ cutoffMs: record.cutoffMs, categoryStartTimes: record.categoryStartTimes }),
-      };
+      return successResponse({ cutoffMs: record.cutoffMs, categoryStartTimes });
     }
 
     if (event.httpMethod === 'POST' || event.httpMethod === 'PUT') {
       const body = parseBody(event);
-      if (!body) return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Missing request body' }) };
+      if (!body) return errorResponse('Missing request body', 400);
 
-      const { cutoffMs, categoryStartTimes } = body as TimingData;
+      const { cutoffMs, categoryStartTimes } = body;
 
       if (cutoffMs !== null && cutoffMs !== undefined && (typeof cutoffMs !== 'number' || cutoffMs < 0)) {
-        return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'cutoffMs must be a positive number or null' }) };
+        return errorResponse('cutoffMs must be a positive number or null', 400);
       }
 
       if (categoryStartTimes !== null && categoryStartTimes !== undefined && (typeof categoryStartTimes !== 'object' || Array.isArray(categoryStartTimes))) {
-        return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'categoryStartTimes must be an object or null' }) };
+        return errorResponse('categoryStartTimes must be an object or null', 400);
       }
 
-      const existing = await prisma.event.findUnique({ where: { id: eventId } });
-      if (!existing) return { statusCode: 404, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Event not found' }) };
+      const existing: any = await query('SELECT id FROM Event WHERE id = ? LIMIT 1', [eventId]);
+      if (existing.length === 0) return errorResponse('Event not found', 404);
 
-      const updated = await prisma.event.update({
-        where: { id: eventId },
-        data: { cutoffMs: cutoffMs ?? null, categoryStartTimes: categoryStartTimes ?? null },
-        select: { id: true, cutoffMs: true, categoryStartTimes: true },
-      });
+      await query(
+        'UPDATE Event SET cutoffMs = ?, categoryStartTimes = ?, updatedAt = NOW() WHERE id = ?',
+        [cutoffMs ?? null, categoryStartTimes ? JSON.stringify(categoryStartTimes) : null, eventId]
+      );
 
-      return {
-        statusCode: 200,
-        headers: CORS_HEADERS,
-        body: JSON.stringify({ cutoffMs: updated.cutoffMs, categoryStartTimes: updated.categoryStartTimes }),
-      };
+      const updated: any = await query(
+        'SELECT id, cutoffMs, categoryStartTimes FROM Event WHERE id = ? LIMIT 1',
+        [eventId]
+      );
+
+      let parsedCST = updated[0].categoryStartTimes;
+      if (typeof parsedCST === 'string') {
+        try { parsedCST = JSON.parse(parsedCST); } catch {}
+      }
+
+      return successResponse({ cutoffMs: updated[0].cutoffMs, categoryStartTimes: parsedCST });
     }
 
-    return { statusCode: 405, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Method not allowed' }) };
+    return errorResponse('Method not allowed', 405);
   } catch (error: any) {
-    return { statusCode: 500, headers: CORS_HEADERS, body: JSON.stringify({ error: error.message || 'Internal server error' }) };
+    console.error('[TIMING] Error:', error);
+    return errorResponse(error.message || 'Internal server error');
   }
 }

@@ -11,6 +11,21 @@ export default function LandingPage() {
   const [scrollY, setScrollY] = useState(0);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [activeHardware, setActiveHardware] = useState(0);
+  const [heroIndex, setHeroIndex] = useState(0);
+
+  const heroImages = [
+    "/Assets/landing/hero_1.png",
+    "/Assets/landing/hero_2.png",
+    "/Assets/landing/hero_3.png"
+  ];
+
+  // Rotate hero image every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHeroIndex((prev) => (prev + 1) % heroImages.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [heroImages.length]);
 
   // Parallax scroll handler
   useEffect(() => {
@@ -105,13 +120,14 @@ export default function LandingPage() {
       {/* ===================== SECTION 1: HERO ===================== */}
       <section
         id="hero"
-        className="landing-hero"
+        className="landing-hero relative transition-all duration-1000 bg-cover bg-center"
         style={{
+          backgroundImage: `url('${heroImages[heroIndex]}')`,
           backgroundPositionY: `${scrollY * 0.4}px`,
         }}
       >
-        <div className="landing-hero__overlay" />
-        <div className="landing-hero__content scroll-reveal">
+        <div className="landing-hero__overlay absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-900/70 to-stone-900/40" />
+        <div className="landing-hero__content scroll-reveal relative z-10">
           <span className="landing-hero__tag">TIMING SYSTEM FOR TRIATHLON EVENTS</span>
           <h1 className="landing-hero__title">
             PRECISION IN
@@ -125,10 +141,10 @@ export default function LandingPage() {
           </p>
           <div className="landing-hero__cta">
             <button
-              onClick={() => navigate("/leaderboard")}
+              onClick={() => navigate("/event")}
               className="landing-btn landing-btn--primary"
             >
-              VIEW LEADERBOARD
+              VIEW EVENTS
             </button>
             <button
               onClick={() => setIsSearchOpen(true)}
@@ -154,6 +170,18 @@ export default function LandingPage() {
               <span className="landing-hero__stat-number">24</span>
               <span className="landing-hero__stat-label">Cities Covered</span>
             </div>
+          </div>
+          
+          {/* Carousel Indicators */}
+          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-2">
+             {heroImages.map((_, i) => (
+                <button 
+                  key={i}
+                  onClick={() => setHeroIndex(i)}
+                  className={`h-2 rounded-full transition-all duration-300 ${i === heroIndex ? 'w-8 bg-red-600' : 'w-2 bg-white/50 hover:bg-white'}`}
+                  aria-label={`Go to slide ${i+1}`}
+                />
+             ))}
           </div>
         </div>
       </section>
@@ -293,7 +321,7 @@ export default function LandingPage() {
       </section>
 
       {/* ===================== SECTION 8: FAQ ===================== */}
-      <section className="landing-section landing-section--gray" id="faq">
+      <section className="landing-section landing-section--white" id="faq">
         <div className="landing-container landing-container--narrow">
           <div className="landing-section-header scroll-reveal">
             <h2 className="landing-section-header__title">FREQUENTLY ASKED QUESTIONS</h2>

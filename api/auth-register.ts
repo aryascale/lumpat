@@ -1,56 +1,48 @@
-import prisma from '../src/lib/prisma';
+import { query } from '../src/lib/db';
 import bcrypt from 'bcryptjs';
 import { signToken } from '../src/lib/jwt';
+import { successResponse, errorResponse, parseBody, CORS_HEADERS } from '../src/lib/api-utils';
 
 export default async function handler(req: any) {
-  if (req.httpMethod !== 'POST') {
-    return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }), headers: {} };
-  }
+  if (req.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
+  if (req.httpMethod !== 'POST') return errorResponse('Method not allowed', 405);
 
   try {
-    const { email, username, password } = JSON.parse(req.body || '{}');
+    const { email, username, password } = parseBody(req);
 
     if (!email || !username || !password) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Missing required fields' }), headers: {} };
+      return errorResponse('Missing required fields', 400);
     }
 
-    const existingEmail = await prisma.user.findUnique({ where: { email } });
-    if (existingEmail) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Email already exists' }), headers: {} };
-    }
+    const existingUsers: any = await query(
+      'SELECT id, email, username FROM User WHERE email = ? OR username = ? LIMIT 1',
+      [email, username]
+    );
 
-    const existingUsername = await prisma.user.findUnique({ where: { username } });
-    if (existingUsername) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Username already exists' }), headers: {} };
+    if (existingUsers.length > 0) {
+      const existing = existingUsers[0];
+      return errorResponse(existing.email === email ? 'Email already exists' : 'Username already exists', 400);
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const userId = crypto.randomUUID();
 
-    const user = await prisma.user.create({
-      data: {
-        email,
-        username,
-        password: hashedPassword,
-      },
-    });
+    await query(
+      'INSERT INTO User (id, email, username, password, role, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, NOW(), NOW())',
+      [userId, email, username, hashedPassword, 'user']
+    );
 
-    const token = signToken({ id: user.id, email: user.email, role: user.role });
+    const token = signToken({ id: userId, email, role: 'user' });
 
-    return {
-      statusCode: 201,
-      headers: {
-        'Content-Type': 'application/json',
-        'Set-Cookie': `token=${token}; HttpOnly; Path=/; Max-Age=604800; SameSite=Strict${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`,
-      },
-      body: JSON.stringify({ 
-        user: { id: user.id, email: user.email, username: user.username, role: user.role } 
-      }),
-    };
+    const response = successResponse({
+      user: { id: userId, email, username, role: 'user' }
+    }, 201);
+
+    response.headers['Set-Cookie'] = `token=${token}; HttpOnly; Path=/; Max-Age=604800; SameSite=Strict${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
+
+    return response;
   } catch (error: any) {
-    return {
-      statusCode: 500,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: error.message || 'Internal server error' }),
-    };
+    console.error('[AUTH] Register error:', error);
+    return errorResponse(error.message || 'Internal server error');
   }
 }

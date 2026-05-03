@@ -1,47 +1,27 @@
-import prisma from '../src/lib/prisma';
+import { query } from '../src/lib/db';
+import { successResponse, errorResponse, parseBody, CORS_HEADERS } from '../src/lib/api-utils';
 
-interface APIEvent {
-  httpMethod: string;
-  headers: { [key: string]: string };
-  body: string | null;
-  isBase64Encoded: boolean;
-}
-
-interface APIResponse {
-  statusCode: number;
-  headers: { [key: string]: string };
-  body: string;
-}
-
-const CORS_HEADERS = {
-  'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
-
-export default async function handler(event: APIEvent): Promise<APIResponse> {
+export default async function handler(event: any) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
-  if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Method not allowed' }) };
+  if (event.httpMethod !== 'POST') return errorResponse('Method not allowed', 405);
 
   try {
-    if (!event.body) return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Missing request body' }) };
+    if (!event.body) return errorResponse('Missing request body', 400);
 
-    const body = event.isBase64Encoded
-      ? JSON.parse(Buffer.from(event.body, 'base64').toString())
-      : JSON.parse(event.body);
-
+    const body = parseBody(event);
     const { bannerId, isActive } = body;
-    if (!bannerId) return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'bannerId is required' }) };
-    if (typeof isActive !== 'boolean') return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'isActive is required (boolean)' }) };
 
-    const banner = await prisma.banner.update({
-      where: { id: bannerId },
-      data: { isActive },
-    });
+    if (!bannerId) return errorResponse('bannerId is required', 400);
+    if (typeof isActive !== 'boolean') return errorResponse('isActive is required (boolean)', 400);
 
-    return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify(banner) };
+    await query('UPDATE Banner SET isActive = ? WHERE id = ?', [isActive, bannerId]);
+
+    const banners: any = await query('SELECT * FROM Banner WHERE id = ? LIMIT 1', [bannerId]);
+    if (banners.length === 0) return errorResponse('Banner not found', 404);
+
+    return successResponse(banners[0]);
   } catch (error: any) {
-    return { statusCode: 500, headers: CORS_HEADERS, body: JSON.stringify({ error: error.message || 'Internal server error' }) };
+    console.error('[UPDATE-BANNER] Error:', error);
+    return errorResponse(error.message || 'Internal server error');
   }
 }

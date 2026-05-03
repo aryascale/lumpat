@@ -1,50 +1,32 @@
-import prisma from '../src/lib/prisma';
+import { query } from '../src/lib/db';
 import { verifyToken } from '../src/lib/jwt';
+import { successResponse, errorResponse, CORS_HEADERS } from '../src/lib/api-utils';
 
 export default async function handler(req: any) {
-  if (req.httpMethod !== 'GET') {
-    return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }), headers: {} };
-  }
+  if (req.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
+  if (req.httpMethod !== 'GET') return errorResponse('Method not allowed', 405);
 
   try {
     const token = req.cookies?.token;
-    if (!token) {
-      return { statusCode: 401, body: JSON.stringify({ error: 'Not authenticated' }), headers: {} };
-    }
+    if (!token) return errorResponse('Not authenticated', 401);
 
     const decoded: any = verifyToken(token);
-    if (!decoded || !decoded.id) {
-      return { statusCode: 401, body: JSON.stringify({ error: 'Invalid token' }), headers: {} };
-    }
+    if (!decoded || !decoded.id) return errorResponse('Invalid token', 401);
 
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        name: true,
-        phoneNumber: true,
-        isPhoneVerified: true,
-        role: true,
-        googleId: true,
-      }
-    });
+    const users: any = await query(
+      'SELECT id, email, username, name, phoneNumber, isPhoneVerified, isEmailVerified, role, googleId FROM User WHERE id = ? LIMIT 1',
+      [decoded.id]
+    );
 
-    if (!user) {
-      return { statusCode: 404, body: JSON.stringify({ error: 'User not found' }), headers: {} };
-    }
+    if (users.length === 0) return errorResponse('User not found', 404);
 
-    return {
-      statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user }),
-    };
+    const user = users[0];
+    user.isPhoneVerified = !!user.isPhoneVerified;
+    user.isEmailVerified = !!user.isEmailVerified;
+
+    return successResponse({ user });
   } catch (error: any) {
-    return {
-      statusCode: 500,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: error.message || 'Internal server error' }),
-    };
+    console.error('[AUTH] Me error:', error);
+    return errorResponse(error.message || 'Internal server error');
   }
 }

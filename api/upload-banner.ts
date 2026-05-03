@@ -1,101 +1,42 @@
+import { query } from '../src/lib/db';
 import { uploadBannerImage } from '../src/lib/fileStorage';
-import prisma from '../src/lib/prisma';
+import { successResponse, errorResponse, parseMultipart, CORS_HEADERS } from '../src/lib/api-utils';
 
-interface APIEvent {
-  httpMethod: string;
-  headers: { [key: string]: string };
-  body: string | null;
-  isBase64Encoded: boolean;
-}
-
-interface APIResponse {
-  statusCode: number;
-  headers: { [key: string]: string };
-  body: string;
-}
-
-const CORS_HEADERS = {
-  'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
-
-function parseMultipart(body: string, boundary: string): { file?: { name: string; type: string; data: Buffer }; fields: Record<string, string> } {
-  const result: { file?: { name: string; type: string; data: Buffer }; fields: Record<string, string> } = { fields: {} };
-  const parts = body.split(`--${boundary}`);
-
-  for (const part of parts) {
-    if (!part.includes('Content-Disposition')) continue;
-
-    const headerEnd = part.indexOf('\r\n\r\n');
-    if (headerEnd === -1) continue;
-
-    const headers = part.slice(0, headerEnd);
-    const content = part.slice(headerEnd + 4);
-    const nameMatch = headers.match(/name="([^"]+)"/);
-    const filenameMatch = headers.match(/filename="([^"]+)"/);
-    const contentTypeMatch = headers.match(/Content-Type:\s*([^\r\n]+)/i);
-
-    if (!nameMatch) continue;
-
-    if (filenameMatch) {
-      let fileContent = content;
-      const boundaryIndex = fileContent.lastIndexOf('\r\n--');
-      if (boundaryIndex !== -1) fileContent = fileContent.slice(0, boundaryIndex);
-
-      result.file = {
-        name: filenameMatch[1],
-        type: contentTypeMatch ? contentTypeMatch[1].trim() : 'application/octet-stream',
-        data: Buffer.from(fileContent, 'binary'),
-      };
-    } else {
-      let fieldContent = content.trim();
-      const boundaryIndex = fieldContent.indexOf('\r\n--');
-      if (boundaryIndex !== -1) fieldContent = fieldContent.slice(0, boundaryIndex);
-      result.fields[nameMatch[1]] = fieldContent.trim();
-    }
-  }
-
-  return result;
-}
-
-export default async function handler(event: APIEvent): Promise<APIResponse> {
+export default async function handler(event: any) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
-  if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Method not allowed' }) };
+  if (event.httpMethod !== 'POST') return errorResponse('Method not allowed', 405);
 
   try {
     const contentType = event.headers['content-type'] || event.headers['Content-Type'] || '';
-    if (!contentType.includes('multipart/form-data')) return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Content-Type must be multipart/form-data' }) };
+    if (!contentType.includes('multipart/form-data')) return errorResponse('Content-Type must be multipart/form-data', 400);
 
     const boundary = contentType.split('boundary=')[1];
-    if (!boundary) return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Missing boundary' }) };
-    if (!event.body) return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Missing request body' }) };
+    if (!boundary) return errorResponse('Missing boundary', 400);
+    if (!event.body) return errorResponse('Missing request body', 400);
 
     const body = event.isBase64Encoded
       ? Buffer.from(event.body, 'base64').toString('binary')
       : event.body;
 
     const { file, fields } = parseMultipart(body, boundary);
-    if (!file) return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'No file uploaded' }) };
+    if (!file) return errorResponse('No file uploaded', 400);
 
     const eventId = fields.eventId;
-    if (!eventId) return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'eventId is required' }) };
+    if (!eventId) return errorResponse('eventId is required', 400);
 
     const result = await uploadBannerImage(eventId, file.data, file.name);
 
-    const banner = await prisma.banner.create({
-      data: {
-        eventId,
-        imageUrl: result.url,
-        alt: fields.alt || file.name,
-        order: parseInt(fields.order || '0', 10),
-        isActive: true,
-      },
-    });
+    const bannerId = crypto.randomUUID();
+    await query(
+      'INSERT INTO Banner (id, eventId, imageUrl, alt, `order`, isActive, createdAt) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+      [bannerId, eventId, result.url, fields.alt || file.name, parseInt(fields.order || '0', 10), true]
+    );
 
-    return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify({ ...result, banner }) };
+    const banners: any = await query('SELECT * FROM Banner WHERE id = ? LIMIT 1', [bannerId]);
+
+    return successResponse({ ...result, banner: banners[0] });
   } catch (error: any) {
-    return { statusCode: 500, headers: CORS_HEADERS, body: JSON.stringify({ error: error.message || 'Internal server error' }) };
+    console.error('[UPLOAD-BANNER] Error:', error);
+    return errorResponse(error.message || 'Internal server error');
   }
 }

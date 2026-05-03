@@ -1,33 +1,58 @@
+import { PrismaClient } from '@prisma/client';
+import { PrismaMariaDb } from '@prisma/adapter-mariadb';
+import * as mariadbPkg from 'mariadb';
 import 'dotenv/config';
-import localDb from './localDb';
 
-let prisma: any;
+console.log('[Prisma] Module loaded');
 
-if (process.env.DATABASE_URL) {
-  try {
-    const prismaClient: any = await import('@prisma/client');
-    const prismaAdapter: any = await import('@prisma/adapter-mariadb');
-    const mariadb = await import('mariadb');
+const prismaClientSingleton = () => {
+  console.log('[Prisma] Creating singleton...');
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl) throw new Error('DATABASE_URL environment variable is missing');
 
-    const PrismaClient = prismaClient.PrismaClient || prismaClient.default?.PrismaClient;
-    const PrismaMariadb = prismaAdapter.PrismaMariadb || prismaAdapter.PrismaMariaDb || prismaAdapter.default?.PrismaMariadb;
+  // Manual parsing for guaranteed results
+  // Format: mysql://user:pass@host:port/db
+  const regex = /^mysql:\/\/([^:]+):([^@]+)@([^:/]+)(?::(\d+))?\/([^?]+)/;
+  const match = dbUrl.match(regex);
+  
+  if (!match) throw new Error('Invalid DATABASE_URL format. Expected: mysql://user:pass@host:port/db');
 
-    let dbUrl = process.env.DATABASE_URL!.replace(/^mysql:\/\//, 'mariadb://');
-    if (!dbUrl.includes('?')) dbUrl += '?allowPublicKeyRetrieval=true';
-    else dbUrl += '&allowPublicKeyRetrieval=true';
-    
-    const pool = mariadb.createPool(dbUrl);
-    const adapter = new PrismaMariadb(pool);
-    prisma = new PrismaClient({ adapter });
+  const [, user, password, host, portStr, database] = match;
+  const port = portStr ? parseInt(portStr) : 3306;
 
-    console.log('[DB] Connected to MariaDB/MySQL');
-  } catch (error: any) {
-    console.warn('[DB] Failed to connect:', error.message);
-    prisma = localDb;
-  }
-} else {
-  console.log('[DB] No DATABASE_URL — using local JSON storage');
-  prisma = localDb;
-}
+  console.log(`[Prisma] Connecting to ${host}:${port} as ${user} (Manual Parse)`);
+
+  const config = {
+    host,
+    port,
+    user,
+    password,
+    database,
+    allowPublicKeyRetrieval: true,
+    connectionLimit: 10,
+    connectTimeout: 10000,
+  };
+
+  const mariadb: any = mariadbPkg;
+  const createPool = mariadb.createPool || mariadb.default?.createPool;
+  if (!createPool) throw new Error('MariaDB driver not found');
+
+  const pool = createPool(config);
+  const adapter = new PrismaMariaDb(pool);
+  
+  return new PrismaClient({ 
+    // @ts-ignore
+    adapter,
+    log: ['query', 'error', 'warn'],
+  });
+};
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
 
 export default prisma;
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;

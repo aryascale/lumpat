@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../contexts/AuthContext';
 import { message, Input, Button } from 'antd';
+import Navbar from '../components/Navbar';
 
 export default function Register() {
   const [email, setEmail] = useState('');
@@ -67,7 +68,9 @@ export default function Register() {
   });
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center pt-24 pb-12 px-4 sm:px-6">
+    <>
+    <Navbar />
+    <div className="min-h-screen bg-white flex flex-col items-center pt-32 pb-12 px-4 sm:px-6">
       
       {/* Header */}
       <div className="w-full max-w-[500px] text-center mb-8">
@@ -142,5 +145,6 @@ export default function Register() {
         </div>
       </div>
     </div>
+    </>
   );
 }
