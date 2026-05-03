@@ -12,6 +12,7 @@ services:
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
+    platform: linux/amd64
     container_name: lumpat-phpmyadmin
     restart: always
     environment:
@@ -19,7 +20,7 @@ services:
     env_file:
       - ../.env
     ports:
-      - "127.0.0.1:8080:80"
+      - "127.0.0.1:8090:80"
     depends_on:
       - mysql
 

@@ -1651,7 +1651,7 @@ body {
   position: relative;
   min-height: 100vh;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   background-image: url('/Assets/landing/hero.webp');
   background-size: cover;

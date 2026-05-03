@@ -44,9 +44,9 @@ export default function Navbar({ showAdminButton = false }: NavbarProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
 
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 shrink-0">
-          <img src="/Assets/logo2.gif" alt="Logo" className="h-8 w-8 rounded-lg" />
-          <span className={`text-lg font-bold tracking-tight hidden sm:block ${isTransparent ? 'text-white' : 'text-gray-900'}`}>Lumpat</span>
+        <Link to="/" className="flex items-center gap-1 shrink-0">
+          <img src="/Assets/logo2.gif" alt="Logo" className="h-40 w-40 sm:h-25 sm:w-25 rounded-xl" />
+          <span className={`text-3xl sm:text-3xl font-black tracking-tighter hidden sm:block ${isTransparent ? 'text-white' : 'text-gray-900'}`}>Lumpat</span>
         </Link>
 
         {/* Desktop Nav */}

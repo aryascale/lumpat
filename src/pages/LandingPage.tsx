@@ -127,48 +127,30 @@ export default function LandingPage() {
         }}
       >
         <div className="landing-hero__overlay absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-900/70 to-stone-900/40" />
-        <div className="landing-hero__content scroll-reveal relative z-10">
-          <span className="landing-hero__tag">TIMING SYSTEM FOR TRIATHLON EVENTS</span>
-          <h1 className="landing-hero__title">
-            PRECISION IN
-            <br />
-            EVERY SECOND
-          </h1>
-          <p className="landing-hero__subtitle">
-            The leading transponder and timing system for Swim, Bike &amp; Run events.
-            <br />
-            Trusted by 150+ sport events across Indonesia.
-          </p>
-          <div className="landing-hero__cta">
-            <button
-              onClick={() => navigate("/event")}
-              className="landing-btn landing-btn--primary"
-            >
-              VIEW EVENTS
-            </button>
-            <button
-              onClick={() => setIsSearchOpen(true)}
-              className="landing-btn landing-btn--outline"
-            >
-              FIND EVENTS
-            </button>
-          </div>
-
-          {/* Stats Bar */}
-          <div className="landing-hero__stats">
-            <div className="landing-hero__stat">
-              <span className="landing-hero__stat-number">4,800+</span>
-              <span className="landing-hero__stat-label">Athletes Timed</span>
+        <div className="scroll-reveal relative z-10 w-full h-full flex flex-col justify-end pb-16 sm:pb-32 px-6 sm:px-12 max-w-7xl mx-auto">
+          
+          <div className="flex flex-col md:flex-row justify-between items-end gap-8 w-full">
+            <div className="text-left max-w-2xl">
+              <h1 className="text-white text-5xl sm:text-6xl md:text-7xl font-black uppercase tracking-tight leading-tight mb-4 shadow-sm">
+                RIDE TOGETHER,
+                <br />
+                GO FURTHER
+              </h1>
+              <p className="text-white/90 text-lg sm:text-xl leading-relaxed max-w-xl shadow-sm">
+                Join a community of cyclists who ride for freedom, fitness, and friendship.
+                <br />
+                Every road is better when shared.
+              </p>
             </div>
-            <div className="landing-hero__stat-divider" />
-            <div className="landing-hero__stat">
-              <span className="landing-hero__stat-number">150+</span>
-              <span className="landing-hero__stat-label">Events Powered</span>
-            </div>
-            <div className="landing-hero__stat-divider" />
-            <div className="landing-hero__stat">
-              <span className="landing-hero__stat-number">24</span>
-              <span className="landing-hero__stat-label">Cities Covered</span>
+            
+            <div className="mb-4 sm:mb-8">
+              <button
+                onClick={() => navigate("/event")}
+                className="px-8 py-4 bg-white text-gray-900 text-lg font-bold rounded-xl hover:bg-gray-100 transition-all flex items-center gap-2 shadow-2xl hover:-translate-y-1 active:scale-95"
+              >
+                Start Riding With Us
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+              </button>
             </div>
           </div>
           
@@ -178,7 +160,7 @@ export default function LandingPage() {
                 <button 
                   key={i}
                   onClick={() => setHeroIndex(i)}
-                  className={`h-2 rounded-full transition-all duration-300 ${i === heroIndex ? 'w-8 bg-red-600' : 'w-2 bg-white/50 hover:bg-white'}`}
+                  className={`h-2 rounded-full transition-all duration-300 ${i === heroIndex ? 'w-8 bg-white' : 'w-2 bg-white/40 hover:bg-white/80'}`}
                   aria-label={`Go to slide ${i+1}`}
                 />
              ))}
@@ -394,7 +376,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="landing-footer__bottom">
-            <span>© 2026 IJT — Indonesia Jaya Triathlon. All rights reserved.</span>
+            <span>© 2026 IJT — Indonesia Timing System. All rights reserved.</span>
           </div>
         </div>
       </footer>

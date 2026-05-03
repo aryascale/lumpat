@@ -7,6 +7,7 @@ export interface User {
   name?: string;
   phoneNumber?: string;
   isPhoneVerified: boolean;
+  isEmailVerified: boolean;
   role: string;
 }
 
@@ -36,6 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await fetch('/api/auth-me', {
         headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store'
       });
       if (response.ok) {
         const data = await response.json();
