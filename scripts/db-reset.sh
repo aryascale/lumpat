@@ -16,6 +16,9 @@ if [[ $confirm != [yY] && $confirm != [yY][eE][sS] ]]; then
     exit 0
 fi
 
+# Navigate to project root relative to script location
+cd "$(dirname "$0")/.."
+
 # 1. Emergency Backup
 if [ -f "./scripts/db-backup.sh" ]; then
     echo "[PROCESS] Creating emergency backup..."
