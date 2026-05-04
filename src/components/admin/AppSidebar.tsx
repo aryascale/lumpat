@@ -4,7 +4,6 @@ import { Layout } from 'antd';
 import SidebarItem from './SidebarItem';
 import HomeIcon from './icons/HomeIcon';
 import EventsIcon from './icons/EventsIcon';
-import BannersIcon from './icons/BannersIcon';
 
 const { Sider } = Layout;
 
@@ -134,7 +133,7 @@ export default function AppSidebar({ collapsed, menuItems, onItemClick }: AppSid
       <div className="p-4 border-b border-gray-200">
         <div className={`flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
           <img
-            src="/Assets/logo.png"
+            src="/Assets/logo2.png"
             alt="Lumpat Logo"
             className={`flex-shrink-0 object-contain ${collapsed ? 'w-10 h-10' : 'w-10 h-10'}`}
           />
@@ -170,9 +169,15 @@ export const defaultMenuItems: MenuItem[] = [
     path: '/admin/events',
   },
   {
-    key: 'banners',
-    label: 'Banners',
-    icon: <BannersIcon />,
-    path: '/admin/banners',
+    key: 'payments',
+    label: 'Payments',
+    icon: <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
+    path: '/admin/payments',
+  },
+  {
+    key: 'activity-logs',
+    label: 'Activity Logs',
+    icon: <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>,
+    path: '/admin/activity-logs',
   },
 ];

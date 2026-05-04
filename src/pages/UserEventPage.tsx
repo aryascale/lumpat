@@ -21,14 +21,6 @@ const STATUS_COLORS: Record<string, { bg: string; text: string; dot: string }> =
   completed: { bg: 'bg-slate-100', text: 'text-slate-600', dot: 'bg-slate-400' },
 };
 
-const PLACEHOLDER_IMAGES = [
-  'https://images.unsplash.com/photo-1571008887538-b36bb32f4571?w=600&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1461896836934-bd45ba0fcfca?w=600&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=600&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=600&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1594882645126-14020914d58d?w=600&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1513593771513-7b58b6c4af38?w=600&h=400&fit=crop',
-];
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
@@ -254,13 +246,21 @@ export default function UserEventPage() {
                   {filtered.map((event, i) => {
                     const status = event.status || 'upcoming';
                     const colors = STATUS_COLORS[status] || STATUS_COLORS.upcoming;
-                    const img = event.bannerUrl || PLACEHOLDER_IMAGES[i % PLACEHOLDER_IMAGES.length];
+                    const hasBanner = !!event.bannerUrl;
                     return (
                       <div key={event.id} onClick={() => handleView(event.slug)}
                         className="group bg-white rounded-2xl overflow-hidden border border-gray-100 hover:border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer"
                         style={{ animation: `fadeUp 0.5s ease-out ${i * 0.06}s both` }}>
                         <div className="relative h-44 overflow-hidden">
-                          <img src={img} alt={event.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                          {hasBanner ? (
+                            <img src={event.bannerUrl} alt={event.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900 flex items-center justify-center">
+                              <svg className="w-16 h-16 text-gray-500 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                              </svg>
+                            </div>
+                          )}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
                           <div className={`absolute top-3 right-3 ${colors.bg} ${colors.text} px-2.5 py-1 rounded-full text-[11px] font-bold flex items-center gap-1.5 backdrop-blur-sm`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${colors.dot}`} />{status.charAt(0).toUpperCase() + status.slice(1)}

@@ -1,7 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import type { Event } from '../../api/events';
+
+interface Event {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  eventDate: string;
+  location?: string;
+  isActive: boolean;
+  categories: any[];
+  createdAt: number;
+}
 
 export default function HomePage() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -232,7 +243,7 @@ export default function HomePage() {
                     <div className="pt-4 border-t border-gray-200">
                       <p className="text-sm font-semibold text-gray-900 mb-2">Categories:</p>
                       <div className="flex flex-wrap gap-2">
-                        {event.categories.slice(0, 3).map((cat) => (
+                        {event.categories.slice(0, 3).map((cat: any) => (
                           <span
                             key={cat}
                             className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium"

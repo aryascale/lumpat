@@ -8,8 +8,7 @@ import LeaderboardTable, { LeaderRow } from "../components/LeaderboardTable";
 import ParticipantModal from "../components/ParticipantModal";
 import InteractiveRouteMap from "../components/InteractiveRouteMap";
 import Navbar from "../components/Navbar";
-import { useAuth } from "../contexts/AuthContext";
-import { message, Modal, Select, Button } from "antd";
+import { message, Modal, Select, Button, Input } from "antd";
 import {
   loadMasterParticipants,
   loadTimesMap,
@@ -42,6 +41,15 @@ interface EventData {
   categoryStartTimes?: Record<string, string> | null;
   logoUrl?: string | null;
   bannerUrl?: string | null;
+  tshirtSizes?: string | null;
+  bibCustomPrice?: number;
+  categories?: any[];
+}
+
+interface CategoryDetail {
+  id: string;
+  name: string;
+  price: number;
 }
 
 interface Banner {
@@ -76,43 +84,112 @@ export default function EventPage() {
   const [recalcTick, setRecalcTick] = useState(0);
   const [gpxTrackPoints, setGpxTrackPoints] = useState<Array<[number, number]>>([]);
 
-  const { user } = useAuth();
   const [registerModalOpen, setRegisterModalOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [registering, setRegistering] = useState(false);
   const [registeredParticipants, setRegisteredParticipants] = useState<any[]>([]);
+  const [categoryDetails, setCategoryDetails] = useState<CategoryDetail[]>([]);
+
+  // Registration form state
+  const [regForm, setRegForm] = useState({
+    categoryId: '',
+    name: '',
+    email: '',
+    phoneNumber: '',
+    gender: '',
+    bloodType: '',
+    emergencyName: '',
+    emergencyPhone: '',
+    tshirtSize: '',
+    bibName: '',
+    notes: '',
+  });
+
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+
+  const updateRegForm = (field: string, value: string) => {
+    setRegForm(prev => ({ ...prev, [field]: value }));
+    // Reset verification if email changes
+    if (field === 'email' && emailVerified) {
+      setEmailVerified(false);
+      setOtpSent(false);
+      setOtpCode('');
+    }
+  };
 
   const fetchRegisteredParticipants = async (eventId: string) => {
     try {
       const res = await fetch(`/api/registrations?eventId=${eventId}`);
       if (res.ok) {
         const data = await res.json();
-        setRegisteredParticipants(data.participants);
+        setRegisteredParticipants(data.participants || []);
       }
     } catch (err) {
       console.error('Failed to load participants', err);
     }
   };
 
-  const handleRegister = async () => {
-    if (!selectedCategory) {
-      message.error('Pilih kategori terlebih dahulu');
+  const fetchCategoryDetails = async (eventId: string) => {
+    try {
+      const res = await fetch(`/api/categories?eventId=${eventId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCategoryDetails(data.categories || []);
+      }
+    } catch (err) {
+      console.error('Failed to load categories', err);
+    }
+  };
+
+  const selectedCategoryDetail = categoryDetails.find(c => c.id === regForm.categoryId);
+  const bibExtraCharge = regForm.bibName ? (event?.bibCustomPrice || 0) : 0;
+  const totalPrice = (selectedCategoryDetail?.price || 0) + bibExtraCharge;
+
+  const handleCheckout = async () => {
+    if (!regForm.categoryId || !regForm.name || !regForm.email || !regForm.phoneNumber || !regForm.gender) {
+      message.error('Lengkapi semua field wajib');
+      return;
+    }
+    if (!emailVerified) {
+      message.error('Silakan verifikasi email kamu terlebih dahulu.');
       return;
     }
     setRegistering(true);
     try {
-      const res = await fetch('/api/registrations', {
+      const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId: event?.id, categoryId: selectedCategory })
+        body: JSON.stringify({ eventId: event?.id, ...regForm }),
       });
-      if (res.ok) {
-        message.success('Berhasil mendaftar event!');
-        setRegisterModalOpen(false);
-        if (event?.id) fetchRegisteredParticipants(event.id);
+      const data = await res.json();
+      if (!res.ok) {
+        message.error(data.error || 'Gagal checkout');
+        return;
+      }
+
+      if (data.snapToken && (window as any).snap) {
+        (window as any).snap.pay(data.snapToken, {
+          onSuccess: () => {
+            message.success('Pembayaran berhasil! Kamu terdaftar.');
+            setRegisterModalOpen(false);
+            if (event?.id) fetchRegisteredParticipants(event.id);
+          },
+          onPending: () => {
+            message.info('Menunggu pembayaran...');
+            setRegisterModalOpen(false);
+          },
+          onError: () => {
+            message.error('Pembayaran gagal');
+          },
+          onClose: () => {
+            message.info('Popup pembayaran ditutup');
+          },
+        });
       } else {
-        const data = await res.json();
-        message.error(data.error || 'Gagal mendaftar');
+        message.success('Registrasi berhasil disimpan (Midtrans belum dikonfigurasi)');
+        setRegisterModalOpen(false);
       }
     } catch (err) {
       message.error('Terjadi kesalahan');
@@ -132,6 +209,7 @@ export default function EventPage() {
           const eventData = await response.json();
           setEvent(eventData);
           fetchRegisteredParticipants(eventData.id);
+          fetchCategoryDetails(eventData.id);
         } else {
           setState({ status: "error", msg: "Event tidak ditemukan" });
         }
@@ -140,6 +218,86 @@ export default function EventPage() {
       }
     })();
   }, [slug]);
+
+  // Load Midtrans Snap Script
+  useEffect(() => {
+    const clientKey = import.meta.env.VITE_MIDTRANS_CLIENT_KEY;
+    if (!clientKey) {
+      console.warn('VITE_MIDTRANS_CLIENT_KEY is missing. Midtrans will not load.');
+      return;
+    }
+
+    const scriptId = 'midtrans-snap-script';
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = import.meta.env.VITE_MIDTRANS_IS_PRODUCTION === 'true' 
+        ? 'https://app.midtrans.com/snap/snap.js' 
+        : 'https://app.sandbox.midtrans.com/snap/snap.js';
+      script.setAttribute('data-client-key', clientKey);
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  const handleSendOtp = async () => {
+    if (!regForm.email) {
+      message.error('Masukkan alamat email terlebih dahulu');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(regForm.email)) {
+      message.error('Format email tidak valid');
+      return;
+    }
+
+    setOtpLoading(true);
+    try {
+      const res = await fetch('/api/send-email-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: regForm.email }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setOtpSent(true);
+        message.success(data.message || 'Kode verifikasi telah dikirim');
+      } else {
+        message.error(data.error || 'Gagal mengirim kode verifikasi');
+      }
+    } catch (err) {
+      message.error('Terjadi kesalahan saat mengirim kode');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otpCode || otpCode.length !== 6) {
+      message.error('Masukkan 6 digit kode verifikasi');
+      return;
+    }
+
+    setOtpLoading(true);
+    try {
+      const res = await fetch('/api/verify-email-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: regForm.email, code: otpCode }),
+      });
+      const data = await res.json();
+      if (res.ok && data.verified) {
+        setEmailVerified(true);
+        message.success(data.message || 'Email berhasil diverifikasi');
+      } else {
+        message.error(data.error || 'Kode verifikasi salah atau expired');
+      }
+    } catch (err) {
+      message.error('Terjadi kesalahan saat verifikasi kode');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
 
   // Load banners
   useEffect(() => {
@@ -504,18 +662,12 @@ export default function EventPage() {
                   <p className="text-stone-300 text-sm md:text-base max-w-2xl font-medium tracking-wide mt-4 border-l-2 border-red-600 pl-4">{event.description}</p>
                 )}
                 
-                {user ? (
-                  <button 
-                    onClick={() => setRegisterModalOpen(true)}
-                    className="mt-6 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded uppercase tracking-widest text-sm transition-colors cursor-pointer"
-                  >
-                    Register Now
-                  </button>
-                ) : (
-                  <Link to="/login" className="inline-block mt-6 bg-stone-700 hover:bg-stone-600 text-white font-bold py-3 px-8 rounded uppercase tracking-widest text-sm transition-colors">
-                    Login to Register
-                  </Link>
-                )}
+                <button 
+                  onClick={() => setRegisterModalOpen(true)}
+                  className="mt-6 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded uppercase tracking-widest text-sm transition-colors cursor-pointer"
+                >
+                  Daftar Sekarang
+                </button>
               </div>
             </div>
           </div>
@@ -593,19 +745,39 @@ export default function EventPage() {
 
           {activeTab === "Registered" && (
             <div className="space-y-8 bg-white p-6 shadow-sm border-t-4 border-red-600">
-              <h2 className="text-2xl font-black uppercase tracking-tighter mb-4">Registered Participants</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-black uppercase tracking-tighter">Peserta Terdaftar</h2>
+                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-bold">{registeredParticipants.length} Terdaftar</span>
+              </div>
               {registeredParticipants.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {registeredParticipants.map((p: any) => (
-                    <div key={p.id} className="border border-stone-200 p-4 flex flex-col">
-                      <span className="font-bold text-lg">{p.user?.name || p.user?.username || 'Unknown User'}</span>
-                      <span className="text-sm text-stone-500">{p.category?.name || p.category || 'Unknown Category'}</span>
-                      <span className="text-xs text-stone-400 mt-2">{new Date(p.createdAt).toLocaleDateString()}</span>
-                    </div>
-                  ))}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b-2 border-stone-200">
+                        <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500">No</th>
+                        <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500">Nama</th>
+                        <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500">Kategori</th>
+                        <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500">BIB</th>
+                        <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500">Size</th>
+                        <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500">Tgl Bayar</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {registeredParticipants.map((p: any, idx: number) => (
+                        <tr key={p.id} className="border-b border-stone-100 hover:bg-stone-50">
+                          <td className="py-3 px-2 font-mono text-stone-400">{idx + 1}</td>
+                          <td className="py-3 px-2 font-bold text-stone-900">{p.name}</td>
+                          <td className="py-3 px-2 text-stone-600">{p.category?.name}</td>
+                          <td className="py-3 px-2 font-mono text-stone-500">{p.bibName || '-'}</td>
+                          <td className="py-3 px-2 text-stone-500">{p.tshirtSize || '-'}</td>
+                          <td className="py-3 px-2 text-stone-400 text-xs">{p.paidAt ? new Date(p.paidAt).toLocaleDateString('id-ID') : '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               ) : (
-                <p className="text-stone-500">Belum ada peserta yang mendaftar.</p>
+                <p className="text-stone-500">Belum ada peserta yang terdaftar.</p>
               )}
             </div>
           )}
@@ -675,30 +847,124 @@ export default function EventPage() {
         </div>
 
           <Modal
-            title="Daftar Event"
+            title={<span className="text-lg font-black uppercase tracking-tight">Pendaftaran Event</span>}
             open={registerModalOpen}
             onCancel={() => setRegisterModalOpen(false)}
+            width={640}
             footer={[
-              <Button key="back" onClick={() => setRegisterModalOpen(false)}>
-                Batal
+              <Button key="back" onClick={() => setRegisterModalOpen(false)}>Batal</Button>,
+              <Button key="submit" type="primary" danger loading={registering} onClick={handleCheckout} disabled={totalPrice <= 0 || !emailVerified}>
+                {totalPrice > 0 ? `Bayar Rp ${totalPrice.toLocaleString('id-ID')}` : 'Pilih Kategori'}
               </Button>,
-              <Button key="submit" type="primary" danger loading={registering} onClick={handleRegister}>
-                Daftar
-              </Button>
             ]}
           >
-            <div className="py-4">
-              <p className="mb-4">Pilih kategori yang ingin Anda ikuti untuk <strong>{event?.name}</strong>.</p>
-              <Select
-                className="w-full"
-                placeholder="Pilih Kategori"
-                value={selectedCategory || undefined}
-                onChange={setSelectedCategory}
-                options={event?.categories?.map((cat: any) => ({
-                  label: cat.name || cat,
-                  value: cat.name || cat,
-                })) || []}
-              />
+            <div className="space-y-4 py-4">
+              <p className="text-sm text-gray-500 mb-2">Lengkapi data berikut untuk mendaftar <strong>{event?.name}</strong>.</p>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Kategori & Harga *</label>
+                <Select
+                  className="w-full"
+                  placeholder="Pilih Kategori"
+                  value={regForm.categoryId || undefined}
+                  onChange={(val) => updateRegForm('categoryId', val)}
+                  options={categoryDetails.map(c => ({ label: `${c.name} - Rp ${c.price.toLocaleString('id-ID')}`, value: c.id }))}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Nama Lengkap *</label>
+                  <Input placeholder="Nama lengkap" value={regForm.name} onChange={e => updateRegForm('name', e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Email *</label>
+                  <div className="flex gap-2">
+                    <Input 
+                      placeholder="email@example.com" 
+                      type="email" 
+                      value={regForm.email} 
+                      onChange={e => updateRegForm('email', e.target.value)} 
+                      disabled={emailVerified}
+                    />
+                    {!emailVerified && (
+                      <Button onClick={handleSendOtp} loading={otpLoading} disabled={!regForm.email}>
+                        Kirim Kode
+                      </Button>
+                    )}
+                    {emailVerified && (
+                      <div className="flex items-center text-green-600 font-bold px-2">
+                        <svg className="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Terverifikasi
+                      </div>
+                    )}
+                  </div>
+                  {otpSent && !emailVerified && (
+                    <div className="mt-2 flex gap-2">
+                      <Input 
+                        placeholder="Masukkan 6 digit OTP" 
+                        maxLength={6}
+                        value={otpCode}
+                        onChange={e => setOtpCode(e.target.value)}
+                      />
+                      <Button type="primary" onClick={handleVerifyOtp} loading={otpLoading} disabled={otpCode.length !== 6}>
+                        Verifikasi
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">No. Telepon *</label>
+                  <Input placeholder="08xxxxxxxxxx" value={regForm.phoneNumber} onChange={e => updateRegForm('phoneNumber', e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Jenis Kelamin *</label>
+                  <Select className="w-full" placeholder="Pilih" value={regForm.gender || undefined} onChange={val => updateRegForm('gender', val)}
+                    options={[{ label: 'Laki-laki', value: 'L' }, { label: 'Perempuan', value: 'P' }]} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Golongan Darah</label>
+                  <Select className="w-full" placeholder="Pilih" value={regForm.bloodType || undefined} onChange={val => updateRegForm('bloodType', val)} allowClear
+                    options={[{ label: 'A', value: 'A' }, { label: 'B', value: 'B' }, { label: 'AB', value: 'AB' }, { label: 'O', value: 'O' }]} />
+                </div>
+                {event?.tshirtSizes && (
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">Ukuran Jersey</label>
+                    <Select className="w-full" placeholder="Pilih ukuran" value={regForm.tshirtSize || undefined} onChange={val => updateRegForm('tshirtSize', val)} allowClear
+                      options={event.tshirtSizes.split(',').map(s => ({ label: s.trim(), value: s.trim() }))} />
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-gray-200 pt-3">
+                <p className="text-xs font-bold text-gray-700 mb-2">Kontak Darurat</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <Input placeholder="Nama kontak darurat" value={regForm.emergencyName} onChange={e => updateRegForm('emergencyName', e.target.value)} />
+                  <Input placeholder="No. HP kontak darurat" value={regForm.emergencyPhone} onChange={e => updateRegForm('emergencyPhone', e.target.value)} />
+                </div>
+              </div>
+
+              {(event?.bibCustomPrice || 0) > 0 && (
+                <div className="border-t border-gray-200 pt-3">
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Custom BIB Name (+Rp {(event?.bibCustomPrice || 0).toLocaleString('id-ID')})</label>
+                  <Input placeholder="Maks. 12 huruf (opsional)" maxLength={12} value={regForm.bibName} onChange={e => updateRegForm('bibName', e.target.value)} />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Catatan Tambahan</label>
+                <Input.TextArea placeholder="Alergi, kondisi medis, atau catatan lainnya (opsional)" rows={2} value={regForm.notes} onChange={e => updateRegForm('notes', e.target.value)} />
+              </div>
+
+              {totalPrice > 0 && (
+                <div className="bg-stone-50 border border-stone-200 p-3 rounded-lg">
+                  <div className="flex justify-between text-sm"><span>Kategori</span><span>Rp {(selectedCategoryDetail?.price || 0).toLocaleString('id-ID')}</span></div>
+                  {bibExtraCharge > 0 && <div className="flex justify-between text-sm"><span>Custom BIB "{regForm.bibName}"</span><span>Rp {bibExtraCharge.toLocaleString('id-ID')}</span></div>}
+                  <div className="flex justify-between font-bold text-base mt-2 pt-2 border-t border-stone-300"><span>Total</span><span>Rp {totalPrice.toLocaleString('id-ID')}</span></div>
+                </div>
+              )}
             </div>
           </Modal>
 

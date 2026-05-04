@@ -17,13 +17,15 @@ model Event {
   location           String?
   latitude           Float?
   longitude          Float?
-  gpxFile            String?    // Path to GPX route file
-  status             String     @default("upcoming") // upcoming, ongoing, completed
+  gpxFile            String?
+  status             String     @default("upcoming")
   isActive           Boolean    @default(true)
-  cutoffMs           Int?       // Cut off time in milliseconds (null = disabled)
-  categoryStartTimes Json?      // JSON object: { "10K Laki-laki": "2025-11-23 07:00:00.000", ... }
+  cutoffMs           Int?
+  categoryStartTimes Json?
   logoUrl            String?
   bannerUrl          String?
+  tshirtSizes        String?    // Comma-separated sizes e.g. "S,M,L,XL,XXL"
+  bibCustomPrice     Int        @default(0) // Extra charge for custom BIB name (Rp)
   categories         Category[]
   banners            Banner[]
   registrations      EventRegistration[]
@@ -32,13 +34,14 @@ model Event {
 }
 
 model Category {
-  id        String   @id @default(uuid())
-  name      String
-  eventId   String
-  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  order     Int      @default(0)
+  id            String   @id @default(uuid())
+  name          String
+  eventId       String
+  event         Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  order         Int      @default(0)
+  price         Int      @default(0) // Price in Rupiah
   registrations EventRegistration[]
-  createdAt DateTime @default(now())
+  createdAt     DateTime @default(now())
 
   @@unique([eventId, name])
   @@index([eventId])
@@ -68,35 +71,67 @@ model User {
   isEmailVerified Boolean  @default(false)
   googleId        String?  @unique
   role            String   @default("user")
-  registrations   EventRegistration[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
 
 model EventRegistration {
-  id         String   @id @default(uuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  eventId    String
-  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  categoryId String
-  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  status     String   @default("registered") // registered, cancelled
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id               String   @id @default(uuid())
+  eventId          String
+  event            Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  categoryId       String
+  category         Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  // Participant info (no login required)
+  email            String
+  name             String
+  phoneNumber      String
+  gender           String   // L or P
+  bloodType        String?  // A, B, AB, O
+  emergencyName    String?
+  emergencyPhone   String?
+  tshirtSize       String?
+  bibName          String?  // Custom BIB name (max 12 chars)
+  notes            String?  @db.Text
+  // Payment
+  orderId          String   @unique
+  grossAmount      Int      @default(0)
+  paymentStatus    String   @default("pending") // pending, settlement, expire, cancel
+  paymentMethod    String?
+  snapToken        String?
+  snapUrl          String?
+  paidAt           DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  @@unique([userId, eventId]) // A user can only register once per event
+  @@unique([email, eventId])
   @@index([eventId])
   @@index([categoryId])
-  @@index([userId])
+  @@index([orderId])
+  @@index([paymentStatus])
 }
 
-model Otp {
-  id          String   @id @default(uuid())
-  phoneNumber String
-  code        String
-  expiresAt   DateTime
-  createdAt   DateTime @default(now())
+model EmailOtp {
+  id        String   @id @default(uuid())
+  email     String
+  code      String
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
 
-  @@index([phoneNumber])
+  @@index([email])
+  @@index([expiresAt])
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  eventId   String?
+  action    String
+  detail    String?  @db.Text
+  actor     String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([eventId])
+  @@index([action])
+  @@index([createdAt])
 }

@@ -42,7 +42,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   const [activeTab, setActiveTab] = useState<'data' | 'banners' | 'categories' | 'route' | 'timing' | 'dq' | 'certified'>('data');
   const [csvMeta, setCsvMeta] = useState<Array<{ key: CsvKind; filename: string; updatedAt: number; rows: number }>>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Array<{ name: string; price: number }>>([]);
   const [loading, setLoading] = useState(true);
 
   const [bannerFile, setBannerFile] = useState<File | null>(null);
@@ -54,6 +54,11 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
 
   // Category state
   const [newCategory, setNewCategory] = useState('');
+  const [newCategoryPrice, setNewCategoryPrice] = useState('');
+
+  // Event settings state
+  const [tshirtSizes, setTshirtSizes] = useState('');
+  const [bibCustomPrice, setBibCustomPrice] = useState('');
 
   // GPX upload state
   const [gpxFile, setGpxFile] = useState<File | null>(null);
@@ -109,7 +114,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       const catRes = await fetch(`/api/categories?eventId=${eventId}`);
       if (catRes.ok) {
         const data = await catRes.json();
-        setCategories(data.categories || []);
+        const cats = (data.categories || []).map((c: any) => typeof c === 'string' ? { name: c, price: 0 } : { name: c.name, price: c.price || 0 });
+        setCategories(cats);
       }
 
       // Load event data to get GPX file path and timing
@@ -118,6 +124,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         const eventData = await eventRes.json();
         setEventData(eventData);
         setCurrentGpxPath(eventData.gpxFile || null);
+        setTshirtSizes(eventData.tshirtSizes || '');
+        setBibCustomPrice(String(eventData.bibCustomPrice || ''));
 
         // Load timing data
         if (eventData.cutoffMs != null) {
@@ -450,23 +458,30 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   const addCategory = async () => {
     const trimmed = newCategory.trim();
     if (!trimmed) return;
-    if (categories.includes(trimmed)) {
+    if (categories.some(c => c.name === trimmed)) {
       alert('Category already exists');
       return;
     }
 
-    const updated = [...categories, trimmed];
+    const price = parseInt(newCategoryPrice) || 0;
+    const updated = [...categories, { name: trimmed, price }];
     await saveCategories(updated);
     setNewCategory('');
+    setNewCategoryPrice('');
   };
 
-  const removeCategory = async (cat: string) => {
-    if (!confirm(`Remove category "${cat}"?`)) return;
-    const updated = categories.filter((c) => c !== cat);
+  const removeCategory = async (catName: string) => {
+    if (!confirm(`Remove category "${catName}"?`)) return;
+    const updated = categories.filter((c) => c.name !== catName);
     await saveCategories(updated);
   };
 
-  const saveCategories = async (cats: string[]) => {
+  const updateCategoryPrice = async (catName: string, price: number) => {
+    const updated = categories.map(c => c.name === catName ? { ...c, price } : c);
+    await saveCategories(updated);
+  };
+
+  const saveCategories = async (cats: Array<{ name: string; price: number }>) => {
     try {
       const res = await fetch(`/api/categories?eventId=${eventId}`, {
         method: 'POST',
@@ -482,6 +497,23 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       }
     } catch (error) {
       alert('Failed to save categories');
+    }
+  };
+
+  const saveEventSettings = async () => {
+    try {
+      const res = await fetch(`/api/events?eventId=${eventId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tshirtSizes: tshirtSizes || null, bibCustomPrice: parseInt(bibCustomPrice) || 0 }),
+      });
+      if (res.ok) {
+        alert('Event settings saved!');
+      } else {
+        alert('Failed to save event settings');
+      }
+    } catch {
+      alert('Failed to save event settings');
     }
   };
 
@@ -1083,9 +1115,9 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         <div className="card">
           <div className="header-row mb-4">
             <div>
-              <h2 className="section-title">Race Categories</h2>
+              <h2 className="section-title">Race Categories & Pricing</h2>
               <div className="subtle text-sm">
-                Kelola kategori lomba untuk event ini.
+                Kelola kategori lomba dan harga tiket per kategori.
               </div>
             </div>
           </div>
@@ -1099,36 +1131,55 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
               onChange={(e) => setNewCategory(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && addCategory()}
             />
+            <input
+              className="search"
+              style={{ width: 160 }}
+              placeholder="Harga (Rp)"
+              type="number"
+              value={newCategoryPrice}
+              onChange={(e) => setNewCategoryPrice(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addCategory()}
+            />
             <button className="btn w-full sm:w-auto" onClick={addCategory} disabled={!newCategory.trim()}>
               + Add Category
             </button>
           </div>
 
-          {/* Desktop Table - hidden on mobile */}
+          {/* Desktop Table */}
           <div className="hidden md:block table-wrap">
             <table className="f1-table compact">
               <thead>
                 <tr>
                   <th style={{ width: 60 }}>#</th>
                   <th>Category Name</th>
+                  <th style={{ width: 180 }}>Harga (Rp)</th>
                   <th style={{ width: 100 }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {categories.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="empty">No categories yet</td>
+                    <td colSpan={4} className="empty">No categories yet</td>
                   </tr>
                 ) : (
                   categories.map((cat, index) => (
-                    <tr key={cat} className="row-hover">
+                    <tr key={cat.name} className="row-hover">
                       <td className="mono">{index + 1}</td>
-                      <td className="name-cell">{cat}</td>
+                      <td className="name-cell">{cat.name}</td>
+                      <td>
+                        <input
+                          className="search text-right"
+                          style={{ width: 150 }}
+                          type="number"
+                          value={cat.price}
+                          onChange={(e) => updateCategoryPrice(cat.name, parseInt(e.target.value) || 0)}
+                        />
+                      </td>
                       <td>
                         <button 
                           className="btn ghost" 
                           style={{ color: '#dc2626' }}
-                          onClick={() => removeCategory(cat)}
+                          onClick={() => removeCategory(cat.name)}
                         >
                           Remove
                         </button>
@@ -1140,27 +1191,65 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
             </table>
           </div>
 
-          {/* Mobile Cards - visible only on mobile */}
+          {/* Mobile Cards */}
           <div className="md:hidden space-y-2">
             {categories.length === 0 ? (
               <div className="text-center text-gray-500 py-8">No categories yet</div>
             ) : (
               categories.map((cat, index) => (
-                <div key={cat} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm flex justify-between items-center">
-                  <div>
-                    <span className="font-medium text-gray-900">{cat}</span>
-                    <span className="text-xs text-gray-400 ml-2">#{index + 1}</span>
+                <div key={cat.name} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+                  <div className="flex justify-between items-center mb-2">
+                    <div>
+                      <span className="font-medium text-gray-900">{cat.name}</span>
+                      <span className="text-xs text-gray-400 ml-2">#{index + 1}</span>
+                    </div>
+                    <button 
+                      className="btn ghost text-sm" 
+                      style={{ color: '#dc2626' }}
+                      onClick={() => removeCategory(cat.name)}
+                    >
+                      Remove
+                    </button>
                   </div>
-                  <button 
-                    className="btn ghost text-sm" 
-                    style={{ color: '#dc2626' }}
-                    onClick={() => removeCategory(cat)}
-                  >
-                    Remove
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">Harga:</span>
+                    <input
+                      className="search text-right flex-1"
+                      type="number"
+                      value={cat.price}
+                      onChange={(e) => updateCategoryPrice(cat.name, parseInt(e.target.value) || 0)}
+                    />
+                  </div>
                 </div>
               ))
             )}
+          </div>
+
+          {/* Event Settings */}
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <h3 className="text-sm font-bold text-gray-800 mb-4 uppercase tracking-wider">Event Settings</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Ukuran Jersey (pisahkan dengan koma)</label>
+                <input
+                  className="search w-full"
+                  placeholder="S,M,L,XL,XXL"
+                  value={tshirtSizes}
+                  onChange={(e) => setTshirtSizes(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Biaya Custom BIB Name (Rp)</label>
+                <input
+                  className="search w-full"
+                  placeholder="0 = gratis / tidak ada opsi"
+                  type="number"
+                  value={bibCustomPrice}
+                  onChange={(e) => setBibCustomPrice(e.target.value)}
+                />
+              </div>
+            </div>
+            <button className="btn mt-4" onClick={saveEventSettings}>Simpan Settings</button>
           </div>
         </div>
       )}
@@ -1298,19 +1387,19 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                       <td colSpan={3} className="empty">No categories defined yet. Add categories first.</td>
                     </tr>
                   ) : (
-                    categories.map((catKey) => (
-                      <tr key={catKey} className="row-hover">
-                        <td className="name-cell">{catKey}</td>
+                    categories.map((cat) => (
+                      <tr key={cat.name} className="row-hover">
+                        <td className="name-cell">{cat.name}</td>
                         <td>
                           <input
                             className="search"
                             style={{ width: "100%" }}
                             placeholder="contoh: 2025-11-23 07:00:00.000"
-                            value={catStart[catKey] || ""}
+                            value={catStart[cat.name] || ""}
                             onChange={(e) =>
                               setCatStart((prev) => ({
                                 ...prev,
-                                [catKey]: e.target.value,
+                                [cat.name]: e.target.value,
                               }))
                             }
                           />
@@ -1322,7 +1411,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                               onClick={() =>
                                 setCatStart((prev) => ({
                                   ...prev,
-                                  [catKey]: formatNowAsTimestamp(),
+                                  [cat.name]: formatNowAsTimestamp(),
                                 }))
                               }
                             >
@@ -1333,7 +1422,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                               onClick={() =>
                                 setCatStart((prev) => ({
                                   ...prev,
-                                  [catKey]: "",
+                                  [cat.name]: "",
                                 }))
                               }
                             >
@@ -1353,17 +1442,17 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
               {categories.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">No categories defined yet. Add categories first.</div>
               ) : (
-                categories.map((catKey) => (
-                  <div key={catKey} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
-                    <div className="font-medium text-gray-900 mb-2">{catKey}</div>
+                categories.map((cat) => (
+                  <div key={cat.name} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+                    <div className="font-medium text-gray-900 mb-2">{cat.name}</div>
                     <input
                       className="search w-full mb-2 text-sm"
                       placeholder="2025-11-23 07:00:00.000"
-                      value={catStart[catKey] || ""}
+                      value={catStart[cat.name] || ""}
                       onChange={(e) =>
                         setCatStart((prev) => ({
                           ...prev,
-                          [catKey]: e.target.value,
+                          [cat.name]: e.target.value,
                         }))
                       }
                     />
@@ -1373,7 +1462,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                         onClick={() =>
                           setCatStart((prev) => ({
                             ...prev,
-                            [catKey]: formatNowAsTimestamp(),
+                            [cat.name]: formatNowAsTimestamp(),
                           }))
                         }
                       >
@@ -1384,7 +1473,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                         onClick={() =>
                           setCatStart((prev) => ({
                             ...prev,
-                            [catKey]: "",
+                            [cat.name]: "",
                           }))
                         }
                       >

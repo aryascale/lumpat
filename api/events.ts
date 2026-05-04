@@ -15,6 +15,8 @@ function formatEvent(event: any) {
     gpxFile: event.gpxFile || undefined,
     logoUrl: event.logoUrl || undefined,
     bannerUrl: event.bannerUrl || undefined,
+    tshirtSizes: event.tshirtSizes || null,
+    bibCustomPrice: event.bibCustomPrice || 0,
     isActive: !!event.isActive,
     categories: event._categories || [],
     createdAt: event.createdAt instanceof Date ? event.createdAt.getTime() : event.createdAt,
@@ -122,6 +124,8 @@ export default async function handler(req: any) {
       if (body.bannerUrl !== undefined) { fields.push('bannerUrl = ?'); values.push(body.bannerUrl); }
       if (body.cutoffMs !== undefined) { fields.push('cutoffMs = ?'); values.push(body.cutoffMs); }
       if (body.categoryStartTimes !== undefined) { fields.push('categoryStartTimes = ?'); values.push(JSON.stringify(body.categoryStartTimes)); }
+      if (body.tshirtSizes !== undefined) { fields.push('tshirtSizes = ?'); values.push(body.tshirtSizes); }
+      if (body.bibCustomPrice !== undefined) { fields.push('bibCustomPrice = ?'); values.push(body.bibCustomPrice); }
 
       fields.push('updatedAt = NOW()');
       values.push(eventId);

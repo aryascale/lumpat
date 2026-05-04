@@ -12,6 +12,8 @@ import {
   EventsPageWrapper,
   BannersPageWrapper
 } from "./components/admin/wrappers";
+import PaymentsPage from "./components/admin/pages/PaymentsPage";
+import ActivityLogsPage from "./components/admin/pages/ActivityLogsPage";
 import { EventProvider } from "./contexts/EventContext";
 import SplashScreen from "./components/SplashScreen";
 import Login from "./pages/Login";
@@ -39,6 +41,8 @@ export default function App() {
           <Route path="overview" element={<OverviewPageWrapper />} />
           <Route path="events" element={<EventsPageWrapper />} />
           <Route path="banners" element={<BannersPageWrapper />} />
+          <Route path="payments" element={<PaymentsPage />} />
+          <Route path="activity-logs" element={<ActivityLogsPage />} />
         </Route>
       </Routes>
     </EventProvider>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useEvent } from '../../../contexts/EventContext';
-import { DEFAULT_EVENT_TITLE, LS_EVENT_TITLE, LS_DATA_VERSION, getCategoriesForEvent } from '../../../lib/config';
+import { DEFAULT_EVENT_TITLE, LS_EVENT_TITLE, LS_DATA_VERSION } from '../../../lib/config';
 
 interface OverviewPageProps {
   allRows: any[];
@@ -8,44 +8,28 @@ interface OverviewPageProps {
   onConfigChanged: () => void;
 }
 
-export default function OverviewPage({ allRows, eventId, onConfigChanged }: OverviewPageProps) {
+export default function OverviewPage({ eventId, onConfigChanged }: OverviewPageProps) {
   const { events } = useEvent();
   const [eventTitle, setEventTitle] = useState<string>(() =>
     localStorage.getItem(LS_EVENT_TITLE) || DEFAULT_EVENT_TITLE
   );
-  const [banners, setBanners] = useState<any[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [dashboardData, setDashboardData] = useState<any>(null);
 
   useEffect(() => {
-    // Load banners
-    const loadBanners = async () => {
+    // Load admin overview data
+    const loadOverviewData = async () => {
       try {
-        const res = await fetch('/api/banners');
+        const url = eventId && eventId !== 'default' ? `/api/admin-overview?eventId=${eventId}` : '/api/admin-overview';
+        const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
-          setBanners(Array.isArray(data) ? data : []);
-        } else {
-          setBanners([]);
+          setDashboardData(data);
         }
       } catch (error) {
-        console.error('Failed to load banners:', error);
-        setBanners([]);
+        console.error('Failed to load overview data', error);
       }
     };
-    loadBanners();
-
-    // Load categories for this event
-    const loadCategories = async () => {
-      if (eventId) {
-        try {
-          const cats = await getCategoriesForEvent(eventId);
-          setCategories(cats);
-        } catch (error) {
-          console.error('Failed to load categories:', error);
-        }
-      }
-    };
-    loadCategories();
+    loadOverviewData();
   }, [eventId]);
 
   const bumpDataVersion = () => {
@@ -63,30 +47,108 @@ export default function OverviewPage({ allRows, eventId, onConfigChanged }: Over
   return (
     <>
       {/* Stats Cards */}
-      <div className="card">
+      <div className="card mb-6 bg-white shadow-sm border-0">
         <div className="header-row">
           <div>
-            <h2 className="section-title">Dashboard Overview</h2>
-            <div className="subtle">Ringkasan data event dan peserta.</div>
+            <h2 className="text-xl font-bold text-gray-900">Dashboard Overview</h2>
+            <div className="text-sm text-gray-500">Ringkasan transaksi dan pendaftaran event.</div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 md:p-4">
-            <div className="label text-xs md:text-sm">Total Events</div>
-            <div className="value mono text-xl md:text-2xl">{events.length}</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+          <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
+            <div className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1">Total Revenue</div>
+            <div className="text-2xl font-black text-indigo-900">Rp {(dashboardData?.totalRevenue || 0).toLocaleString('id-ID')}</div>
           </div>
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 md:p-4">
-            <div className="label text-xs md:text-sm">Total Participants</div>
-            <div className="value mono text-xl md:text-2xl">{allRows.length}</div>
+          <div className="bg-green-50 border border-green-100 rounded-xl p-4">
+            <div className="text-xs font-bold text-green-600 uppercase tracking-wider mb-1">Peserta (Paid)</div>
+            <div className="text-2xl font-black text-green-900">{dashboardData?.totalParticipants || 0}</div>
           </div>
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 md:p-4">
-            <div className="label text-xs md:text-sm">Categories</div>
-            <div className="value mono text-xl md:text-2xl">{categories.length}</div>
+          <div className="bg-yellow-50 border border-yellow-100 rounded-xl p-4">
+            <div className="text-xs font-bold text-yellow-600 uppercase tracking-wider mb-1">Pending</div>
+            <div className="text-2xl font-black text-yellow-900">{dashboardData?.paymentStatus?.pending || 0}</div>
           </div>
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 md:p-4">
-            <div className="label text-xs md:text-sm">Active Banners</div>
-            <div className="value mono text-xl md:text-2xl">{banners.filter(b => b.active || b.isActive).length}</div>
+          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+            <div className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">Total Events</div>
+            <div className="text-2xl font-black text-blue-900">{dashboardData?.totalEvents || events.length}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="lg:col-span-2 card bg-white shadow-sm border-0">
+          <div className="header-row mb-4">
+            <h3 className="text-lg font-bold text-gray-900">Recent Registrations</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="py-3 font-semibold text-gray-600">Nama</th>
+                  <th className="py-3 font-semibold text-gray-600">Event & Kategori</th>
+                  <th className="py-3 font-semibold text-gray-600">Status</th>
+                  <th className="py-3 font-semibold text-gray-600">Waktu</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(dashboardData?.recentRegistrations || []).map((reg: any) => (
+                  <tr key={reg.id} className="border-b border-gray-50 hover:bg-gray-50/50">
+                    <td className="py-3">
+                      <div className="font-medium text-gray-900">{reg.name}</div>
+                      <div className="text-xs text-gray-500">{reg.email}</div>
+                    </td>
+                    <td className="py-3 text-gray-700">
+                      <div className="font-medium">{reg.eventName}</div>
+                      <div className="text-xs text-gray-500">{reg.categoryName}</div>
+                    </td>
+                    <td className="py-3">
+                      <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-full ${
+                        reg.paymentStatus === 'settlement' ? 'bg-green-100 text-green-700' :
+                        reg.paymentStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {reg.paymentStatus}
+                      </span>
+                    </td>
+                    <td className="py-3 text-xs text-gray-500">
+                      {new Date(reg.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </td>
+                  </tr>
+                ))}
+                {!dashboardData?.recentRegistrations?.length && (
+                  <tr>
+                    <td colSpan={4} className="py-6 text-center text-gray-500">Belum ada pendaftaran terbaru</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="card bg-white shadow-sm border-0">
+          <div className="header-row mb-4">
+            <h3 className="text-lg font-bold text-gray-900">Status Pembayaran</h3>
+          </div>
+          <div className="space-y-4">
+            {[
+              { label: 'Settlement (Lunas)', count: dashboardData?.paymentStatus?.settlement || 0, color: 'bg-green-500' },
+              { label: 'Pending (Belum Bayar)', count: dashboardData?.paymentStatus?.pending || 0, color: 'bg-yellow-500' },
+              { label: 'Expire / Cancel', count: (dashboardData?.paymentStatus?.expire || 0) + (dashboardData?.paymentStatus?.cancel || 0), color: 'bg-red-500' },
+            ].map(stat => {
+              const total = Object.values(dashboardData?.paymentStatus || {}).reduce((a: any, b: any) => a + b, 0) as number;
+              const percent = total > 0 ? Math.round((stat.count / total) * 100) : 0;
+              return (
+                <div key={stat.label}>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-gray-700">{stat.label}</span>
+                    <span className="font-bold text-gray-900">{stat.count}</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2">
+                    <div className={`${stat.color} h-2 rounded-full`} style={{ width: `${percent}%` }}></div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

@@ -20,7 +20,7 @@ export default async function handler(event: any) {
       const categories: any = await query(
         'SELECT * FROM Category WHERE eventId = ? ORDER BY `order` ASC', [eventId]
       );
-      return successResponse({ categories: categories.map((c: any) => c.name) });
+      return successResponse({ categories: categories.map((c: any) => ({ id: c.id, name: c.name, price: c.price || 0, order: c.order })) });
     }
 
     if (event.httpMethod === 'POST' || event.httpMethod === 'PUT') {
@@ -38,16 +38,17 @@ export default async function handler(event: any) {
 
       await query('DELETE FROM Category WHERE eventId = ?', [eventId]);
       for (let i = 0; i < categories.length; i++) {
+        const cat = typeof categories[i] === 'string' ? { name: categories[i], price: 0 } : categories[i];
         await query(
-          'INSERT INTO Category (id, name, eventId, `order`, createdAt) VALUES (?, ?, ?, ?, NOW())',
-          [crypto.randomUUID(), categories[i], eventId, i]
+          'INSERT INTO Category (id, name, eventId, `order`, price, createdAt) VALUES (?, ?, ?, ?, ?, NOW())',
+          [crypto.randomUUID(), cat.name, eventId, i, cat.price || 0]
         );
       }
 
       const updated: any = await query(
         'SELECT * FROM Category WHERE eventId = ? ORDER BY `order` ASC', [eventId]
       );
-      return successResponse({ categories: updated.map((c: any) => c.name) });
+      return successResponse({ categories: updated.map((c: any) => ({ id: c.id, name: c.name, price: c.price || 0, order: c.order })) });
     }
 
     if (event.httpMethod === 'DELETE') {
@@ -59,7 +60,7 @@ export default async function handler(event: any) {
       await query('DELETE FROM Category WHERE eventId = ?', [eventId]);
       for (let i = 0; i < DEFAULT_CATEGORIES.length; i++) {
         await query(
-          'INSERT INTO Category (id, name, eventId, `order`, createdAt) VALUES (?, ?, ?, ?, NOW())',
+          'INSERT INTO Category (id, name, eventId, `order`, price, createdAt) VALUES (?, ?, ?, ?, 0, NOW())',
           [crypto.randomUUID(), DEFAULT_CATEGORIES[i], eventId, i]
         );
       }
