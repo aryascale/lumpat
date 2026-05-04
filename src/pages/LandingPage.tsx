@@ -14,9 +14,9 @@ export default function LandingPage() {
   const [heroIndex, setHeroIndex] = useState(0);
 
   const heroImages = [
-    "/Assets/landing/hero_1.png",
-    "/Assets/landing/hero_2.png",
-    "/Assets/landing/hero_3.png"
+    "/Assets/landing/hero.webp",
+    "/Assets/landing/hero_2.webp",
+    "/Assets/landing/hero_3.webp"
   ];
 
   // Rotate hero image every 5 seconds
@@ -132,14 +132,12 @@ export default function LandingPage() {
           <div className="flex flex-col md:flex-row justify-between items-end gap-8 w-full">
             <div className="text-left max-w-2xl">
               <h1 className="text-white text-5xl sm:text-6xl md:text-7xl font-black uppercase tracking-tight leading-tight mb-4 shadow-sm">
-                RIDE TOGETHER,
+                CHASE THE FINISH,
                 <br />
-                GO FURTHER
+                OWN YOUR TIME
               </h1>
               <p className="text-white/90 text-lg sm:text-xl leading-relaxed max-w-xl shadow-sm">
-                Join a community of cyclists who ride for freedom, fitness, and friendship.
-                <br />
-                Every road is better when shared.
+                Discover events, push your limits, and see your results in real time.
               </p>
             </div>
             
@@ -148,7 +146,7 @@ export default function LandingPage() {
                 onClick={() => navigate("/event")}
                 className="px-8 py-4 bg-white text-gray-900 text-lg font-bold rounded-xl hover:bg-gray-100 transition-all flex items-center gap-2 shadow-2xl hover:-translate-y-1 active:scale-95"
               >
-                Start Riding With Us
+                Find Event
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
               </button>
             </div>
@@ -184,7 +182,6 @@ export default function LandingPage() {
           </div>
 
           <div className="landing-section-header scroll-reveal" style={{ marginTop: "48px" }}>
-            <h2 className="landing-section-header__title">SWIM · BIKE · RUN</h2>
             <p className="landing-section-header__subtitle">
               From the open water to the finish line, our timing system records
               every split time with industry-leading accuracy.
