@@ -54,6 +54,7 @@ export default async function handler(event: any) {
         paymentMethod: r.paymentMethod,
         paidAt: r.paidAt,
         createdAt: r.createdAt,
+        dateOfBirth: r.dateOfBirth,
       })),
       summary: summary[0] || { total: 0, paid: 0, pending: 0, failed: 0, totalRevenue: 0 },
     });

@@ -102,6 +102,7 @@ export default function EventPage() {
     tshirtSize: '',
     bibName: '',
     notes: '',
+    dateOfBirth: '',
   });
 
   const [emailVerified, setEmailVerified] = useState(false);
@@ -148,7 +149,7 @@ export default function EventPage() {
   const totalPrice = (selectedCategoryDetail?.price || 0) + bibExtraCharge;
 
   const handleCheckout = async () => {
-    if (!regForm.categoryId || !regForm.name || !regForm.email || !regForm.phoneNumber || !regForm.gender) {
+    if (!regForm.categoryId || !regForm.name || !regForm.email || !regForm.phoneNumber || !regForm.gender || !regForm.dateOfBirth) {
       message.error('Lengkapi semua field wajib');
       return;
     }
@@ -961,6 +962,10 @@ export default function EventPage() {
                   <label className="block text-xs font-bold text-gray-700 mb-1">Jenis Kelamin *</label>
                   <Select className="w-full" placeholder="Pilih" value={regForm.gender || undefined} onChange={val => updateRegForm('gender', val)}
                     options={[{ label: 'Laki-laki', value: 'L' }, { label: 'Perempuan', value: 'P' }]} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Tanggal Lahir *</label>
+                  <Input type="date" value={regForm.dateOfBirth} onChange={e => updateRegForm('dateOfBirth', e.target.value)} />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">Golongan Darah</label>

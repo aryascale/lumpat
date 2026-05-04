@@ -34,6 +34,7 @@ export default async function handler(event: any) {
         orderId: r.orderId,
         paidAt: r.paidAt,
         createdAt: r.createdAt,
+        dateOfBirth: r.dateOfBirth,
       }));
 
       return successResponse({ participants, total: participants.length });

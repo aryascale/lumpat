@@ -17,10 +17,10 @@ export default async function handler(event: any) {
     const body = parseBody(event);
     if (!body) return errorResponse('Missing request body', 400);
 
-    const { eventId, categoryId, name, email, phoneNumber, gender, bloodType, emergencyName, emergencyPhone, tshirtSize, bibName, notes } = body;
+    const { eventId, categoryId, name, email, phoneNumber, gender, bloodType, emergencyName, emergencyPhone, tshirtSize, bibName, notes, dateOfBirth } = body;
 
-    if (!eventId || !categoryId || !name || !email || !phoneNumber || !gender) {
-      return errorResponse('eventId, categoryId, name, email, phoneNumber, and gender are required', 400);
+    if (!eventId || !categoryId || !name || !email || !phoneNumber || !gender || !dateOfBirth) {
+      return errorResponse('eventId, categoryId, name, email, phoneNumber, gender, and dateOfBirth are required', 400);
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -63,9 +63,9 @@ export default async function handler(event: any) {
     const regId = crypto.randomUUID();
     await query(
       `INSERT INTO EventRegistration 
-        (id, eventId, categoryId, email, name, phoneNumber, gender, bloodType, emergencyName, emergencyPhone, tshirtSize, bibName, notes, orderId, grossAmount, paymentStatus, createdAt, updatedAt)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW(), NOW())`,
-      [regId, eventId, categoryId, email, name, phoneNumber, gender, bloodType || null, emergencyName || null, emergencyPhone || null, tshirtSize || null, bibName || null, notes || null, orderId, grossAmount]
+        (id, eventId, categoryId, email, name, phoneNumber, gender, bloodType, emergencyName, emergencyPhone, tshirtSize, bibName, notes, orderId, grossAmount, dateOfBirth, paymentStatus, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW(), NOW())`,
+      [regId, eventId, categoryId, email, name, phoneNumber, gender, bloodType || null, emergencyName || null, emergencyPhone || null, tshirtSize || null, bibName || null, notes || null, orderId, grossAmount, dateOfBirth || null]
     );
 
     if (!MIDTRANS_SERVER_KEY) {

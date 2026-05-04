@@ -17,6 +17,7 @@ interface Payment {
   paymentMethod: string;
   paidAt: string;
   createdAt: string;
+  dateOfBirth: string;
 }
 
 interface Summary {
@@ -164,7 +165,8 @@ export default function PaymentsPage() {
                         <td className="mono text-xs">{p.orderId}</td>
                         <td>
                           <div className="font-medium">{p.name}</div>
-                          <div className="text-xs text-gray-400">{p.email}</div>
+                          <div className="text-[10px] text-gray-500">{p.email}</div>
+                          <div className="text-[10px] text-red-500 font-bold">Lahir: {p.dateOfBirth ? new Date(p.dateOfBirth).toLocaleDateString('id-ID') : '-'}</div>
                         </td>
                         <td className="text-sm">{p.eventName}</td>
                         <td className="text-sm">{p.categoryName}</td>
