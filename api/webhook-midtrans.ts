@@ -32,25 +32,32 @@ export default async function handler(event: any) {
 
     const { order_id, status_code, gross_amount, signature_key, transaction_status, payment_type, fraud_status } = body;
 
-    console.log(`[WEBHOOK-MIDTRANS] Received notification for Order: ${order_id}, Status: ${transaction_status}, Amount: ${gross_amount}`);
+    // Log the incoming request to ActivityLog for debugging
+    await logActivity('webhook.received', `Webhook masuk: Order ${order_id}, Status: ${transaction_status}`, 'system', null, { 
+      orderId: order_id, 
+      status: transaction_status, 
+      amount: gross_amount,
+      paymentType: payment_type
+    });
 
     if (!order_id || !signature_key) {
+      console.error('[WEBHOOK-MIDTRANS] Missing order_id or signature_key');
       return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Invalid notification' }) };
     }
 
     // Robust signature verification
     const verify = (amt: string) => {
       const payload = order_id + status_code + amt + MIDTRANS_SERVER_KEY;
-      return crypto.createHash('sha512').update(payload).digest('hex') === signature_key;
+      const calculatedHash = crypto.createHash('sha512').update(payload).digest('hex');
+      return calculatedHash === signature_key;
     };
 
-    // Try both original gross_amount and integer-only version
     const grossAmountStr = String(gross_amount);
     const isVerified = verify(grossAmountStr) || verify(grossAmountStr.split('.')[0]);
 
     if (MIDTRANS_SERVER_KEY && !isVerified) {
       console.error('[WEBHOOK-MIDTRANS] Signature verification failed for order:', order_id);
-      console.error('[WEBHOOK-MIDTRANS] Expected signature for amount', grossAmountStr, 'or', grossAmountStr.split('.')[0]);
+      await logActivity('webhook.error', `Signature verification failed for ${order_id}`, 'system', null, { orderId: order_id, received_sig: signature_key });
       return { statusCode: 403, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Invalid signature' }) };
     }
 
