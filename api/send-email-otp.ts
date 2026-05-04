@@ -49,7 +49,7 @@ export default async function handler(event: any) {
     await transporter.sendMail({
       from: fromAddress,
       to: email,
-      subject: `Kode Verifikasi Lumpat - ${code}`,
+      subject: `Kode Verifikasi Lumpat`,
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px;">
           <div style="text-align: center; margin-bottom: 32px;">
