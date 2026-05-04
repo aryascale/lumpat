@@ -22,6 +22,21 @@ export default async function handler(event: any) {
       return errorResponse('Registration not found', 404);
     }
 
+    // Fetch details to send email
+    const regRes: any = await query(
+      `SELECT er.*, e.name as eventName, e.eventDate, c.name as categoryName 
+       FROM EventRegistration er
+       JOIN Event e ON er.eventId = e.id
+       JOIN Category c ON er.categoryId = c.id
+       WHERE er.orderId = ? LIMIT 1`,
+      [orderId]
+    );
+
+    if (regRes.length > 0) {
+      const { sendRegistrationConfirmation } = await import('../src/lib/email-service');
+      await sendRegistrationConfirmation(regRes[0]);
+    }
+
     // Log the manual action
     await logActivity('payment.manual_settle', `Penyelesaian pembayaran manual untuk ${orderId}`, 'admin', null, { orderId });
 
