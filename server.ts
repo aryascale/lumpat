@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import compression from 'compression';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -16,6 +17,7 @@ const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(PROJECT_ROOT, 'uploads');
 
 app.use(cors({ origin: true, credentials: true }));
 app.use(cookieParser());
+app.use(compression());
 
 app.use((req, res, next) => {
   const contentType = req.headers['content-type'] || '';
@@ -33,8 +35,8 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-app.use(express.static(path.join(PROJECT_ROOT, 'dist')));
-app.use('/uploads', express.static(UPLOAD_DIR));
+app.use(express.static(path.join(PROJECT_ROOT, 'dist'), { maxAge: '1d' }));
+app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '1d' }));
 
 const apiHandler = async (req: any, res: any) => {
   const url = new URL(req.originalUrl, `http://${req.headers.host}`);
