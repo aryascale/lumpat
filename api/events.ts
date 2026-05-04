@@ -13,6 +13,8 @@ function formatEvent(event: any) {
     longitude: event.longitude || undefined,
     status: event.status || 'upcoming',
     gpxFile: event.gpxFile || undefined,
+    logoUrl: event.logoUrl || undefined,
+    bannerUrl: event.bannerUrl || undefined,
     isActive: !!event.isActive,
     categories: event._categories || [],
     createdAt: event.createdAt instanceof Date ? event.createdAt.getTime() : event.createdAt,
@@ -45,12 +47,23 @@ export default async function handler(req: any) {
         'SELECT * FROM Event ORDER BY createdAt DESC'
       );
 
-      for (const event of events) {
+      if (events.length > 0) {
+        const eventIds = events.map((e: any) => e.id);
+        const placeholders = eventIds.map(() => '?').join(',');
         const categories: any = await query(
-          'SELECT * FROM Category WHERE eventId = ? ORDER BY `order` ASC',
-          [event.id]
+          `SELECT eventId, name FROM Category WHERE eventId IN (${placeholders}) ORDER BY \`order\` ASC`,
+          eventIds
         );
-        event._categories = categories.map((c: any) => c.name);
+        
+        const catMap = new Map();
+        categories.forEach((c: any) => {
+          if (!catMap.has(c.eventId)) catMap.set(c.eventId, []);
+          catMap.get(c.eventId).push(c.name);
+        });
+
+        for (const event of events) {
+          event._categories = catMap.get(event.id) || [];
+        }
       }
 
       return successResponse(events.map(formatEvent));
@@ -71,8 +84,8 @@ export default async function handler(req: any) {
 
       const eventIdNew = crypto.randomUUID();
       await query(
-        'INSERT INTO Event (id, name, slug, description, eventDate, location, latitude, longitude, isActive, status, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
-        [eventIdNew, name, slug, description || null, new Date(eventDate), location || null, latitude || null, longitude || null, isActive ?? true, 'upcoming']
+        'INSERT INTO Event (id, name, slug, description, eventDate, location, latitude, longitude, isActive, status, logoUrl, bannerUrl, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
+        [eventIdNew, name, slug, description || null, new Date(eventDate), location || null, latitude || null, longitude || null, isActive ?? true, 'upcoming', null, null]
       );
 
       const defaultCategories = categories || ['10K Laki-laki', '10K Perempuan', '5K Laki-Laki', '5K Perempuan'];
@@ -105,6 +118,8 @@ export default async function handler(req: any) {
       if (body.longitude !== undefined) { fields.push('longitude = ?'); values.push(body.longitude); }
       if (body.isActive !== undefined) { fields.push('isActive = ?'); values.push(body.isActive); }
       if (body.status !== undefined) { fields.push('status = ?'); values.push(body.status); }
+      if (body.logoUrl !== undefined) { fields.push('logoUrl = ?'); values.push(body.logoUrl); }
+      if (body.bannerUrl !== undefined) { fields.push('bannerUrl = ?'); values.push(body.bannerUrl); }
       if (body.cutoffMs !== undefined) { fields.push('cutoffMs = ?'); values.push(body.cutoffMs); }
       if (body.categoryStartTimes !== undefined) { fields.push('categoryStartTimes = ?'); values.push(JSON.stringify(body.categoryStartTimes)); }
 

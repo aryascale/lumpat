@@ -45,9 +45,12 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Banner upload state
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [coverBannerFile, setCoverBannerFile] = useState<File | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   // Category state
   const [newCategory, setNewCategory] = useState('');
@@ -355,6 +358,51 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       alert(error.message || 'Failed to upload banner');
     } finally {
       setUploadingBanner(false);
+    }
+  };
+
+  const handleMediaUpload = async (type: 'logo' | 'banner') => {
+    const file = type === 'logo' ? logoFile : coverBannerFile;
+    if (!file) {
+      alert('Please select an image file');
+      return;
+    }
+
+    type === 'logo' ? setUploadingLogo(true) : setUploadingCover(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('eventId', eventId);
+      formData.append('field', type);
+
+      const res = await fetch('/api/upload-event-media', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to upload media');
+      }
+
+      const result = await res.json();
+      setEventData(result.event);
+      
+      if (type === 'logo') {
+        setLogoFile(null);
+        const fileInput = document.getElementById('logo-upload') as HTMLInputElement;
+        if (fileInput) fileInput.value = '';
+      } else {
+        setCoverBannerFile(null);
+        const fileInput = document.getElementById('cover-banner-upload') as HTMLInputElement;
+        if (fileInput) fileInput.value = '';
+      }
+      
+      alert(`${type === 'logo' ? 'Logo' : 'Cover Banner'} uploaded successfully!`);
+    } catch (error: any) {
+      alert(error.message || `Failed to upload ${type}`);
+    } finally {
+      type === 'logo' ? setUploadingLogo(false) : setUploadingCover(false);
     }
   };
 
@@ -677,7 +725,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           className={`detail-tab whitespace-nowrap ${activeTab === 'banners' ? 'active' : ''}`}
           onClick={() => setActiveTab('banners')}
         >
-          Banners ({banners.length})
+          Media & Banners
         </button>
         <button
           className={`detail-tab whitespace-nowrap ${activeTab === 'categories' ? 'active' : ''}`}
@@ -842,23 +890,77 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         <div className="card">
           <div className="header-row mb-4">
             <div>
-              <h2 className="section-title">Banner Images</h2>
+              <h2 className="section-title">Media & Banners</h2>
               <div className="subtle text-sm">
-                Upload banner images yang akan ditampilkan di halaman event.
+                Upload Event Logo, Cover Banner, and rotating carousel banners.
               </div>
             </div>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            {/* Logo Upload */}
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="font-bold text-gray-900 mb-1">Event Logo</div>
+              <div className="text-xs text-gray-500 mb-3">Square image (e.g. 500x500). Used for event page header.</div>
+              {eventData?.logoUrl && (
+                <img src={eventData.logoUrl} alt="Logo" className="w-16 h-16 object-contain bg-white rounded shadow-sm mb-3 border border-gray-200" />
+              )}
+              <div className="flex gap-2">
+                <input
+                  id="logo-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
+                  className="flex-1 text-sm block w-full text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300"
+                />
+                <button
+                  className="btn"
+                  onClick={() => handleMediaUpload('logo')}
+                  disabled={!logoFile || uploadingLogo}
+                >
+                  {uploadingLogo ? 'Uploading...' : 'Upload'}
+                </button>
+              </div>
+            </div>
+
+            {/* Cover Banner Upload */}
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="font-bold text-gray-900 mb-1">Cover Banner</div>
+              <div className="text-xs text-gray-500 mb-3">Wide image (e.g. 1920x1080). Used for card background and hero.</div>
+              {eventData?.bannerUrl && (
+                <img src={eventData.bannerUrl} alt="Cover Banner" className="w-32 h-16 object-cover bg-white rounded shadow-sm mb-3 border border-gray-200" />
+              )}
+              <div className="flex gap-2">
+                <input
+                  id="cover-banner-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setCoverBannerFile(e.target.files?.[0] || null)}
+                  className="flex-1 text-sm block w-full text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300"
+                />
+                <button
+                  className="btn"
+                  onClick={() => handleMediaUpload('banner')}
+                  disabled={!coverBannerFile || uploadingCover}
+                >
+                  {uploadingCover ? 'Uploading...' : 'Upload'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <h3 className="font-bold text-gray-900 mb-3">Carousel Banners ({banners.length})</h3>
+
           {/* Banner Upload */}
           <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-            <div className="subtle mb-2 font-medium text-sm">Upload New Banner</div>
+            <div className="subtle mb-2 font-medium text-sm">Upload New Carousel Banner</div>
             <div className="flex flex-col sm:flex-row gap-2">
               <input
                 id="banner-upload"
                 type="file"
                 accept="image/*"
                 onChange={(e) => setBannerFile(e.target.files?.[0] || null)}
-                className="flex-1 text-sm"
+                className="flex-1 text-sm block w-full text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300"
               />
               <button
                 className="btn w-full sm:w-auto"

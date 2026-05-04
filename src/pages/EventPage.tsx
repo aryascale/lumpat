@@ -37,10 +37,11 @@ interface EventData {
   latitude?: number;
   longitude?: number;
   gpxFile?: string;
-  categories: string[];
   isActive: boolean;
   cutoffMs?: number | null;
   categoryStartTimes?: Record<string, string> | null;
+  logoUrl?: string | null;
+  bannerUrl?: string | null;
 }
 
 interface Banner {
@@ -461,24 +462,24 @@ export default function EventPage() {
     );
   }
 
-  // Get first banner as main logo/image
-  const mainBanner = banners.length > 0 ? banners[0] : null;
+  // Fallback to first carousel banner if cover banner is missing
+  const coverImageUrl = event.bannerUrl || (banners.length > 0 ? banners[0].imageUrl : '');
 
   return (
     <>
       <Navbar />
       <div className="event-page bg-stone-50 min-h-screen">
         {/* Parallax Hero Header */}
-        <div className="relative w-full h-[450px] bg-stone-900 bg-fixed bg-center bg-cover overflow-hidden" style={{ backgroundImage: `url(${mainBanner?.imageUrl || ''})` }}>
+        <div className="relative w-full h-[450px] bg-stone-900 bg-fixed bg-center bg-cover overflow-hidden" style={{ backgroundImage: coverImageUrl ? `url(${coverImageUrl})` : 'none' }}>
           <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-900/80 to-transparent"></div>
           
           <div className="absolute bottom-0 left-0 w-full p-8 md:p-12 max-w-7xl mx-auto flex flex-col md:flex-row gap-8 items-end justify-between z-10">
             <div className="flex items-end gap-6 w-full">
-              {mainBanner ? (
-                <img src={mainBanner.imageUrl} alt={event.name} className="w-32 h-32 md:w-48 md:h-48 object-cover border-4 border-white shadow-2xl bg-white" />
+              {event.logoUrl ? (
+                <img src={event.logoUrl} alt={event.name} className="w-32 h-32 md:w-48 md:h-48 object-contain border-4 border-white shadow-2xl bg-white" />
               ) : (
-                <div className="w-32 h-32 md:w-48 md:h-48 border-4 border-stone-800 bg-stone-900 shadow-2xl flex items-center justify-center">
-                  <span className="text-stone-700 font-bold uppercase tracking-widest text-xs">Event Logo</span>
+                <div className="w-32 h-32 md:w-48 md:h-48 border-4 border-stone-800 bg-stone-900 shadow-2xl flex items-center justify-center text-center p-2">
+                  <span className="text-stone-700 font-bold uppercase tracking-widest text-xs">No Logo</span>
                 </div>
               )}
               <div className="flex-1 pb-2">

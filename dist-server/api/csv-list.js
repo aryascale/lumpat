@@ -1,4 +1,4 @@
-import { listCsvMetadata } from '../src/lib/fileStorage.js';
+import { listCsvMetadata } from '../src/lib/fileStorage';
 const CORS_HEADERS = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',

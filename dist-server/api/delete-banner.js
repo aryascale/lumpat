@@ -1,34 +1,30 @@
-import prisma from '../src/lib/prisma.js';
-import { deleteFileByUrl } from '../src/lib/fileStorage.js';
-const CORS_HEADERS = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-};
+import { query } from '../src/lib/db';
+import { deleteFileByUrl } from '../src/lib/fileStorage';
+import { successResponse, errorResponse, CORS_HEADERS } from '../src/lib/api-utils';
 export default async function handler(event) {
     if (event.httpMethod === 'OPTIONS')
         return { statusCode: 200, headers: CORS_HEADERS, body: '' };
     if (event.httpMethod !== 'DELETE')
-        return { statusCode: 405, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Method not allowed' }) };
+        return errorResponse('Method not allowed', 405);
     try {
         const bannerId = event.queryStringParameters?.bannerId;
         const imageUrl = event.queryStringParameters?.imageUrl;
         if (!bannerId)
-            return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'bannerId is required' }) };
+            return errorResponse('bannerId is required', 400);
         if (!imageUrl)
-            return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'imageUrl is required' }) };
-        const banner = await prisma.banner.findUnique({ where: { id: bannerId } });
-        if (!banner)
-            return { statusCode: 404, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Banner not found' }) };
-        await prisma.banner.delete({ where: { id: bannerId } });
+            return errorResponse('imageUrl is required', 400);
+        const banners = await query('SELECT * FROM Banner WHERE id = ? LIMIT 1', [bannerId]);
+        if (banners.length === 0)
+            return errorResponse('Banner not found', 404);
+        await query('DELETE FROM Banner WHERE id = ?', [bannerId]);
         try {
             await deleteFileByUrl(imageUrl);
         }
         catch { }
-        return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify({ success: true }) };
+        return successResponse({ success: true });
     }
     catch (error) {
-        return { statusCode: 500, headers: CORS_HEADERS, body: JSON.stringify({ error: error.message || 'Internal server error' }) };
+        console.error('[DELETE-BANNER] Error:', error);
+        return errorResponse(error.message || 'Internal server error');
     }
 }

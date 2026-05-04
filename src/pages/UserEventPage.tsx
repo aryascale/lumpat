@@ -12,6 +12,7 @@ interface Event {
   categories?: string[];
   status?: 'upcoming' | 'ongoing' | 'completed';
   isActive?: boolean;
+  bannerUrl?: string;
 }
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
@@ -253,7 +254,7 @@ export default function UserEventPage() {
                   {filtered.map((event, i) => {
                     const status = event.status || 'upcoming';
                     const colors = STATUS_COLORS[status] || STATUS_COLORS.upcoming;
-                    const img = PLACEHOLDER_IMAGES[i % PLACEHOLDER_IMAGES.length];
+                    const img = event.bannerUrl || PLACEHOLDER_IMAGES[i % PLACEHOLDER_IMAGES.length];
                     return (
                       <div key={event.id} onClick={() => handleView(event.slug)}
                         className="group bg-white rounded-2xl overflow-hidden border border-gray-100 hover:border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer"

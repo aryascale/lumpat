@@ -1,27 +1,19 @@
-import prisma from '../src/lib/prisma.js';
-const CORS_HEADERS = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-};
+import { query } from '../src/lib/db';
+import { successResponse, errorResponse, CORS_HEADERS } from '../src/lib/api-utils';
 export default async function handler(event) {
-    if (event.httpMethod === 'OPTIONS') {
+    if (event.httpMethod === 'OPTIONS')
         return { statusCode: 200, headers: CORS_HEADERS, body: '' };
-    }
-    if (event.httpMethod !== 'GET') {
-        return { statusCode: 405, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Method not allowed' }) };
-    }
+    if (event.httpMethod !== 'GET')
+        return errorResponse('Method not allowed', 405);
     try {
         const eventId = event.queryStringParameters?.eventId;
-        const where = eventId ? { eventId } : {};
-        const banners = await prisma.banner.findMany({
-            where,
-            orderBy: { order: 'asc' },
-        });
-        return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify(banners) };
+        const banners = eventId
+            ? await query('SELECT * FROM Banner WHERE eventId = ? ORDER BY `order` ASC', [eventId])
+            : await query('SELECT * FROM Banner ORDER BY `order` ASC');
+        return successResponse(banners);
     }
     catch (error) {
-        return { statusCode: 500, headers: CORS_HEADERS, body: JSON.stringify({ error: error.message || 'Internal server error' }) };
+        console.error('[BANNERS] Error:', error);
+        return errorResponse(error.message || 'Internal server error');
     }
 }

@@ -1,4 +1,4 @@
-import { uploadCsvFile } from '../src/lib/fileStorage.js';
+import { uploadCsvFile } from '../src/lib/fileStorage';
 const CORS_HEADERS = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',

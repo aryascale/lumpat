@@ -22,6 +22,8 @@ model Event {
   isActive           Boolean    @default(true)
   cutoffMs           Int?       // Cut off time in milliseconds (null = disabled)
   categoryStartTimes Json?      // JSON object: { "10K Laki-laki": "2025-11-23 07:00:00.000", ... }
+  logoUrl            String?
+  bannerUrl          String?
   categories         Category[]
   banners            Banner[]
   registrations      EventRegistration[]

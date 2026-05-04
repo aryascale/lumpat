@@ -1,187 +1,143 @@
-import prisma from '../src/lib/prisma.js';
+import { query } from '../src/lib/db';
+import { successResponse, errorResponse, parseBody, CORS_HEADERS } from '../src/lib/api-utils';
 function formatEvent(event) {
     return {
         id: event.id,
         name: event.name,
         slug: event.slug,
         description: event.description || '',
-        eventDate: event.eventDate.toISOString(),
+        eventDate: event.eventDate instanceof Date ? event.eventDate.toISOString() : event.eventDate,
         location: event.location || '',
         latitude: event.latitude || undefined,
         longitude: event.longitude || undefined,
         status: event.status || 'upcoming',
         gpxFile: event.gpxFile || undefined,
-        isActive: event.isActive,
-        categories: event.categories.map((c) => c.name),
-        createdAt: event.createdAt.getTime(),
-        cutoffMs: event.cutoffMs ?? null,
-        categoryStartTimes: event.categoryStartTimes ?? null,
+        isActive: !!event.isActive,
+        categories: event._categories || [],
+        createdAt: event.createdAt instanceof Date ? event.createdAt.getTime() : event.createdAt,
     };
 }
-const CORS_HEADERS = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-};
-function parseBody(event) {
-    if (!event.body)
-        return null;
-    return event.isBase64Encoded
-        ? JSON.parse(Buffer.from(event.body, 'base64').toString())
-        : JSON.parse(event.body);
-}
-function resolveCoordinate(value) {
-    if (value === null || value === undefined || value === '')
-        return null;
-    return parseFloat(value);
-}
-async function tryGeocode(location) {
-    try {
-        const { geocodeLocation } = await import('../src/lib/geocoding.js');
-        return await geocodeLocation(location);
-    }
-    catch {
-        return null;
-    }
-}
-async function generateUniqueSlug(name) {
-    const baseSlug = name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '');
-    let slug = baseSlug;
-    let counter = 1;
-    let existing = await prisma.event.findUnique({ where: { slug } });
-    while (existing) {
-        slug = `${baseSlug}-${counter}`;
-        counter++;
-        existing = await prisma.event.findUnique({ where: { slug } });
-    }
-    return slug;
-}
-export default async function handler(event) {
-    if (event.httpMethod === 'OPTIONS') {
+export default async function handler(req) {
+    if (req.httpMethod === 'OPTIONS')
         return { statusCode: 200, headers: CORS_HEADERS, body: '' };
-    }
     try {
-        if (event.httpMethod === 'GET') {
-            const eventId = event.queryStringParameters?.eventId;
+        const eventId = req.queryStringParameters?.eventId;
+        if (req.httpMethod === 'GET') {
             if (eventId) {
-                let record = await prisma.event.findUnique({
-                    where: { id: eventId },
-                    include: { categories: { orderBy: { order: 'asc' } } },
-                });
-                if (!record) {
-                    record = await prisma.event.findUnique({
-                        where: { slug: eventId },
-                        include: { categories: { orderBy: { order: 'asc' } } },
-                    });
-                }
-                if (!record) {
-                    return { statusCode: 404, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Event not found' }) };
-                }
-                return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify(formatEvent(record)) };
+                const events = await query('SELECT * FROM Event WHERE id = ? OR slug = ? LIMIT 1', [eventId, eventId]);
+                if (events.length === 0)
+                    return errorResponse('Event not found', 404);
+                const categories = await query('SELECT * FROM Category WHERE eventId = ? ORDER BY `order` ASC', [events[0].id]);
+                events[0]._categories = categories.map((c) => c.name);
+                return successResponse(formatEvent(events[0]));
             }
-            const events = await prisma.event.findMany({
-                include: { categories: { orderBy: { order: 'asc' } } },
-                orderBy: { createdAt: 'desc' },
-            });
-            return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify(events.map(formatEvent)) };
+            const events = await query('SELECT * FROM Event ORDER BY createdAt DESC');
+            if (events.length > 0) {
+                const eventIds = events.map((e) => e.id);
+                const placeholders = eventIds.map(() => '?').join(',');
+                const categories = await query(`SELECT eventId, name FROM Category WHERE eventId IN (${placeholders}) ORDER BY \`order\` ASC`, eventIds);
+                const catMap = new Map();
+                categories.forEach((c) => {
+                    if (!catMap.has(c.eventId))
+                        catMap.set(c.eventId, []);
+                    catMap.get(c.eventId).push(c.name);
+                });
+                for (const event of events) {
+                    event._categories = catMap.get(event.id) || [];
+                }
+            }
+            return successResponse(events.map(formatEvent));
         }
-        if (event.httpMethod === 'POST') {
-            const body = parseBody(event);
-            if (!body)
-                return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Missing request body' }) };
-            const { name, description, eventDate, location, latitude, longitude, isActive, categories } = body;
+        if (req.httpMethod === 'POST') {
+            const { name, description, eventDate, location, latitude, longitude, isActive, categories } = parseBody(req);
             if (!name || !eventDate)
-                return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Name and eventDate are required' }) };
-            let finalLat = resolveCoordinate(latitude);
-            let finalLon = resolveCoordinate(longitude);
-            if ((finalLat === null || finalLon === null) && location?.trim()) {
-                const coords = await tryGeocode(location);
-                if (coords) {
-                    finalLat = finalLat ?? coords.latitude;
-                    finalLon = finalLon ?? coords.longitude;
-                }
+                return errorResponse('Name and eventDate are required', 400);
+            const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+            let slug = baseSlug;
+            let counter = 1;
+            let existing = await query('SELECT id FROM Event WHERE slug = ? LIMIT 1', [slug]);
+            while (existing.length > 0) {
+                slug = `${baseSlug}-${counter++}`;
+                existing = await query('SELECT id FROM Event WHERE slug = ? LIMIT 1', [slug]);
             }
-            const slug = await generateUniqueSlug(name);
+            const eventIdNew = crypto.randomUUID();
+            await query('INSERT INTO Event (id, name, slug, description, eventDate, location, latitude, longitude, isActive, status, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())', [eventIdNew, name, slug, description || null, new Date(eventDate), location || null, latitude || null, longitude || null, isActive ?? true, 'upcoming']);
             const defaultCategories = categories || ['10K Laki-laki', '10K Perempuan', '5K Laki-Laki', '5K Perempuan'];
-            const newEvent = await prisma.event.create({
-                data: {
-                    name,
-                    slug,
-                    description,
-                    eventDate: new Date(eventDate),
-                    location,
-                    latitude: finalLat,
-                    longitude: finalLon,
-                    isActive: isActive !== undefined ? isActive : true,
-                    categories: {
-                        create: defaultCategories.map((name, order) => ({ name, order })),
-                    },
-                },
-                include: { categories: { orderBy: { order: 'asc' } } },
-            });
-            return { statusCode: 201, headers: CORS_HEADERS, body: JSON.stringify(formatEvent(newEvent)) };
-        }
-        if (event.httpMethod === 'PUT') {
-            const eventId = event.queryStringParameters?.eventId;
-            if (!eventId)
-                return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'eventId is required' }) };
-            const body = parseBody(event);
-            if (!body)
-                return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Missing request body' }) };
-            const { name, description, eventDate, location, latitude, longitude, isActive, status, gpxFile } = body;
-            let finalLat = latitude !== undefined ? resolveCoordinate(latitude) : undefined;
-            let finalLon = longitude !== undefined ? resolveCoordinate(longitude) : undefined;
-            if (location !== undefined && finalLat === undefined && finalLon === undefined) {
-                const currentEvent = await prisma.event.findUnique({
-                    where: { id: eventId },
-                    select: { location: true },
-                });
-                if (currentEvent && currentEvent.location !== location) {
-                    if (location?.trim()) {
-                        const coords = await tryGeocode(location);
-                        if (coords) {
-                            finalLat = coords.latitude;
-                            finalLon = coords.longitude;
-                        }
-                    }
-                    else {
-                        finalLat = null;
-                        finalLon = null;
-                    }
-                }
+            for (let i = 0; i < defaultCategories.length; i++) {
+                await query('INSERT INTO Category (id, name, eventId, `order`, createdAt) VALUES (?, ?, ?, ?, NOW())', [crypto.randomUUID(), defaultCategories[i], eventIdNew, i]);
             }
-            const updatedEvent = await prisma.event.update({
-                where: { id: eventId },
-                data: {
-                    ...(name && { name }),
-                    ...(description !== undefined && { description }),
-                    ...(eventDate && { eventDate: new Date(eventDate) }),
-                    ...(location !== undefined && { location }),
-                    ...(finalLat !== undefined && { latitude: finalLat }),
-                    ...(finalLon !== undefined && { longitude: finalLon }),
-                    ...(isActive !== undefined && { isActive }),
-                    ...(status !== undefined && { status }),
-                    ...(gpxFile !== undefined && { gpxFile }),
-                },
-                include: { categories: { orderBy: { order: 'asc' } } },
-            });
-            return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify(formatEvent(updatedEvent)) };
+            const created = await query('SELECT * FROM Event WHERE id = ? LIMIT 1', [eventIdNew]);
+            const cats = await query('SELECT * FROM Category WHERE eventId = ? ORDER BY `order` ASC', [eventIdNew]);
+            created[0]._categories = cats.map((c) => c.name);
+            return successResponse(formatEvent(created[0]), 201);
         }
-        if (event.httpMethod === 'DELETE') {
-            const eventId = event.queryStringParameters?.eventId;
+        if (req.httpMethod === 'PUT') {
             if (!eventId)
-                return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'eventId is required' }) };
-            await prisma.event.delete({ where: { id: eventId } });
-            return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify({ success: true }) };
+                return errorResponse('eventId is required', 400);
+            const body = parseBody(req);
+            const fields = [];
+            const values = [];
+            if (body.name !== undefined) {
+                fields.push('name = ?');
+                values.push(body.name);
+            }
+            if (body.description !== undefined) {
+                fields.push('description = ?');
+                values.push(body.description);
+            }
+            if (body.eventDate !== undefined) {
+                fields.push('eventDate = ?');
+                values.push(new Date(body.eventDate));
+            }
+            if (body.location !== undefined) {
+                fields.push('location = ?');
+                values.push(body.location);
+            }
+            if (body.latitude !== undefined) {
+                fields.push('latitude = ?');
+                values.push(body.latitude);
+            }
+            if (body.longitude !== undefined) {
+                fields.push('longitude = ?');
+                values.push(body.longitude);
+            }
+            if (body.isActive !== undefined) {
+                fields.push('isActive = ?');
+                values.push(body.isActive);
+            }
+            if (body.status !== undefined) {
+                fields.push('status = ?');
+                values.push(body.status);
+            }
+            if (body.cutoffMs !== undefined) {
+                fields.push('cutoffMs = ?');
+                values.push(body.cutoffMs);
+            }
+            if (body.categoryStartTimes !== undefined) {
+                fields.push('categoryStartTimes = ?');
+                values.push(JSON.stringify(body.categoryStartTimes));
+            }
+            fields.push('updatedAt = NOW()');
+            values.push(eventId);
+            await query(`UPDATE Event SET ${fields.join(', ')} WHERE id = ?`, values);
+            const updated = await query('SELECT * FROM Event WHERE id = ? LIMIT 1', [eventId]);
+            const cats = await query('SELECT * FROM Category WHERE eventId = ? ORDER BY `order` ASC', [eventId]);
+            updated[0]._categories = cats.map((c) => c.name);
+            return successResponse(formatEvent(updated[0]));
         }
-        return { statusCode: 405, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Method not allowed' }) };
+        if (req.httpMethod === 'DELETE') {
+            if (!eventId)
+                return errorResponse('eventId is required', 400);
+            await query('DELETE FROM Category WHERE eventId = ?', [eventId]);
+            await query('DELETE FROM Banner WHERE eventId = ?', [eventId]);
+            await query('DELETE FROM EventRegistration WHERE eventId = ?', [eventId]);
+            await query('DELETE FROM Event WHERE id = ?', [eventId]);
+            return successResponse({ success: true });
+        }
+        return errorResponse('Method not allowed', 405);
     }
     catch (error) {
-        console.error('Events API error:', error);
-        return { statusCode: 500, headers: CORS_HEADERS, body: JSON.stringify({ error: error.message || 'Internal server error' }) };
+        console.error('[EVENTS] Error:', error);
+        return errorResponse(error.message || 'Internal server error');
     }
 }
