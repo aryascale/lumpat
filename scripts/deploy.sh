@@ -8,6 +8,9 @@
 
 set -e
 
+# Navigate to project root relative to script location
+cd "$(dirname "$0")/.."
+
 echo "[1/5] Fetching latest updates from Git repository..."
 git fetch origin
 git reset --hard origin/main
