@@ -37,7 +37,7 @@ function getCsvMetaPath(eventId: string): string {
 
 function filePathToUrl(filePath: string): string {
   const relativePath = filePath.replace(getUploadDir(), '').replace(/\\/g, '/');
-  return `${getBaseUrl()}/uploads${relativePath}`;
+  return `/uploads${relativePath}`;
 }
 
 export async function uploadCsvFile(
