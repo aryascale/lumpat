@@ -15,8 +15,8 @@ export default async function handler(event: any) {
                 c.id as categoryId, c.name as categoryName
          FROM EventRegistration er
          JOIN Category c ON er.categoryId = c.id
-         WHERE er.eventId = ? AND er.paymentStatus = 'settlement'
-         ORDER BY er.paidAt DESC`,
+         WHERE er.eventId = ? AND er.paymentStatus IN ('settlement', 'pending')
+         ORDER BY (CASE WHEN er.paymentStatus = 'settlement' THEN 1 ELSE 2 END), er.createdAt DESC`,
         [eventId]
       );
 

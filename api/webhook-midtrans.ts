@@ -28,6 +28,15 @@ export default async function handler(event: any) {
 
   try {
     const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
+    
+    // PING LOG - TO VERIFY ENDPOINT IS REACHED
+    await query("INSERT INTO ActivityLog (id, action, detail, actor, createdAt) VALUES (?, ?, ?, ?, NOW())", [
+      crypto.randomUUID(),
+      'webhook.ping',
+      `Endpoint hit with method ${event.httpMethod}`,
+      'system'
+    ]);
+
     if (!body) return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Missing body' }) };
 
     const { order_id, status_code, gross_amount, signature_key, transaction_status, payment_type, fraud_status } = body;

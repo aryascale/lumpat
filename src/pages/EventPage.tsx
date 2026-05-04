@@ -179,12 +179,15 @@ export default function EventPage() {
           onPending: () => {
             message.info('Menunggu pembayaran...');
             setRegisterModalOpen(false);
+            if (event?.id) fetchRegisteredParticipants(event.id);
           },
           onError: () => {
             message.error('Pembayaran gagal');
+            if (event?.id) fetchRegisteredParticipants(event.id);
           },
           onClose: () => {
             message.info('Popup pembayaran ditutup');
+            if (event?.id) fetchRegisteredParticipants(event.id);
           },
         });
       } else {
@@ -770,13 +773,17 @@ export default function EventPage() {
                     </thead>
                     <tbody>
                       {registeredParticipants.map((p: any, idx: number) => (
-                        <tr key={p.id} className="border-b border-stone-100 hover:bg-stone-50">
+                        <tr key={p.id} className={`border-b border-stone-100 hover:bg-stone-50 ${p.paymentStatus === 'pending' ? 'opacity-60 grayscale' : ''}`}>
                           <td className="py-3 px-2 font-mono text-stone-400">{idx + 1}</td>
-                          <td className="py-3 px-2 font-bold text-stone-900">{p.name}</td>
+                          <td className="py-3 px-2 font-bold text-stone-900">
+                            {p.name}
+                            {p.paymentStatus === 'pending' && <span className="ml-2 bg-stone-100 text-stone-400 text-[9px] px-1.5 py-0.5 rounded uppercase font-black">Pending</span>}
+                            {p.paymentStatus === 'settlement' && <span className="ml-2 bg-green-100 text-green-600 text-[9px] px-1.5 py-0.5 rounded uppercase font-black">Confirmed</span>}
+                          </td>
                           <td className="py-3 px-2 text-stone-600">{p.category?.name}</td>
                           <td className="py-3 px-2 font-mono text-stone-500">{p.bibName || '-'}</td>
                           <td className="py-3 px-2 text-stone-500">{p.tshirtSize || '-'}</td>
-                          <td className="py-3 px-2 text-stone-400 text-xs">{p.paidAt ? new Date(p.paidAt).toLocaleDateString('id-ID') : '-'}</td>
+                          <td className="py-3 px-2 text-stone-400 text-xs">{p.paidAt ? new Date(p.paidAt).toLocaleDateString('id-ID') : (p.paymentStatus === 'pending' ? 'Menunggu' : '-')}</td>
                         </tr>
                       ))}
                     </tbody>

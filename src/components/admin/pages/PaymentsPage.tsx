@@ -152,11 +152,12 @@ export default function PaymentsPage() {
                     <th style={{ width: 100 }}>Status</th>
                     <th style={{ width: 100 }}>Metode</th>
                     <th style={{ width: 120 }}>Tanggal</th>
+                    <th style={{ width: 100 }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.length === 0 ? (
-                    <tr><td colSpan={8} className="empty">Tidak ada transaksi</td></tr>
+                    <tr><td colSpan={9} className="empty">Tidak ada transaksi</td></tr>
                   ) : (
                     filtered.map(p => (
                       <tr key={p.id} className="row-hover">
@@ -175,6 +176,32 @@ export default function PaymentsPage() {
                         </td>
                         <td className="text-xs text-gray-500">{p.paymentMethod || '-'}</td>
                         <td className="text-xs text-gray-400">{new Date(p.createdAt).toLocaleDateString('id-ID')}</td>
+                        <td>
+                          {p.paymentStatus === 'pending' && (
+                            <button 
+                              className="px-2 py-1 bg-black text-white text-[10px] font-bold uppercase rounded hover:bg-stone-800 transition-colors"
+                              onClick={async () => {
+                                if (confirm(`Selesaikan pembayaran untuk ${p.name} secara manual?`)) {
+                                  try {
+                                    const res = await fetch('/api/admin-settle-payment', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ orderId: p.orderId })
+                                    });
+                                    if (res.ok) {
+                                      alert('Pembayaran diselesaikan');
+                                      loadPayments();
+                                    }
+                                  } catch (e) {
+                                    alert('Gagal menyelesaikan pembayaran');
+                                  }
+                                }
+                              }}
+                            >
+                              Settle
+                            </button>
+                          )}
+                        </td>
                       </tr>
                     ))
                   )}

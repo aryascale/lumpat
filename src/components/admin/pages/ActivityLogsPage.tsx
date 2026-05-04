@@ -12,7 +12,8 @@ export default function ActivityLogsPage() {
   const loadLogs = async () => {
     try {
       setLoading(true);
-      const eventIdParam = currentEvent?.id && currentEvent.id !== 'default' ? `&eventId=${currentEvent.id}` : '';
+      // Show all logs if no specific event is selected or if 'default' is selected
+      const eventIdParam = currentEvent?.id && currentEvent.id !== 'default' && currentEvent.id !== 'all' ? `&eventId=${currentEvent.id}` : '';
       const offset = (page - 1) * limit;
       const res = await fetch(`/api/activity-logs?limit=${limit}&offset=${offset}${eventIdParam}`);
       if (res.ok) {
