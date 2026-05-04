@@ -22,7 +22,7 @@ interface EventContextType {
   setCurrentEvent: (event: Event | null) => void;
   events: Event[];
   setEvents: (events: Event[]) => void;
-  refreshEvents: () => Promise<void>;
+  refreshEvents: (isAdmin?: boolean) => Promise<void>;
   loading: boolean;
 }
 
@@ -33,10 +33,10 @@ export function EventProvider({ children }: { children: ReactNode }) {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const refreshEvents = async () => {
+  const refreshEvents = async (isAdmin = false) => {
     setLoading(true);
     try {
-      const response = await fetch('/api/events');
+      const response = await fetch(`/api/events${isAdmin ? '?showDrafts=true' : ''}`);
       if (!response.ok) throw new Error('Failed to fetch events');
 
       const data = await response.json();

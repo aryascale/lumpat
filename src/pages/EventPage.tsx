@@ -620,8 +620,9 @@ export default function EventPage() {
     );
   }
 
-  // Fallback to first carousel banner if cover banner is missing
-  const coverImageUrl = event.bannerUrl || (banners.length > 0 ? banners[0].imageUrl : '');
+  // Fallback logic for cover banner
+  const hasCover = !!event.bannerUrl && event.bannerUrl.startsWith('http');
+  const coverImageUrl = hasCover ? event.bannerUrl : (banners.length > 0 ? banners[0].imageUrl : '');
 
   return (
     <>
@@ -629,6 +630,11 @@ export default function EventPage() {
       <div className="event-page bg-stone-50 min-h-screen">
         {/* Parallax Hero Header */}
         <div className="relative w-full h-[450px] bg-stone-900 bg-fixed bg-center bg-cover overflow-hidden" style={{ backgroundImage: coverImageUrl ? `url(${coverImageUrl})` : 'none' }}>
+          {!coverImageUrl && (
+            <div className="absolute inset-0 bg-gradient-to-br from-stone-800 via-stone-700 to-stone-900">
+              <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+            </div>
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-900/80 to-transparent"></div>
           
           <div className="absolute bottom-0 left-0 w-full p-8 md:p-12 max-w-7xl mx-auto flex flex-col md:flex-row gap-8 items-end justify-between z-10">
@@ -877,43 +883,68 @@ export default function EventPage() {
                   <label className="block text-xs font-bold text-gray-700 mb-1">Nama Lengkap *</label>
                   <Input placeholder="Nama lengkap" value={regForm.name} onChange={e => updateRegForm('name', e.target.value)} />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Email *</label>
-                  <div className="flex gap-2">
-                    <Input 
-                      placeholder="email@example.com" 
-                      type="email" 
-                      value={regForm.email} 
-                      onChange={e => updateRegForm('email', e.target.value)} 
-                      disabled={emailVerified}
-                    />
-                    {!emailVerified && (
-                      <Button onClick={handleSendOtp} loading={otpLoading} disabled={!regForm.email}>
-                        Kirim Kode
-                      </Button>
-                    )}
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-gray-700 mb-1.5">Email Pendaftar *</label>
+                  <div className="bg-gray-50 p-3 rounded-xl border border-gray-200">
+                    <div className="flex gap-2">
+                      <Input 
+                        placeholder="email@example.com" 
+                        type="email" 
+                        size="large"
+                        className="flex-1"
+                        value={regForm.email} 
+                        onChange={e => updateRegForm('email', e.target.value)} 
+                        disabled={emailVerified || otpLoading}
+                      />
+                      {!emailVerified && (
+                        <Button 
+                          size="large"
+                          type={otpSent ? "default" : "primary"}
+                          onClick={handleSendOtp} 
+                          loading={otpLoading} 
+                          disabled={!regForm.email || !regForm.email.includes('@')}
+                        >
+                          {otpSent ? 'Kirim Ulang' : 'Kirim Kode'}
+                        </Button>
+                      )}
+                    </div>
+                    
                     {emailVerified && (
-                      <div className="flex items-center text-green-600 font-bold px-2">
-                        <svg className="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      <div className="mt-2 flex items-center text-green-600 text-xs font-black uppercase tracking-wider bg-green-50 p-2 rounded-lg border border-green-100">
+                        <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
-                        Terverifikasi
+                        Email Terverifikasi
+                      </div>
+                    )}
+
+                    {otpSent && !emailVerified && (
+                      <div className="mt-3 pt-3 border-t border-gray-200 animate-in fade-in slide-in-from-top-2">
+                        <p className="text-[10px] font-bold text-gray-500 uppercase mb-2">Masukkan 6 Digit Kode OTP</p>
+                        <div className="flex gap-2">
+                          <Input 
+                            placeholder="000000" 
+                            size="large"
+                            className="text-center font-mono tracking-[0.5em] text-lg"
+                            maxLength={6}
+                            value={otpCode}
+                            onChange={e => setOtpCode(e.target.value.replace(/[^0-9]/g, ''))}
+                          />
+                          <Button 
+                            type="primary" 
+                            danger
+                            size="large"
+                            onClick={handleVerifyOtp} 
+                            loading={otpLoading} 
+                            disabled={otpCode.length !== 6}
+                          >
+                            Verifikasi
+                          </Button>
+                        </div>
+                        <p className="text-[10px] text-gray-400 mt-2">Cek kotak masuk atau folder spam email kamu.</p>
                       </div>
                     )}
                   </div>
-                  {otpSent && !emailVerified && (
-                    <div className="mt-2 flex gap-2">
-                      <Input 
-                        placeholder="Masukkan 6 digit OTP" 
-                        maxLength={6}
-                        value={otpCode}
-                        onChange={e => setOtpCode(e.target.value)}
-                      />
-                      <Button type="primary" onClick={handleVerifyOtp} loading={otpLoading} disabled={otpCode.length !== 6}>
-                        Verifikasi
-                      </Button>
-                    </div>
-                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">No. Telepon *</label>

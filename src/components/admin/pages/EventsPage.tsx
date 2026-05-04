@@ -46,6 +46,8 @@ export default function EventsPage({ events, onEventsChange }: EventsPageProps) 
   const [newEventDescription, setNewEventDescription] = useState('');
   const [newEventActive, setNewEventActive] = useState(true);
   const [newEventStatus, setNewEventStatus] = useState<EventStatus>('upcoming');
+  const [newEventIsDraft, setNewEventIsDraft] = useState(false);
+  const [newEventPublishAt, setNewEventPublishAt] = useState('');
 
   // Selected event for detail view
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
@@ -75,6 +77,8 @@ export default function EventsPage({ events, onEventsChange }: EventsPageProps) 
           latitude: newEventLatitude.trim() ? parseFloat(newEventLatitude.trim()) : null,
           longitude: newEventLongitude.trim() ? parseFloat(newEventLongitude.trim()) : null,
           isActive: newEventActive,
+          isDraft: newEventIsDraft,
+          publishAt: newEventPublishAt || null,
           categories: [...CATEGORY_KEYS],
         }),
       });
@@ -94,14 +98,16 @@ export default function EventsPage({ events, onEventsChange }: EventsPageProps) 
       setNewEventLongitude('');
       setNewEventDescription('');
       setNewEventActive(true);
+      setNewEventIsDraft(false);
+      setNewEventPublishAt('');
       setNewEventStatus('upcoming');
       setShowEventForm(false);
 
       // Reload events list
-      const eventsRes = await fetch('/api/events');
+      const eventsRes = await fetch('/api/events?showDrafts=true');
       const eventsData = await eventsRes.json();
       onEventsChange(Array.isArray(eventsData) ? eventsData : []);
-      await refreshEvents();
+      await refreshEvents(true);
 
       alert(`Event "${event.name}" created successfully!`);
     } catch (err: any) {
@@ -126,16 +132,40 @@ export default function EventsPage({ events, onEventsChange }: EventsPageProps) 
       }
 
       // Reload events
-      const eventsRes = await fetch('/api/events');
+      const eventsRes = await fetch('/api/events?showDrafts=true');
       const eventsData = await eventsRes.json();
       onEventsChange(Array.isArray(eventsData) ? eventsData : []);
-      await refreshEvents();
+      await refreshEvents(true);
 
       alert(`Event status updated to "${newStatus}"`);
     } catch (error: any) {
       alert(error.message || 'Failed to update event status');
     } finally {
       setUpdatingStatus(null);
+    }
+  };
+
+  const handleDeleteEvent = async (eventId: string, name: string) => {
+    if (!confirm(`Hapus event "${name}"? Semua data peserta, kategori, dan media akan terhapus permanen.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/events?eventId=${eventId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Failed to delete event');
+
+      // Reload events
+      const eventsRes = await fetch('/api/events?showDrafts=true');
+      const eventsData = await eventsRes.json();
+      onEventsChange(Array.isArray(eventsData) ? eventsData : []);
+      await refreshEvents(true);
+
+      alert(`Event "${name}" berhasil dihapus.`);
+    } catch (error: any) {
+      alert(error.message || 'Failed to delete event');
     }
   };
 
@@ -148,15 +178,17 @@ export default function EventsPage({ events, onEventsChange }: EventsPageProps) 
     setNewEventLongitude("");
     setNewEventDescription("");
     setNewEventActive(true);
+    setNewEventIsDraft(false);
+    setNewEventPublishAt('');
   };
 
   const handleBackFromDetail = async () => {
     setSelectedEvent(null);
     // Refresh events list
-    const eventsRes = await fetch('/api/events');
+    const eventsRes = await fetch('/api/events?showDrafts=true');
     const eventsData = await eventsRes.json();
     onEventsChange(Array.isArray(eventsData) ? eventsData : []);
-    await refreshEvents();
+    await refreshEvents(true);
   };
 
   // Show event detail page if an event is selected
@@ -263,7 +295,7 @@ export default function EventsPage({ events, onEventsChange }: EventsPageProps) 
                   <option value="completed">Completed</option>
                 </select>
               </div>
-              <div className="flex items-end">
+              <div className="flex items-end gap-6">
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -272,7 +304,27 @@ export default function EventsPage({ events, onEventsChange }: EventsPageProps) 
                   />
                   <span className="text-sm">Event is active</span>
                 </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={newEventIsDraft}
+                    onChange={(e) => setNewEventIsDraft(e.target.checked)}
+                  />
+                  <span className="text-sm">Save as Draft</span>
+                </label>
               </div>
+              {newEventIsDraft && (
+                <div>
+                  <label className="block mb-2 font-medium text-sm">Publish Date (Optional)</label>
+                  <input
+                    type="datetime-local"
+                    className="search w-full"
+                    value={newEventPublishAt}
+                    onChange={(e) => setNewEventPublishAt(e.target.value)}
+                  />
+                  <div className="text-[10px] text-gray-500 mt-1">Biarkan kosong untuk publish manual.</div>
+                </div>
+              )}
             </div>
             <div className="flex flex-col sm:flex-row gap-2 mt-4">
               <button className="btn w-full sm:w-auto" onClick={handleCreateEvent}>
@@ -294,6 +346,7 @@ export default function EventsPage({ events, onEventsChange }: EventsPageProps) 
                 <th>Date</th>
                 <th>Location</th>
                 <th>Status</th>
+                <th>Pub</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -331,6 +384,13 @@ export default function EventsPage({ events, onEventsChange }: EventsPageProps) 
                       </select>
                     </td>
                     <td>
+                      {evt.isDraft ? (
+                        <span className="px-2 py-0.5 text-[10px] bg-gray-100 text-gray-600 rounded font-bold uppercase">Draft</span>
+                      ) : (
+                        <span className="px-2 py-0.5 text-[10px] bg-black text-white rounded font-bold uppercase">Live</span>
+                      )}
+                    </td>
+                    <td>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
                         <button
                           className="btn"
@@ -343,6 +403,13 @@ export default function EventsPage({ events, onEventsChange }: EventsPageProps) 
                           onClick={() => window.open(`/event/${evt.slug}`, '_blank')}
                         >
                           View
+                        </button>
+                        <button
+                          className="btn"
+                          style={{ backgroundColor: '#fee2e2', color: '#dc2626', border: 'none' }}
+                          onClick={() => handleDeleteEvent(evt.id, evt.name)}
+                        >
+                          Delete
                         </button>
                       </div>
                     </td>

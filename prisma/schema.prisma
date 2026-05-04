@@ -9,39 +9,41 @@ datasource db {
 }
 
 model Event {
-  id                 String     @id @default(uuid())
+  id                 String              @id @default(uuid())
   name               String
-  slug               String     @unique
+  slug               String              @unique
   description        String?
   eventDate          DateTime
   location           String?
   latitude           Float?
   longitude          Float?
   gpxFile            String?
-  status             String     @default("upcoming")
-  isActive           Boolean    @default(true)
+  status             String              @default("upcoming")
+  isActive           Boolean             @default(true)
   cutoffMs           Int?
   categoryStartTimes Json?
   logoUrl            String?
   bannerUrl          String?
-  tshirtSizes        String?    // Comma-separated sizes e.g. "S,M,L,XL,XXL"
-  bibCustomPrice     Int        @default(0) // Extra charge for custom BIB name (Rp)
-  categories         Category[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  bibCustomPrice     Int                 @default(0)
+  tshirtSizes        String?
+  isDraft            Boolean             @default(false)
+  publishAt          DateTime?
   banners            Banner[]
+  categories         Category[]
   registrations      EventRegistration[]
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @updatedAt
 }
 
 model Category {
-  id            String   @id @default(uuid())
+  id            String              @id @default(uuid())
   name          String
   eventId       String
-  event         Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  order         Int      @default(0)
-  price         Int      @default(0) // Price in Rupiah
+  order         Int                 @default(0)
+  createdAt     DateTime            @default(now())
+  price         Int                 @default(0)
+  event         Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
   registrations EventRegistration[]
-  createdAt     DateTime @default(now())
 
   @@unique([eventId, name])
   @@index([eventId])
@@ -50,12 +52,12 @@ model Category {
 model Banner {
   id        String   @id @default(uuid())
   eventId   String
-  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   imageUrl  String
   alt       String?
   order     Int      @default(0)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@index([eventId])
 }
@@ -76,32 +78,30 @@ model User {
 }
 
 model EventRegistration {
-  id               String   @id @default(uuid())
-  eventId          String
-  event            Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  categoryId       String
-  category         Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  // Participant info (no login required)
-  email            String
-  name             String
-  phoneNumber      String
-  gender           String   // L or P
-  bloodType        String?  // A, B, AB, O
-  emergencyName    String?
-  emergencyPhone   String?
-  tshirtSize       String?
-  bibName          String?  // Custom BIB name (max 12 chars)
-  notes            String?  @db.Text
-  // Payment
-  orderId          String   @unique
-  grossAmount      Int      @default(0)
-  paymentStatus    String   @default("pending") // pending, settlement, expire, cancel
-  paymentMethod    String?
-  snapToken        String?
-  snapUrl          String?
-  paidAt           DateTime?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id             String    @id @default(uuid())
+  eventId        String
+  categoryId     String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  bibName        String?
+  bloodType      String?
+  email          String
+  emergencyName  String?
+  emergencyPhone String?
+  gender         String
+  grossAmount    Int       @default(0)
+  name           String
+  notes          String?   @db.Text
+  orderId        String    @unique
+  paidAt         DateTime?
+  paymentMethod  String?
+  paymentStatus  String    @default("pending")
+  phoneNumber    String
+  snapToken      String?
+  snapUrl        String?
+  tshirtSize     String?
+  category       Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  event          Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@unique([email, eventId])
   @@index([eventId])

@@ -13,11 +13,13 @@ function formatEvent(event: any) {
     longitude: event.longitude || undefined,
     status: event.status || 'upcoming',
     gpxFile: event.gpxFile || undefined,
-    logoUrl: event.logoUrl || undefined,
-    bannerUrl: event.bannerUrl || undefined,
+    logoUrl: (event.logoUrl && event.logoUrl !== 'null') ? event.logoUrl : undefined,
+    bannerUrl: (event.bannerUrl && event.bannerUrl !== 'null') ? event.bannerUrl : undefined,
     tshirtSizes: event.tshirtSizes || null,
     bibCustomPrice: event.bibCustomPrice || 0,
     isActive: !!event.isActive,
+    isDraft: !!event.isDraft,
+    publishAt: event.publishAt instanceof Date ? event.publishAt.toISOString() : event.publishAt,
     categories: event._categories || [],
     createdAt: event.createdAt instanceof Date ? event.createdAt.getTime() : event.createdAt,
   };
@@ -32,10 +34,20 @@ export default async function handler(req: any) {
     if (req.httpMethod === 'GET') {
       if (eventId) {
         const events: any = await query(
-          'SELECT * FROM Event WHERE id = ? OR slug = ? LIMIT 1',
+          'SELECT * FROM Event WHERE (id = ? OR slug = ?) LIMIT 1',
           [eventId, eventId]
         );
         if (events.length === 0) return errorResponse('Event not found', 404);
+        
+        // Hide if draft and not admin request
+        const showDrafts = req.queryStringParameters?.showDrafts === 'true';
+        const isDraft = !!events[0].isDraft;
+        const publishAt = events[0].publishAt ? new Date(events[0].publishAt) : null;
+        const isPublished = !isDraft || (publishAt && publishAt <= new Date());
+        
+        if (!showDrafts && !isPublished) {
+          return errorResponse('Event not found', 404);
+        }
 
         const categories: any = await query(
           'SELECT * FROM Category WHERE eventId = ? ORDER BY `order` ASC',
@@ -45,9 +57,16 @@ export default async function handler(req: any) {
         return successResponse(formatEvent(events[0]));
       }
 
-      const events: any = await query(
-        'SELECT * FROM Event ORDER BY createdAt DESC'
-      );
+      const showDrafts = req.queryStringParameters?.showDrafts === 'true';
+      let events: any[];
+      
+      if (showDrafts) {
+        events = await query('SELECT * FROM Event ORDER BY createdAt DESC');
+      } else {
+        events = await query(
+          'SELECT * FROM Event WHERE isDraft = false OR (publishAt IS NOT NULL AND publishAt <= NOW()) ORDER BY createdAt DESC'
+        );
+      }
 
       if (events.length > 0) {
         const eventIds = events.map((e: any) => e.id);
@@ -72,7 +91,7 @@ export default async function handler(req: any) {
     }
 
     if (req.httpMethod === 'POST') {
-      const { name, description, eventDate, location, latitude, longitude, isActive, categories } = parseBody(req);
+      const { name, description, eventDate, location, latitude, longitude, isActive, isDraft, publishAt, categories } = parseBody(req);
       if (!name || !eventDate) return errorResponse('Name and eventDate are required', 400);
 
       const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -86,8 +105,8 @@ export default async function handler(req: any) {
 
       const eventIdNew = crypto.randomUUID();
       await query(
-        'INSERT INTO Event (id, name, slug, description, eventDate, location, latitude, longitude, isActive, status, logoUrl, bannerUrl, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
-        [eventIdNew, name, slug, description || null, new Date(eventDate), location || null, latitude || null, longitude || null, isActive ?? true, 'upcoming', null, null]
+        'INSERT INTO Event (id, name, slug, description, eventDate, location, latitude, longitude, isActive, isDraft, publishAt, status, logoUrl, bannerUrl, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
+        [eventIdNew, name, slug, description || null, new Date(eventDate), location || null, latitude || null, longitude || null, isActive ?? true, isDraft ?? false, publishAt ? new Date(publishAt) : null, 'upcoming', null, null]
       );
 
       const defaultCategories = categories || ['10K Laki-laki', '10K Perempuan', '5K Laki-Laki', '5K Perempuan'];
@@ -119,6 +138,8 @@ export default async function handler(req: any) {
       if (body.latitude !== undefined) { fields.push('latitude = ?'); values.push(body.latitude); }
       if (body.longitude !== undefined) { fields.push('longitude = ?'); values.push(body.longitude); }
       if (body.isActive !== undefined) { fields.push('isActive = ?'); values.push(body.isActive); }
+      if (body.isDraft !== undefined) { fields.push('isDraft = ?'); values.push(body.isDraft); }
+      if (body.publishAt !== undefined) { fields.push('publishAt = ?'); values.push(body.publishAt ? new Date(body.publishAt) : null); }
       if (body.status !== undefined) { fields.push('status = ?'); values.push(body.status); }
       if (body.logoUrl !== undefined) { fields.push('logoUrl = ?'); values.push(body.logoUrl); }
       if (body.bannerUrl !== undefined) { fields.push('bannerUrl = ?'); values.push(body.bannerUrl); }

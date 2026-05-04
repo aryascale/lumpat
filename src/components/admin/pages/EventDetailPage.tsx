@@ -39,7 +39,7 @@ function formatNowAsTimestamp(): string {
 }
 
 export default function EventDetailPage({ eventId, eventSlug, eventName, onBack }: EventDetailPageProps) {
-  const [activeTab, setActiveTab] = useState<'data' | 'banners' | 'categories' | 'route' | 'timing' | 'dq' | 'certified'>('data');
+  const [activeTab, setActiveTab] = useState<'data' | 'banners' | 'categories' | 'route' | 'timing' | 'dq' | 'certified' | 'settings'>('data');
   const [csvMeta, setCsvMeta] = useState<Array<{ key: CsvKind; filename: string; updatedAt: number; rows: number }>>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [categories, setCategories] = useState<Array<{ name: string; price: number }>>([]);
@@ -782,6 +782,12 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           onClick={() => setActiveTab('certified')}
         >
           Certified {certData.hasCertificate ? '✓' : ''}
+        </button>
+        <button
+          className={`detail-tab whitespace-nowrap ${activeTab === 'settings' ? 'active' : ''}`}
+          onClick={() => setActiveTab('settings')}
+        >
+          Settings ⚙️
         </button>
       </div>
 
@@ -1716,6 +1722,109 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           </div>
         </div>
       )}
+
+      {/* Settings Tab */}
+      {activeTab === 'settings' && (
+        <div className="card">
+          <div className="header-row mb-6">
+            <div>
+              <h2 className="section-title">Event Status & Schedule</h2>
+              <div className="subtle">Kelola status publikasi dan jadwal rilis event.</div>
+            </div>
+            <button 
+              className="btn" 
+              onClick={async () => {
+                try {
+                  const res = await fetch(`/api/events?eventId=${eventId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                      isDraft: eventData.isDraft, 
+                      publishAt: eventData.publishAt 
+                    }),
+                  });
+                  if (res.ok) alert('Settings saved!');
+                  else alert('Failed to save settings');
+                } catch {
+                  alert('Failed to save settings');
+                }
+              }}
+            >
+              Save Settings
+            </button>
+          </div>
+
+          <div className="space-y-6">
+            <div className="admin-cutoff">
+              <div className="label">Publication Status</div>
+              <div className="tools">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={eventData?.isDraft}
+                    onChange={(e) => setEventData({ ...eventData, isDraft: e.target.checked })}
+                    className="w-5 h-5"
+                  />
+                  <div className="flex flex-col">
+                    <span className="font-bold text-gray-900">{eventData?.isDraft ? 'Draft Mode' : 'Live Mode'}</span>
+                    <span className="text-xs text-gray-500">
+                      {eventData?.isDraft 
+                        ? 'Event disembunyikan dari halaman publik dan pendaftaran ditutup.' 
+                        : 'Event tampil di halaman publik dan pendaftaran dibuka.'}
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {eventData?.isDraft && (
+              <div className="admin-cutoff">
+                <div className="label">Scheduled Publication</div>
+                <div className="tools">
+                  <input
+                    type="datetime-local"
+                    className="search w-full"
+                    value={eventData?.publishAt ? new Date(new Date(eventData.publishAt).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16) : ''}
+                    onChange={(e) => setEventData({ ...eventData, publishAt: e.target.value || null })}
+                  />
+                  <div className="text-xs text-gray-500 mt-2">
+                    Event akan otomatis dipublish pada waktu yang ditentukan di atas. Biarkan kosong untuk publikasi manual.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-12 pt-12 border-t border-red-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-red-600 font-bold">Danger Zone</h3>
+                  <div className="text-sm text-gray-500">Hapus event secara permanen. Tindakan ini tidak dapat dibatalkan.</div>
+                </div>
+                <button 
+                  className="btn" 
+                  style={{ backgroundColor: '#fee2e2', color: '#dc2626', border: 'none' }}
+                  onClick={async () => {
+                    if (confirm(`Hapus event "${eventName}"? Semua data akan hilang permanen.`)) {
+                      try {
+                        const res = await fetch(`/api/events?eventId=${eventId}`, { method: 'DELETE' });
+                        if (res.ok) {
+                          alert('Event deleted');
+                          onBack();
+                        }
+                      } catch {
+                        alert('Failed to delete');
+                      }
+                    }
+                  }}
+                >
+                  Delete Event
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         .event-detail-page {
           padding: 0;

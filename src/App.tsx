@@ -1,5 +1,5 @@
 
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import UserEventPage from "./pages/UserEventPage";
 import HomePage from "./pages/HomePage";
@@ -38,6 +38,7 @@ export default function App() {
 
         {/* New Admin Routes with Layout */}
         <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Navigate to="overview" replace />} />
           <Route path="overview" element={<OverviewPageWrapper />} />
           <Route path="events" element={<EventsPageWrapper />} />
           <Route path="banners" element={<BannersPageWrapper />} />

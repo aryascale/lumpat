@@ -8,13 +8,17 @@ export default function EventsPageWrapper() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    refreshEvents(true);
+  }, []);
+
+  useEffect(() => {
     setEventsData(events);
     setLoading(false);
   }, [events]);
 
   const handleEventsChange = (newEvents: any[]) => {
     setEventsData(newEvents);
-    refreshEvents();
+    refreshEvents(true);
   };
 
   if (loading) {

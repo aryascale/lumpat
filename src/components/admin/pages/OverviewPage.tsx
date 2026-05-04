@@ -56,21 +56,21 @@ export default function OverviewPage({ eventId, onConfigChanged }: OverviewPageP
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-          <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
-            <div className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1">Total Revenue</div>
-            <div className="text-2xl font-black text-indigo-900">Rp {(dashboardData?.totalRevenue || 0).toLocaleString('id-ID')}</div>
+          <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+            <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total Revenue</div>
+            <div className="text-2xl font-black text-gray-900">Rp {(dashboardData?.totalRevenue || 0).toLocaleString('id-ID')}</div>
           </div>
-          <div className="bg-green-50 border border-green-100 rounded-xl p-4">
-            <div className="text-xs font-bold text-green-600 uppercase tracking-wider mb-1">Peserta (Paid)</div>
-            <div className="text-2xl font-black text-green-900">{dashboardData?.totalParticipants || 0}</div>
+          <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+            <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Peserta (Paid)</div>
+            <div className="text-2xl font-black text-gray-900">{dashboardData?.totalParticipants || 0}</div>
           </div>
-          <div className="bg-yellow-50 border border-yellow-100 rounded-xl p-4">
-            <div className="text-xs font-bold text-yellow-600 uppercase tracking-wider mb-1">Pending</div>
-            <div className="text-2xl font-black text-yellow-900">{dashboardData?.paymentStatus?.pending || 0}</div>
+          <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+            <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Pending</div>
+            <div className="text-2xl font-black text-gray-900">{dashboardData?.paymentStatus?.pending || 0}</div>
           </div>
-          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-            <div className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">Total Events</div>
-            <div className="text-2xl font-black text-blue-900">{dashboardData?.totalEvents || events.length}</div>
+          <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+            <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total Events</div>
+            <div className="text-2xl font-black text-gray-900">{dashboardData?.totalEvents || events.length}</div>
           </div>
         </div>
       </div>
@@ -103,9 +103,9 @@ export default function OverviewPage({ eventId, onConfigChanged }: OverviewPageP
                     </td>
                     <td className="py-3">
                       <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-full ${
-                        reg.paymentStatus === 'settlement' ? 'bg-green-100 text-green-700' :
-                        reg.paymentStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-red-100 text-red-700'
+                        reg.paymentStatus === 'settlement' ? 'bg-gray-900 text-white' :
+                        reg.paymentStatus === 'pending' ? 'bg-gray-200 text-gray-700' :
+                        'bg-gray-100 text-gray-400'
                       }`}>
                         {reg.paymentStatus}
                       </span>
@@ -131,9 +131,9 @@ export default function OverviewPage({ eventId, onConfigChanged }: OverviewPageP
           </div>
           <div className="space-y-4">
             {[
-              { label: 'Settlement (Lunas)', count: dashboardData?.paymentStatus?.settlement || 0, color: 'bg-green-500' },
-              { label: 'Pending (Belum Bayar)', count: dashboardData?.paymentStatus?.pending || 0, color: 'bg-yellow-500' },
-              { label: 'Expire / Cancel', count: (dashboardData?.paymentStatus?.expire || 0) + (dashboardData?.paymentStatus?.cancel || 0), color: 'bg-red-500' },
+              { label: 'Settlement (Lunas)', count: dashboardData?.paymentStatus?.settlement || 0, color: 'bg-gray-900' },
+              { label: 'Pending (Belum Bayar)', count: dashboardData?.paymentStatus?.pending || 0, color: 'bg-gray-400' },
+              { label: 'Expire / Cancel', count: (dashboardData?.paymentStatus?.expire || 0) + (dashboardData?.paymentStatus?.cancel || 0), color: 'bg-gray-200' },
             ].map(stat => {
               const total = Object.values(dashboardData?.paymentStatus || {}).reduce((a: any, b: any) => a + b, 0) as number;
               const percent = total > 0 ? Math.round((stat.count / total) * 100) : 0;
