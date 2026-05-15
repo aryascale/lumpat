@@ -21,9 +21,16 @@ cd docker || exit 1
 echo "[3/5] Rebuilding and starting containers..."
 docker compose up -d --build
 
-echo "[4/5] Waiting for database..."
-# Wait a few seconds to ensure MySQL is ready
-sleep 5
+echo "[4/5] Waiting for database to be ready..."
+# Wait for MySQL to respond on its port inside the network
+for i in {1..30}; do
+  if docker exec lumpat-app nc -z mysql 3306; then
+    echo "Database is up and running!"
+    break
+  fi
+  echo "Waiting for database... ($i/30)"
+  sleep 2
+done
 
 echo "[5/5] Synchronizing database schema..."
 docker exec lumpat-app npx prisma db push --accept-data-loss

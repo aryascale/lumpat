@@ -4,7 +4,7 @@ FROM node:22-alpine
 WORKDIR /app
 
 # Install build dependencies
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache python3 make g++ netcat-openbsd
 
 # Copy package files
 COPY package*.json ./
