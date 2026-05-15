@@ -1,7 +1,15 @@
 import { query } from '../src/lib/db';
 import { successResponse, errorResponse, parseBody, CORS_HEADERS } from '../src/lib/api-utils';
+import { logActivity } from '../src/lib/activity-logger';
+import crypto from 'crypto';
 
 function formatEvent(event: any) {
+  let content = null;
+  if (event.content) {
+    try {
+      content = typeof event.content === 'string' ? JSON.parse(event.content) : event.content;
+    } catch { content = null; }
+  }
   return {
     id: event.id,
     name: event.name,
@@ -15,12 +23,15 @@ function formatEvent(event: any) {
     gpxFile: event.gpxFile || undefined,
     logoUrl: (event.logoUrl && event.logoUrl !== 'null') ? event.logoUrl : undefined,
     bannerUrl: (event.bannerUrl && event.bannerUrl !== 'null') ? event.bannerUrl : undefined,
+    homeImageUrl: (event.homeImageUrl && event.homeImageUrl !== 'null') ? event.homeImageUrl : undefined,
     tshirtSizes: event.tshirtSizes || null,
     bibCustomPrice: event.bibCustomPrice || 0,
     isActive: !!event.isActive,
     isDraft: !!event.isDraft,
     publishAt: event.publishAt instanceof Date ? event.publishAt.toISOString() : event.publishAt,
     categories: event._categories || [],
+    content,
+    participantCount: event.participantCount || 0,
     createdAt: event.createdAt instanceof Date ? event.createdAt.getTime() : event.createdAt,
   };
 }
@@ -34,7 +45,10 @@ export default async function handler(req: any) {
     if (req.httpMethod === 'GET') {
       if (eventId) {
         const events: any = await query(
-          'SELECT * FROM Event WHERE (id = ? OR slug = ?) LIMIT 1',
+          `SELECT e.*, 
+            (SELECT COUNT(*) FROM EventRegistration WHERE eventId = e.id AND paymentStatus = 'settlement') as participantCount 
+           FROM Event e 
+           WHERE (e.id = ? OR e.slug = ?) LIMIT 1`,
           [eventId, eventId]
         );
         if (events.length === 0) return errorResponse('Event not found', 404);
@@ -58,18 +72,27 @@ export default async function handler(req: any) {
       }
 
       const showDrafts = req.queryStringParameters?.showDrafts === 'true';
-      let events: any[];
+      let allEvents: any[];
       
       if (showDrafts) {
-        events = await query('SELECT * FROM Event ORDER BY createdAt DESC');
+        allEvents = await query(`
+          SELECT e.*, 
+            (SELECT COUNT(*) FROM EventRegistration WHERE eventId = e.id AND paymentStatus = 'settlement') as participantCount 
+          FROM Event e 
+          ORDER BY e.createdAt DESC
+        `) as any[];
       } else {
-        events = await query(
-          'SELECT * FROM Event WHERE isDraft = false OR (publishAt IS NOT NULL AND publishAt <= NOW()) ORDER BY createdAt DESC'
-        );
+        allEvents = await query(`
+          SELECT e.*, 
+            (SELECT COUNT(*) FROM EventRegistration WHERE eventId = e.id AND paymentStatus = 'settlement') as participantCount 
+          FROM Event e 
+          WHERE e.isDraft = false OR (e.publishAt IS NOT NULL AND e.publishAt <= NOW()) 
+          ORDER BY e.createdAt DESC
+        `) as any[];
       }
 
-      if (events.length > 0) {
-        const eventIds = events.map((e: any) => e.id);
+      if (allEvents.length > 0) {
+        const eventIds = allEvents.map((e: any) => e.id);
         const placeholders = eventIds.map(() => '?').join(',');
         const categories: any = await query(
           `SELECT eventId, name FROM Category WHERE eventId IN (${placeholders}) ORDER BY \`order\` ASC`,
@@ -82,12 +105,12 @@ export default async function handler(req: any) {
           catMap.get(c.eventId).push(c.name);
         });
 
-        for (const event of events) {
+        for (const event of allEvents) {
           event._categories = catMap.get(event.id) || [];
         }
       }
 
-      return successResponse(events.map(formatEvent));
+      return successResponse(allEvents.map(formatEvent));
     }
 
     if (req.httpMethod === 'POST') {
@@ -109,7 +132,7 @@ export default async function handler(req: any) {
         [eventIdNew, name, slug, description || null, new Date(eventDate), location || null, latitude || null, longitude || null, isActive ?? true, isDraft ?? false, publishAt ? new Date(publishAt) : null, 'upcoming', null, null]
       );
 
-      const defaultCategories = categories || ['10K Laki-laki', '10K Perempuan', '5K Laki-Laki', '5K Perempuan'];
+      const defaultCategories = categories || [];
       for (let i = 0; i < defaultCategories.length; i++) {
         await query(
           'INSERT INTO Category (id, name, eventId, `order`, createdAt) VALUES (?, ?, ?, ?, NOW())',
@@ -120,6 +143,8 @@ export default async function handler(req: any) {
       const created: any = await query('SELECT * FROM Event WHERE id = ? LIMIT 1', [eventIdNew]);
       const cats: any = await query('SELECT * FROM Category WHERE eventId = ? ORDER BY `order` ASC', [eventIdNew]);
       created[0]._categories = cats.map((c: any) => c.name);
+
+      await logActivity('event.create', `Event baru dibuat: ${name}`, 'admin', eventIdNew);
 
       return successResponse(formatEvent(created[0]), 201);
     }
@@ -143,10 +168,12 @@ export default async function handler(req: any) {
       if (body.status !== undefined) { fields.push('status = ?'); values.push(body.status); }
       if (body.logoUrl !== undefined) { fields.push('logoUrl = ?'); values.push(body.logoUrl); }
       if (body.bannerUrl !== undefined) { fields.push('bannerUrl = ?'); values.push(body.bannerUrl); }
+      if (body.homeImageUrl !== undefined) { fields.push('homeImageUrl = ?'); values.push(body.homeImageUrl); }
       if (body.cutoffMs !== undefined) { fields.push('cutoffMs = ?'); values.push(body.cutoffMs); }
       if (body.categoryStartTimes !== undefined) { fields.push('categoryStartTimes = ?'); values.push(JSON.stringify(body.categoryStartTimes)); }
       if (body.tshirtSizes !== undefined) { fields.push('tshirtSizes = ?'); values.push(body.tshirtSizes); }
       if (body.bibCustomPrice !== undefined) { fields.push('bibCustomPrice = ?'); values.push(body.bibCustomPrice); }
+      if (body.content !== undefined) { fields.push('content = ?'); values.push(JSON.stringify(body.content)); }
 
       fields.push('updatedAt = NOW()');
       values.push(eventId);
@@ -156,6 +183,8 @@ export default async function handler(req: any) {
       const updated: any = await query('SELECT * FROM Event WHERE id = ? LIMIT 1', [eventId]);
       const cats: any = await query('SELECT * FROM Category WHERE eventId = ? ORDER BY `order` ASC', [eventId]);
       updated[0]._categories = cats.map((c: any) => c.name);
+
+      await logActivity('event.update', `Event diperbarui: ${updated[0].name}`, 'admin', eventId);
 
       return successResponse(formatEvent(updated[0]));
     }

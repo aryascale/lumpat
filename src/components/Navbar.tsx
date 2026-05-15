@@ -36,6 +36,7 @@ export default function Navbar({ showAdminButton = false }: NavbarProps) {
   // AUTH DISABLED: const initials = user ? ((user as any)?.name || user.username || user.email || '?').charAt(0).toUpperCase() : '';
 
   const navLinks = [
+    { to: '#about', label: 'About' },
     { to: '/event', label: 'Events' },
   ];
 
@@ -45,18 +46,17 @@ export default function Navbar({ showAdminButton = false }: NavbarProps) {
 
         {/* Logo */}
         <Link to="/" className="flex items-center gap-1 shrink-0">
-          <img src="/Assets/logo2.gif" alt="Logo" className="h-40 w-40 sm:h-25 sm:w-25 rounded-xl" />
-          <span className={`text-3xl sm:text-3xl font-black tracking-tighter hidden sm:block ${isTransparent ? 'text-white' : 'text-gray-900'}`}>Lumpat</span>
+          <span className={`text-xl sm:text-2xl font-black uppercase tracking-widest ${isTransparent ? 'text-white' : 'text-gray-900'}`}>Lumpat</span>
         </Link>
 
         {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-1">
+        <div className="hidden md:flex items-center gap-6">
           {navLinks.map(link => (
             <Link key={link.to} to={link.to}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`text-sm font-medium transition-colors ${
                 location.pathname === link.to
-                  ? isTransparent ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-900'
-                  : isTransparent ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  ? isTransparent ? 'text-white' : 'text-gray-900'
+                  : isTransparent ? 'text-white/80 hover:text-white' : 'text-gray-600 hover:text-gray-900'
               }`}
             >{link.label}</Link>
           ))}

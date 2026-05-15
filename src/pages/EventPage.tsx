@@ -41,15 +41,37 @@ interface EventData {
   categoryStartTimes?: Record<string, string> | null;
   logoUrl?: string | null;
   bannerUrl?: string | null;
+  homeImageUrl?: string | null;
   tshirtSizes?: string | null;
   bibCustomPrice?: number;
   categories?: any[];
+  content?: any;
 }
 
 interface CategoryDetail {
   id: string;
   name: string;
   price: number;
+  quota: number;
+  sold: number;
+}
+
+interface RegistrationField {
+  id: string;
+  label: string;
+  type: string;
+  required: boolean;
+  options: string | null;
+  order: number;
+}
+
+interface TshirtStock {
+  id: string;
+  size: string;
+  quota: number;
+  sold: number;
+  width?: string;
+  height?: string;
 }
 
 interface Banner {
@@ -77,7 +99,7 @@ export default function EventPage() {
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [overall, setOverall] = useState<LeaderRow[]>([]);
   const [byCategory, setByCategory] = useState<Record<string, LeaderRow[]>>({});
-  const [activeTab, setActiveTab] = useState<string>("Participants");
+  const [activeTab, setActiveTab] = useState<string>("Home");
   const [checkpointMap, setCheckpointMap] = useState<Map<string, string[]>>(new Map());
   const [selected, setSelected] = useState<LeaderRow | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -88,8 +110,24 @@ export default function EventPage() {
   const [registering, setRegistering] = useState(false);
   const [registeredParticipants, setRegisteredParticipants] = useState<any[]>([]);
   const [categoryDetails, setCategoryDetails] = useState<CategoryDetail[]>([]);
+  const [customFields, setCustomFields] = useState<RegistrationField[]>([]);
+  const [tshirtInventory, setTshirtInventory] = useState<TshirtStock[]>([]);
+  const [bulkQty, setBulkQty] = useState(1);
+  const [activeTabIdx, setActiveTabIdx] = useState(0);
+  const [bulkParticipants, setBulkParticipants] = useState<Record<string, string>[]>([{}]);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [scrollY, setScrollY] = useState(0);
+  const [regDetailOpen, setRegDetailOpen] = useState(false);
+  const [regDetailParticipant, setRegDetailParticipant] = useState<any>(null);
+
+  useEffect(() => {
+    const handleScroll = () => setScrollY(window.scrollY);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Registration form state
+
   const [regForm, setRegForm] = useState({
     categoryId: '',
     name: '',
@@ -146,23 +184,44 @@ export default function EventPage() {
 
   const selectedCategoryDetail = categoryDetails.find(c => c.id === regForm.categoryId);
   const bibExtraCharge = regForm.bibName ? (event?.bibCustomPrice || 0) : 0;
-  const totalPrice = (selectedCategoryDetail?.price || 0) + bibExtraCharge;
+  const totalPrice = ((selectedCategoryDetail?.price || 0) + bibExtraCharge) * bulkQty;
 
   const handleCheckout = async () => {
-    if (!regForm.categoryId || !regForm.name || !regForm.email || !regForm.phoneNumber || !regForm.gender || !regForm.dateOfBirth) {
-      message.error('Lengkapi semua field wajib');
+    if (!regForm.categoryId) {
+      message.error('Pilih kategori terlebih dahulu');
       return;
     }
-    if (!emailVerified) {
+    if (!emailVerified && !event?.content?.allowBulkNoOtp) {
       message.error('Silakan verifikasi email kamu terlebih dahulu.');
       return;
     }
+    
+    // Check if required custom fields are filled for all participants
+    for (let i = 0; i < bulkQty; i++) {
+      const p = bulkParticipants[i] || {};
+      const missingFields = customFields.filter(f => f.required && !p[f.id]);
+      if (missingFields.length > 0) {
+        setActiveTabIdx(i);
+        message.error(`Pelanggan ${i+1}: Harap isi kolom: ${missingFields.map(f => f.label).join(', ')}`);
+        return;
+      }
+    }
+
     setRegistering(true);
     try {
+      const participantsToSend = bulkParticipants.slice(0, bulkQty).map(p => ({
+        ...regForm,
+        customData: Object.keys(p).length > 0 ? p : undefined
+      }));
+
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId: event?.id, ...regForm }),
+        body: JSON.stringify({ 
+          eventId: event?.id, 
+          ...regForm,
+          bulkParticipants: participantsToSend,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -214,6 +273,24 @@ export default function EventPage() {
           setEvent(eventData);
           fetchRegisteredParticipants(eventData.id);
           fetchCategoryDetails(eventData.id);
+
+          // Load custom fields
+          try {
+            const fieldsRes = await fetch(`/api/registration-fields?eventId=${eventData.id}`);
+            if (fieldsRes.ok) {
+              const fieldsData = await fieldsRes.json();
+              setCustomFields(fieldsData.fields || []);
+            }
+          } catch {}
+
+          // Load tshirt inventory
+          try {
+            const invRes = await fetch(`/api/tshirt-inventory?eventId=${eventData.id}`);
+            if (invRes.ok) {
+              const invData = await invRes.json();
+              setTshirtInventory(invData.inventory || []);
+            }
+          } catch {}
         } else {
           setState({ status: "error", msg: "Event tidak ditemukan" });
         }
@@ -255,6 +332,13 @@ export default function EventPage() {
       return;
     }
 
+    const sendCountKey = `otp_send_count_${regForm.email}`;
+    const sendCount = parseInt(localStorage.getItem(sendCountKey) || '0', 10);
+    if (sendCount >= 2) {
+      message.error('Batas pengiriman OTP harian tercapai untuk email ini di browser Anda.');
+      return;
+    }
+
     setOtpLoading(true);
     try {
       const res = await fetch('/api/send-email-otp', {
@@ -264,6 +348,7 @@ export default function EventPage() {
       });
       const data = await res.json();
       if (res.ok) {
+        localStorage.setItem(sendCountKey, (sendCount + 1).toString());
         setOtpSent(true);
         message.success(data.message || 'Kode verifikasi telah dikirim');
       } else {
@@ -432,31 +517,53 @@ export default function EventPage() {
 
         const baseRows: LeaderRow[] = [];
 
-        master.all.forEach((p) => {
-          const finishEntry = finishMap.get(p.epc);
-          if (!finishEntry?.ms) return;
+        if (master.all.length === 0) {
+          // Fallback to registered participants if timing list is not yet uploaded
+          registeredParticipants.filter(p => p.paymentStatus === 'settlement').forEach(p => {
+            baseRows.push({
+              rank: null,
+              bib: p.bibName || 'RDY',
+              name: p.name,
+              gender: p.gender || 'U',
+              category: p.category?.name || 'REG',
+              sourceCategoryKey: p.category?.name || 'REG',
+              finishTimeRaw: '-',
+              totalTimeMs: 0,
+              totalTimeDisplay: 'Registered',
+              epc: p.id,
+            });
+          });
+        } else {
+          master.all.forEach((p) => {
+            const finishEntry = finishMap.get(p.epc);
+            if (!finishEntry?.ms) return;
 
-          const catKey = p.sourceCategoryKey;
-          const absMs = absOverrideMs[catKey] ?? null;
-          const timeOnly = timeOnlyStr[catKey] ?? null;
+            const catKey = p.sourceCategoryKey;
+            const absMs = absOverrideMs[catKey] ?? null;
+            const timeOnly = timeOnlyStr[catKey] ?? null;
 
-          let total: number | null = null;
+            let total: number | null = null;
 
-          if (absMs != null && Number.isFinite(absMs)) {
-            const delta = finishEntry.ms - absMs;
-            if (Number.isFinite(delta) && delta >= 0) {
-              total = delta;
-            } else {
-              const startEntry = startMap.get(p.epc);
-              if (!startEntry?.ms) return;
-              total = finishEntry.ms - startEntry.ms;
-            }
-          } else if (timeOnly) {
-            const builtOverride = buildOverrideFromFinishDate(finishEntry.ms, timeOnly);
-            if (builtOverride != null) {
-              const delta = finishEntry.ms - builtOverride;
+            if (absMs != null && Number.isFinite(absMs)) {
+              const delta = finishEntry.ms - absMs;
               if (Number.isFinite(delta) && delta >= 0) {
                 total = delta;
+              } else {
+                const startEntry = startMap.get(p.epc);
+                if (!startEntry?.ms) return;
+                total = finishEntry.ms - startEntry.ms;
+              }
+            } else if (timeOnly) {
+              const builtOverride = buildOverrideFromFinishDate(finishEntry.ms, timeOnly);
+              if (builtOverride != null) {
+                const delta = finishEntry.ms - builtOverride;
+                if (Number.isFinite(delta) && delta >= 0) {
+                  total = delta;
+                } else {
+                  const startEntry = startMap.get(p.epc);
+                  if (!startEntry?.ms) return;
+                  total = finishEntry.ms - startEntry.ms;
+                }
               } else {
                 const startEntry = startMap.get(p.epc);
                 if (!startEntry?.ms) return;
@@ -467,30 +574,26 @@ export default function EventPage() {
               if (!startEntry?.ms) return;
               total = finishEntry.ms - startEntry.ms;
             }
-          } else {
-            const startEntry = startMap.get(p.epc);
-            if (!startEntry?.ms) return;
-            total = finishEntry.ms - startEntry.ms;
-          }
 
-          if (!Number.isFinite(total) || total == null || total < 0) return;
+            if (!Number.isFinite(total) || total == null || total < 0) return;
 
-          const isDQ = !!dqMap[p.epc];
-          const isDNF = cutoffMs != null && total > cutoffMs;
+            const isDQ = !!dqMap[p.epc];
+            const isDNF = cutoffMs != null && total > cutoffMs;
 
-          baseRows.push({
-            rank: null,
-            bib: p.bib,
-            name: p.name,
-            gender: p.gender,
-            category: p.category || p.sourceCategoryKey,
-            sourceCategoryKey: p.sourceCategoryKey,
-            finishTimeRaw: extractTimeOfDay(finishEntry.raw),
-            totalTimeMs: total,
-            totalTimeDisplay: isDQ ? "DSQ" : isDNF ? "DNF" : formatDuration(total),
-            epc: p.epc,
+            baseRows.push({
+              rank: null,
+              bib: p.bib,
+              name: p.name,
+              gender: p.gender,
+              category: p.category || p.sourceCategoryKey,
+              sourceCategoryKey: p.sourceCategoryKey,
+              finishTimeRaw: extractTimeOfDay(finishEntry.raw),
+              totalTimeMs: total,
+              totalTimeDisplay: isDQ ? "DSQ" : isDNF ? "DNF" : formatDuration(total),
+              epc: p.epc,
+            });
           });
-        });
+        }
 
         const finishers = baseRows.filter(
           (r) => r.totalTimeDisplay !== "DNF" && r.totalTimeDisplay !== "DSQ"
@@ -548,7 +651,7 @@ export default function EventPage() {
         setHasLoadedOnce(true);
       }
     })();
-  }, [recalcTick, event?.id, event?.categories]);
+  }, [recalcTick, event?.id, event?.categories, registeredParticipants]);
 
   // Refresh when data changes
   useEffect(() => {
@@ -562,7 +665,7 @@ export default function EventPage() {
   }, []);
 
   const tabs = useMemo(() => {
-    const baseTabs = ["Participants", "Registered"];
+    const baseTabs = ["Home", "Participants", "Registered"];
     // Add Route tab if GPX file exists, next to Participants
     if (event?.gpxFile || (event?.latitude && event?.longitude)) {
       baseTabs.push("Route");
@@ -625,7 +728,7 @@ export default function EventPage() {
   }
 
   // Fallback logic for cover banner
-  const hasCover = !!event.bannerUrl && event.bannerUrl.startsWith('http');
+  const hasCover = !!event.bannerUrl;
   const coverImageUrl = hasCover ? event.bannerUrl : (banners.length > 0 ? banners[0].imageUrl : '');
 
   return (
@@ -633,9 +736,20 @@ export default function EventPage() {
       <Navbar />
       <div className="event-page bg-stone-50 min-h-screen">
         {/* Parallax Hero Header */}
-        <div className="relative w-full h-[450px] bg-stone-900 bg-fixed bg-center bg-cover overflow-hidden" style={{ backgroundImage: coverImageUrl ? `url(${coverImageUrl})` : 'none' }}>
-          {!coverImageUrl && (
-            <div className="absolute inset-0 bg-gradient-to-br from-stone-800 via-stone-700 to-stone-900">
+        <div className="relative w-full h-[450px] bg-stone-900 overflow-hidden">
+          {coverImageUrl ? (
+            <div 
+              className="absolute inset-0 bg-center bg-cover scale-105 will-change-transform"
+              style={{ 
+                backgroundImage: `url(${coverImageUrl})`,
+                transform: `translateY(${scrollY * 0.4}px)` 
+              }}
+            />
+          ) : (
+            <div 
+              className="absolute inset-0 bg-gradient-to-br from-stone-800 via-stone-700 to-stone-900 will-change-transform"
+              style={{ transform: `translateY(${scrollY * 0.4}px)` }}
+            >
               <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
             </div>
           )}
@@ -674,9 +788,9 @@ export default function EventPage() {
                 
                 <button 
                   onClick={() => setRegisterModalOpen(true)}
-                  className="mt-6 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded uppercase tracking-widest text-sm transition-colors cursor-pointer"
+                  className="mt-6 bg-white text-black font-bold py-3 px-10 rounded-full uppercase tracking-widest text-xs transition-all hover:bg-stone-100 hover:scale-105 cursor-pointer"
                 >
-                  Daftar Sekarang
+                  Daftar Sekarang →
                 </button>
               </div>
             </div>
@@ -706,6 +820,46 @@ export default function EventPage() {
 
         {/* Tab Content Area */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+          {activeTab === "Home" && (
+            <div className="space-y-10 animate-in fade-in duration-700">
+              {/* Event Hero Banner (Original Ratio) */}
+              {event.homeImageUrl && (
+                <div className="w-full overflow-hidden bg-stone-100 border-b border-stone-200">
+                  <img src={event.homeImageUrl} alt={event.name} className="w-full max-h-[400px] object-contain block mx-auto" />
+                </div>
+              )}
+
+              {/* Banner Gallery */}
+              {banners.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {banners.map((b) => (
+                    <div key={b.id} className="overflow-hidden shadow-lg group">
+                      <img src={b.imageUrl} alt={b.alt || event?.name} className="w-full h-52 object-cover transition-transform duration-500 group-hover:scale-105" />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Event Summary / Blog Content */}
+              <div className="grid grid-cols-1 gap-8">
+                <div className="space-y-8">
+                  {/* Rich Text Homepage Content */}
+                  <div className="bg-white p-8 shadow-sm border-t-4 border-red-600">
+                    {event?.content?.about ? (
+                      <div className="prose prose-stone max-w-none prose-headings:font-black prose-headings:tracking-tighter prose-headings:uppercase prose-a:text-red-600 hover:prose-a:text-red-700" dangerouslySetInnerHTML={{ __html: event.content.about }} />
+                    ) : event?.description ? (
+                      <div className="prose prose-stone max-w-none prose-headings:font-black prose-headings:tracking-tighter prose-headings:uppercase">
+                        <p className="leading-relaxed">{event.description}</p>
+                      </div>
+                    ) : (
+                      <p className="text-stone-400 italic">Belum ada deskripsi event.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === "Participants" && (
             <div className="space-y-8">
               {overall.length > 0 ? (
@@ -757,34 +911,28 @@ export default function EventPage() {
             <div className="space-y-8 bg-white p-6 shadow-sm border-t-4 border-red-600">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-black uppercase tracking-tighter">Peserta Terdaftar</h2>
-                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-bold">{registeredParticipants.length} Terdaftar</span>
+                <span className="text-stone-500 text-sm font-medium">{registeredParticipants.filter(p => p.paymentStatus === 'settlement').length} Terdaftar</span>
               </div>
-              {registeredParticipants.length > 0 ? (
+              {registeredParticipants.filter(p => p.paymentStatus === 'settlement').length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b-2 border-stone-200">
-                        <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500">No</th>
+                        <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500" style={{width: 60}}>No</th>
                         <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500">Nama</th>
                         <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500">Kategori</th>
-                        <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500">BIB</th>
-                        <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500">Size</th>
-                        <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500">Tgl Bayar</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {registeredParticipants.map((p: any, idx: number) => (
-                        <tr key={p.id} className={`border-b border-stone-100 hover:bg-stone-50 ${p.paymentStatus === 'pending' ? 'opacity-60 grayscale' : ''}`}>
+                      {registeredParticipants.filter(p => p.paymentStatus === 'settlement').map((p: any, idx: number) => (
+                        <tr 
+                          key={p.id} 
+                          className="border-b border-stone-100 hover:bg-stone-50 cursor-pointer transition-colors"
+                          onClick={() => { setRegDetailParticipant(p); setRegDetailOpen(true); }}
+                        >
                           <td className="py-3 px-2 font-mono text-stone-400">{idx + 1}</td>
-                          <td className="py-3 px-2 font-bold text-stone-900">
-                            {p.name}
-                            {p.paymentStatus === 'pending' && <span className="ml-2 bg-stone-100 text-stone-400 text-[9px] px-1.5 py-0.5 rounded uppercase font-black">Pending</span>}
-                            {p.paymentStatus === 'settlement' && <span className="ml-2 bg-green-100 text-green-600 text-[9px] px-1.5 py-0.5 rounded uppercase font-black">Confirmed</span>}
-                          </td>
+                          <td className="py-3 px-2 font-bold text-stone-900">{p.name}</td>
                           <td className="py-3 px-2 text-stone-600">{p.category?.name}</td>
-                          <td className="py-3 px-2 font-mono text-stone-500">{p.bibName || '-'}</td>
-                          <td className="py-3 px-2 text-stone-500">{p.tshirtSize || '-'}</td>
-                          <td className="py-3 px-2 text-stone-400 text-xs">{p.paidAt ? new Date(p.paidAt).toLocaleDateString('id-ID') : (p.paymentStatus === 'pending' ? 'Menunggu' : '-')}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -796,7 +944,64 @@ export default function EventPage() {
             </div>
           )}
 
-          {activeTab !== "Participants" && activeTab !== "Registered" && activeTab !== "Results" && activeTab !== "Route" && (
+          {/* Registered Participant Detail Modal */}
+          {regDetailOpen && regDetailParticipant && (
+            <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setRegDetailOpen(false)}>
+              <div className="bg-white rounded-2xl max-w-md w-full max-h-[80vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+                <div className="p-6 border-b border-stone-100">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-black uppercase tracking-tight">Detail Peserta</h3>
+                    <button onClick={() => setRegDetailOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-100 text-stone-400 text-lg font-bold">✕</button>
+                  </div>
+                </div>
+                <div className="p-6 space-y-4">
+                  <div className="flex justify-between items-start py-2 border-b border-stone-100">
+                    <span className="text-[10px] font-black text-stone-400 uppercase">Nama</span>
+                    <span className="font-bold text-stone-900">{regDetailParticipant.name}</span>
+                  </div>
+                  <div className="flex justify-between items-start py-2 border-b border-stone-100">
+                    <span className="text-[10px] font-black text-stone-400 uppercase">Kategori</span>
+                    <span className="text-sm text-stone-700">{regDetailParticipant.category?.name}</span>
+                  </div>
+                  <div className="flex justify-between items-start py-2 border-b border-stone-100">
+                    <span className="text-[10px] font-black text-stone-400 uppercase">Email</span>
+                    <span className="text-sm text-stone-700">{regDetailParticipant.email}</span>
+                  </div>
+                  {regDetailParticipant.bibName && (
+                    <div className="flex justify-between items-start py-2 border-b border-stone-100">
+                      <span className="text-[10px] font-black text-stone-400 uppercase">BIB Name</span>
+                      <span className="text-sm font-mono font-bold text-stone-900">{regDetailParticipant.bibName}</span>
+                    </div>
+                  )}
+                  {regDetailParticipant.tshirtSize && (
+                    <div className="flex justify-between items-start py-2 border-b border-stone-100">
+                      <span className="text-[10px] font-black text-stone-400 uppercase">T-Shirt Size</span>
+                      <span className="text-sm text-stone-700">{regDetailParticipant.tshirtSize}</span>
+                    </div>
+                  )}
+                  {/* Render all custom fields */}
+                  {regDetailParticipant.customData && Object.entries(regDetailParticipant.customData).map(([key, val]: [string, any]) => {
+                    if (!val || key === 'categoryId' || key === 'paymentStatus' || key === 'tshirtSize' || key === 'bibName') return null;
+                    // Try to find a label from customFields
+                    const fieldDef = customFields.find(f => f.id === key);
+                    const label = fieldDef?.label || key;
+                    return (
+                      <div key={key} className="flex justify-between items-start py-2 border-b border-stone-100">
+                        <span className="text-[10px] font-black text-stone-400 uppercase">{label}</span>
+                        <span className="text-sm text-stone-700 text-right max-w-[60%]">{String(val)}</span>
+                      </div>
+                    );
+                  })}
+                  <div className="flex justify-between items-start py-2">
+                    <span className="text-[10px] font-black text-stone-400 uppercase">Tgl Bayar</span>
+                    <span className="text-sm text-stone-500">{regDetailParticipant.paidAt ? new Date(regDetailParticipant.paidAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab !== "Home" && activeTab !== "Participants" && activeTab !== "Registered" && activeTab !== "Results" && activeTab !== "Route" && (
             <div className="space-y-8">
               <RaceClock cutoffMs={event?.cutoffMs} categoryStartTimes={event?.categoryStartTimes} />
               <CategorySection
@@ -860,80 +1065,146 @@ export default function EventPage() {
           )}
         </div>
 
-          <Modal
-            title={<span className="text-lg font-black uppercase tracking-tight">Pendaftaran Event</span>}
-            open={registerModalOpen}
-            onCancel={() => setRegisterModalOpen(false)}
-            width={640}
-            footer={[
-              <Button key="back" onClick={() => setRegisterModalOpen(false)}>Batal</Button>,
-              <Button key="submit" type="primary" danger loading={registering} onClick={handleCheckout} disabled={totalPrice <= 0 || !emailVerified}>
-                {totalPrice > 0 ? `Bayar Rp ${totalPrice.toLocaleString('id-ID')}` : 'Pilih Kategori'}
-              </Button>,
-            ]}
+        {/* Floating CTA Button */}
+        <div className="fixed bottom-6 right-6 z-50" style={{ display: registerModalOpen ? 'none' : 'block' }}>
+          <button
+            onClick={() => setRegisterModalOpen(true)}
+            className="bg-black/80 backdrop-blur-md text-white font-bold py-3 px-6 rounded-full shadow-lg uppercase tracking-widest text-[10px] transition-all hover:bg-black hover:scale-105 cursor-pointer border border-white/10"
           >
-            <div className="space-y-4 py-4">
-              <p className="text-sm text-gray-500 mb-2">Lengkapi data berikut untuk mendaftar <strong>{event?.name}</strong>.</p>
+            Daftar →
+          </button>
+        </div>
 
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Kategori & Harga *</label>
-                <Select
-                  className="w-full"
-                  placeholder="Pilih Kategori"
-                  value={regForm.categoryId || undefined}
-                  onChange={(val) => updateRegForm('categoryId', val)}
-                  options={categoryDetails.map(c => ({ label: `${c.name} - Rp ${c.price.toLocaleString('id-ID')}`, value: c.id }))}
-                />
+          <Modal
+            title={null}
+            open={registerModalOpen}
+            onCancel={() => {
+              setRegisterModalOpen(false);
+              setCurrentStep(1);
+            }}
+            width={720}
+            footer={null}
+            className="registration-wizard"
+            centered
+          >
+            <div className="p-2 sm:p-6">
+              {/* Progress Header */}
+              <div className="mb-8">
+                <h2 className="text-2xl font-black uppercase tracking-tighter mb-6 text-center">Pendaftaran Event</h2>
+                <div className="flex items-center justify-between relative px-4">
+                  {/* Background Line */}
+                  <div className="absolute left-8 right-8 top-4 h-[2px] bg-gray-200 -z-10"></div>
+                  {/* Active Line */}
+                  <div 
+                    className="absolute left-8 top-4 h-[2px] bg-red-600 -z-10 transition-all duration-500 overflow-hidden"
+                    style={{ width: currentStep === 1 ? '0%' : currentStep === 2 ? '50%' : 'calc(100% - 4rem)' }}
+                  >
+                    {currentStep < 3 && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_2s_infinite]"></div>
+                    )}
+                  </div>
+                  
+                  {/* Step 1 */}
+                  <div className="flex flex-col items-center gap-2 bg-white relative">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${currentStep === 1 ? 'bg-red-600 text-white ring-4 ring-red-100 scale-110 shadow-lg shadow-red-200' : currentStep > 1 ? 'bg-red-600 text-white' : 'bg-gray-400 text-white'}`}>
+                      {currentStep > 1 ? '✓' : '1'}
+                    </div>
+                    <span className={`text-[11px] font-bold ${currentStep >= 1 ? 'text-stone-900' : 'text-gray-500'}`}>Data Diri</span>
+                  </div>
+                  
+                  {/* Step 2 */}
+                  <div className="flex flex-col items-center gap-2 bg-white relative">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${currentStep === 2 ? 'bg-red-600 text-white ring-4 ring-red-100 scale-110 shadow-lg shadow-red-200' : currentStep > 2 ? 'bg-red-600 text-white' : 'bg-gray-400 text-white'}`}>
+                      {currentStep > 2 ? '✓' : '2'}
+                    </div>
+                    <span className={`text-[11px] font-bold ${currentStep >= 2 ? 'text-stone-900' : 'text-gray-500'}`}>Konfirmasi</span>
+                  </div>
+
+                  {/* Step 3 */}
+                  <div className="flex flex-col items-center gap-2 bg-white relative">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${currentStep === 3 ? 'bg-red-600 text-white ring-4 ring-red-100 scale-110 shadow-lg shadow-red-200' : 'bg-gray-400 text-white'}`}>
+                      3
+                    </div>
+                    <span className={`text-[11px] font-bold ${currentStep >= 3 ? 'text-stone-900' : 'text-gray-500'}`}>Pembayaran</span>
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Nama Lengkap *</label>
-                  <Input placeholder="Nama lengkap" value={regForm.name} onChange={e => updateRegForm('name', e.target.value)} />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5">Email Pendaftar *</label>
-                  <div className="bg-gray-50 p-3 rounded-xl border border-gray-200">
-                    <div className="flex gap-2">
-                      <Input 
-                        placeholder="email@example.com" 
-                        type="email" 
-                        size="large"
-                        className="flex-1"
-                        value={regForm.email} 
-                        onChange={e => updateRegForm('email', e.target.value)} 
-                        disabled={emailVerified || otpLoading}
-                      />
-                      {!emailVerified && (
-                        <Button 
+              {/* Step 1: Category & Email */}
+              {currentStep === 1 && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="bg-stone-50 p-6 rounded-2xl border border-stone-200">
+                    <h3 className="text-lg font-black mb-4">1. Pilih Kategori</h3>
+                    <Select
+                      className="w-full"
+                      size="large"
+                      placeholder="Pilih Kategori Perlombaan"
+                      value={regForm.categoryId || undefined}
+                      onChange={(val) => {
+                        updateRegForm('categoryId', val);
+                        setBulkQty(1);
+                        setBulkParticipants([{}]);
+                      }}
+                      options={categoryDetails.filter(c => c.quota === 0 || c.sold < c.quota).map(c => ({
+                        label: `${c.name} - Rp ${c.price.toLocaleString('id-ID')}${c.quota > 0 ? ` (${c.quota - c.sold} slot)` : ''}`,
+                        value: c.id,
+                      }))}
+                    />
+                  </div>
+
+                  <div className="bg-stone-50 p-6 rounded-2xl border border-stone-200">
+                    <h3 className="text-lg font-black mb-4">2. {event?.content?.allowBulkNoOtp ? 'Alamat Email' : 'Verifikasi Email'}</h3>
+                    <p className="text-sm text-gray-500 mb-4">
+                      {event?.content?.allowBulkNoOtp 
+                        ? 'Masukkan alamat email Anda untuk keperluan tiket dan informasi.' 
+                        : 'Kode OTP akan dikirimkan ke email Anda untuk validasi pendaftaran.'}
+                    </p>
+                    
+                    <div className="flex flex-col sm:flex-row gap-3 items-center">
+                      <div className="relative flex-1 w-full">
+                        <Input 
+                          placeholder="email@example.com" 
+                          type="email" 
                           size="large"
-                          type={otpSent ? "default" : "primary"}
-                          onClick={handleSendOtp} 
-                          loading={otpLoading} 
-                          disabled={!regForm.email || !regForm.email.includes('@')}
-                        >
-                          {otpSent ? 'Kirim Ulang' : 'Kirim Kode'}
-                        </Button>
+                          className="w-full"
+                          value={regForm.email} 
+                          onChange={e => updateRegForm('email', e.target.value)} 
+                          disabled={(emailVerified && !event?.content?.allowBulkNoOtp) || otpLoading}
+                        />
+                      </div>
+                      {!event?.content?.allowBulkNoOtp && (
+                        <>
+                          {!emailVerified ? (
+                            <Button 
+                              size="large"
+                              type={otpSent ? "default" : "primary"}
+                              onClick={handleSendOtp} 
+                              loading={otpLoading} 
+                              disabled={!regForm.email || !regForm.email.includes('@')}
+                              className="w-full sm:w-auto"
+                            >
+                              {otpSent ? 'Kirim Ulang' : 'Kirim Kode'}
+                            </Button>
+                          ) : (
+                            <div className="flex items-center gap-1.5 bg-white px-4 py-2 rounded-lg border border-stone-200 text-xs font-black text-green-600 shadow-sm whitespace-nowrap uppercase tracking-widest">
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                              Terverifikasi
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
-                    
-                    {emailVerified && (
-                      <div className="mt-2 flex items-center text-green-600 text-xs font-black uppercase tracking-wider bg-green-50 p-2 rounded-lg border border-green-100">
-                        <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                        Email Terverifikasi
-                      </div>
-                    )}
 
-                    {otpSent && !emailVerified && (
-                      <div className="mt-3 pt-3 border-t border-gray-200 animate-in fade-in slide-in-from-top-2">
-                        <p className="text-[10px] font-bold text-gray-500 uppercase mb-2">Masukkan 6 Digit Kode OTP</p>
-                        <div className="flex gap-2">
+                    {!event?.content?.allowBulkNoOtp && otpSent && !emailVerified && (
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <p className="text-xs font-bold text-gray-500 uppercase mb-2">Masukkan 6 Digit OTP</p>
+                        <div className="flex flex-col sm:flex-row gap-3">
                           <Input 
                             placeholder="000000" 
                             size="large"
-                            className="text-center font-mono tracking-[0.5em] text-lg"
+                            className="text-center font-mono tracking-[0.5em] text-xl"
                             maxLength={6}
                             value={otpCode}
                             onChange={e => setOtpCode(e.target.value.replace(/[^0-9]/g, ''))}
@@ -945,67 +1216,257 @@ export default function EventPage() {
                             onClick={handleVerifyOtp} 
                             loading={otpLoading} 
                             disabled={otpCode.length !== 6}
+                            className="w-full sm:w-auto"
                           >
                             Verifikasi
                           </Button>
                         </div>
-                        <p className="text-[10px] text-gray-400 mt-2">Cek kotak masuk atau folder spam email kamu.</p>
                       </div>
                     )}
                   </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">No. Telepon *</label>
-                  <Input placeholder="08xxxxxxxxxx" value={regForm.phoneNumber} onChange={e => updateRegForm('phoneNumber', e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Jenis Kelamin *</label>
-                  <Select className="w-full" placeholder="Pilih" value={regForm.gender || undefined} onChange={val => updateRegForm('gender', val)}
-                    options={[{ label: 'Laki-laki', value: 'L' }, { label: 'Perempuan', value: 'P' }]} />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Tanggal Lahir *</label>
-                  <Input type="date" value={regForm.dateOfBirth} onChange={e => updateRegForm('dateOfBirth', e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Golongan Darah</label>
-                  <Select className="w-full" placeholder="Pilih" value={regForm.bloodType || undefined} onChange={val => updateRegForm('bloodType', val)} allowClear
-                    options={[{ label: 'A', value: 'A' }, { label: 'B', value: 'B' }, { label: 'AB', value: 'AB' }, { label: 'O', value: 'O' }]} />
-                </div>
-                {event?.tshirtSizes && (
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">Ukuran Jersey</label>
-                    <Select className="w-full" placeholder="Pilih ukuran" value={regForm.tshirtSize || undefined} onChange={val => updateRegForm('tshirtSize', val)} allowClear
-                      options={event.tshirtSizes.split(',').map(s => ({ label: s.trim(), value: s.trim() }))} />
+
+                  <div className="flex justify-end pt-4">
+                    <Button 
+                      type="primary" 
+                      danger 
+                      size="large" 
+                      className="px-8 font-bold uppercase tracking-widest text-xs"
+                      disabled={!regForm.categoryId || (!event?.content?.allowBulkNoOtp && !emailVerified) || (event?.content?.allowBulkNoOtp && (!regForm.email || !regForm.email.includes('@')))}
+                      onClick={() => setCurrentStep(2)}
+                    >
+                      Selanjutnya
+                    </Button>
                   </div>
-                )}
-              </div>
-
-              <div className="border-t border-gray-200 pt-3">
-                <p className="text-xs font-bold text-gray-700 mb-2">Kontak Darurat</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <Input placeholder="Nama kontak darurat" value={regForm.emergencyName} onChange={e => updateRegForm('emergencyName', e.target.value)} />
-                  <Input placeholder="No. HP kontak darurat" value={regForm.emergencyPhone} onChange={e => updateRegForm('emergencyPhone', e.target.value)} />
-                </div>
-              </div>
-
-              {(event?.bibCustomPrice || 0) > 0 && (
-                <div className="border-t border-gray-200 pt-3">
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Custom BIB Name (+Rp {(event?.bibCustomPrice || 0).toLocaleString('id-ID')})</label>
-                  <Input placeholder="Maks. 12 huruf (opsional)" maxLength={12} value={regForm.bibName} onChange={e => updateRegForm('bibName', e.target.value)} />
                 </div>
               )}
 
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Catatan Tambahan</label>
-                <Input.TextArea placeholder="Alergi, kondisi medis, atau catatan lainnya (opsional)" rows={2} value={regForm.notes} onChange={e => updateRegForm('notes', e.target.value)} />
-              </div>
+              {/* Step 2: Custom Dynamic Fields */}
+              {currentStep === 2 && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
+                  <div className="bg-stone-50 p-6 rounded-2xl border border-stone-200">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                      <h3 className="text-lg font-black">Data Peserta</h3>
+                      {event?.content?.allowBulkNoOtp && (
+                        <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-lg border border-stone-200">
+                          <span className="font-bold text-xs text-stone-500 uppercase">Qty</span>
+                          <Select 
+                            size="small"
+                            bordered={false}
+                            value={bulkQty} 
+                            onChange={(val) => {
+                              setBulkQty(val);
+                              setBulkParticipants(prev => {
+                                const updated = [...prev];
+                                while (updated.length < val) updated.push({});
+                                return updated;
+                              });
+                              if (activeTabIdx >= val) setActiveTabIdx(val - 1);
+                            }}
+                            options={(() => {
+                              const selectedCat = categoryDetails.find(c => c.id === regForm.categoryId);
+                              const available = selectedCat ? (selectedCat.quota > 0 ? selectedCat.quota - selectedCat.sold : 10) : 10;
+                              const max = Math.min(10, available);
+                              return Array.from({ length: max }, (_, i) => i + 1).map(v => ({ label: v.toString(), value: v }));
+                            })()}
+                            className="w-16"
+                          />
+                        </div>
+                      )}
+                    </div>
 
-              {totalPrice > 0 && (
-                <div className="bg-stone-50 border border-stone-200 p-3 rounded-lg">
-                  <div className="flex justify-between text-sm"><span>Kategori</span><span>Rp {(selectedCategoryDetail?.price || 0).toLocaleString('id-ID')}</span></div>
-                  {bibExtraCharge > 0 && <div className="flex justify-between text-sm"><span>Custom BIB "{regForm.bibName}"</span><span>Rp {bibExtraCharge.toLocaleString('id-ID')}</span></div>}
-                  <div className="flex justify-between font-bold text-base mt-2 pt-2 border-t border-stone-300"><span>Total</span><span>Rp {totalPrice.toLocaleString('id-ID')}</span></div>
+                    {bulkQty > 1 && (
+                      <div className="flex overflow-x-auto gap-2 mb-6 pb-2 border-b border-stone-100">
+                        {Array.from({ length: bulkQty }).map((_, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setActiveTabIdx(idx)}
+                            className={`px-4 py-2 text-xs font-bold whitespace-nowrap rounded-lg transition-colors ${activeTabIdx === idx ? 'bg-blue-500 text-white' : 'bg-stone-100 text-stone-500 hover:bg-stone-200'}`}
+                          >
+                            PELANGGAN {idx + 1}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {customFields.length === 0 && tshirtInventory.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        Admin belum mengatur kolom pendaftaran untuk event ini.<br />
+                        Klik Lanjut Pembayaran untuk meneruskan pesanan.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {customFields.map(field => (
+                          <div key={field.id} className={field.type === 'textarea' ? 'md:col-span-2' : ''}>
+                            <label className="block text-xs font-bold text-gray-700 mb-1">
+                              {field.label} {field.required && <span className="text-red-500">*</span>}
+                            </label>
+                            
+                            {field.type === 'dropdown' ? (
+                              <Select
+                                className="w-full"
+                                size="large"
+                                placeholder={`Pilih ${field.label}`}
+                                value={bulkParticipants[activeTabIdx]?.[field.id] || undefined}
+                                onChange={(val) => setBulkParticipants(prev => {
+                                  const updated = [...prev];
+                                  updated[activeTabIdx] = { ...updated[activeTabIdx], [field.id]: val };
+                                  return updated;
+                                })}
+                                options={(field.options ? field.options.split(',') : []).map(opt => ({ label: opt.trim(), value: opt.trim() }))}
+                              />
+                            ) : field.type === 'textarea' ? (
+                              <Input.TextArea
+                                rows={3}
+                                placeholder={`Masukkan ${field.label}`}
+                                value={bulkParticipants[activeTabIdx]?.[field.id] || ''}
+                                onChange={(e) => setBulkParticipants(prev => {
+                                  const updated = [...prev];
+                                  updated[activeTabIdx] = { ...updated[activeTabIdx], [field.id]: e.target.value };
+                                  return updated;
+                                })}
+                              />
+                            ) : (
+                              <Input
+                                size="large"
+                                type={field.type}
+                                placeholder={`Masukkan ${field.label}`}
+                                value={bulkParticipants[activeTabIdx]?.[field.id] || ''}
+                                onChange={(e) => setBulkParticipants(prev => {
+                                  const updated = [...prev];
+                                  updated[activeTabIdx] = { ...updated[activeTabIdx], [field.id]: e.target.value };
+                                  return updated;
+                                })}
+                              />
+                            )}
+                          </div>
+                        ))}
+
+                        {tshirtInventory.length > 0 && (
+                          <div className="md:col-span-2 mt-4 pt-4 border-t border-stone-200">
+                            <label className="block text-xs font-bold text-gray-700 mb-2">
+                              Ukuran Kaos / Jersey <span className="text-red-500">*</span>
+                            </label>
+                            <Select
+                              className="w-full mb-3"
+                              size="large"
+                              placeholder="Pilih Ukuran"
+                              value={bulkParticipants[activeTabIdx]?.['tshirtSize'] || undefined}
+                              onChange={(val) => setBulkParticipants(prev => {
+                                  const updated = [...prev];
+                                  updated[activeTabIdx] = { ...updated[activeTabIdx], tshirtSize: val };
+                                  return updated;
+                              })}
+                              options={tshirtInventory.map(t => ({
+                                label: `${t.size} ${t.quota > 0 ? (t.sold >= t.quota ? '(Habis)' : `(${t.quota - t.sold} tersisa)`) : ''}`,
+                                value: t.size,
+                                disabled: t.quota > 0 && t.sold >= t.quota
+                              }))}
+                            />
+                            <div className="mt-4">
+                              <div className="bg-stone-100 p-2 px-4 rounded-t-xl border-x border-t border-stone-200">
+                                <span className="text-[10px] font-black uppercase tracking-wider text-stone-500">Size Chart (Panduan Ukuran)</span>
+                              </div>
+                              <div className="overflow-x-auto border-x border-b border-stone-200 rounded-b-xl bg-white">
+                                <table className="w-full text-left text-[11px]">
+                                  <thead>
+                                    <tr className="bg-stone-50 border-b border-stone-200">
+                                      <th className="py-2 px-4 font-bold text-stone-700">Size</th>
+                                      <th className="py-2 px-4 font-bold text-stone-700">Lebar (cm)</th>
+                                      <th className="py-2 px-4 font-bold text-stone-700">Tinggi (cm)</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {tshirtInventory.map((t, idx) => (
+                                      <tr key={idx} className="border-b border-stone-100 last:border-0 hover:bg-stone-50 transition-colors">
+                                        <td className="py-2 px-4 font-black text-stone-900">{t.size}</td>
+                                        <td className="py-2 px-4 text-stone-600">{t.width || '-'}</td>
+                                        <td className="py-2 px-4 text-stone-600">{t.height || '-'}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex justify-between pt-4">
+                    <Button size="large" onClick={() => setCurrentStep(1)}>
+                      Kembali
+                    </Button>
+                    <Button 
+                      type="primary" 
+                      danger 
+                      size="large" 
+                      className="px-8 font-bold uppercase tracking-widest text-xs"
+                      onClick={() => {
+                        for (let i = 0; i < bulkQty; i++) {
+                          const p = bulkParticipants[i] || {};
+                          const missing = customFields.filter(f => f.required && !p[f.id]);
+                          if (tshirtInventory.length > 0 && !p['tshirtSize']) {
+                            missing.push({ label: 'Ukuran Kaos / Jersey' } as any);
+                          }
+                          if (missing.length > 0) {
+                            setActiveTabIdx(i);
+                            message.error(`Pelanggan ${i+1}: Harap isi: ${missing.map(f => f.label).join(', ')}`);
+                            return;
+                          }
+                        }
+                        setCurrentStep(3);
+                      }}
+                    >
+                      Lanjut Pembayaran
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Summary & Payment */}
+              {currentStep === 3 && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
+                  <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
+                    <h3 className="text-lg font-black mb-4 uppercase tracking-tight text-center">Ringkasan Pendaftaran</h3>
+                    
+                    <div className="space-y-3 mb-6 bg-stone-50 p-4 rounded-xl">
+                      <div className="flex justify-between border-b border-gray-200 pb-2">
+                        <span className="text-gray-500 text-sm">Event</span>
+                        <span className="font-bold">{event?.name}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-gray-200 pb-2">
+                        <span className="text-gray-500 text-sm">Kategori</span>
+                        <span className="font-bold">{selectedCategoryDetail?.name}</span>
+                      </div>
+                      <div className="flex justify-between pb-2">
+                        <span className="text-gray-500 text-sm">Email</span>
+                        <span className="font-bold">{regForm.email}</span>
+                      </div>
+                    </div>
+
+                    <div className="p-8 rounded-2xl flex flex-col items-center border border-stone-200 bg-stone-50/50 shadow-sm">
+                      <span className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] mb-2">Total Pembayaran</span>
+                      <span className="text-5xl font-black text-stone-900 tracking-tighter">Rp {totalPrice.toLocaleString('id-ID')}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between pt-4">
+                    <Button size="large" onClick={() => setCurrentStep(2)}>
+                      Kembali
+                    </Button>
+                    <Button 
+                      type="primary" 
+                      danger 
+                      size="large" 
+                      loading={registering} 
+                      onClick={handleCheckout} 
+                      className="px-8 font-bold uppercase tracking-widest text-xs"
+                      disabled={totalPrice <= 0}
+                    >
+                      Bayar Sekarang
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>

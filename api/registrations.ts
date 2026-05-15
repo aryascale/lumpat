@@ -12,12 +12,13 @@ export default async function handler(event: any) {
       const registrations: any = await query(
         `SELECT er.id, er.name, er.email, er.phoneNumber, er.gender, er.tshirtSize, er.bibName,
                 er.paymentStatus, er.grossAmount, er.orderId, er.paidAt, er.createdAt,
-                c.id as categoryId, c.name as categoryName
+                er.customData, c.id as categoryId, c.name as categoryName
          FROM EventRegistration er
          JOIN Category c ON er.categoryId = c.id
-         WHERE er.eventId = ? AND er.paymentStatus IN ('settlement', 'pending')
+         JOIN Event e ON er.eventId = e.id
+         WHERE (e.id = ? OR e.slug = ?) AND er.paymentStatus IN ('settlement', 'pending')
          ORDER BY (CASE WHEN er.paymentStatus = 'settlement' THEN 1 ELSE 2 END), er.createdAt DESC`,
-        [eventId]
+        [eventId, eventId]
       );
 
       const participants = registrations.map((r: any) => ({
@@ -35,6 +36,7 @@ export default async function handler(event: any) {
         paidAt: r.paidAt,
         createdAt: r.createdAt,
         dateOfBirth: r.dateOfBirth,
+        customData: r.customData ? (typeof r.customData === 'string' ? JSON.parse(r.customData) : r.customData) : null,
       }));
 
       return successResponse({ participants, total: participants.length });

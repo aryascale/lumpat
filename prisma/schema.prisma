@@ -24,12 +24,14 @@ model Event {
   categoryStartTimes Json?
   logoUrl            String?
   bannerUrl          String?
+  homeImageUrl        String?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   bibCustomPrice     Int                 @default(0)
   tshirtSizes        String?
   isDraft            Boolean             @default(false)
   publishAt          DateTime?
+  content            Json?
   banners            Banner[]
   categories         Category[]
   registrations      EventRegistration[]
@@ -42,6 +44,7 @@ model Category {
   order         Int                 @default(0)
   createdAt     DateTime            @default(now())
   price         Int                 @default(0)
+  quota         Int                 @default(0)
   event         Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
   registrations EventRegistration[]
 
@@ -92,7 +95,7 @@ model EventRegistration {
   grossAmount    Int       @default(0)
   name           String
   notes          String?   @db.Text
-  orderId        String    @unique
+  orderId        String
   paidAt         DateTime?
   paymentMethod  String?
   paymentStatus  String    @default("pending")
@@ -101,6 +104,7 @@ model EventRegistration {
   snapUrl        String?
   tshirtSize     String?
   dateOfBirth    DateTime?
+  customData     Json?
   category       Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   event          Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
@@ -135,4 +139,30 @@ model ActivityLog {
   @@index([eventId])
   @@index([action])
   @@index([createdAt])
+}
+
+model RegistrationField {
+  id        String   @id @default(uuid())
+  eventId   String
+  label     String
+  type      String   @default("text")
+  required  Boolean  @default(false)
+  options   String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([eventId])
+}
+
+model TshirtInventory {
+  id      String @id @default(uuid())
+  eventId String
+  size    String
+  quota   Int    @default(0)
+  sold    Int    @default(0)
+  width   String?
+  height  String?
+
+  @@unique([eventId, size])
+  @@index([eventId])
 }

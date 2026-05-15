@@ -14,7 +14,10 @@ export default async function handler(event: any) {
     let where = 'WHERE 1=1';
     const params: any[] = [];
 
-    if (eventId) { where += ' AND eventId = ?'; params.push(eventId); }
+    if (eventId && eventId !== 'all') { 
+      where += ' AND (eventId = ? OR eventId IS NULL)'; 
+      params.push(eventId); 
+    }
     if (action) { where += ' AND action LIKE ?'; params.push(`${action}%`); }
 
     const logs: any = await query(

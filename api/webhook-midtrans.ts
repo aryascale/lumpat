@@ -5,6 +5,7 @@ import { sendRegistrationConfirmation } from '../src/lib/email-service';
 import crypto from 'crypto';
 
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY || '';
+const MIDTRANS_MERCHANT_ID = process.env.MIDTRANS_MERCHANT_ID || '';
 
 function verifySignature(orderId: string, statusCode: string, grossAmount: string, signatureKey: string): boolean {
   const payload = orderId + statusCode + grossAmount + MIDTRANS_SERVER_KEY;
@@ -14,6 +15,23 @@ function verifySignature(orderId: string, statusCode: string, grossAmount: strin
 
 export default async function handler(event: any) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
+  
+  // GET: For verification in browser
+  if (event.httpMethod === 'GET') {
+    return {
+      statusCode: 200,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'text/html' },
+      body: `
+        <div style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; background:#f8f9fa;">
+          <div style="padding:2rem; background:white; border-radius:1rem; shadow:0 4px 6px -1px rgb(0 0 0 / 0.1); border:1px solid #e5e7eb;">
+            <h1 style="font-size:1.25rem; font-weight:bold; color:#111827;">[api paymentgateway lumpat acces -arya]</h1>
+            <p style="color:#6b7280; font-size:0.875rem; margin-top:0.5rem; text-align:center;">Webhook endpoint is active and ready for Midtrans notifications.</p>
+          </div>
+        </div>
+      `
+    };
+  }
+
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Method not allowed' }) };
 
   try {
@@ -31,18 +49,22 @@ export default async function handler(event: any) {
 
     const { order_id, status_code, gross_amount, signature_key, transaction_status, payment_type, fraud_status } = body;
 
+    if (!order_id || !signature_key) {
+      console.error('[WEBHOOK-MIDTRANS] Missing order_id or signature_key');
+      return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Invalid notification' }) };
+    }
+
+    // Try to find eventId for this order
+    const registration: any = await query("SELECT eventId FROM EventRegistration WHERE orderId = ? LIMIT 1", [order_id]);
+    const eventId = registration[0]?.eventId || null;
+
     // Log the incoming request to ActivityLog for debugging
-    await logActivity('webhook.received', `Webhook masuk: Order ${order_id}, Status: ${transaction_status}`, 'system', null, { 
+    await logActivity('webhook.received', `Webhook masuk: Order ${order_id}, Status: ${transaction_status}`, 'system', eventId, { 
       orderId: order_id, 
       status: transaction_status, 
       amount: gross_amount,
       paymentType: payment_type
     });
-
-    if (!order_id || !signature_key) {
-      console.error('[WEBHOOK-MIDTRANS] Missing order_id or signature_key');
-      return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Invalid notification' }) };
-    }
 
     // Robust signature verification
     const verify = (amt: string) => {
@@ -105,6 +127,14 @@ export default async function handler(event: any) {
       // Send Confirmation Email if settlement
       if (paymentStatus === 'settlement') {
         await sendRegistrationConfirmation(reg);
+
+        // Increment t-shirt inventory sold count
+        if (reg.tshirtSize) {
+          await query(
+            'UPDATE TshirtInventory SET sold = sold + 1 WHERE eventId = ? AND size = ?',
+            [reg.eventId, reg.tshirtSize]
+          );
+        }
       }
     }
     return { statusCode: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'ok' }) };

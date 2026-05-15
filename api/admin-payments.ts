@@ -55,6 +55,7 @@ export default async function handler(event: any) {
         paidAt: r.paidAt,
         createdAt: r.createdAt,
         dateOfBirth: r.dateOfBirth,
+        customData: r.customData ? (typeof r.customData === 'string' ? JSON.parse(r.customData) : r.customData) : null,
       })),
       summary: summary[0] || { total: 0, paid: 0, pending: 0, failed: 0, totalRevenue: 0 },
     });

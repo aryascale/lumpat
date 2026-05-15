@@ -600,6 +600,11 @@ body {
   }
 }
 
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
 .custom-marker {
   animation: marker-pulse 2s ease-in-out infinite;
 }
@@ -2688,3 +2693,4 @@ body {
   border-radius: 6px;
   overflow: hidden;
 }
+@plugin "@tailwindcss/typography";

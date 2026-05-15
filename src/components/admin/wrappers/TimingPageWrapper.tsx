@@ -5,7 +5,7 @@ import TimingPage from '../pages/TimingPage';
 
 export default function TimingPageWrapper() {
   const { currentEvent } = useEvent();
-  const [categories, setCategories] = useState<string[]>([...CATEGORY_KEYS]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   const eventId = currentEvent?.id || 'default';
@@ -19,7 +19,7 @@ export default function TimingPageWrapper() {
         }
       } catch (error) {
         console.error('Failed to load categories:', error);
-        setCategories([...CATEGORY_KEYS]);
+        setCategories([]);
       } finally {
         setLoading(false);
       }

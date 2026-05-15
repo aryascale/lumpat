@@ -25,12 +25,12 @@ export default async function handler(event: any) {
     if (!eventId) return errorResponse('eventId is required', 400);
 
     const targetField = fields.field;
-    if (targetField !== 'logo' && targetField !== 'banner') {
-      return errorResponse('Invalid field type, must be "logo" or "banner"', 400);
+    if (targetField !== 'logo' && targetField !== 'banner' && targetField !== 'home_image') {
+      return errorResponse('Invalid field type, must be "logo", "banner" or "home_image"', 400);
     }
 
     const result = await uploadFile(eventId, file.data, file.name, 'images');
-    const updateColumn = targetField === 'logo' ? 'logoUrl' : 'bannerUrl';
+    const updateColumn = targetField === 'logo' ? 'logoUrl' : targetField === 'banner' ? 'bannerUrl' : 'homeImageUrl';
 
     await query(
       `UPDATE Event SET ${updateColumn} = ?, updatedAt = NOW() WHERE id = ?`,

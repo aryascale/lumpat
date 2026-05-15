@@ -20,7 +20,13 @@ export default async function handler(event: any) {
       const categories: any = await query(
         'SELECT * FROM Category WHERE eventId = ? ORDER BY `order` ASC', [eventId]
       );
-      return successResponse({ categories: categories.map((c: any) => ({ id: c.id, name: c.name, price: c.price || 0, order: c.order })) });
+      // Count sold per category from registrations
+      const soldCounts: any = await query(
+        `SELECT categoryId, COUNT(*) as sold FROM EventRegistration WHERE eventId = ? AND paymentStatus = 'settlement' GROUP BY categoryId`,
+        [eventId]
+      );
+      const soldMap = new Map(soldCounts.map((s: any) => [s.categoryId, Number(s.sold)]));
+      return successResponse({ categories: categories.map((c: any) => ({ id: c.id, name: c.name, price: c.price || 0, quota: c.quota || 0, sold: soldMap.get(c.id) || 0, order: c.order })) });
     }
 
     if (event.httpMethod === 'POST' || event.httpMethod === 'PUT') {
@@ -38,17 +44,21 @@ export default async function handler(event: any) {
 
       await query('DELETE FROM Category WHERE eventId = ?', [eventId]);
       for (let i = 0; i < categories.length; i++) {
-        const cat = typeof categories[i] === 'string' ? { name: categories[i], price: 0 } : categories[i];
+        const cat = typeof categories[i] === 'string' ? { name: categories[i], price: 0, quota: 0 } : categories[i];
         await query(
-          'INSERT INTO Category (id, name, eventId, `order`, price, createdAt) VALUES (?, ?, ?, ?, ?, NOW())',
-          [crypto.randomUUID(), cat.name, eventId, i, cat.price || 0]
+          'INSERT INTO Category (id, name, eventId, `order`, price, quota, createdAt) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+          [crypto.randomUUID(), cat.name, eventId, i, cat.price || 0, cat.quota || 0]
         );
       }
 
       const updated: any = await query(
         'SELECT * FROM Category WHERE eventId = ? ORDER BY `order` ASC', [eventId]
       );
-      return successResponse({ categories: updated.map((c: any) => ({ id: c.id, name: c.name, price: c.price || 0, order: c.order })) });
+
+      const { logActivity } = await import('../src/lib/activity-logger');
+      await logActivity('event.update_categories', `Update kategori untuk event ${eventId}`, 'admin', eventId);
+
+      return successResponse({ categories: updated.map((c: any) => ({ id: c.id, name: c.name, price: c.price || 0, quota: c.quota || 0, order: c.order })) });
     }
 
     if (event.httpMethod === 'DELETE') {

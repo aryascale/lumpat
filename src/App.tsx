@@ -19,6 +19,7 @@ import SplashScreen from "./components/SplashScreen";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
+import VerifyPage from "./pages/VerifyPage";
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/verify/:id" element={<VerifyPage />} />
         <Route path="/" element={<LandingPage />} />
         <Route path="/leaderboard" element={<UserEventPage />} />
         <Route path="/event" element={<UserEventPage />} />
@@ -38,7 +40,7 @@ export default function App() {
 
         {/* New Admin Routes with Layout */}
         <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<Navigate to="overview" replace />} />
+          <Route index element={<Navigate to="events" replace />} />
           <Route path="overview" element={<OverviewPageWrapper />} />
           <Route path="events" element={<EventsPageWrapper />} />
           <Route path="banners" element={<BannersPageWrapper />} />

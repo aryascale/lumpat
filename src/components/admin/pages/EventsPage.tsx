@@ -79,7 +79,7 @@ export default function EventsPage({ events, onEventsChange }: EventsPageProps) 
           isActive: newEventActive,
           isDraft: newEventIsDraft,
           publishAt: newEventPublishAt || null,
-          categories: [...CATEGORY_KEYS],
+          categories: [],
         }),
       });
 
@@ -191,6 +191,11 @@ export default function EventsPage({ events, onEventsChange }: EventsPageProps) 
     await refreshEvents(true);
   };
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(events.length / itemsPerPage);
+  const currentEvents = events.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   // Show event detail page if an event is selected
   if (selectedEvent) {
     return (
@@ -206,7 +211,7 @@ export default function EventsPage({ events, onEventsChange }: EventsPageProps) 
   return (
     <>
       {/* Manage Events */}
-      <div className="card">
+      <div className="card flex flex-col" style={{ minHeight: 'calc(100vh - 120px)' }}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <h2 className="section-title">Manage Events</h2>
@@ -217,13 +222,13 @@ export default function EventsPage({ events, onEventsChange }: EventsPageProps) 
           </button>
         </div>
 
-        <div className="p-3 bg-blue-50 border border-blue-400 rounded text-blue-900 text-sm">
+        <div className="p-3 bg-blue-50 border border-blue-400 rounded text-blue-900 text-sm mb-4">
           <strong>Info:</strong> Setiap event memiliki kategori dan data CSV sendiri.
           Pilih event dari data table di bawah untuk mengelola event tersebut.
         </div>
 
         {showEventForm && (
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label className="block mb-2 font-medium text-sm">Event Name</label>
@@ -337,148 +342,194 @@ export default function EventsPage({ events, onEventsChange }: EventsPageProps) 
           </div>
         )}
 
-        {/* Desktop Table - hidden on mobile */}
-        <div className="hidden md:block table-wrap mt-4">
-          <table className="f1-table compact">
-            <thead>
-              <tr>
-                <th>Event Name</th>
-                <th>Date</th>
-                <th>Location</th>
-                <th>Status</th>
-                <th>Pub</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {events.length === 0 ? (
+        {/* Table Container - Flex grow to fill space */}
+        <div className="flex-1 overflow-auto">
+          {/* Desktop Table - hidden on mobile */}
+          <div className="hidden md:block table-wrap">
+            <table className="f1-table compact">
+              <thead>
                 <tr>
-                  <td colSpan={5} className="empty">No events created yet</td>
+                  <th>Event Name</th>
+                  <th>Date</th>
+                  <th>Location</th>
+                  <th>Status</th>
+                  <th>Reg</th>
+                  <th>Pub</th>
+                  <th>Actions</th>
                 </tr>
-              ) : (
-                events.map((evt) => (
-                  <tr key={evt.id} className="row-hover">
-                    <td className="name-cell">{evt.name}</td>
-                    <td className="mono">{evt.eventDate ? new Date(evt.eventDate).toLocaleDateString() : (evt.date || '-')}</td>
-                    <td>{evt.location || "-"}</td>
-                    <td>
-                      <select
-                        className="search"
-                        style={{
-                          padding: '4px 8px',
-                          borderRadius: '6px',
-                          fontSize: '12px',
-                          fontWeight: 700,
-                          border: '1px solid #e5e7eb',
-                          background: getStatusColor(evt.status),
-                          color: getStatusTextColor(evt.status),
-                          cursor: 'pointer',
-                        }}
-                        value={evt.status || 'upcoming'}
-                        onChange={(e) => handleStatusChange(evt.id, e.target.value as EventStatus)}
-                        disabled={updatingStatus === evt.id}
-                      >
-                        <option value="upcoming">Upcoming</option>
-                        <option value="ongoing">Ongoing</option>
-                        <option value="completed">Completed</option>
-                      </select>
-                    </td>
-                    <td>
-                      {evt.isDraft ? (
-                        <span className="px-2 py-0.5 text-[10px] bg-gray-100 text-gray-600 rounded font-bold uppercase">Draft</span>
-                      ) : (
-                        <span className="px-2 py-0.5 text-[10px] bg-black text-white rounded font-bold uppercase">Live</span>
-                      )}
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button
-                          className="btn"
-                          onClick={() => setSelectedEvent(evt)}
-                        >
-                          Manage
-                        </button>
-                        <button
-                          className="btn ghost"
-                          onClick={() => window.open(`/event/${evt.slug}`, '_blank')}
-                        >
-                          View
-                        </button>
-                        <button
-                          className="btn"
-                          style={{ backgroundColor: '#fee2e2', color: '#dc2626', border: 'none' }}
-                          onClick={() => handleDeleteEvent(evt.id, evt.name)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
+              </thead>
+              <tbody>
+                {currentEvents.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="empty py-20">No events found</td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  currentEvents.map((evt) => (
+                    <tr key={evt.id} className="row-hover">
+                      <td className="name-cell font-bold">{evt.name}</td>
+                      <td className="mono text-xs">{evt.eventDate ? new Date(evt.eventDate).toLocaleDateString() : (evt.date || '-')}</td>
+                      <td className="text-sm">{evt.location || "-"}</td>
+                      <td>
+                        <select
+                          className="search"
+                          style={{
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            border: '1px solid #e5e7eb',
+                            background: getStatusColor(evt.status),
+                            color: getStatusTextColor(evt.status),
+                            cursor: 'pointer',
+                          }}
+                          value={evt.status || 'upcoming'}
+                          onChange={(e) => handleStatusChange(evt.id, e.target.value as EventStatus)}
+                          disabled={updatingStatus === evt.id}
+                        >
+                          <option value="upcoming">Upcoming</option>
+                          <option value="ongoing">Ongoing</option>
+                          <option value="completed">Completed</option>
+                        </select>
+                      </td>
+                      <td>
+                        <div className="font-bold text-gray-700 text-sm">
+                          {evt.participantCount || 0}
+                        </div>
+                      </td>
+                      <td>
+                        {evt.isDraft ? (
+                          <span className="px-2 py-0.5 text-[10px] bg-gray-100 text-gray-600 rounded font-bold uppercase">Draft</span>
+                        ) : (
+                          <span className="px-2 py-0.5 text-[10px] bg-black text-white rounded font-bold uppercase text-xs">Live</span>
+                        )}
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '0.4rem' }}>
+                          <button
+                            className="btn sm"
+                            onClick={() => setSelectedEvent(evt)}
+                          >
+                            Manage
+                          </button>
+                          <button
+                            className="btn ghost sm"
+                            onClick={() => window.open(`/event/${evt.slug}`, '_blank')}
+                          >
+                            View
+                          </button>
+                          <button
+                            className="btn sm"
+                            style={{ backgroundColor: '#fee2e2', color: '#dc2626', border: 'none' }}
+                            onClick={() => handleDeleteEvent(evt.id, evt.name)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Cards - visible only on mobile */}
+          <div className="md:hidden space-y-3">
+            {currentEvents.length === 0 ? (
+              <div className="text-center text-gray-500 py-12">No events found</div>
+            ) : (
+              currentEvents.map((evt) => (
+                <div key={evt.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{evt.name}</h3>
+                      <p className="text-sm text-gray-500">{evt.location || "No location"}</p>
+                    </div>
+                    <span
+                      className="px-2 py-1 rounded-full text-[10px] font-bold uppercase"
+                      style={{
+                        background: getStatusColor(evt.status),
+                        color: getStatusTextColor(evt.status),
+                      }}
+                    >
+                      {evt.status || 'upcoming'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center mb-3 text-sm text-gray-600">
+                    <span className="mono text-xs">
+                      {evt.eventDate ? new Date(evt.eventDate).toLocaleDateString() : (evt.date || 'No date')}
+                    </span>
+                    <span className="font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded text-xs">
+                      {evt.participantCount || 0} Reg
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <select
+                      className="search w-full text-sm"
+                      value={evt.status || 'upcoming'}
+                      onChange={(e) => handleStatusChange(evt.id, e.target.value as EventStatus)}
+                      disabled={updatingStatus === evt.id}
+                    >
+                      <option value="upcoming">Upcoming</option>
+                      <option value="ongoing">Ongoing</option>
+                      <option value="completed">Completed</option>
+                    </select>
+                    <div className="flex gap-2">
+                      <button
+                        className="btn flex-1 sm"
+                        onClick={() => setSelectedEvent(evt)}
+                      >
+                        Manage
+                      </button>
+                      <button
+                        className="btn ghost flex-1 sm"
+                        onClick={() => window.open(`/event/${evt.slug}`, '_blank')}
+                      >
+                        View
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
-        {/* Mobile Cards - visible only on mobile */}
-        <div className="md:hidden mt-4 space-y-3">
-          {events.length === 0 ? (
-            <div className="text-center text-gray-500 py-8">No events created yet</div>
-          ) : (
-            events.map((evt) => (
-              <div key={evt.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{evt.name}</h3>
-                    <p className="text-sm text-gray-500">{evt.location || "No location"}</p>
-                  </div>
-                  <span
-                    className="px-2 py-1 rounded-full text-xs font-bold"
-                    style={{
-                      background: getStatusColor(evt.status),
-                      color: getStatusTextColor(evt.status),
-                    }}
-                  >
-                    {evt.status || 'upcoming'}
-                  </span>
-                </div>
-                
-                <div className="text-sm text-gray-600 mb-3">
-                  <span className="mono">
-                    {evt.eventDate ? new Date(evt.eventDate).toLocaleDateString() : (evt.date || 'No date')}
-                  </span>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <select
-                    className="search w-full text-sm"
-                    value={evt.status || 'upcoming'}
-                    onChange={(e) => handleStatusChange(evt.id, e.target.value as EventStatus)}
-                    disabled={updatingStatus === evt.id}
-                  >
-                    <option value="upcoming">Upcoming</option>
-                    <option value="ongoing">Ongoing</option>
-                    <option value="completed">Completed</option>
-                  </select>
-                  <div className="flex gap-2">
-                    <button
-                      className="btn flex-1"
-                      onClick={() => setSelectedEvent(evt)}
-                    >
-                      Manage
-                    </button>
-                    <button
-                      className="btn ghost flex-1"
-                      onClick={() => window.open(`/event/${evt.slug}`, '_blank')}
-                    >
-                      View
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-gray-100 pt-4 mt-auto">
+            <div className="text-sm text-gray-500">
+              Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, events.length)}</span> of <span className="font-medium">{events.length}</span> events
+            </div>
+            <div className="flex gap-1">
+              <button
+                className="btn ghost sm"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => prev - 1)}
+              >
+                Previous
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  className={`btn sm w-8 h-8 p-0 flex items-center justify-center ${currentPage === page ? '' : 'ghost'}`}
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page}
+                </button>
+              ))}
+              <button
+                className="btn ghost sm"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => prev + 1)}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useEvent } from '../../../contexts/EventContext';
 
 export default function ActivityLogsPage() {
-  const { currentEvent } = useEvent();
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -12,10 +10,8 @@ export default function ActivityLogsPage() {
   const loadLogs = async () => {
     try {
       setLoading(true);
-      // Show all logs if no specific event is selected or if 'default' is selected
-      const eventIdParam = currentEvent?.id && currentEvent.id !== 'default' && currentEvent.id !== 'all' ? `&eventId=${currentEvent.id}` : '';
       const offset = (page - 1) * limit;
-      const res = await fetch(`/api/activity-logs?limit=${limit}&offset=${offset}${eventIdParam}`);
+      const res = await fetch(`/api/activity-logs?limit=${limit}&offset=${offset}`);
       if (res.ok) {
         const data = await res.json();
         setLogs(data.logs || []);
@@ -36,82 +32,91 @@ export default function ActivityLogsPage() {
       if (page === 1) loadLogs();
     }, 30000);
     return () => clearInterval(interval);
-  }, [currentEvent?.id, page]);
+  }, [page]);
 
   return (
-    <div className="card">
-      <div className="header-row mb-6">
-        <div>
-          <h2 className="section-title">Activity Logs</h2>
-          <div className="subtle">Riwayat aktivitas sistem dan transaksi.</div>
+    <div className="flex flex-col">
+      <div className="card flex-1 flex flex-col" style={{ minHeight: 'calc(100vh - 120px)' }}>
+        <div className="header-row mb-6">
+          <div>
+            <h2 className="section-title">Activity Logs</h2>
+            <div className="subtle">Riwayat aktivitas sistem dan transaksi.</div>
+          </div>
+          <button className="btn" onClick={loadLogs} disabled={loading}>
+            {loading ? 'Memuat...' : 'Refresh'}
+          </button>
         </div>
-        <button className="btn" onClick={loadLogs} disabled={loading}>
-          {loading ? 'Memuat...' : 'Refresh'}
-        </button>
-      </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-gray-100 bg-gray-50 text-gray-600">
-              <th className="py-3 px-4 font-semibold">Waktu</th>
-              <th className="py-3 px-4 font-semibold">Aksi</th>
-              <th className="py-3 px-4 font-semibold">Pelaku</th>
-              <th className="py-3 px-4 font-semibold">Detail</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.map((log) => (
-              <tr key={log.id} className="border-b border-gray-50 hover:bg-gray-50">
-                <td className="py-3 px-4 text-xs text-gray-500 whitespace-nowrap">
-                  {new Date(log.createdAt).toLocaleDateString('id-ID', {
-                    day: 'numeric', month: 'short', year: 'numeric',
-                    hour: '2-digit', minute: '2-digit', second: '2-digit'
-                  })}
-                </td>
-                <td className="py-3 px-4">
-                  <span className="px-2 py-1 text-[10px] font-bold uppercase rounded-md bg-gray-100 text-gray-700">
-                    {log.action}
-                  </span>
-                </td>
-                <td className="py-3 px-4 font-medium text-gray-900">{log.actor}</td>
-                <td className="py-3 px-4 text-gray-600">{log.detail}</td>
-              </tr>
-            ))}
-            {logs.length === 0 && !loading && (
+        <div className="flex-1 overflow-auto">
+          <table className="f1-table compact">
+            <thead>
               <tr>
-                <td colSpan={4} className="py-8 text-center text-gray-500">
-                  Belum ada log aktivitas.
-                </td>
+                <th className="font-bold">Waktu</th>
+                <th className="font-bold">Aksi</th>
+                <th className="font-bold">Pelaku</th>
+                <th className="font-bold">Detail</th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {total > limit && (
-        <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
-          <div className="text-sm text-gray-500">
-            Menampilkan {(page - 1) * limit + 1} - {Math.min(page * limit, total)} dari {total} log
-          </div>
-          <div className="flex gap-2">
-            <button
-              className="px-3 py-1 border border-gray-200 rounded disabled:opacity-50"
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-            >
-              Sebelumnya
-            </button>
-            <button
-              className="px-3 py-1 border border-gray-200 rounded disabled:opacity-50"
-              onClick={() => setPage(p => p + 1)}
-              disabled={page * limit >= total}
-            >
-              Selanjutnya
-            </button>
-          </div>
+            </thead>
+            <tbody>
+              {logs.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="empty py-20 text-center text-gray-400 font-medium">
+                    {loading ? 'Memuat data log...' : 'Belum ada log aktivitas.'}
+                  </td>
+                </tr>
+              ) : (
+                logs.map((log) => (
+                  <tr key={log.id} className="row-hover">
+                    <td className="mono text-[10px] text-gray-500 whitespace-nowrap">
+                      {new Date(log.createdAt).toLocaleDateString('id-ID', {
+                        day: 'numeric', month: 'short', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit', second: '2-digit'
+                      })}
+                    </td>
+                    <td>
+                      <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-gray-100 text-gray-600 border border-gray-200">
+                        {log.action}
+                      </span>
+                    </td>
+                    <td className="font-bold text-sm text-gray-900">{log.actor}</td>
+                    <td className="text-xs text-gray-600 leading-relaxed">{log.detail}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
+
+        {total > limit && (
+          <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
+            <div className="text-sm text-gray-500">
+              Showing <span className="font-medium">{(page - 1) * limit + 1}</span> to <span className="font-medium">{Math.min(page * limit, total)}</span> of <span className="font-medium">{total}</span> logs
+            </div>
+            <div className="flex gap-1">
+              <button
+                className="btn ghost sm"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+              >
+                Previous
+              </button>
+              <button
+                className="btn sm w-10 h-8 p-0 flex items-center justify-center font-bold"
+                disabled
+              >
+                {page}
+              </button>
+              <button
+                className="btn ghost sm"
+                onClick={() => setPage(p => p + 1)}
+                disabled={page * limit >= total}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

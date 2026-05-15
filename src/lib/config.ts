@@ -36,13 +36,9 @@ export async function getCategoriesForEvent(eventId: string): Promise<string[]> 
   try {
     const response = await fetch(`/api/categories?eventId=${encodeURIComponent(eventId)}`);
 
-    if (!response.ok) {
-      return [...DEFAULT_CATEGORIES];
-    }
-
     const data = await response.json();
-    return (data.categories && data.categories.length > 0) ? data.categories : [...DEFAULT_CATEGORIES];
+    return data.categories || [];
   } catch (error) {
-    return [...DEFAULT_CATEGORIES];
+    return [];
   }
 }

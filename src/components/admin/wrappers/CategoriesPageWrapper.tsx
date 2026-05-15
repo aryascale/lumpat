@@ -5,7 +5,7 @@ import CategoriesPage from '../pages/CategoriesPage';
 
 export default function CategoriesPageWrapper() {
   const { currentEvent } = useEvent();
-  const [categories, setCategories] = useState<string[]>([...CATEGORY_KEYS]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   const eventId = currentEvent?.id || 'default';
@@ -19,7 +19,7 @@ export default function CategoriesPageWrapper() {
         }
       } catch (error) {
         console.error('Failed to load categories:', error);
-        setCategories([...CATEGORY_KEYS]);
+        setCategories([]);
       } finally {
         setLoading(false);
       }

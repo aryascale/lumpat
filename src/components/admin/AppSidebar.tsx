@@ -157,12 +157,6 @@ export default function AppSidebar({ collapsed, menuItems, onItemClick }: AppSid
 // Export default menu items for use in AdminLayout
 export const defaultMenuItems: MenuItem[] = [
   {
-    key: 'overview',
-    label: 'Overview',
-    icon: <HomeIcon />,
-    path: '/admin/overview',
-  },
-  {
     key: 'events',
     label: 'Events',
     icon: <EventsIcon />,

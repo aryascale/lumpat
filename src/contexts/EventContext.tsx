@@ -15,6 +15,17 @@ interface Event {
   status?: string;
   cutoffMs?: number | null;
   categoryStartTimes?: Record<string, string> | null;
+  bannerUrl?: string;
+  logoUrl?: string;
+  homeImageUrl?: string;
+  participantCount?: number;
+  content?: {
+    about: string;
+    schedule: string;
+    rules: string;
+  };
+  isDraft?: boolean;
+  publishAt?: string;
 }
 
 interface EventContextType {

@@ -36,9 +36,6 @@ function formatDate(dateStr?: string) {
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-const EVENT_TYPES = ['Fun Run', 'Marathon', 'Trail Run', 'Triathlon', 'Cycling'];
-const LOCATIONS = ['Jakarta', 'Bandung', 'Surabaya', 'Yogyakarta', 'Bali'];
-
 export default function UserEventPage() {
   const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
@@ -92,6 +89,7 @@ export default function UserEventPage() {
   );
 
   const uniqueLocations = [...new Set(events.map(e => e.location).filter(Boolean))];
+  const uniqueCategories = [...new Set(events.flatMap(e => e.categories || []).filter(Boolean))];
 
   return (
     <>
@@ -155,7 +153,7 @@ export default function UserEventPage() {
               <div className="mb-6">
                 <h3 className="text-sm font-bold text-gray-800 mb-3">Event Type</h3>
                 <div className="grid grid-cols-2 gap-2">
-                  {EVENT_TYPES.map(t => (
+                  {uniqueCategories.map(t => (
                     <label key={t} className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer hover:text-gray-900 transition-colors">
                       <input type="checkbox" className="w-3.5 h-3.5 rounded border-gray-300 text-red-500 focus:ring-red-400" />
                       {t}
@@ -188,8 +186,7 @@ export default function UserEventPage() {
                   className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400"
                 >
                   <option value="all">All Locations</option>
-                  {uniqueLocations.map(l => <option key={l} value={l}>{l}</option>)}
-                  {LOCATIONS.filter(l => !uniqueLocations.includes(l)).map(l => <option key={l} value={l}>{l}</option>)}
+                  {uniqueLocations.map(l => <option key={l as string} value={l as string}>{l as string}</option>)}
                 </select>
               </div>
             </div>
@@ -246,7 +243,7 @@ export default function UserEventPage() {
                   {filtered.map((event, i) => {
                     const status = event.status || 'upcoming';
                     const colors = STATUS_COLORS[status] || STATUS_COLORS.upcoming;
-                    const hasBanner = !!event.bannerUrl && event.bannerUrl.startsWith('http');
+                    const hasBanner = !!event.bannerUrl;
                     return (
                       <div key={event.id} onClick={() => handleView(event.slug)}
                         className="group bg-white rounded-2xl overflow-hidden border border-gray-100 hover:border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer"

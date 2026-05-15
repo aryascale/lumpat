@@ -38,7 +38,8 @@ export default async function handler(event: any) {
     }
 
     // Log the manual action
-    await logActivity('payment.manual_settle', `Penyelesaian pembayaran manual untuk ${orderId}`, 'admin', null, { orderId });
+    const eventId = regRes[0]?.eventId || null;
+    await logActivity('payment.manual_settle', `Penyelesaian pembayaran manual untuk ${orderId}`, 'admin', eventId, { orderId });
 
     return successResponse({ message: 'Pembayaran berhasil diselesaikan secara manual' });
   } catch (error: any) {

@@ -1,4 +1,6 @@
 // Admin Event Detail Page - for managing individual event data, CSV uploads, banners, categories
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import { useState, useEffect, useMemo } from "react";
 import { putCsvFile, deleteCsvFile, listCsvMeta } from "../../../lib/idb";
 import { parseCsv, countDataRows } from "../../../lib/csvParse";
@@ -39,26 +41,44 @@ function formatNowAsTimestamp(): string {
 }
 
 export default function EventDetailPage({ eventId, eventSlug, eventName, onBack }: EventDetailPageProps) {
-  const [activeTab, setActiveTab] = useState<'data' | 'banners' | 'categories' | 'route' | 'timing' | 'dq' | 'certified' | 'settings'>('data');
+  const [activeTab, setActiveTab] = useState<'homepage' | 'data' | 'banners' | 'categories' | 'route' | 'timing' | 'dq' | 'certified' | 'settings' | 'registration' | 'inventory'>('homepage');
+  const [participants, setParticipants] = useState<any[]>([]);
+  const [loadingParticipants, setLoadingParticipants] = useState(false);
   const [csvMeta, setCsvMeta] = useState<Array<{ key: CsvKind; filename: string; updatedAt: number; rows: number }>>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
-  const [categories, setCategories] = useState<Array<{ name: string; price: number }>>([]);
+  const [categories, setCategories] = useState<Array<{ name: string; price: number; quota: number }>>([]);
   const [loading, setLoading] = useState(true);
 
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [coverBannerFile, setCoverBannerFile] = useState<File | null>(null);
+  const [homeImageFile, setHomeImageFile] = useState<File | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingHomeImage, setUploadingHomeImage] = useState(false);
 
   // Category state
   const [newCategory, setNewCategory] = useState('');
   const [newCategoryPrice, setNewCategoryPrice] = useState('');
+  const [newCategoryQuota, setNewCategoryQuota] = useState('');
 
   // Event settings state
   const [tshirtSizes, setTshirtSizes] = useState('');
   const [bibCustomPrice, setBibCustomPrice] = useState('');
+
+  // Homepage content state
+  const [homeContent, setHomeContent] = useState<{ about: string; schedule: string; rules: string }>({ about: '', schedule: '', rules: '' });
+  const [savingHome, setSavingHome] = useState(false);
+
+  // Registration fields state
+  const [regFields, setRegFields] = useState<Array<{ id?: string; label: string; type: string; required: boolean; options: string }>>([]);
+  const [savingFields, setSavingFields] = useState(false);
+
+  // T-shirt inventory state
+  const [tshirtInventory, setTshirtInventory] = useState<Array<{ id?: string; size: string; quota: number; sold: number; width?: string; height?: string }>>([]);
+  const [sizeChartHtml, setSizeChartHtml] = useState('');
+  const [savingInventory, setSavingInventory] = useState(false);
 
   // GPX upload state
   const [gpxFile, setGpxFile] = useState<File | null>(null);
@@ -114,8 +134,46 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       const catRes = await fetch(`/api/categories?eventId=${eventId}`);
       if (catRes.ok) {
         const data = await catRes.json();
-        const cats = (data.categories || []).map((c: any) => typeof c === 'string' ? { name: c, price: 0 } : { name: c.name, price: c.price || 0 });
+        const cats = (data.categories || []).map((c: any) => typeof c === 'string' ? { name: c, price: 0, quota: 0 } : { name: c.name, price: c.price || 0, quota: c.quota || 0 });
         setCategories(cats);
+      }
+
+      // Load homepage content
+      const contentRes = await fetch(`/api/events?eventId=${eventId}`);
+      if (contentRes.ok) {
+        const evtData = await contentRes.json();
+        if (evtData.content) {
+          setHomeContent({
+            about: evtData.content.about || '',
+            schedule: evtData.content.schedule || '',
+            rules: evtData.content.rules || '',
+          });
+        }
+      }
+
+      // Load registration fields
+      const fieldsRes = await fetch(`/api/registration-fields?eventId=${eventId}`);
+      if (fieldsRes.ok) {
+        const fData = await fieldsRes.json();
+        setRegFields((fData.fields || []).map((f: any) => ({ id: f.id, label: f.label, type: f.type || 'text', required: !!f.required, options: f.options || '' })));
+      }
+
+      // Load t-shirt inventory
+      const invRes = await fetch(`/api/tshirt-inventory?eventId=${eventId}`);
+      if (invRes.ok) {
+        const iData = await invRes.json();
+        setTshirtInventory((iData.inventory || []).map((i: any) => ({ id: i.id, size: i.size, quota: i.quota || 0, sold: i.sold || 0, width: i.width || '', height: i.height || '' })));
+        
+        let content = {};
+        try { content = typeof data.event.content === 'string' ? JSON.parse(data.event.content) : (data.event.content || {}); } catch(e){}
+        setSizeChartHtml(content.sizeChartHtml || '');
+      }
+
+      // Load participants
+      const pRes = await fetch(`/api/registrations?eventId=${eventId}`);
+      if (pRes.ok) {
+        const pData = await pRes.json();
+        setParticipants(pData.participants || []);
       }
 
       // Load event data to get GPX file path and timing
@@ -369,14 +427,20 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
     }
   };
 
-  const handleMediaUpload = async (type: 'logo' | 'banner') => {
-    const file = type === 'logo' ? logoFile : coverBannerFile;
+  const handleMediaUpload = async (type: 'logo' | 'banner' | 'home_image') => {
+    let file = null;
+    if (type === 'logo') file = logoFile;
+    else if (type === 'banner') file = coverBannerFile;
+    else if (type === 'home_image') file = homeImageFile;
+
     if (!file) {
       alert('Please select an image file');
       return;
     }
 
-    type === 'logo' ? setUploadingLogo(true) : setUploadingCover(true);
+    if (type === 'logo') setUploadingLogo(true);
+    else if (type === 'banner') setUploadingCover(true);
+    else if (type === 'home_image') setUploadingHomeImage(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -400,17 +464,19 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         setLogoFile(null);
         const fileInput = document.getElementById('logo-upload') as HTMLInputElement;
         if (fileInput) fileInput.value = '';
-      } else {
-        setCoverBannerFile(null);
-        const fileInput = document.getElementById('cover-banner-upload') as HTMLInputElement;
+      } else if (type === 'home_image') {
+        setHomeImageFile(null);
+        const fileInput = document.getElementById('home-image-upload') as HTMLInputElement;
         if (fileInput) fileInput.value = '';
       }
       
-      alert(`${type === 'logo' ? 'Logo' : 'Cover Banner'} uploaded successfully!`);
+      alert(`${type === 'logo' ? 'Logo' : type === 'banner' ? 'Cover Banner' : 'Homepage Image'} uploaded successfully!`);
     } catch (error: any) {
       alert(error.message || `Failed to upload ${type}`);
     } finally {
-      type === 'logo' ? setUploadingLogo(false) : setUploadingCover(false);
+      if (type === 'logo') setUploadingLogo(false);
+      else if (type === 'banner') setUploadingCover(false);
+      else if (type === 'home_image') setUploadingHomeImage(false);
     }
   };
 
@@ -464,10 +530,12 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
     }
 
     const price = parseInt(newCategoryPrice) || 0;
-    const updated = [...categories, { name: trimmed, price }];
+    const quota = parseInt(newCategoryQuota) || 0;
+    const updated = [...categories, { name: trimmed, price, quota }];
     await saveCategories(updated);
     setNewCategory('');
     setNewCategoryPrice('');
+    setNewCategoryQuota('');
   };
 
   const removeCategory = async (catName: string) => {
@@ -481,7 +549,72 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
     await saveCategories(updated);
   };
 
-  const saveCategories = async (cats: Array<{ name: string; price: number }>) => {
+  const updateCategoryQuota = async (catName: string, quota: number) => {
+    const updated = categories.map(c => c.name === catName ? { ...c, quota } : c);
+    await saveCategories(updated);
+  };
+
+  // Homepage content save
+  const saveHomeContent = async () => {
+    setSavingHome(true);
+    try {
+      const res = await fetch(`/api/events?eventId=${eventId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: homeContent }),
+      });
+      if (res.ok) alert('Homepage content saved!');
+      else alert('Failed to save homepage content');
+    } catch {
+      alert('Failed to save homepage content');
+    } finally {
+      setSavingHome(false);
+    }
+  };
+
+  // Registration fields save
+  const saveRegFields = async () => {
+    setSavingFields(true);
+    try {
+      const res = await fetch(`/api/registration-fields?eventId=${eventId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: regFields }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRegFields((data.fields || []).map((f: any) => ({ id: f.id, label: f.label, type: f.type || 'text', required: !!f.required, options: f.options || '' })));
+        alert('Registration fields saved!');
+      } else alert('Failed to save registration fields');
+    } catch {
+      alert('Failed to save registration fields');
+    } finally {
+      setSavingFields(false);
+    }
+  };
+
+  // T-shirt inventory save
+  const saveTshirtInventory = async () => {
+    setSavingInventory(true);
+    try {
+      const res = await fetch(`/api/tshirt-inventory?eventId=${slug}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inventory: tshirtInventory, sizeChartHtml }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTshirtInventory((data.inventory || []).map((i: any) => ({ id: i.id, size: i.size, quota: i.quota || 0, sold: i.sold || 0 })));
+        alert('T-shirt inventory saved!');
+      } else alert('Failed to save inventory');
+    } catch {
+      alert('Failed to save inventory');
+    } finally {
+      setSavingInventory(false);
+    }
+  };
+
+  const saveCategories = async (cats: Array<{ name: string; price: number; quota: number }>) => {
     try {
       const res = await fetch(`/api/categories?eventId=${eventId}`, {
         method: 'POST',
@@ -742,16 +875,22 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       {/* Tabs - scrollable on mobile */}
       <div className="flex gap-1 mb-4 overflow-x-auto pb-2 border-b-2 border-gray-200 -mx-3 px-3 md:mx-0 md:px-0">
         <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'data' ? 'active' : ''}`}
-          onClick={() => setActiveTab('data')}
+          className={`detail-tab whitespace-nowrap ${activeTab === 'homepage' ? 'active' : ''}`}
+          onClick={() => setActiveTab('homepage')}
         >
-          Data Upload
+          Homepage
         </button>
         <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'timing' ? 'active' : ''}`}
-          onClick={() => setActiveTab('timing')}
+          className={`detail-tab whitespace-nowrap ${activeTab === 'registration' ? 'active' : ''}`}
+          onClick={() => setActiveTab('registration')}
         >
-          Timing Rules
+          Registration ({regFields.length})
+        </button>
+        <button
+          className={`detail-tab whitespace-nowrap ${activeTab === 'inventory' ? 'active' : ''}`}
+          onClick={() => setActiveTab('inventory')}
+        >
+          Inventory ({tshirtInventory.length})
         </button>
         <button
           className={`detail-tab whitespace-nowrap ${activeTab === 'banners' ? 'active' : ''}`}
@@ -772,6 +911,18 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           Route {currentGpxPath ? '(1)' : '(0)'}
         </button>
         <button
+          className={`detail-tab whitespace-nowrap ${activeTab === 'data' ? 'active' : ''}`}
+          onClick={() => setActiveTab('data')}
+        >
+          Data Upload
+        </button>
+        <button
+          className={`detail-tab whitespace-nowrap ${activeTab === 'timing' ? 'active' : ''}`}
+          onClick={() => setActiveTab('timing')}
+        >
+          Timing Rules
+        </button>
+        <button
           className={`detail-tab whitespace-nowrap ${activeTab === 'dq' ? 'active' : ''}`}
           onClick={() => setActiveTab('dq')}
         >
@@ -787,9 +938,10 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           className={`detail-tab whitespace-nowrap ${activeTab === 'settings' ? 'active' : ''}`}
           onClick={() => setActiveTab('settings')}
         >
-          Settings ⚙️
+          Settings
         </button>
       </div>
+
 
       {/* Data Upload Tab */}
       {activeTab === 'data' && (
@@ -1139,11 +1291,20 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
             />
             <input
               className="search"
-              style={{ width: 160 }}
+              style={{ width: 140 }}
               placeholder="Harga (Rp)"
               type="number"
               value={newCategoryPrice}
               onChange={(e) => setNewCategoryPrice(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addCategory()}
+            />
+            <input
+              className="search"
+              style={{ width: 120 }}
+              placeholder="Kuota (0=∞)"
+              type="number"
+              value={newCategoryQuota}
+              onChange={(e) => setNewCategoryQuota(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && addCategory()}
             />
             <button className="btn w-full sm:w-auto" onClick={addCategory} disabled={!newCategory.trim()}>
@@ -1158,14 +1319,15 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                 <tr>
                   <th style={{ width: 60 }}>#</th>
                   <th>Category Name</th>
-                  <th style={{ width: 180 }}>Harga (Rp)</th>
+                  <th style={{ width: 160 }}>Harga (Rp)</th>
+                  <th style={{ width: 120 }}>Kuota</th>
                   <th style={{ width: 100 }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {categories.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="empty">No categories yet</td>
+                    <td colSpan={5} className="empty">No categories yet</td>
                   </tr>
                 ) : (
                   categories.map((cat, index) => (
@@ -1175,10 +1337,20 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                       <td>
                         <input
                           className="search text-right"
-                          style={{ width: 150 }}
+                          style={{ width: 130 }}
                           type="number"
                           value={cat.price}
                           onChange={(e) => updateCategoryPrice(cat.name, parseInt(e.target.value) || 0)}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          className="search text-right"
+                          style={{ width: 100 }}
+                          type="number"
+                          value={cat.quota}
+                          placeholder="0=∞"
+                          onChange={(e) => updateCategoryQuota(cat.name, parseInt(e.target.value) || 0)}
                         />
                       </td>
                       <td>
@@ -1229,33 +1401,6 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                 </div>
               ))
             )}
-          </div>
-
-          {/* Event Settings */}
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <h3 className="text-sm font-bold text-gray-800 mb-4 uppercase tracking-wider">Event Settings</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Ukuran Jersey (pisahkan dengan koma)</label>
-                <input
-                  className="search w-full"
-                  placeholder="S,M,L,XL,XXL"
-                  value={tshirtSizes}
-                  onChange={(e) => setTshirtSizes(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Biaya Custom BIB Name (Rp)</label>
-                <input
-                  className="search w-full"
-                  placeholder="0 = gratis / tidak ada opsi"
-                  type="number"
-                  value={bibCustomPrice}
-                  onChange={(e) => setBibCustomPrice(e.target.value)}
-                />
-              </div>
-            </div>
-            <button className="btn mt-4" onClick={saveEventSettings}>Simpan Settings</button>
           </div>
         </div>
       )}
@@ -1723,6 +1868,415 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         </div>
       )}
 
+      {/* Homepage Content Tab */}
+      {activeTab === 'homepage' && (
+        <div className="card">
+          <div className="header-row mb-6">
+            <div>
+              <h2 className="section-title">Homepage Content</h2>
+              <div className="subtle text-sm">Kelola konten yang tampil di halaman Home event (blog-style landing page).</div>
+            </div>
+            <button className="btn" onClick={saveHomeContent} disabled={savingHome}>
+              {savingHome ? 'Saving...' : 'Save Content'}
+            </button>
+          </div>
+
+          <div className="mb-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <div className="font-bold text-gray-900 mb-1">Homepage Summary Image</div>
+            <div className="text-xs text-gray-500 mb-3">Large image for the event summary section (blog-style).</div>
+            {eventData?.homeImageUrl && (
+              <div className="relative inline-block mb-3">
+                <img src={eventData.homeImageUrl} alt="Home Image" className="w-full max-w-md h-48 object-cover bg-white rounded shadow-sm border border-gray-200" />
+                <button
+                  className="absolute top-2 right-2 w-7 h-7 bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold hover:bg-red-700 shadow-md"
+                  title="Hapus gambar"
+                  onClick={async () => {
+                    if (!confirm('Hapus gambar homepage?')) return;
+                    try {
+                      await fetch(`/api/events?eventId=${eventData.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ homeImageUrl: null }),
+                      });
+                      setEventData((prev: any) => prev ? { ...prev, homeImageUrl: null } : prev);
+                    } catch (e) {
+                      alert('Gagal menghapus gambar');
+                    }
+                  }}
+                >✕</button>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                id="home-image-upload"
+                type="file"
+                accept="image/*"
+                onChange={(e) => setHomeImageFile(e.target.files?.[0] || null)}
+                className="flex-1 text-sm block w-full text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300"
+              />
+              <button
+                className="btn"
+                onClick={() => handleMediaUpload('home_image')}
+                disabled={!homeImageFile || uploadingHomeImage}
+              >
+                {uploadingHomeImage ? 'Uploading...' : 'Upload Image'}
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Konten Halaman Home</label>
+              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden pb-12">
+                <ReactQuill 
+                  theme="snow" 
+                  value={homeContent.about} 
+                  onChange={(val) => setHomeContent({ ...homeContent, about: val })} 
+                  style={{ height: '400px' }} 
+                  className="bg-white"
+                  placeholder="Ketik isi konten homepage di sini... (mendukung format teks, gambar, video, dan styling)"
+                />
+              </div>
+            </div>
+
+            <div className="p-3 bg-blue-50 border border-blue-400 rounded-lg text-blue-900 text-sm mt-8">
+              <strong>Tips:</strong> Konten ini akan ditampilkan secara penuh di tab "Home" pada halaman event publik. Anda memiliki kontrol penuh atas styling, gambar, dan tata letaknya.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Registration Fields Tab */}
+      {activeTab === 'registration' && (
+        <div className="card">
+          <div className="header-row mb-6">
+            <div>
+              <h2 className="section-title">Custom Registration Fields</h2>
+              <div className="subtle text-sm">Tambahkan field custom di form registrasi event ini (selain field standar: nama, email, dll).</div>
+            </div>
+            <button className="btn" onClick={saveRegFields} disabled={savingFields}>
+              {savingFields ? 'Saving...' : 'Save Fields'}
+            </button>
+          </div>
+
+          {/* Add Field */}
+          <div className="flex flex-col sm:flex-row gap-2 mb-6">
+            <button
+              className="btn w-full sm:w-auto"
+              onClick={() => setRegFields([...regFields, { label: '', type: 'text', required: false, options: '' }])}
+            >
+              + Add Field
+            </button>
+          </div>
+
+          {regFields.length === 0 ? (
+            <div className="text-center text-gray-400 py-8">
+              <p className="text-gray-600 font-medium">Belum ada custom field</p>
+              <p className="text-sm text-gray-400 mt-1">Klik "+ Add Field" untuk menambahkan field baru di form registrasi.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {regFields.map((field, idx) => (
+                <div key={idx} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <span className="text-xs font-bold text-gray-400 uppercase">Field #{idx + 1}</span>
+                    <button
+                      className="btn ghost text-xs"
+                      style={{ color: '#dc2626' }}
+                      onClick={() => setRegFields(regFields.filter((_, i) => i !== idx))}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-600 mb-1">Label</label>
+                      <input
+                        className="search w-full"
+                        placeholder="e.g., Komunitas"
+                        value={field.label}
+                        onChange={(e) => {
+                          const updated = [...regFields];
+                          updated[idx] = { ...updated[idx], label: e.target.value };
+                          setRegFields(updated);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-600 mb-1">Type</label>
+                      <select
+                        className="search w-full"
+                        value={field.type}
+                        onChange={(e) => {
+                          const updated = [...regFields];
+                          updated[idx] = { ...updated[idx], type: e.target.value };
+                          setRegFields(updated);
+                        }}
+                      >
+                        <option value="text">Text</option>
+                        <option value="number">Number</option>
+                        <option value="textarea">Textarea</option>
+                        <option value="dropdown">Dropdown</option>
+                      </select>
+                    </div>
+                    {field.type === 'dropdown' && (
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-bold text-gray-600 mb-1">Options (pisahkan dengan koma)</label>
+                        <input
+                          className="search w-full"
+                          placeholder="e.g., Option A, Option B, Option C"
+                          value={field.options}
+                          onChange={(e) => {
+                            const updated = [...regFields];
+                            updated[idx] = { ...updated[idx], options: e.target.value };
+                            setRegFields(updated);
+                          }}
+                        />
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={field.required}
+                          onChange={(e) => {
+                            const updated = [...regFields];
+                            updated[idx] = { ...updated[idx], required: e.target.checked };
+                            setRegFields(updated);
+                          }}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-sm font-medium text-gray-700">Required</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-400 rounded-lg text-blue-900 text-sm">
+            <strong>Info:</strong> Field custom akan muncul di bawah form registrasi standar. Data yang diisi peserta akan tersimpan di customData.
+          </div>
+        </div>
+      )}
+
+      {/* T-shirt Inventory Tab */}
+      {activeTab === 'inventory' && (
+        <div className="card">
+          <div className="header-row mb-6">
+            <div>
+              <h2 className="section-title">T-shirt / Jersey Inventory</h2>
+              <div className="subtle text-sm">Kelola stok jersey per ukuran. Set kuota 0 untuk unlimited.</div>
+            </div>
+            <button className="btn" onClick={saveTshirtInventory} disabled={savingInventory}>
+              {savingInventory ? 'Saving...' : 'Save Inventory'}
+            </button>
+          </div>
+
+          {/* Add Size */}
+          <div className="flex flex-col sm:flex-row gap-2 mb-6">
+            <button
+              className="btn w-full sm:w-auto"
+              onClick={() => setTshirtInventory([...tshirtInventory, { size: '', quota: 0, sold: 0, width: '', height: '' }])}
+            >
+              + Add Size
+            </button>
+          </div>
+
+          <div className="mb-6">
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Size Chart Description (HTML support)
+            </label>
+            <textarea
+              className="search w-full min-h-[100px] text-sm"
+              placeholder="e.g. <table>...</table> atau <p>Panjang x Lebar...</p>"
+              value={sizeChartHtml}
+              onChange={(e) => setSizeChartHtml(e.target.value)}
+            />
+            <p className="text-xs text-gray-500 mt-1">Gunakan HTML untuk mendesain tabel size chart. Ini akan ditampilkan di modal registrasi jika ada inventory.</p>
+          </div>
+
+          {tshirtInventory.length === 0 ? (
+            <div className="text-center text-gray-400 py-8">
+              <p className="text-gray-600 font-medium">Belum ada data inventory</p>
+              <p className="text-sm text-gray-400 mt-1">Klik "+ Add Size" untuk menambahkan ukuran jersey baru.</p>
+            </div>
+          ) : (
+            <div className="hidden md:block table-wrap">
+              <table className="f1-table compact">
+                <thead>
+                  <tr>
+                    <th style={{ width: 60 }}>#</th>
+                    <th>Size</th>
+                    <th>Lebar (cm)</th>
+                    <th>Tinggi (cm)</th>
+                    <th style={{ width: 140 }}>Kuota</th>
+                    <th style={{ width: 100 }}>Terjual</th>
+                    <th style={{ width: 120 }}>Status</th>
+                    <th style={{ width: 100 }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tshirtInventory.map((item, idx) => (
+                    <tr key={idx} className="row-hover">
+                      <td className="mono">{idx + 1}</td>
+                      <td>
+                        <input
+                          className="search"
+                          style={{ width: 120 }}
+                          placeholder="e.g., XL"
+                          value={item.size}
+                          onChange={(e) => {
+                            const updated = [...tshirtInventory];
+                            updated[idx] = { ...updated[idx], size: e.target.value };
+                            setTshirtInventory(updated);
+                          }}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          className="search"
+                          style={{ width: 80 }}
+                          placeholder="Lebar"
+                          value={item.width || ''}
+                          onChange={(e) => {
+                            const updated = [...tshirtInventory];
+                            updated[idx] = { ...updated[idx], width: e.target.value };
+                            setTshirtInventory(updated);
+                          }}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          className="search"
+                          style={{ width: 80 }}
+                          placeholder="Tinggi"
+                          value={item.height || ''}
+                          onChange={(e) => {
+                            const updated = [...tshirtInventory];
+                            updated[idx] = { ...updated[idx], height: e.target.value };
+                            setTshirtInventory(updated);
+                          }}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          className="search text-right"
+                          style={{ width: 110 }}
+                          type="number"
+                          placeholder="0=∞"
+                          value={item.quota}
+                          onChange={(e) => {
+                            const updated = [...tshirtInventory];
+                            updated[idx] = { ...updated[idx], quota: parseInt(e.target.value) || 0 };
+                            setTshirtInventory(updated);
+                          }}
+                        />
+                      </td>
+                      <td className="mono text-center">{item.sold}</td>
+                      <td>
+                        {item.quota > 0 ? (
+                          <span
+                            className="px-2 py-1 rounded-full text-xs font-bold"
+                            style={{
+                              background: item.sold >= item.quota ? '#fee2e2' : '#dcfce7',
+                              color: item.sold >= item.quota ? '#dc2626' : '#166534',
+                            }}
+                          >
+                            {item.sold >= item.quota ? 'HABIS' : `${item.quota - item.sold} tersisa`}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-400">Unlimited</span>
+                        )}
+                      </td>
+                      <td>
+                        <button
+                          className="btn ghost"
+                          style={{ color: '#dc2626' }}
+                          onClick={() => setTshirtInventory(tshirtInventory.filter((_, i) => i !== idx))}
+                        >
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Mobile Cards */}
+          {tshirtInventory.length > 0 && (
+            <div className="md:hidden space-y-3">
+              {tshirtInventory.map((item, idx) => (
+                <div key={idx} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-gray-400 uppercase">Size #{idx + 1}</span>
+                    <button
+                      className="btn ghost text-xs"
+                      style={{ color: '#dc2626' }}
+                      onClick={() => setTshirtInventory(tshirtInventory.filter((_, i) => i !== idx))}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-600 mb-1">Size</label>
+                      <input
+                        className="search w-full"
+                        placeholder="e.g., XL"
+                        value={item.size}
+                        onChange={(e) => {
+                          const updated = [...tshirtInventory];
+                          updated[idx] = { ...updated[idx], size: e.target.value };
+                          setTshirtInventory(updated);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-600 mb-1">Kuota</label>
+                      <input
+                        className="search w-full"
+                        type="number"
+                        placeholder="0=∞"
+                        value={item.quota}
+                        onChange={(e) => {
+                          const updated = [...tshirtInventory];
+                          updated[idx] = { ...updated[idx], quota: parseInt(e.target.value) || 0 };
+                          setTshirtInventory(updated);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between mt-2 text-sm">
+                    <span className="text-gray-500">Terjual: <strong>{item.sold}</strong></span>
+                    {item.quota > 0 ? (
+                      <span
+                        className="px-2 py-1 rounded-full text-xs font-bold"
+                        style={{
+                          background: item.sold >= item.quota ? '#fee2e2' : '#dcfce7',
+                          color: item.sold >= item.quota ? '#dc2626' : '#166534',
+                        }}
+                      >
+                        {item.sold >= item.quota ? 'HABIS' : `${item.quota - item.sold} tersisa`}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400">Unlimited</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-400 rounded-lg text-blue-900 text-sm">
+            <strong>Tips:</strong> Pastikan ukuran jersey sesuai dengan yang di-setting di tab Settings (T-shirt Sizes). Data "Terjual" akan terupdate otomatis saat peserta membayar.
+          </div>
+        </div>
+      )}
+
       {/* Settings Tab */}
       {activeTab === 'settings' && (
         <div className="card">
@@ -1740,7 +2294,11 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                       isDraft: eventData.isDraft, 
-                      publishAt: eventData.publishAt 
+                      publishAt: eventData.publishAt,
+                      content: {
+                        ...(eventData.content || {}),
+                        allowBulkNoOtp: eventData.content?.allowBulkNoOtp
+                      }
                     }),
                   });
                   if (res.ok) alert('Settings saved!');
@@ -1793,6 +2351,29 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                 </div>
               </div>
             )}
+
+            <div className="admin-cutoff border-t border-gray-100 pt-6">
+              <div className="label">Pendaftaran Massal (Bulk)</div>
+              <div className="tools">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={eventData?.content?.allowBulkNoOtp || false}
+                    onChange={(e) => setEventData({ 
+                      ...eventData, 
+                      content: { ...(eventData?.content || {}), allowBulkNoOtp: e.target.checked }
+                    })}
+                    className="w-5 h-5"
+                  />
+                  <div className="flex flex-col">
+                    <span className="font-bold text-gray-900">Izinkan Bulk Registration (Tanpa OTP)</span>
+                    <span className="text-xs text-gray-500">
+                      Jika diaktifkan, peserta dapat membeli tiket lebih dari 1 tanpa verifikasi email OTP.
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </div>
 
             <div className="mt-12 pt-12 border-t border-red-100">
               <div className="flex items-center justify-between">

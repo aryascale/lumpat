@@ -89,7 +89,7 @@ export default function AdminPage({
     localStorage.getItem(LS_EVENT_TITLE) || DEFAULT_EVENT_TITLE
   );
 
-  const [categories, setCategories] = useState<string[]>([...CATEGORY_KEYS]);
+  const [categories, setCategories] = useState<string[]>([]);
 
   // Event management state
   const [events, setEvents] = useState<any[]>([]);

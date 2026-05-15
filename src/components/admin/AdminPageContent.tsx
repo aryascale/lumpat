@@ -27,7 +27,7 @@ export default function AdminPageContent({ activeSection, allRows, onConfigChang
   const [banners, setBanners] = useState<any[]>([]);
 
   // Categories state
-  const [categories, setCategories] = useState<string[]>([...CATEGORY_KEYS]);
+  const [categories, setCategories] = useState<string[]>([]);
 
   // CSV state
   const [csvMeta, setCsvMeta] = useState<

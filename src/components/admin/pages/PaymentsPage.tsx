@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Modal } from 'antd';
 
 interface Payment {
   id: string;
@@ -18,6 +19,7 @@ interface Payment {
   paidAt: string;
   createdAt: string;
   dateOfBirth: string;
+  customData?: any;
 }
 
 interface Summary {
@@ -34,6 +36,8 @@ export default function PaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
 
   useEffect(() => {
     loadPayments();
@@ -82,11 +86,22 @@ export default function PaymentsPage() {
     return p.name.toLowerCase().includes(q) || p.email.toLowerCase().includes(q) || p.orderId.toLowerCase().includes(q) || p.eventName.toLowerCase().includes(q);
   });
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const currentPayments = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  // Reset page when search or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filter]);
+
   return (
-    <div>
+    <div className="flex flex-col">
       <div className="header-row mb-6">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-gray-900">Payments</h1>
+          <h1 className="text-2xl font-black tracking-tight text-gray-900 uppercase">Payments</h1>
           <p className="text-sm text-gray-500 mt-1">Kelola semua transaksi pembayaran event.</p>
         </div>
       </div>
@@ -134,112 +149,215 @@ export default function PaymentsPage() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="card">
+      {/* Table Card - Flex grow to fill space */}
+      <div className="card flex-1 flex flex-col mb-4" style={{ minHeight: 'calc(100vh - 400px)' }}>
         {loading ? (
-          <div className="text-center py-12 text-gray-500">Loading...</div>
+          <div className="text-center py-24 text-gray-400 font-medium">Loading payments data...</div>
         ) : (
           <>
-            {/* Desktop Table */}
-            <div className="hidden md:block table-wrap">
-              <table className="f1-table compact">
-                <thead>
-                  <tr>
-                    <th>Order ID</th>
-                    <th>Nama</th>
-                    <th>Event</th>
-                    <th>Kategori</th>
-                    <th style={{ width: 120 }}>Amount</th>
-                    <th style={{ width: 100 }}>Status</th>
-                    <th style={{ width: 100 }}>Metode</th>
-                    <th style={{ width: 120 }}>Tanggal</th>
-                    <th style={{ width: 100 }}>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.length === 0 ? (
-                    <tr><td colSpan={9} className="empty">Tidak ada transaksi</td></tr>
-                  ) : (
-                    filtered.map(p => (
-                      <tr key={p.id} className="row-hover">
-                        <td className="mono text-xs">{p.orderId}</td>
-                        <td>
-                          <div className="font-medium">{p.name}</div>
-                          <div className="text-[10px] text-gray-500">{p.email}</div>
-                          <div className="text-[10px] text-red-500 font-bold">Lahir: {p.dateOfBirth ? new Date(p.dateOfBirth).toLocaleDateString('id-ID') : '-'}</div>
-                        </td>
-                        <td className="text-sm">{p.eventName}</td>
-                        <td className="text-sm">{p.categoryName}</td>
-                        <td className="mono text-right">Rp {p.grossAmount.toLocaleString('id-ID')}</td>
-                        <td>
-                          <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold ${statusColor(p.paymentStatus)}`}>
-                            {statusLabel(p.paymentStatus)}
-                          </span>
-                        </td>
-                        <td className="text-xs text-gray-500">{p.paymentMethod || '-'}</td>
-                        <td className="text-xs text-gray-400">{new Date(p.createdAt).toLocaleDateString('id-ID')}</td>
-                        <td>
-                          {p.paymentStatus === 'pending' && (
-                            <button 
-                              className="px-2 py-1 bg-black text-white text-[10px] font-bold uppercase rounded hover:bg-stone-800 transition-colors"
-                              onClick={async () => {
-                                if (confirm(`Selesaikan pembayaran untuk ${p.name} secara manual?`)) {
-                                  try {
-                                    const res = await fetch('/api/admin-settle-payment', {
-                                      method: 'POST',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ orderId: p.orderId })
-                                    });
-                                    if (res.ok) {
-                                      alert('Pembayaran diselesaikan');
-                                      loadPayments();
+            <div className="flex-1 overflow-auto">
+              {/* Desktop Table */}
+              <div className="hidden md:block table-wrap">
+                <table className="f1-table compact">
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>Nama</th>
+                      <th>Event</th>
+                      <th>Kategori</th>
+                      <th style={{ width: 120 }}>Amount</th>
+                      <th style={{ width: 100 }}>Status</th>
+                      <th style={{ width: 100 }}>Metode</th>
+                      <th style={{ width: 120 }}>Tanggal</th>
+                      <th style={{ width: 130 }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentPayments.length === 0 ? (
+                      <tr><td colSpan={9} className="empty py-20">Tidak ada transaksi ditemukan</td></tr>
+                    ) : (
+                      currentPayments.map(p => (
+                        <tr key={p.id} className="row-hover">
+                          <td className="mono text-[10px]">{p.orderId}</td>
+                          <td>
+                            <div className="font-bold text-sm text-gray-900">{p.name}</div>
+                            <div className="text-[10px] text-gray-500">{p.email}</div>
+                            <div className="text-[10px] text-gray-400 italic">Lahir: {p.dateOfBirth ? new Date(p.dateOfBirth).toLocaleDateString('id-ID') : '-'}</div>
+                          </td>
+                          <td className="text-xs font-medium">{p.eventName}</td>
+                          <td className="text-xs">{p.categoryName}</td>
+                          <td className="mono text-right font-bold text-sm">Rp {p.grossAmount.toLocaleString('id-ID')}</td>
+                          <td>
+                            <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase ${statusColor(p.paymentStatus)}`}>
+                              {statusLabel(p.paymentStatus)}
+                            </span>
+                          </td>
+                          <td className="text-[10px] font-bold text-gray-500 uppercase">{p.paymentMethod || '-'}</td>
+                          <td className="text-[10px] text-gray-400">{new Date(p.createdAt).toLocaleDateString('id-ID')}</td>
+                          <td className="flex gap-2">
+                             <button
+                               className="px-2 py-1 bg-blue-500 text-white text-[10px] font-bold uppercase rounded hover:bg-blue-600 transition-colors"
+                               onClick={() => {
+                                 setSelectedPayment(p);
+                                 setDetailsModalOpen(true);
+                               }}
+                             >
+                               Info
+                             </button>
+                            {p.paymentStatus === 'pending' && (
+                              <button 
+                                className="px-2 py-1 bg-black text-white text-[10px] font-bold uppercase rounded hover:bg-stone-800 transition-colors"
+                                onClick={async () => {
+                                  if (confirm(`Selesaikan pembayaran untuk ${p.name} secara manual?`)) {
+                                    try {
+                                      const res = await fetch('/api/admin-settle-payment', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ orderId: p.orderId })
+                                      });
+                                      if (res.ok) {
+                                        alert('Pembayaran diselesaikan');
+                                        loadPayments();
+                                      }
+                                    } catch (e) {
+                                      alert('Gagal menyelesaikan pembayaran');
                                     }
-                                  } catch (e) {
-                                    alert('Gagal menyelesaikan pembayaran');
                                   }
-                                }
-                              }}
-                            >
-                              Settle
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                                }}
+                              >
+                                Settle
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="md:hidden space-y-3">
+                {currentPayments.length === 0 ? (
+                  <div className="text-center text-gray-500 py-12">Tidak ada transaksi ditemukan</div>
+                ) : (
+                  currentPayments.map(p => (
+                    <div key={p.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <div className="font-bold text-gray-900">{p.name}</div>
+                          <div className="text-xs text-gray-400">{p.email}</div>
+                        </div>
+                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${statusColor(p.paymentStatus)}`}>
+                          {statusLabel(p.paymentStatus)}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-600 mb-1">{p.eventName} - {p.categoryName}</div>
+                      <div className="flex justify-between text-sm">
+                        <span className="font-mono font-bold">Rp {p.grossAmount.toLocaleString('id-ID')}</span>
+                        <span className="text-gray-400 text-xs">{new Date(p.createdAt).toLocaleDateString('id-ID')}</span>
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1 font-mono">{p.orderId}</div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
 
-            {/* Mobile Cards */}
-            <div className="md:hidden space-y-3">
-              {filtered.length === 0 ? (
-                <div className="text-center text-gray-500 py-8">Tidak ada transaksi</div>
-              ) : (
-                filtered.map(p => (
-                  <div key={p.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <div className="font-bold text-gray-900">{p.name}</div>
-                        <div className="text-xs text-gray-400">{p.email}</div>
-                      </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${statusColor(p.paymentStatus)}`}>
-                        {statusLabel(p.paymentStatus)}
-                      </span>
-                    </div>
-                    <div className="text-sm text-gray-600 mb-1">{p.eventName} - {p.categoryName}</div>
-                    <div className="flex justify-between text-sm">
-                      <span className="font-mono font-bold">Rp {p.grossAmount.toLocaleString('id-ID')}</span>
-                      <span className="text-gray-400 text-xs">{new Date(p.createdAt).toLocaleDateString('id-ID')}</span>
-                    </div>
-                    <div className="text-xs text-gray-400 mt-1 font-mono">{p.orderId}</div>
-                  </div>
-                ))
-              )}
-            </div>
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between border-t border-gray-100 pt-4 mt-auto">
+                <div className="text-sm text-gray-500">
+                  Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, filtered.length)}</span> of <span className="font-medium">{filtered.length}</span> payments
+                </div>
+                <div className="flex gap-1">
+                  <button
+                    className="btn ghost sm"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(prev => prev - 1)}
+                  >
+                    Previous
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <button
+                      key={page}
+                      className={`btn sm w-8 h-8 p-0 flex items-center justify-center ${currentPage === page ? '' : 'ghost'}`}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  <button
+                    className="btn ghost sm"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(prev => prev + 1)}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
+      <Modal
+        title="Detail Pendaftaran"
+        open={detailsModalOpen}
+        onCancel={() => setDetailsModalOpen(false)}
+        footer={null}
+        width={600}
+      >
+        {selectedPayment && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4 pb-4 border-b border-gray-100">
+              <div>
+                <div className="text-[10px] uppercase font-black text-gray-400">Order ID</div>
+                <div className="font-mono font-bold text-sm">{selectedPayment.orderId}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase font-black text-gray-400">Status</div>
+                <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase ${statusColor(selectedPayment.paymentStatus)}`}>
+                  {statusLabel(selectedPayment.paymentStatus)}
+                </span>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase font-black text-gray-400">Nama</div>
+                <div className="font-bold">{selectedPayment.name}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase font-black text-gray-400">Email</div>
+                <div className="text-sm">{selectedPayment.email}</div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4">Field Custom (Input User)</h3>
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                {selectedPayment.customData ? (
+                  <div className="grid grid-cols-1 gap-3">
+                    {Object.entries(selectedPayment.customData).map(([key, val]: [string, any]) => {
+                      if (!val || key === 'tshirtSize' || key === 'bibName' || key === 'paymentStatus' || key === 'categoryId') return null;
+                      return (
+                        <div key={key} className="flex justify-between items-start py-1 border-b border-gray-200 last:border-0">
+                          <span className="text-[10px] font-bold text-gray-500 uppercase">{key}</span>
+                          <span className="text-sm font-medium text-gray-900">{String(val)}</span>
+                        </div>
+                      );
+                    })}
+                    {/* Add standard fields that were in customData but are important */}
+                    <div className="flex justify-between items-start py-1 border-b border-gray-200 last:border-0">
+                      <span className="text-[10px] font-bold text-gray-500 uppercase">T-Shirt Size</span>
+                      <span className="text-sm font-medium text-gray-900">{selectedPayment.tshirtSize || '-'}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-gray-400 italic text-sm">Tidak ada data custom</div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
