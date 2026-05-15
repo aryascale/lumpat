@@ -77,7 +77,6 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
 
   // T-shirt inventory state
   const [tshirtInventory, setTshirtInventory] = useState<Array<{ id?: string; size: string; quota: number; sold: number; width?: string; height?: string }>>([]);
-  const [sizeChartHtml, setSizeChartHtml] = useState('');
   const [savingInventory, setSavingInventory] = useState(false);
 
   // GPX upload state
@@ -163,10 +162,6 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       if (invRes.ok) {
         const iData = await invRes.json();
         setTshirtInventory((iData.inventory || []).map((i: any) => ({ id: i.id, size: i.size, quota: i.quota || 0, sold: i.sold || 0, width: i.width || '', height: i.height || '' })));
-        
-        let content = {};
-        try { content = typeof data.event.content === 'string' ? JSON.parse(data.event.content) : (data.event.content || {}); } catch(e){}
-        setSizeChartHtml(content.sizeChartHtml || '');
       }
 
       // Load participants
@@ -597,14 +592,21 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   const saveTshirtInventory = async () => {
     setSavingInventory(true);
     try {
-      const res = await fetch(`/api/tshirt-inventory?eventId=${slug}`, {
+      const res = await fetch(`/api/tshirt-inventory?eventId=${eventId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inventory: tshirtInventory, sizeChartHtml }),
+        body: JSON.stringify({ inventory: tshirtInventory }),
       });
       if (res.ok) {
         const data = await res.json();
-        setTshirtInventory((data.inventory || []).map((i: any) => ({ id: i.id, size: i.size, quota: i.quota || 0, sold: i.sold || 0 })));
+        setTshirtInventory((data.inventory || []).map((i: any) => ({ 
+          id: i.id, 
+          size: i.size, 
+          quota: i.quota || 0, 
+          sold: i.sold || 0,
+          width: i.width || '',
+          height: i.height || ''
+        })));
         alert('T-shirt inventory saved!');
       } else alert('Failed to save inventory');
     } catch {
@@ -2084,17 +2086,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
             </button>
           </div>
 
-          <div className="mb-6">
-            <label className="block text-sm font-bold text-gray-700 mb-2">
-              Size Chart Description (HTML support)
-            </label>
-            <textarea
-              className="search w-full min-h-[100px] text-sm"
-              placeholder="e.g. <table>...</table> atau <p>Panjang x Lebar...</p>"
-              value={sizeChartHtml}
-              onChange={(e) => setSizeChartHtml(e.target.value)}
-            />
-            <p className="text-xs text-gray-500 mt-1">Gunakan HTML untuk mendesain tabel size chart. Ini akan ditampilkan di modal registrasi jika ada inventory.</p>
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-400 rounded-lg text-blue-900 text-sm mb-6">
+            <strong>Tips:</strong> Pastikan ukuran jersey sesuai dengan yang di-setting di tab Settings (T-shirt Sizes). Data "Terjual" akan terupdate otomatis saat peserta membayar.
           </div>
 
           {tshirtInventory.length === 0 ? (

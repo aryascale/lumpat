@@ -1363,29 +1363,22 @@ export default function EventPage() {
                               }))}
                             />
                             <div className="mt-4">
-                              <div className="bg-stone-100 p-2 px-4 rounded-t-xl border-x border-t border-stone-200">
-                                <span className="text-[10px] font-black uppercase tracking-wider text-stone-500">Size Chart (Panduan Ukuran)</span>
+                              <div className="flex items-center gap-2 mb-3">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Size Chart Guide</span>
+                                <div className="h-[1px] flex-1 bg-stone-100"></div>
                               </div>
-                              <div className="overflow-x-auto border-x border-b border-stone-200 rounded-b-xl bg-white">
-                                <table className="w-full text-left text-[11px]">
-                                  <thead>
-                                    <tr className="bg-stone-50 border-b border-stone-200">
-                                      <th className="py-2 px-4 font-bold text-stone-700">Size</th>
-                                      <th className="py-2 px-4 font-bold text-stone-700">Lebar (cm)</th>
-                                      <th className="py-2 px-4 font-bold text-stone-700">Tinggi (cm)</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {tshirtInventory.map((t, idx) => (
-                                      <tr key={idx} className="border-b border-stone-100 last:border-0 hover:bg-stone-50 transition-colors">
-                                        <td className="py-2 px-4 font-black text-stone-900">{t.size}</td>
-                                        <td className="py-2 px-4 text-stone-600">{t.width || '-'}</td>
-                                        <td className="py-2 px-4 text-stone-600">{t.height || '-'}</td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                {tshirtInventory.map((t, idx) => (
+                                  <div key={idx} className="bg-stone-50/50 border border-stone-100 rounded-xl p-3 flex flex-col items-center justify-center transition-all hover:border-red-200 hover:bg-white group">
+                                    <span className="text-lg font-black text-stone-900 mb-1 group-hover:text-red-600 transition-colors">{t.size}</span>
+                                    <div className="flex flex-col items-center text-[10px] text-stone-500 font-medium uppercase tracking-tighter">
+                                      <span>W: {t.width || '-'} cm</span>
+                                      <span>H: {t.height || '-'} cm</span>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
+                              <p className="text-[9px] text-stone-400 mt-3 italic text-center">* Ukuran dalam centimeter (cm). Toleransi ukuran ±1-2cm.</p>
                             </div>
                           </div>
                         )}
