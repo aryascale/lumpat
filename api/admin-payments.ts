@@ -37,7 +37,7 @@ export default async function handler(event: any) {
     );
 
     const fieldDefs: any = await query('SELECT id, label FROM RegistrationField');
-    const labelMap = new Map(fieldDefs.map((f: any) => [f.id.toLowerCase(), f.label]));
+    const labelMap = new Map<string, string>(fieldDefs.map((f: any) => [f.id.toLowerCase(), f.label]));
 
     return successResponse({
       registrations: registrations.map((r: any) => {
@@ -49,7 +49,7 @@ export default async function handler(event: any) {
             const isUUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(k);
             const label = labelMap.get(k.toLowerCase());
             if (!label && isUUID) continue; // Skip deleted fields
-            const displayLabel = label || k.replace(/([A-Z])/g, ' $1').trim();
+            const displayLabel = (label || k.replace(/([A-Z])/g, ' $1').trim()) as string;
             mappedCustomData[displayLabel] = v;
           }
         }
