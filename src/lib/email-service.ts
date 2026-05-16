@@ -32,7 +32,7 @@ export async function sendRegistrationConfirmation(reg: any) {
     await transporter.sendMail({
       from: fromAddress,
       to: reg.email,
-      subject: `✅ Konfirmasi Pendaftaran: ${reg.eventName}`,
+      subject: `Konfirmasi Pendaftaran: ${reg.eventName}`,
       attachments: [
         {
           filename: 'qr-code.png',
