@@ -120,36 +120,37 @@ export default function PaymentsPage() {
 
   return (
     <div className="flex flex-col">
-      <div className="header-row mb-6">
+      <div className="header-row mb-4 md:mb-6">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-gray-900 uppercase">Payments</h1>
-          <p className="text-sm text-gray-500 mt-1">Kelola semua transaksi pembayaran event.</p>
+          <h1 className="text-lg md:text-2xl font-black tracking-tight text-gray-900 uppercase">Payments</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-1">Kelola semua transaksi pembayaran event.</p>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-          <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total Revenue</div>
-          <div className="text-2xl font-black text-gray-900">Rp {(summary.totalRevenue || 0).toLocaleString('id-ID')}</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-4 md:mb-6">
+        <div className="bg-white border border-gray-200 rounded-lg p-3 md:p-4 shadow-sm">
+          <div className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total Revenue</div>
+          <div className="text-base md:text-2xl font-black text-gray-900">Rp {(summary.totalRevenue || 0).toLocaleString('id-ID')}</div>
         </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-          <div className="text-xs font-bold text-black-600 uppercase tracking-wider mb-1">Paid</div>
-          <div className="text-2xl font-black text-black-700">{summary.paid || 0}</div>
+        <div className="bg-white border border-gray-200 rounded-lg p-3 md:p-4 shadow-sm">
+          <div className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Paid</div>
+          <div className="text-base md:text-2xl font-black text-gray-900">{summary.paid || 0}</div>
         </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-          <div className="text-xs font-bold text-black-600 uppercase tracking-wider mb-1">Pending</div>
-          <div className="text-2xl font-black text-black-700">{summary.pending || 0}</div>
+        <div className="bg-white border border-gray-200 rounded-lg p-3 md:p-4 shadow-sm">
+          <div className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Pending</div>
+          <div className="text-base md:text-2xl font-black text-gray-900">{summary.pending || 0}</div>
         </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-          <div className="text-xs font-bold text-black-600 uppercase tracking-wider mb-1">Failed</div>
-          <div className="text-2xl font-black text-black-700">{summary.failed || 0}</div>
+        <div className="bg-white border border-gray-200 rounded-lg p-3 md:p-4 shadow-sm">
+          <div className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Failed</div>
+          <div className="text-base md:text-2xl font-black text-gray-900">{summary.failed || 0}</div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="card mb-4">
-        <div className="flex flex-col sm:flex-row gap-3">
+      <div className="card mb-4 !p-3 md:!p-4">
+        <div className="flex flex-col gap-2 md:gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
           <select
             className="search"
             value={eventFilter}
@@ -184,51 +185,21 @@ export default function PaymentsPage() {
               {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
             </select>
           )}
+          </div>
           <button 
-            className="btn ghost whitespace-nowrap"
+            className="btn ghost whitespace-nowrap w-full sm:w-auto text-xs"
             onClick={() => {
               if (filtered.length === 0) return alert('Tidak ada data untuk diexport');
-              
-              // Get all possible custom field keys from the filtered data
               const customKeys = new Set<string>();
-              filtered.forEach(p => {
-                if (p.customData) Object.keys(p.customData).forEach(k => customKeys.add(k));
-              });
+              filtered.forEach(p => { if (p.customData) Object.keys(p.customData).forEach(k => customKeys.add(k)); });
               const customKeysArray = Array.from(customKeys);
-
-              const headers = [
-                'Order ID', 'Status', 'Tanggal Daftar', 'Nama', 'Email', 'No HP', 
-                'Tanggal Lahir', 'Gender', 'T-Shirt Size', 'BIB Name', 
-                'Event', 'Kategori', 'Gross Amount', ...customKeysArray
-              ];
-
+              const headers = ['Order ID','Status','Tanggal Daftar','Nama','Email','No HP','Tanggal Lahir','Gender','T-Shirt Size','BIB Name','Event','Kategori','Gross Amount',...customKeysArray];
               const csvData = filtered.map(p => {
-                const row = [
-                  p.orderId,
-                  p.paymentStatus,
-                  new Date(p.createdAt).toLocaleDateString('id-ID'),
-                  `"${p.name || ''}"`,
-                  p.email,
-                  `'${p.phoneNumber || ''}`, // Prepend apostrophe to prevent excel from parsing as number
-                  p.dateOfBirth ? new Date(p.dateOfBirth).toLocaleDateString('id-ID') : '',
-                  p.gender || '',
-                  p.tshirtSize || '',
-                  p.bibName || '',
-                  `"${p.eventName || ''}"`,
-                  `"${p.categoryName || ''}"`,
-                  p.grossAmount
-                ];
-
-                customKeysArray.forEach(k => {
-                  let val = p.customData?.[k] || '';
-                  if (typeof val === 'string' && val.includes(',')) val = `"${val}"`;
-                  row.push(val);
-                });
-
+                const row = [p.orderId,p.paymentStatus,new Date(p.createdAt).toLocaleDateString('id-ID'),`"${p.name||''}"`,p.email,`'${p.phoneNumber||''}`,p.dateOfBirth?new Date(p.dateOfBirth).toLocaleDateString('id-ID'):'',p.gender||'',p.tshirtSize||'',p.bibName||'',`"${p.eventName||''}"`,`"${p.categoryName||''}"`,p.grossAmount];
+                customKeysArray.forEach(k => { let val = p.customData?.[k]||''; if(typeof val==='string'&&val.includes(',')) val=`"${val}"`; row.push(val); });
                 return row.join(',');
               });
-
-              const csvContent = [headers.join(','), ...csvData].join('\n');
+              const csvContent = [headers.join(','),...csvData].join('\n');
               const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
               const url = URL.createObjectURL(blob);
               const link = document.createElement('a');
@@ -240,7 +211,7 @@ export default function PaymentsPage() {
               document.body.removeChild(link);
             }}
           >
-            Export CSV
+            📥 Export CSV
           </button>
         </div>
       </div>
@@ -338,22 +309,27 @@ export default function PaymentsPage() {
                   <div className="text-center text-gray-500 py-12">Tidak ada transaksi ditemukan</div>
                 ) : (
                   currentPayments.map(p => (
-                    <div key={p.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <div key={p.id} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
                       <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <div className="font-bold text-gray-900">{p.name}</div>
-                          <div className="text-xs text-gray-400">{p.email}</div>
+                        <div className="min-w-0 flex-1 mr-2">
+                          <div className="font-bold text-gray-900 text-sm truncate">{p.name}</div>
+                          <div className="text-[10px] text-gray-400 truncate">{p.email}</div>
                         </div>
-                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${statusColor(p.paymentStatus)}`}>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 ${statusColor(p.paymentStatus)}`}>
                           {statusLabel(p.paymentStatus)}
                         </span>
                       </div>
-                      <div className="text-sm text-gray-600 mb-1">{p.eventName} - {p.categoryName}</div>
-                      <div className="flex justify-between text-sm">
-                        <span className="font-mono font-bold">Rp {p.grossAmount.toLocaleString('id-ID')}</span>
-                        <span className="text-gray-400 text-xs">{new Date(p.createdAt).toLocaleDateString('id-ID')}</span>
+                      <div className="text-xs text-gray-600 mb-1">{p.categoryName}</div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="font-mono font-bold text-xs">Rp {p.grossAmount.toLocaleString('id-ID')}</span>
+                        <span className="text-gray-400 text-[10px]">{new Date(p.createdAt).toLocaleDateString('id-ID')}</span>
                       </div>
-                      <div className="text-xs text-gray-400 mt-1 font-mono">{p.orderId}</div>
+                      <div className="flex gap-2 mt-2 pt-2 border-t border-gray-100">
+                        <button className="flex-1 px-2 py-1.5 bg-blue-500 text-white text-[10px] font-bold uppercase rounded" onClick={() => { setSelectedPayment(p); setDetailsModalOpen(true); }}>Info</button>
+                        {p.paymentStatus === 'pending' && (
+                          <button className="flex-1 px-2 py-1.5 bg-black text-white text-[10px] font-bold uppercase rounded" onClick={async () => { if(confirm(`Settle pembayaran ${p.name}?`)){try{const r=await fetch('/api/admin-settle-payment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:p.orderId})});if(r.ok){alert('Done');loadPayments();}}catch{alert('Gagal');}} }}>Settle</button>
+                        )}
+                      </div>
                     </div>
                   ))
                 )}
@@ -401,11 +377,12 @@ export default function PaymentsPage() {
         open={detailsModalOpen}
         onCancel={() => setDetailsModalOpen(false)}
         footer={null}
-        width={600}
+        width="95vw"
+        style={{ maxWidth: 600 }}
       >
         {selectedPayment && (
           <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4 pb-4 border-b border-gray-100">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 pb-4 border-b border-gray-100">
               <div>
                 <div className="text-[10px] uppercase font-black text-gray-400">Order ID</div>
                 <div className="font-mono font-bold text-sm">{selectedPayment.orderId}</div>
