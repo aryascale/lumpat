@@ -102,9 +102,9 @@ export default async function handler(event: any) {
         return errorResponse('Email ini sudah terdaftar di event ini', 400);
       }
     }
-    // Clean up old pending registrations for same email+event
+    // Clean up only stale pending registrations (older than 24h) for same email+event
     await query(
-      "DELETE FROM EventRegistration WHERE email = ? AND eventId = ? AND paymentStatus = 'pending'",
+      "DELETE FROM EventRegistration WHERE email = ? AND eventId = ? AND paymentStatus = 'pending' AND createdAt < DATE_SUB(NOW(), INTERVAL 24 HOUR)",
       [email, eventId]
     );
 

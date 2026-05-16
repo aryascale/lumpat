@@ -42,13 +42,33 @@ export default async function handler(event: any) {
         return successResponse({ categories: saved });
       }
 
-      await query('DELETE FROM Category WHERE eventId = ?', [eventId]);
+      // Safe upsert: preserve existing category IDs to avoid CASCADE deleting registrations
+      const existingCats: any = await query('SELECT * FROM Category WHERE eventId = ? ORDER BY `order` ASC', [eventId]);
+      const existingMap = new Map(existingCats.map((c: any) => [c.name, c]));
+      const newNames = new Set(categories.map((c: any) => typeof c === 'string' ? c : c.name));
+
+      // Delete only categories that are NOT in the new list AND have no registrations
+      for (const existing of existingCats) {
+        if (!newNames.has(existing.name)) {
+          const regCount: any = await query('SELECT COUNT(*) as cnt FROM EventRegistration WHERE categoryId = ?', [existing.id]);
+          if (Number(regCount[0]?.cnt || 0) === 0) {
+            await query('DELETE FROM Category WHERE id = ?', [existing.id]);
+          }
+        }
+      }
+
+      // Upsert categories
       for (let i = 0; i < categories.length; i++) {
         const cat = typeof categories[i] === 'string' ? { name: categories[i], price: 0, quota: 0 } : categories[i];
-        await query(
-          'INSERT INTO Category (id, name, eventId, `order`, price, quota, createdAt) VALUES (?, ?, ?, ?, ?, ?, NOW())',
-          [crypto.randomUUID(), cat.name, eventId, i, cat.price || 0, cat.quota || 0]
-        );
+        const existing = existingMap.get(cat.name) as any;
+        if (existing) {
+          await query('UPDATE Category SET `order` = ?, price = ?, quota = ?, name = ? WHERE id = ?', [i, cat.price || 0, cat.quota || 0, cat.name, existing.id]);
+        } else {
+          await query(
+            'INSERT INTO Category (id, name, eventId, `order`, price, quota, createdAt) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+            [crypto.randomUUID(), cat.name, eventId, i, cat.price || 0, cat.quota || 0]
+          );
+        }
       }
 
       const updated: any = await query(
