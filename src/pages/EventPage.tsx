@@ -845,9 +845,9 @@ export default function EventPage() {
         </div>
 
         {/* Tab Content Area */}
-        <div className={`${activeTab === 'Home' ? 'w-full' : 'max-w-7xl mx-auto px-4 sm:px-6'} py-0 md:py-8`}>
+        <div className={`${activeTab === 'Home' ? 'w-full' : 'max-w-7xl mx-auto px-4 sm:px-6 py-0 md:py-8'}`}>
           {activeTab === "Home" && (
-            <div className="space-y-10 animate-in fade-in duration-700">
+            <div className="animate-in fade-in duration-700">
               {/* Event Hero Banner (Original Ratio) */}
               {event.homeImageUrl && (
                 <div className="w-full overflow-hidden">
@@ -1560,11 +1560,11 @@ export default function EventPage() {
         <style>{`
           .event-page {
             min-height: 100vh;
-            background: #f8f9fa;
+            background: #ffffff;
           }
 
           .event-banner-header {
-            background: linear-gradient(135deg, #c62828, #e53935);
+            background: #1c1917;
             padding: 0;
             min-height: 80px;
           }
