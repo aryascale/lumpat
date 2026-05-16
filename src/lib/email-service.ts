@@ -95,18 +95,26 @@ export async function sendRegistrationConfirmation(reg: any) {
                   </tr>` : ''}
 
                   <!-- Dynamic Custom Fields -->
-                  ${(() => {
+                  ${await (async () => {
                     if (!reg.customData) return '';
                     try {
                       const data = typeof reg.customData === 'string' ? JSON.parse(reg.customData) : reg.customData;
+                      
+                      // Fetch field definitions for this event to get labels
+                      const { query } = await import('./db');
+                      const fieldDefs: any = await query('SELECT id, label FROM RegistrationField WHERE eventId = ?', [reg.eventId]);
+                      const labelMap = new Map(fieldDefs.map((f: any) => [f.id, f.label]));
+
                       return Object.entries(data)
                         .filter(([key, val]) => val && !['name', 'email', 'phoneNumber', 'gender', 'tshirtSize', 'bibName', 'categoryId', 'eventId'].includes(key))
-                        .map(([key, val]) => `
+                        .map(([key, val]) => {
+                          const label = labelMap.get(key) || key.replace(/([A-Z])/g, ' $1').trim();
+                          return `
                           <tr>
-                            <td style="padding: 8px 0; color: #6b7280; text-transform: capitalize;">${key.replace(/([A-Z])/g, ' $1').trim()}</td>
+                            <td style="padding: 8px 0; color: #6b7280; text-transform: capitalize;">${label}</td>
                             <td style="padding: 8px 0; text-align: right; font-weight: 700; color: #111827;">${val}</td>
-                          </tr>
-                        `).join('');
+                          </tr>`;
+                        }).join('');
                     } catch (e) { return ''; }
                   })()}
 

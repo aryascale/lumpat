@@ -37,10 +37,32 @@ export default async function handler(event: any) {
 
     const participantsData = participantsList.map(p => {
        const pCustom = p.customData || p;
-       let pName = p.name || (nameField ? pCustom[nameField.id] : null) || pCustom['nama'] || pCustom['name'] || email.split('@')[0];
-       let pPhone = p.phoneNumber || pCustom['phone'] || pCustom['nohp'] || pCustom['whatsapp'] || '000000000000';
-       let pGender = p.gender || pCustom['gender'] || pCustom['jeniskelamin'] || 'U';
-       return { ...p, name: pName, phoneNumber: pPhone, gender: pGender, customData: pCustom };
+       
+       // Detect fields from labels
+       const getFieldByLabel = (regex: RegExp) => regFields.find((f: any) => regex.test(f.label.toLowerCase()))?.id;
+       
+       const fnId = getFieldByLabel(/first name|nama depan/);
+       const lnId = getFieldByLabel(/last name|nama belakang/);
+       const waId = getFieldByLabel(/whatsapp|wa|phone|nomor hp|no hp|telp/);
+       const gnId = getFieldByLabel(/gender|jenis kelamin/);
+       const dobId = getFieldByLabel(/birth|lahir|tanggal lahir/);
+
+       let pName = p.name;
+       if (!pName) {
+         const fn = pCustom[fnId || ''] || pCustom['first_name'] || '';
+         const ln = pCustom[lnId || ''] || pCustom['last_name'] || '';
+         if (fn || ln) {
+           pName = `${fn} ${ln}`.trim();
+         } else {
+           pName = (nameField ? pCustom[nameField.id] : null) || pCustom['nama'] || pCustom['name'] || email.split('@')[0];
+         }
+       }
+
+       let pPhone = p.phoneNumber || pCustom[waId || ''] || pCustom['phone'] || pCustom['nohp'] || pCustom['whatsapp'] || '000000000000';
+       let pGender = p.gender || pCustom[gnId || ''] || pCustom['gender'] || pCustom['jeniskelamin'] || 'U';
+       let pDob = p.dateOfBirth || pCustom[dobId || ''] || pCustom['dob'] || pCustom['birth_date'] || null;
+
+       return { ...p, name: pName, phoneNumber: pPhone, gender: pGender, dateOfBirth: pDob, customData: pCustom };
     });
 
     const primaryParticipant = participantsData[0];
