@@ -60,10 +60,10 @@ export default function VerifyPage() {
           ) : participant ? (
             <div className="bg-white shadow-xl overflow-hidden">
               {/* Status Header */}
-              <div className={`p-8 text-center ${verified ? 'bg-gradient-to-br from-green-600 to-green-700' : 'bg-gradient-to-br from-stone-700 to-stone-800'}`}>
-                <div className={`w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center ${verified ? 'bg-green-500' : 'bg-stone-600'}`}>
+              <div className={`p-8 text-center ${verified ? '' : 'bg-gradient-to-br from-stone-700 to-stone-800'}`} style={verified ? { backgroundColor: '#77FC70' } : {}}>
+                <div className={`w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center ${verified ? 'bg-white shadow-sm' : 'bg-stone-600'}`}>
                   {verified ? (
-                    <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-10 h-10" style={{ color: '#77FC70' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   ) : (
@@ -72,10 +72,10 @@ export default function VerifyPage() {
                     </svg>
                   )}
                 </div>
-                <h1 className="text-2xl font-black text-white uppercase tracking-tight mb-1">
+                <h1 className={`text-2xl font-black uppercase tracking-tight mb-1 ${verified ? 'text-stone-900' : 'text-white'}`}>
                   {verified ? 'TERVERIFIKASI' : 'BELUM DIKONFIRMASI'}
                 </h1>
-                <p className="text-white/70 text-sm font-medium">{message}</p>
+                <p className={`text-sm font-medium ${verified ? 'text-stone-800' : 'text-white/70'}`}>{message}</p>
               </div>
 
               {/* Participant Details */}

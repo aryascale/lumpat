@@ -28,6 +28,22 @@ export default async function handler(event: any) {
     const reg = results[0];
     const isConfirmed = reg.paymentStatus === 'settlement';
 
+    let mappedCustomData: Record<string, any> | null = null;
+    if (reg.customData) {
+      const fieldDefs: any = await query('SELECT id, label FROM RegistrationField');
+      const labelMap = new Map<string, string>(fieldDefs.map((f: any) => [f.id.toLowerCase(), f.label]));
+      
+      const parsed = typeof reg.customData === 'string' ? JSON.parse(reg.customData) : reg.customData;
+      mappedCustomData = {};
+      for (const [k, v] of Object.entries(parsed)) {
+        const isUUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(k);
+        const label = labelMap.get(k.toLowerCase());
+        if (!label && isUUID) continue; // Skip deleted fields
+        const displayLabel = (label || k.replace(/([A-Z])/g, ' $1').trim()) as string;
+        mappedCustomData[displayLabel] = v;
+      }
+    }
+
     return successResponse({
       verified: isConfirmed,
       message: isConfirmed ? 'Peserta terdaftar dan sudah bayar' : `Status: ${reg.paymentStatus}`,
@@ -48,7 +64,7 @@ export default async function handler(event: any) {
         orderId: reg.orderId,
         paymentStatus: reg.paymentStatus,
         paidAt: reg.paidAt,
-        customData: reg.customData ? (typeof reg.customData === 'string' ? JSON.parse(reg.customData) : reg.customData) : null,
+        customData: mappedCustomData,
       },
     });
   } catch (error: any) {
