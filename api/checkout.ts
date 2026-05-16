@@ -93,16 +93,20 @@ export default async function handler(event: any) {
       }
     }
 
-    const existingReg: any = await query(
-      "SELECT id, paymentStatus FROM EventRegistration WHERE email = ? AND eventId = ? LIMIT 1",
-      [email, eventId]
-    );
-    if (existingReg.length > 0) {
-      if (existingReg[0].paymentStatus === 'settlement') {
+    if (!allowBulkNoOtp) {
+      const existingReg: any = await query(
+        "SELECT id, paymentStatus FROM EventRegistration WHERE email = ? AND eventId = ? AND paymentStatus = 'settlement' LIMIT 1",
+        [email, eventId]
+      );
+      if (existingReg.length > 0) {
         return errorResponse('Email ini sudah terdaftar di event ini', 400);
       }
-      await query('DELETE FROM EventRegistration WHERE id = ?', [existingReg[0].id]);
     }
+    // Clean up old pending registrations for same email+event
+    await query(
+      "DELETE FROM EventRegistration WHERE email = ? AND eventId = ? AND paymentStatus = 'pending'",
+      [email, eventId]
+    );
 
     const categories: any = await query('SELECT id, name, price, quota FROM Category WHERE id = ? AND eventId = ? LIMIT 1', [categoryId, eventId]);
     if (categories.length === 0) return errorResponse('Category not found', 404);

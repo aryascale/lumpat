@@ -108,7 +108,7 @@ model EventRegistration {
   category       Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   event          Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
-  @@unique([email, eventId])
+  @@index([email, eventId])
   @@index([eventId])
   @@index([categoryId])
   @@index([orderId])

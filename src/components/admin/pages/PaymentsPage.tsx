@@ -424,6 +424,22 @@ export default function PaymentsPage() {
                 <div className="text-[10px] uppercase font-black text-gray-400">Email</div>
                 <div className="text-sm">{selectedPayment.email}</div>
               </div>
+              <div>
+                <div className="text-[10px] uppercase font-black text-gray-400">Kategori</div>
+                <div className="text-sm font-bold">{selectedPayment.categoryName}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase font-black text-gray-400">Amount</div>
+                <div className="text-sm font-bold font-mono">Rp {selectedPayment.grossAmount.toLocaleString('id-ID')}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase font-black text-gray-400">Metode Bayar</div>
+                <div className="text-sm uppercase font-bold">{selectedPayment.paymentMethod || '-'}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase font-black text-gray-400">Tanggal Bayar</div>
+                <div className="text-sm">{selectedPayment.paidAt ? new Date(selectedPayment.paidAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}</div>
+              </div>
             </div>
 
             <div>
