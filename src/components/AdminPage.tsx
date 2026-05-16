@@ -70,7 +70,13 @@ export default function AdminPage({
   const [authed, setAuthed] = useState(loadAuth());
   const [user, setUser] = useState("");
   const [pass, setPass] = useState("");
-  const [activeSection, setActiveSection] = useState<AdminSection>('overview');
+  const [activeSection, setActiveSection] = useState<AdminSection>(() => {
+    return (localStorage.getItem('admin_main_section') as AdminSection) || 'overview';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('admin_main_section', activeSection);
+  }, [activeSection]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [cutoffHours, setCutoffHours] = useState(() => {

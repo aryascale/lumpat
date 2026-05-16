@@ -41,7 +41,13 @@ function formatNowAsTimestamp(): string {
 }
 
 export default function EventDetailPage({ eventId, eventSlug, eventName, onBack }: EventDetailPageProps) {
-  const [activeTab, setActiveTab] = useState<'homepage' | 'data' | 'banners' | 'categories' | 'route' | 'timing' | 'dq' | 'certified' | 'settings' | 'registration' | 'inventory'>('homepage');
+  const [activeTab, setActiveTab] = useState<'homepage' | 'data' | 'banners' | 'categories' | 'route' | 'timing' | 'dq' | 'certified' | 'settings' | 'registration' | 'inventory'>(() => {
+    return (localStorage.getItem(`admin_tab_${eventId}`) as any) || 'homepage';
+  });
+
+  useEffect(() => {
+    localStorage.setItem(`admin_tab_${eventId}`, activeTab);
+  }, [activeTab, eventId]);
   const [participants, setParticipants] = useState<any[]>([]);
   const [loadingParticipants, setLoadingParticipants] = useState(false);
   const [csvMeta, setCsvMeta] = useState<Array<{ key: CsvKind; filename: string; updatedAt: number; rows: number }>>([]);
