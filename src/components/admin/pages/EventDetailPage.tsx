@@ -1960,30 +1960,37 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
             <div>
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-2 gap-3">
                 <label className="block text-sm font-bold text-gray-700">Konten Halaman Home</label>
-                <div className="flex flex-wrap items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 font-bold hidden sm:inline">Upload HTML:</span>
-                    <input
-                      type="file"
-                      accept=".html"
-                      onChange={handleHtmlFileUpload}
-                      className="text-[10px] file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-gray-200 file:font-bold file:text-gray-700 cursor-pointer hover:file:bg-gray-300 w-[180px]"
-                    />
+                <div className="flex flex-col items-end gap-2">
+                  <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500 font-bold hidden sm:inline">Upload HTML:</span>
+                      <input
+                        type="file"
+                        accept=".html"
+                        onChange={handleHtmlFileUpload}
+                        className="text-[10px] file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-gray-200 file:font-bold file:text-gray-700 cursor-pointer hover:file:bg-gray-300 w-[180px]"
+                      />
+                    </div>
+                    <div className="flex bg-gray-200 p-1 rounded-lg">
+                      <button
+                        className={`px-3 py-1 text-[11px] font-bold rounded transition-colors ${!isRawHtmlMode ? 'bg-white shadow-sm text-stone-900' : 'text-gray-500 hover:text-gray-700'}`}
+                        onClick={() => setIsRawHtmlMode(false)}
+                      >
+                        Visual Editor
+                      </button>
+                      <button
+                        className={`px-3 py-1 text-[11px] font-bold rounded transition-colors ${isRawHtmlMode ? 'bg-white shadow-sm text-stone-900' : 'text-gray-500 hover:text-gray-700'}`}
+                        onClick={() => setIsRawHtmlMode(true)}
+                      >
+                        Raw HTML
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex bg-gray-200 p-1 rounded-lg">
-                    <button
-                      className={`px-3 py-1 text-[11px] font-bold rounded transition-colors ${!isRawHtmlMode ? 'bg-white shadow-sm text-stone-900' : 'text-gray-500 hover:text-gray-700'}`}
-                      onClick={() => setIsRawHtmlMode(false)}
-                    >
-                      Visual Editor
-                    </button>
-                    <button
-                      className={`px-3 py-1 text-[11px] font-bold rounded transition-colors ${isRawHtmlMode ? 'bg-white shadow-sm text-stone-900' : 'text-gray-500 hover:text-gray-700'}`}
-                      onClick={() => setIsRawHtmlMode(true)}
-                    >
-                      Raw HTML
-                    </button>
-                  </div>
+                  {isRawHtmlMode && (
+                    <span className="text-[10px] text-red-500 font-medium">
+                      ⚠️ Jangan pindah ke Visual Editor jika Anda mem-paste file HTML utuh, kode akan rusak!
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="bg-white border border-gray-200 rounded-lg overflow-hidden pb-12">
