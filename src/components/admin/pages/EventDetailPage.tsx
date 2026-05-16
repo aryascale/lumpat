@@ -2017,6 +2017,9 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                       >
                         <option value="text">Text</option>
                         <option value="number">Number</option>
+                        <option value="tel">Phone Number</option>
+                        <option value="date">Date of Birth</option>
+                        <option value="email">Email</option>
                         <option value="textarea">Textarea</option>
                         <option value="dropdown">Dropdown</option>
                       </select>

@@ -199,11 +199,36 @@ export default function EventPage() {
     // Check if required custom fields are filled for all participants
     for (let i = 0; i < bulkQty; i++) {
       const p = bulkParticipants[i] || {};
+      
+      // Check required
       const missingFields = customFields.filter(f => f.required && !p[f.id]);
       if (missingFields.length > 0) {
         setActiveTabIdx(i);
         message.error(`Pelanggan ${i+1}: Harap isi kolom: ${missingFields.map(f => f.label).join(', ')}`);
         return;
+      }
+
+      // Check format for custom email and phone
+      for (const field of customFields) {
+        const val = p[field.id];
+        if (val) {
+          if (field.type === 'email') {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(val)) {
+              setActiveTabIdx(i);
+              message.error(`Pelanggan ${i+1}: Format email pada '${field.label}' tidak valid`);
+              return;
+            }
+          }
+          if (field.type === 'tel') {
+            const telRegex = /^[0-9+\-\s()]+$/;
+            if (!telRegex.test(val)) {
+              setActiveTabIdx(i);
+              message.error(`Pelanggan ${i+1}: Nomor telepon pada '${field.label}' hanya boleh berisi angka, +, -, dan spasi`);
+              return;
+            }
+          }
+        }
       }
     }
 
