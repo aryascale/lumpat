@@ -150,12 +150,17 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       if (contentRes.ok) {
         const evtData = await contentRes.json();
         if (evtData.content) {
+          const aboutContent = evtData.content.about || '';
           setHomeContent({
-            about: evtData.content.about || '',
+            about: aboutContent,
             schedule: evtData.content.schedule || '',
             rules: evtData.content.rules || '',
           });
+          if (aboutContent.trim().toLowerCase().startsWith('<!doctype html') || aboutContent.trim().toLowerCase().startsWith('<html')) {
+            setIsRawHtmlMode(true);
+          }
         }
+        setEventData(evtData);
       }
 
       // Load registration fields
@@ -567,7 +572,10 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         body: JSON.stringify({ 
           content: {
             ...(eventData?.content || {}),
-            ...homeContent
+            about: homeContent.about || eventData?.content?.about || '',
+            schedule: homeContent.schedule || eventData?.content?.schedule || '',
+            rules: homeContent.rules || eventData?.content?.rules || '',
+            allowBulkNoOtp: eventData?.content?.allowBulkNoOtp || false
           }
         }),
       });
@@ -2380,8 +2388,10 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                       publishAt: eventData.publishAt,
                       content: {
                         ...(eventData.content || {}),
-                        ...homeContent,
-                        allowBulkNoOtp: eventData.content?.allowBulkNoOtp
+                        about: homeContent.about || eventData.content?.about || '',
+                        schedule: homeContent.schedule || eventData.content?.schedule || '',
+                        rules: homeContent.rules || eventData.content?.rules || '',
+                        allowBulkNoOtp: eventData.content?.allowBulkNoOtp || false
                       }
                     }),
                   });
