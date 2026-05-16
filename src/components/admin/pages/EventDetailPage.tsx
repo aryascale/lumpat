@@ -564,10 +564,17 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       const res = await fetch(`/api/events?eventId=${eventId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: homeContent }),
+        body: JSON.stringify({ 
+          content: {
+            ...(eventData?.content || {}),
+            ...homeContent
+          }
+        }),
       });
-      if (res.ok) alert('Homepage content saved!');
-      else alert('Failed to save homepage content');
+      if (res.ok) {
+        alert('Homepage content saved!');
+        await loadAllData();
+      } else alert('Failed to save homepage content');
     } catch {
       alert('Failed to save homepage content');
     } finally {
@@ -2373,12 +2380,15 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                       publishAt: eventData.publishAt,
                       content: {
                         ...(eventData.content || {}),
+                        ...homeContent,
                         allowBulkNoOtp: eventData.content?.allowBulkNoOtp
                       }
                     }),
                   });
-                  if (res.ok) alert('Settings saved!');
-                  else alert('Failed to save settings');
+                  if (res.ok) {
+                    alert('Settings saved!');
+                    await loadAllData();
+                  } else alert('Failed to save settings');
                 } catch {
                   alert('Failed to save settings');
                 }
