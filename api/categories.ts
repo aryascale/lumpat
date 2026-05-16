@@ -96,12 +96,24 @@ export default async function handler(event: any) {
         return successResponse({ categories });
       }
 
-      await query('DELETE FROM Category WHERE eventId = ?', [eventId]);
+      // Safe reset: only delete categories without registrations, then add defaults
+      const existingCats: any = await query('SELECT * FROM Category WHERE eventId = ?', [eventId]);
+      for (const cat of existingCats) {
+        const regCount: any = await query('SELECT COUNT(*) as cnt FROM EventRegistration WHERE categoryId = ?', [cat.id]);
+        if (Number(regCount[0]?.cnt || 0) === 0) {
+          await query('DELETE FROM Category WHERE id = ?', [cat.id]);
+        }
+      }
+      const defaultNames = new Set(DEFAULT_CATEGORIES);
+      const remaining: any = await query('SELECT name FROM Category WHERE eventId = ?', [eventId]);
+      const existingNames = new Set(remaining.map((c: any) => c.name));
       for (let i = 0; i < DEFAULT_CATEGORIES.length; i++) {
-        await query(
-          'INSERT INTO Category (id, name, eventId, `order`, price, createdAt) VALUES (?, ?, ?, ?, 0, NOW())',
-          [crypto.randomUUID(), DEFAULT_CATEGORIES[i], eventId, i]
-        );
+        if (!existingNames.has(DEFAULT_CATEGORIES[i])) {
+          await query(
+            'INSERT INTO Category (id, name, eventId, `order`, price, createdAt) VALUES (?, ?, ?, ?, 0, NOW())',
+            [crypto.randomUUID(), DEFAULT_CATEGORIES[i], eventId, i]
+          );
+        }
       }
 
       const cats: any = await query(

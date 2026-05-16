@@ -191,9 +191,14 @@ export default async function handler(req: any) {
 
     if (req.httpMethod === 'DELETE') {
       if (!eventId) return errorResponse('eventId is required', 400);
-      await query('DELETE FROM Category WHERE eventId = ?', [eventId]);
+      // Auto-backup before destructive event delete
+      try {
+        const { createBackup } = await import('../src/lib/backup');
+        await createBackup('event_delete');
+      } catch (e) { console.error('[BACKUP] Failed before event delete:', e); }
       await query('DELETE FROM Banner WHERE eventId = ?', [eventId]);
       await query('DELETE FROM EventRegistration WHERE eventId = ?', [eventId]);
+      await query('DELETE FROM Category WHERE eventId = ?', [eventId]);
       await query('DELETE FROM Event WHERE id = ?', [eventId]);
       return successResponse({ success: true });
     }

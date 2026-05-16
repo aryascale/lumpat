@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import compression from 'compression';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { runMigrations } from './src/lib/migrations';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -89,8 +90,10 @@ app.use((_req, res) => {
   res.sendFile(path.join(PROJECT_ROOT, 'dist', 'index.html'));
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log(`Upload directory: ${UPLOAD_DIR}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  // Run database migrations on startup
+  await runMigrations();
 });
