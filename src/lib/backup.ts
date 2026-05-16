@@ -51,7 +51,7 @@ export async function createBackup(trigger: string): Promise<string> {
     .sort()
     .reverse();
   
-  for (const old of files.slice(50)) {
+  for (const old of files.slice(2000)) {
     fs.unlinkSync(path.join(BACKUP_DIR, old));
   }
 
