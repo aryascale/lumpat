@@ -41,7 +41,7 @@ export default async function handler(event: any) {
 
     return successResponse({
       registrations: registrations.map((r: any) => {
-        let mappedCustomData = null;
+        let mappedCustomData: Record<string, any> | null = null;
         if (r.customData) {
           const parsed = typeof r.customData === 'string' ? JSON.parse(r.customData) : r.customData;
           mappedCustomData = {};

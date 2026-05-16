@@ -1292,6 +1292,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       {/* Categories Tab */}
       {activeTab === 'categories' && (
         <div className="card">
+          <div className="header-row mb-4">
             <div>
               <h2 className="section-title">Race Categories & Pricing</h2>
               <div className="subtle text-sm">
