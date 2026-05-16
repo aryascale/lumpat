@@ -211,7 +211,7 @@ export default function PaymentsPage() {
               document.body.removeChild(link);
             }}
           >
-            📥 Export CSV
+            Export CSV
           </button>
         </div>
       </div>
