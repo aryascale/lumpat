@@ -35,18 +35,29 @@ export default function PaymentsPage() {
   const [summary, setSummary] = useState<Summary>({ total: 0, paid: 0, pending: 0, failed: 0, totalRevenue: 0 });
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
+  const [eventFilter, setEventFilter] = useState('');
+  const [events, setEvents] = useState<{id:string;name:string}[]>([]);
   const [search, setSearch] = useState('');
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
 
   useEffect(() => {
-    loadPayments();
-  }, [filter]);
+    fetch('/api/events?showDrafts=true').then(r=>r.json()).then(data => {
+      const list = Array.isArray(data) ? data : [];
+      setEvents(list.map((e:any)=>({id:e.id,name:e.name})));
+      if (list.length > 0 && !eventFilter) setEventFilter(list[0].id);
+    }).catch(()=>{});
+  }, []);
+
+  useEffect(() => {
+    if (eventFilter) loadPayments();
+  }, [filter, eventFilter]);
 
   const loadPayments = async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
+      if (eventFilter) params.set('eventId', eventFilter);
       if (filter) params.set('status', filter);
       const res = await fetch(`/api/admin-payments?${params.toString()}`);
       if (res.ok) {
@@ -129,9 +140,16 @@ export default function PaymentsPage() {
       {/* Filters */}
       <div className="card mb-4">
         <div className="flex flex-col sm:flex-row gap-3">
+          <select
+            className="search"
+            value={eventFilter}
+            onChange={(e) => setEventFilter(e.target.value)}
+          >
+            {events.map(ev => <option key={ev.id} value={ev.id}>{ev.name}</option>)}
+          </select>
           <input
             className="search flex-1"
-            placeholder="Cari nama, email, order ID, atau event..."
+            placeholder="Cari nama, email, order ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -195,7 +213,8 @@ export default function PaymentsPage() {
               const url = URL.createObjectURL(blob);
               const link = document.createElement('a');
               link.setAttribute('href', url);
-              link.setAttribute('download', `lumpat_participants_${Date.now()}.csv`);
+              const evName = events.find(e=>e.id===eventFilter)?.name?.replace(/[^a-z0-9]/gi,'_') || 'all';
+              link.setAttribute('download', `${evName}_participants_${Date.now()}.csv`);
               document.body.appendChild(link);
               link.click();
               document.body.removeChild(link);

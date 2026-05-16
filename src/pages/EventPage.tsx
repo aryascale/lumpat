@@ -759,9 +759,9 @@ export default function EventPage() {
   return (
     <>
       <Navbar />
-      <div className="event-page bg-stone-50 min-h-screen">
+      <div className="event-page min-h-screen bg-white">
         {/* Parallax Hero Header */}
-        <div className="relative w-full h-[450px] bg-stone-900 overflow-hidden">
+        <div className="relative w-full h-[300px] md:h-[450px] bg-stone-900 overflow-hidden">
           {coverImageUrl ? (
             <div 
               className="absolute inset-0 bg-center bg-cover scale-105 will-change-transform"
@@ -780,13 +780,13 @@ export default function EventPage() {
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-900/80 to-transparent"></div>
           
-          <div className="absolute bottom-0 left-0 w-full p-8 md:p-12 max-w-7xl mx-auto flex flex-col md:flex-row gap-8 items-end justify-between z-10">
+          <div className="absolute bottom-0 left-0 w-full p-4 md:p-12 max-w-7xl mx-auto flex flex-col md:flex-row gap-4 md:gap-8 items-end justify-between z-10">
             <div className="flex items-end gap-6 w-full">
               {event.logoUrl ? (
-                <img src={event.logoUrl} alt={event.name} className="w-32 h-32 md:w-48 md:h-48 object-contain border-4 border-white shadow-2xl bg-white" />
+                <img src={event.logoUrl} alt={event.name} className="w-20 h-20 md:w-48 md:h-48 object-contain border-2 md:border-4 border-white shadow-2xl bg-white" />
               ) : (
-                <div className="w-32 h-32 md:w-48 md:h-48 border-4 border-stone-800 bg-stone-900 shadow-2xl flex items-center justify-center text-center p-2">
-                  <span className="text-stone-700 font-bold uppercase tracking-widest text-xs">No Logo</span>
+                <div className="w-20 h-20 md:w-48 md:h-48 border-2 md:border-4 border-stone-800 bg-stone-900 shadow-2xl flex items-center justify-center text-center p-2">
+                  <span className="text-stone-700 font-bold uppercase tracking-widest text-[8px] md:text-xs">No Logo</span>
                 </div>
               )}
               <div className="flex-1 pb-2">
@@ -804,16 +804,16 @@ export default function EventPage() {
                     </>
                   )}
                 </div>
-                <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter uppercase leading-none drop-shadow-lg mb-2">
+                <h1 className="text-xl md:text-6xl font-black text-white tracking-tighter uppercase leading-none drop-shadow-lg mb-1 md:mb-2">
                   {event.name}
                 </h1>
                 {event.description && (
-                  <p className="text-stone-300 text-sm md:text-base max-w-2xl font-medium tracking-wide mt-4 border-l-2 border-red-600 pl-4">{event.description}</p>
+                  <p className="text-stone-300 text-xs md:text-base max-w-2xl font-medium tracking-wide mt-2 md:mt-4 border-l-2 border-red-600 pl-3 md:pl-4 line-clamp-2 md:line-clamp-none">{event.description}</p>
                 )}
                 
                 <button 
                   onClick={() => setRegisterModalOpen(true)}
-                  className="mt-6 bg-white text-black font-bold py-3 px-10 rounded-full uppercase tracking-widest text-xs transition-all hover:bg-stone-100 hover:scale-105 cursor-pointer"
+                  className="mt-3 md:mt-6 bg-white text-black font-bold py-2 md:py-3 px-6 md:px-10 rounded-full uppercase tracking-widest text-[10px] md:text-xs transition-all hover:bg-stone-100 hover:scale-105 cursor-pointer"
                 >
                   Daftar Sekarang →
                 </button>
@@ -823,14 +823,14 @@ export default function EventPage() {
         </div>
 
         {/* Editorial Navigation Tabs */}
-        <div className="sticky top-0 z-40 bg-stone-950 border-b border-stone-800 shadow-xl">
+        <div className="sticky top-0 z-40 bg-stone-950 border-b border-stone-800 shadow-xl overflow-x-auto">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="flex overflow-x-auto hide-scrollbar gap-8">
               {tabs.map((t) => (
                 <button
                   key={t}
                   data-tab={t}
-                  className={`py-5 text-sm font-black tracking-widest uppercase transition-all whitespace-nowrap border-b-4 ${
+                  className={`py-3 md:py-5 text-[10px] md:text-sm font-black tracking-widest uppercase transition-all whitespace-nowrap border-b-4 ${
                     activeTab === t 
                       ? "border-red-600 text-white" 
                       : "border-transparent text-stone-500 hover:text-stone-300 hover:border-stone-700"
@@ -845,13 +845,13 @@ export default function EventPage() {
         </div>
 
         {/* Tab Content Area */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+        <div className={`${activeTab === 'Home' ? 'w-full' : 'max-w-7xl mx-auto px-4 sm:px-6'} py-0 md:py-8`}>
           {activeTab === "Home" && (
             <div className="space-y-10 animate-in fade-in duration-700">
               {/* Event Hero Banner (Original Ratio) */}
               {event.homeImageUrl && (
-                <div className="w-full overflow-hidden bg-stone-100 border-b border-stone-200">
-                  <img src={event.homeImageUrl} alt={event.name} className="w-full max-h-[400px] object-contain block mx-auto" />
+                <div className="w-full overflow-hidden">
+                  <img src={event.homeImageUrl} alt={event.name} className="w-full object-contain block mx-auto" />
                 </div>
               )}
 
@@ -870,13 +870,14 @@ export default function EventPage() {
               <div className="grid grid-cols-1 gap-8">
                 <div className="space-y-8">
                   {/* Homepage Content */}
-                  <div className="w-full">
+                  <div className="w-full overflow-hidden">
                     {event?.content?.about ? (
                       event.content.about.trim().toLowerCase().startsWith('<!doctype html>') || event.content.about.trim().toLowerCase().startsWith('<html') ? (
-                        <iframe 
-                          srcDoc={event.content.about} 
-                          className="w-full border-0 overflow-hidden" 
-                          style={{ minHeight: '800px' }}
+                        <iframe
+                          title="Event Homepage"
+                          srcDoc={event.content.about}
+                          className="w-full border-0 overflow-hidden block"
+                          style={{ minHeight: '100vh', width: '100%' }}
                           onLoad={(e) => {
                             try {
                               const iframe = e.target as HTMLIFrameElement;
