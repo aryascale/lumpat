@@ -36,27 +36,44 @@ export default async function handler(event: any) {
       eventId ? [eventId] : []
     );
 
+    const fieldDefs: any = await query('SELECT id, label FROM RegistrationField');
+    const labelMap = new Map(fieldDefs.map((f: any) => [f.id.toLowerCase(), f.label]));
+
     return successResponse({
-      registrations: registrations.map((r: any) => ({
-        id: r.id,
-        orderId: r.orderId,
-        eventName: r.eventName,
-        eventId: r.eventId,
-        categoryName: r.categoryName,
-        name: r.name,
-        email: r.email,
-        phoneNumber: r.phoneNumber,
-        gender: r.gender,
-        tshirtSize: r.tshirtSize,
-        bibName: r.bibName,
-        grossAmount: r.grossAmount,
-        paymentStatus: r.paymentStatus,
-        paymentMethod: r.paymentMethod,
-        paidAt: r.paidAt,
-        createdAt: r.createdAt,
-        dateOfBirth: r.dateOfBirth,
-        customData: r.customData ? (typeof r.customData === 'string' ? JSON.parse(r.customData) : r.customData) : null,
-      })),
+      registrations: registrations.map((r: any) => {
+        let mappedCustomData = null;
+        if (r.customData) {
+          const parsed = typeof r.customData === 'string' ? JSON.parse(r.customData) : r.customData;
+          mappedCustomData = {};
+          for (const [k, v] of Object.entries(parsed)) {
+            const isUUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(k);
+            const label = labelMap.get(k.toLowerCase());
+            if (!label && isUUID) continue; // Skip deleted fields
+            const displayLabel = label || k.replace(/([A-Z])/g, ' $1').trim();
+            mappedCustomData[displayLabel] = v;
+          }
+        }
+        return {
+          id: r.id,
+          orderId: r.orderId,
+          eventName: r.eventName,
+          eventId: r.eventId,
+          categoryName: r.categoryName,
+          name: r.name,
+          email: r.email,
+          phoneNumber: r.phoneNumber,
+          gender: r.gender,
+          tshirtSize: r.tshirtSize,
+          bibName: r.bibName,
+          grossAmount: r.grossAmount,
+          paymentStatus: r.paymentStatus,
+          paymentMethod: r.paymentMethod,
+          paidAt: r.paidAt,
+          createdAt: r.createdAt,
+          dateOfBirth: r.dateOfBirth,
+          customData: mappedCustomData,
+        };
+      }),
       summary: summary[0] || { total: 0, paid: 0, pending: 0, failed: 0, totalRevenue: 0 },
     });
   } catch (error: any) {

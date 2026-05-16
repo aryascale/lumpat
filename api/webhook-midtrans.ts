@@ -112,28 +112,30 @@ export default async function handler(event: any) {
        FROM EventRegistration er
        JOIN Event e ON er.eventId = e.id
        JOIN Category c ON er.categoryId = c.id
-       WHERE er.orderId = ? LIMIT 1`,
+       WHERE er.orderId = ?`,
       [order_id]
     );
 
     if (regRes.length > 0) {
-      const reg = regRes[0];
+      const primaryReg = regRes[0];
       
       // Log activity
       const actionMap: Record<string, string> = { settlement: 'payment.settlement', cancel: 'payment.cancel', expire: 'payment.expire', pending: 'payment.pending' };
       const actionKey = actionMap[paymentStatus] || 'payment.update';
-      await logActivity(actionKey, `Pembayaran ${paymentStatus} untuk ${reg.name} (${order_id})`, reg.email, reg.eventId, { orderId: order_id, paymentStatus, paymentType: payment_type });
+      await logActivity(actionKey, `Pembayaran ${paymentStatus} untuk ${primaryReg.name} (+${regRes.length - 1} others) (${order_id})`, primaryReg.email, primaryReg.eventId, { orderId: order_id, paymentStatus, paymentType: payment_type });
 
       // Send Confirmation Email if settlement
       if (paymentStatus === 'settlement') {
-        await sendRegistrationConfirmation(reg);
+        for (const reg of regRes) {
+          await sendRegistrationConfirmation(reg);
 
-        // Increment t-shirt inventory sold count
-        if (reg.tshirtSize) {
-          await query(
-            'UPDATE TshirtInventory SET sold = sold + 1 WHERE eventId = ? AND size = ?',
-            [reg.eventId, reg.tshirtSize]
-          );
+          // Increment t-shirt inventory sold count
+          if (reg.tshirtSize) {
+            await query(
+              'UPDATE TshirtInventory SET sold = sold + 1 WHERE eventId = ? AND size = ?',
+              [reg.eventId, reg.tshirtSize]
+            );
+          }
         }
       }
     }

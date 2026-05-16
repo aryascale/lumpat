@@ -37,7 +37,7 @@ export async function sendRegistrationConfirmation(reg: any) {
         {
           filename: 'qr-code.png',
           content: Buffer.from(qrBase64, 'base64'),
-          cid: 'qrcode@lumpat',
+          cid: `qrcode-${reg.id}@lumpat`,
         },
       ],
       html: `
@@ -103,15 +103,18 @@ export async function sendRegistrationConfirmation(reg: any) {
                       // Fetch field definitions for this event to get labels
                       const { query } = await import('./db');
                       const fieldDefs: any = await query('SELECT id, label FROM RegistrationField WHERE eventId = ?', [reg.eventId]);
-                      const labelMap = new Map(fieldDefs.map((f: any) => [f.id, f.label]));
+                      const labelMap = new Map(fieldDefs.map((f: any) => [f.id.toLowerCase(), f.label]));
 
                       return Object.entries(data)
                         .filter(([key, val]) => val && !['name', 'email', 'phoneNumber', 'gender', 'tshirtSize', 'bibName', 'categoryId', 'eventId'].includes(key))
                         .map(([key, val]) => {
-                          const label = labelMap.get(key) || key.replace(/([A-Z])/g, ' $1').trim();
+                          const isUUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(key);
+                          const label = labelMap.get(key.toLowerCase());
+                          if (!label && isUUID) return ''; // Skip deleted fields to avoid showing ugly UUIDs
+                          const displayLabel = label || key.replace(/([A-Z])/g, ' $1').trim();
                           return `
                           <tr>
-                            <td style="padding: 8px 0; color: #6b7280; text-transform: capitalize;">${label}</td>
+                            <td style="padding: 8px 0; color: #6b7280; text-transform: capitalize;">${displayLabel}</td>
                             <td style="padding: 8px 0; text-align: right; font-weight: 700; color: #111827;">${val}</td>
                           </tr>`;
                         }).join('');
@@ -129,7 +132,7 @@ export async function sendRegistrationConfirmation(reg: any) {
               <div style="margin-top: 30px; text-align: center; border: 2px solid #f3f4f6; border-radius: 16px; padding: 30px;">
                 <p style="margin: 0 0 15px 0; font-size: 10px; font-weight: 900; color: #9ca3af; text-transform: uppercase; letter-spacing: 2px;">Kode Check-in Anda</p>
                 <div style="padding: 10px; background: white; display: inline-block;">
-                   <img src="cid:qrcode@lumpat" alt="QR Code" width="160" height="160" style="display: block;" />
+                   <img src="cid:qrcode-${reg.id}@lumpat" alt="QR Code" width="160" height="160" style="display: block;" />
                 </div>
                 <p style="margin: 15px 0 0 0; font-size: 12px; color: #6b7280;">Tunjukkan kode ini saat pengambilan Race Pack</p>
               </div>

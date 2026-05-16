@@ -61,8 +61,9 @@ export default async function handler(event: any) {
        let pPhone = p.phoneNumber || pCustom[waId || ''] || pCustom['phone'] || pCustom['nohp'] || pCustom['whatsapp'] || '000000000000';
        let pGender = p.gender || pCustom[gnId || ''] || pCustom['gender'] || pCustom['jeniskelamin'] || 'U';
        let pDob = p.dateOfBirth || pCustom[dobId || ''] || pCustom['dob'] || pCustom['birth_date'] || null;
+       let pTshirtSize = p.tshirtSize || pCustom['tshirtSize'] || null;
 
-       return { ...p, name: pName, phoneNumber: pPhone, gender: pGender, dateOfBirth: pDob, customData: pCustom };
+       return { ...p, name: pName, phoneNumber: pPhone, gender: pGender, dateOfBirth: pDob, tshirtSize: pTshirtSize, customData: pCustom };
     });
 
     const primaryParticipant = participantsData[0];
@@ -122,14 +123,16 @@ export default async function handler(event: any) {
     // Event lookup was moved above
 
     // Check t-shirt inventory quota
-    if (tshirtSize) {
-      const inventory: any = await query(
-        'SELECT id, quota, sold FROM TshirtInventory WHERE eventId = ? AND size = ? LIMIT 1',
-        [eventId, tshirtSize]
-      );
-      if (inventory.length > 0 && inventory[0].quota > 0) {
-        if (inventory[0].sold >= inventory[0].quota) {
-          return errorResponse(`Ukuran baju ${tshirtSize} sudah habis (Sold Out)`, 400);
+    for (const p of participantsData) {
+      if (p.tshirtSize) {
+        const inventory: any = await query(
+          'SELECT id, quota, sold FROM TshirtInventory WHERE eventId = ? AND size = ? LIMIT 1',
+          [eventId, p.tshirtSize]
+        );
+        if (inventory.length > 0 && inventory[0].quota > 0) {
+          if (inventory[0].sold >= inventory[0].quota) {
+            return errorResponse(`Ukuran baju ${p.tshirtSize} sudah habis (Sold Out)`, 400);
+          }
         }
       }
     }
