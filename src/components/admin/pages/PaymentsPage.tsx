@@ -36,7 +36,9 @@ export default function PaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
   const [eventFilter, setEventFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [events, setEvents] = useState<{id:string;name:string}[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [search, setSearch] = useState('');
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
@@ -50,7 +52,14 @@ export default function PaymentsPage() {
   }, []);
 
   useEffect(() => {
-    if (eventFilter) loadPayments();
+    if (eventFilter) {
+      loadPayments();
+      setCategoryFilter('');
+      fetch(`/api/categories?eventId=${eventFilter}`).then(r=>r.json()).then(data => {
+        const cats = (data.categories || []).map((c:any) => typeof c === 'string' ? c : c.name);
+        setCategories(cats);
+      }).catch(()=>setCategories([]));
+    }
   }, [filter, eventFilter]);
 
   const loadPayments = async () => {
@@ -92,9 +101,10 @@ export default function PaymentsPage() {
   };
 
   const filtered = payments.filter(p => {
+    if (categoryFilter && p.categoryName !== categoryFilter) return false;
     if (!search) return true;
     const q = search.toLowerCase();
-    return p.name.toLowerCase().includes(q) || p.email.toLowerCase().includes(q) || p.orderId.toLowerCase().includes(q) || p.eventName.toLowerCase().includes(q);
+    return p.name.toLowerCase().includes(q) || p.email.toLowerCase().includes(q) || p.orderId.toLowerCase().includes(q);
   });
 
   // Pagination state
@@ -164,6 +174,16 @@ export default function PaymentsPage() {
             <option value="cancel">Cancelled</option>
             <option value="expire">Expired</option>
           </select>
+          {categories.length > 0 && (
+            <select
+              className="search"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+            >
+              <option value="">Semua Kategori</option>
+              {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+            </select>
+          )}
           <button 
             className="btn ghost whitespace-nowrap"
             onClick={() => {
