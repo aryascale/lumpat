@@ -829,6 +829,7 @@ export default function EventPage() {
               {tabs.map((t) => (
                 <button
                   key={t}
+                  data-tab={t}
                   className={`py-5 text-sm font-black tracking-widest uppercase transition-all whitespace-nowrap border-b-4 ${
                     activeTab === t 
                       ? "border-red-600 text-white" 
@@ -871,10 +872,63 @@ export default function EventPage() {
                   {/* Homepage Content */}
                   <div className="w-full">
                     {event?.content?.about ? (
-                      // Custom HTML or WYSIWYG - We remove 'prose' so Figma HTML can control everything. 
-                      // If WYSIWYG is used, basic Tailwind reset applies, but we'll add a minimal base class for WYSIWYG compatibility if needed.
-                      // The 'ql-editor' class is added here just in case they used the ReactQuill visual editor, which brings some default styles if the quill CSS is loaded.
-                      <div className="w-full overflow-hidden" dangerouslySetInnerHTML={{ __html: event.content.about }} />
+                      event.content.about.trim().toLowerCase().startsWith('<!doctype html>') || event.content.about.trim().toLowerCase().startsWith('<html') ? (
+                        <iframe 
+                          srcDoc={event.content.about} 
+                          className="w-full border-0 overflow-hidden" 
+                          style={{ minHeight: '800px' }}
+                          onLoad={(e) => {
+                            try {
+                              const iframe = e.target as HTMLIFrameElement;
+                              if (iframe.contentWindow) {
+                                const resize = () => {
+                                  iframe.style.height = iframe.contentWindow!.document.documentElement.scrollHeight + 'px';
+                                };
+                                setTimeout(resize, 100);
+                                setTimeout(resize, 500);
+                                
+                                // Set up a ResizeObserver inside the iframe to keep height updated
+                                const resizeObserver = new ResizeObserver(() => resize());
+                                resizeObserver.observe(iframe.contentWindow!.document.body);
+
+                                // Intercept clicks on links or buttons that should open registration
+                                iframe.contentWindow.document.body.addEventListener('click', (ev) => {
+                                  const target = ev.target as HTMLElement;
+                                  // Look for links to #tickets or buttons with data-ticket
+                                  const btn = target.closest('a[href="#tickets"], a[href="#participants"], button[data-ticket], .btn-buy, .btn-fun');
+                                  
+                                  if (btn) {
+                                    // If it's the backToTop button, ignore interception
+                                    if (btn.id === 'backToTop') return;
+
+                                    ev.preventDefault();
+                                    
+                                    // Click the 'DAFTAR SEKARANG' or 'PARTICIPANTS' tab in the parent app
+                                    // The main CTA button has id="main-register-btn" or we can click the tab
+                                    const participantsTab = document.querySelector('button[data-tab="Participants"]') as HTMLButtonElement;
+                                    if (participantsTab) {
+                                      participantsTab.click();
+                                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    } else {
+                                      // Fallback to finding any button that says Daftar
+                                      const allBtns = Array.from(document.querySelectorAll('button'));
+                                      const daftarBtn = allBtns.find(b => b.textContent?.toLowerCase().includes('daftar'));
+                                      if (daftarBtn) {
+                                        daftarBtn.click();
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                      }
+                                    }
+                                  }
+                                });
+                              }
+                            } catch (err) {
+                              console.error('Failed to setup iframe', err);
+                            }
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full overflow-hidden" dangerouslySetInnerHTML={{ __html: event.content.about }} />
+                      )
                     ) : event?.description ? (
                       <div className="bg-white p-8 shadow-sm border-t-4 border-stone-900 prose prose-stone max-w-none prose-headings:font-black prose-headings:tracking-tighter prose-headings:uppercase">
                         <p className="leading-relaxed">{event.description}</p>
