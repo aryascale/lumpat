@@ -868,16 +868,21 @@ export default function EventPage() {
               {/* Event Summary / Blog Content */}
               <div className="grid grid-cols-1 gap-8">
                 <div className="space-y-8">
-                  {/* Rich Text Homepage Content */}
-                  <div className="bg-white p-8 shadow-sm border-t-4 border-red-600">
+                  {/* Homepage Content */}
+                  <div className="w-full">
                     {event?.content?.about ? (
-                      <div className="prose prose-stone max-w-none prose-headings:font-black prose-headings:tracking-tighter prose-headings:uppercase prose-a:text-red-600 hover:prose-a:text-red-700" dangerouslySetInnerHTML={{ __html: event.content.about }} />
+                      // Custom HTML or WYSIWYG - We remove 'prose' so Figma HTML can control everything. 
+                      // If WYSIWYG is used, basic Tailwind reset applies, but we'll add a minimal base class for WYSIWYG compatibility if needed.
+                      // The 'ql-editor' class is added here just in case they used the ReactQuill visual editor, which brings some default styles if the quill CSS is loaded.
+                      <div className="w-full overflow-hidden" dangerouslySetInnerHTML={{ __html: event.content.about }} />
                     ) : event?.description ? (
-                      <div className="prose prose-stone max-w-none prose-headings:font-black prose-headings:tracking-tighter prose-headings:uppercase">
+                      <div className="bg-white p-8 shadow-sm border-t-4 border-stone-900 prose prose-stone max-w-none prose-headings:font-black prose-headings:tracking-tighter prose-headings:uppercase">
                         <p className="leading-relaxed">{event.description}</p>
                       </div>
                     ) : (
-                      <p className="text-stone-400 italic">Belum ada deskripsi event.</p>
+                      <div className="bg-white p-8 shadow-sm border-t-4 border-stone-200">
+                        <p className="text-stone-400 italic">Belum ada deskripsi event.</p>
+                      </div>
                     )}
                   </div>
                 </div>
