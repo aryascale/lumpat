@@ -78,6 +78,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   // T-shirt inventory state
   const [tshirtInventory, setTshirtInventory] = useState<Array<{ id?: string; size: string; quota: number; sold: number; width?: string; height?: string }>>([]);
   const [savingInventory, setSavingInventory] = useState(false);
+  const [savingCategories, setSavingCategories] = useState(false);
 
   // GPX upload state
   const [gpxFile, setGpxFile] = useState<File | null>(null);
@@ -539,14 +540,14 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
     await saveCategories(updated);
   };
 
-  const updateCategoryPrice = async (catName: string, price: number) => {
-    const updated = categories.map(c => c.name === catName ? { ...c, price } : c);
-    await saveCategories(updated);
+  const updateCategoryQuota = (catName: string, quota: number) => {
+    const updated = categories.map(c => c.name === catName ? { ...c, quota } : c);
+    setCategories(updated);
   };
 
-  const updateCategoryQuota = async (catName: string, quota: number) => {
-    const updated = categories.map(c => c.name === catName ? { ...c, quota } : c);
-    await saveCategories(updated);
+  const updateCategoryPrice = (catName: string, price: number) => {
+    const updated = categories.map(c => c.name === catName ? { ...c, price } : c);
+    setCategories(updated);
   };
 
   // Homepage content save
@@ -617,6 +618,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   };
 
   const saveCategories = async (cats: Array<{ name: string; price: number; quota: number }>) => {
+    setSavingCategories(true);
     try {
       const res = await fetch(`/api/categories?eventId=${eventId}`, {
         method: 'POST',
@@ -625,13 +627,17 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       });
       
       if (res.ok) {
-        setCategories(cats);
+        const data = await res.json();
+        setCategories(data.categories || cats);
         bumpDataVersion();
+        alert('Categories saved!');
       } else {
         alert('Failed to save categories');
       }
     } catch (error) {
       alert('Failed to save categories');
+    } finally {
+      setSavingCategories(false);
     }
   };
 
@@ -1273,13 +1279,19 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       {/* Categories Tab */}
       {activeTab === 'categories' && (
         <div className="card">
-          <div className="header-row mb-4">
             <div>
               <h2 className="section-title">Race Categories & Pricing</h2>
               <div className="subtle text-sm">
                 Kelola kategori lomba dan harga tiket per kategori.
               </div>
             </div>
+            <button 
+              className="btn" 
+              onClick={() => saveCategories(categories)} 
+              disabled={savingCategories || categories.length === 0}
+            >
+              {savingCategories ? 'Saving...' : 'Save Categories'}
+            </button>
           </div>
 
           {/* Add Category */}
@@ -1321,8 +1333,9 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                 <tr>
                   <th style={{ width: 60 }}>#</th>
                   <th>Category Name</th>
-                  <th style={{ width: 160 }}>Harga (Rp)</th>
-                  <th style={{ width: 120 }}>Kuota</th>
+                  <th style={{ width: 140 }}>Harga (Rp)</th>
+                  <th style={{ width: 100 }}>Kuota</th>
+                  <th style={{ width: 80 }}>Sold</th>
                   <th style={{ width: 100 }}>Actions</th>
                 </tr>
               </thead>
@@ -1348,12 +1361,15 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                       <td>
                         <input
                           className="search text-right"
-                          style={{ width: 100 }}
+                          style={{ width: 90 }}
                           type="number"
                           value={cat.quota}
                           placeholder="0=∞"
                           onChange={(e) => updateCategoryQuota(cat.name, parseInt(e.target.value) || 0)}
                         />
+                      </td>
+                      <td className="text-center font-bold text-red-600">
+                        {(cat as any).sold || 0}
                       </td>
                       <td>
                         <button 

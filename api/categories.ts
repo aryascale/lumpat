@@ -55,10 +55,17 @@ export default async function handler(event: any) {
         'SELECT * FROM Category WHERE eventId = ? ORDER BY `order` ASC', [eventId]
       );
 
+      // Count sold per category from registrations
+      const soldCounts: any = await query(
+        `SELECT categoryId, COUNT(*) as sold FROM EventRegistration WHERE eventId = ? AND paymentStatus = 'settlement' GROUP BY categoryId`,
+        [eventId]
+      );
+      const soldMap = new Map(soldCounts.map((s: any) => [s.categoryId, Number(s.sold)]));
+
       const { logActivity } = await import('../src/lib/activity-logger');
       await logActivity('event.update_categories', `Update kategori untuk event ${eventId}`, 'admin', eventId);
 
-      return successResponse({ categories: updated.map((c: any) => ({ id: c.id, name: c.name, price: c.price || 0, quota: c.quota || 0, order: c.order })) });
+      return successResponse({ categories: updated.map((c: any) => ({ id: c.id, name: c.name, price: c.price || 0, quota: c.quota || 0, sold: soldMap.get(c.id) || 0, order: c.order })) });
     }
 
     if (event.httpMethod === 'DELETE') {
