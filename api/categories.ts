@@ -1,6 +1,7 @@
 import { query } from '../src/lib/db';
 import { getDefaultCategories, saveDefaultCategories, resetDefaultCategories } from '../src/lib/defaultCategories';
 import { successResponse, errorResponse, parseBody, CORS_HEADERS } from '../src/lib/api-utils';
+import { createBackup } from '../src/lib/backup';
 
 const DEFAULT_CATEGORIES = ['10K Laki-laki', '10K Perempuan', '5K Laki-Laki', '5K Perempuan'];
 
@@ -84,6 +85,7 @@ export default async function handler(event: any) {
 
       const { logActivity } = await import('../src/lib/activity-logger');
       await logActivity('event.update_categories', `Update kategori untuk event ${eventId}`, 'admin', eventId);
+      try { await createBackup('category_update'); } catch (e) { console.error('[BACKUP] Failed:', e); }
 
       return successResponse({ categories: updated.map((c: any) => ({ id: c.id, name: c.name, price: c.price || 0, quota: c.quota || 0, sold: soldMap.get(c.id) || 0, order: c.order })) });
     }

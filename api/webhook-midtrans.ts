@@ -2,6 +2,7 @@ import { query } from '../src/lib/db';
 import { CORS_HEADERS } from '../src/lib/api-utils';
 import { logActivity } from '../src/lib/activity-logger';
 import { sendRegistrationConfirmation } from '../src/lib/email-service';
+import { createBackup } from '../src/lib/backup';
 import crypto from 'crypto';
 
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY || '';
@@ -137,6 +138,8 @@ export default async function handler(event: any) {
             );
           }
         }
+        // Auto-backup after successful payment
+        try { await createBackup('payment'); } catch (e) { console.error('[BACKUP] Failed:', e); }
       }
     }
     return { statusCode: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'ok' }) };

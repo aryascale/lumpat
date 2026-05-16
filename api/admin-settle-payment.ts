@@ -1,6 +1,7 @@
 import { query } from '../src/lib/db';
 import { successResponse, errorResponse, CORS_HEADERS } from '../src/lib/api-utils';
 import { logActivity } from '../src/lib/activity-logger';
+import { createBackup } from '../src/lib/backup';
 
 export default async function handler(event: any) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
@@ -40,6 +41,8 @@ export default async function handler(event: any) {
     // Log the manual action
     const eventId = regRes[0]?.eventId || null;
     await logActivity('payment.manual_settle', `Penyelesaian pembayaran manual untuk ${orderId}`, 'admin', eventId, { orderId });
+
+    try { await createBackup('manual_settle'); } catch (e) { console.error('[BACKUP] Failed:', e); }
 
     return successResponse({ message: 'Pembayaran berhasil diselesaikan secara manual' });
   } catch (error: any) {
