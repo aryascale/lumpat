@@ -84,32 +84,32 @@ export default function LandingPage() {
 
   const products = [
     {
-      name: "Bib Tag",
-      desc: "Race bib with integrated UHF transponder chip. Pre-programmed and personalized.",
-      type: "disposable",
+      name: "Pro Time Decoder",
+      desc: "The core timing unit that processes transponder reads with extreme accuracy and reliability.",
+      type: "hardware",
     },
     {
-      name: "Ankle Tag",
-      desc: "Reusable UHF transponder worn on the ankle with neoprene strap. Low-cost and durable.",
+      name: "Magic Antenna",
+      desc: "Advanced high-gain antenna system ensuring maximum read rates in dense race conditions.",
+      type: "hardware",
+    },
+    {
+      name: "Active Chip",
+      desc: "High precision active transponder designed for professional cycling and high-speed sports.",
       type: "reusable",
     },
     {
-      name: "Bike Tag",
-      desc: "Aerodynamic seatpost sticker with embedded transponder. Simply stick and ride.",
+      name: "Running Chip",
+      desc: "Lightweight passive UHF transponder optimized for mass running events and marathons.",
       type: "disposable",
-    },
-    {
-      name: "Relay Baton",
-      desc: "Timing baton with dual transponders for relay race events. Robust and reliable.",
-      type: "reusable",
     },
   ];
 
   const hardwareImages = [
-    "/images/events/device_bib_tag.webp",
-    "/images/events/device_ankle_tag.webp",
-    "/images/events/device_bike_tag.webp",
-    "/images/events/device_relay_baton.webp"
+    "/Assets/landing2/PRO TIME DECODER.png",
+    "/Assets/landing2/MAGIC ANTENNA.png",
+    "/Assets/landing2/Active Chip.png",
+    "/Assets/landing2/RUNNING Chip.png"
   ];
 
 
@@ -294,6 +294,69 @@ export default function LandingPage() {
                   <p className="landing-product-card__desc">{product.desc}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===================== SECTION 5: PLATFORM ECOSYSTEM ===================== */}
+      <section className="landing-section" id="platform" style={{ backgroundColor: "#f8f9fa", padding: "100px 0" }}>
+        <div className="landing-container">
+          <div className="landing-section-header scroll-reveal">
+            <span className="landing-section-header__tag text-red-600 font-bold tracking-widest text-sm uppercase mb-2 block">SOFTWARE PLATFORM</span>
+            <h2 className="landing-section-header__title text-4xl font-black uppercase text-stone-900 mb-4">COMPLETE ECOSYSTEM</h2>
+            <p className="landing-section-header__subtitle text-stone-500 max-w-2xl mx-auto">
+              Manage your entire event from one unified dashboard. From custom branding to real-time results.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-16 scroll-reveal">
+            {/* Feature 1 */}
+            <div className="flex flex-col items-center bg-white p-8 rounded-3xl shadow-lg border border-gray-100 transition-all hover:-translate-y-2 hover:shadow-xl group">
+              <div className="h-56 w-full flex items-center justify-center mb-6">
+                <img src="/Assets/landing2/White Label Website.png" alt="White Label Website" className="max-h-full max-w-full object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-500" />
+              </div>
+              <h3 className="text-2xl font-black text-stone-900 mb-3 uppercase tracking-tight">White Label Website</h3>
+              <p className="text-stone-500 text-center font-medium leading-relaxed">Fully customizable event websites that match your brand identity. Own your entire registration process.</p>
+            </div>
+            
+            {/* Feature 2 */}
+            <div className="flex flex-col items-center bg-white p-8 rounded-3xl shadow-lg border border-gray-100 transition-all hover:-translate-y-2 hover:shadow-xl group">
+              <div className="h-56 w-full flex items-center justify-center mb-6">
+                <img src="/Assets/landing2/result.png" alt="Real-time Results" className="max-h-full max-w-full object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-500" />
+              </div>
+              <h3 className="text-2xl font-black text-stone-900 mb-3 uppercase tracking-tight">Real-time Results</h3>
+              <p className="text-stone-500 text-center font-medium leading-relaxed">Instant leaderboards, split times, and auto-generated finisher certificates for all participants.</p>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="flex flex-col items-center bg-white p-8 rounded-3xl shadow-lg border border-gray-100 transition-all hover:-translate-y-2 hover:shadow-xl group">
+              <div className="h-56 w-full flex items-center justify-center mb-6">
+                <img src="/Assets/landing2/map start and finish.png" alt="Route Mapping" className="max-h-full max-w-full object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-500" />
+              </div>
+              <h3 className="text-2xl font-black text-stone-900 mb-3 uppercase tracking-tight">Route Mapping</h3>
+              <p className="text-stone-500 text-center font-medium leading-relaxed">Interactive start/finish maps and strategic checkpoint placement for precise split tracking.</p>
+            </div>
+
+            {/* Feature 4 */}
+            <div className="flex flex-col items-center bg-white p-8 rounded-3xl shadow-lg border border-gray-100 transition-all hover:-translate-y-2 hover:shadow-xl group">
+              <div className="h-56 w-full flex items-center justify-center mb-6">
+                <img src="/Assets/landing2/multisport.png" alt="Multisport Support" className="max-h-full max-w-full object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-500" />
+              </div>
+              <h3 className="text-2xl font-black text-stone-900 mb-3 uppercase tracking-tight">Multisport Support</h3>
+              <p className="text-stone-500 text-center font-medium leading-relaxed">Built from the ground up for triathlons, duathlons, and multi-stage races with seamless transitions.</p>
+            </div>
+          </div>
+          
+          <div className="mt-8 flex justify-center scroll-reveal">
+            <div className="flex flex-col md:flex-row items-center gap-8 bg-white p-8 md:p-12 rounded-3xl shadow-lg border border-gray-100 max-w-5xl w-full transition-all hover:-translate-y-2 hover:shadow-xl group">
+              <div className="w-full md:w-1/2 flex items-center justify-center">
+                <img src="/Assets/landing2/portfolio.png" alt="Event Portfolio" className="max-h-72 object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-500" />
+              </div>
+              <div className="w-full md:w-1/2 text-center md:text-left">
+                <h3 className="text-3xl font-black text-stone-900 mb-4 uppercase tracking-tight">Event Portfolio</h3>
+                <p className="text-stone-500 font-medium leading-relaxed text-lg">Manage multiple events, track participant history, and analyze revenue across your entire organization with our comprehensive dashboard.</p>
+              </div>
             </div>
           </div>
         </div>
