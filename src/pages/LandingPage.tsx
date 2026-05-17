@@ -309,7 +309,7 @@ export default function LandingPage() {
       </section>
 
       {/* ===================== SECTION 5: PLATFORM ECOSYSTEM ===================== */}
-      <section className="landing-section overflow-hidden" id="platform" style={{ backgroundColor: "#f8f9fa", padding: "100px 0" }}>
+      <section className="landing-section overflow-hidden" id="platform" style={{ backgroundColor: "#fafafa", padding: "100px 0" }}>
         <div className="landing-container">
           <div className="landing-section-header scroll-reveal">
             <span className="landing-section-header__tag text-red-600 font-bold tracking-widest text-sm uppercase mb-2 block">SOFTWARE PLATFORM</span>
@@ -319,9 +319,9 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Coverflow Image Strip */}
-          <div className="relative w-full mt-16" style={{ perspective: '1800px' }}>
-            <div className="flex items-center justify-center" style={{ height: '420px' }}>
+          {/* Coverflow Strip */}
+          <div className="relative w-full mt-20 mb-12" style={{ perspective: '2000px' }}>
+            <div className="flex items-center justify-center relative" style={{ height: '380px', transformStyle: 'preserve-3d' }}>
               {[
                 { title: "White Label Website", img: "/Assets/landing2/White Label Website.png", tag: "#01" },
                 { title: "Real-time Results", img: "/Assets/landing2/result.png", tag: "#02" },
@@ -335,34 +335,36 @@ export default function LandingPage() {
                 if (diff < -Math.floor(total / 2)) diff += total;
                 const absDiff = Math.abs(diff);
                 const isCenter = absDiff === 0;
-                const zIndex = 50 - absDiff * 10;
 
-                const translateX = diff * 200;
-                const rotateY = diff * -35;
-                const translateZ = isCenter ? 80 : absDiff * -120;
-                const cardScale = isCenter ? 1.08 : 1 - absDiff * 0.08;
-                const cardOpacity = absDiff > 2 ? 0 : 1 - absDiff * 0.15;
+                // Tight spacing like reference — images almost touching
+                const gap = 175;
+                const tx = diff * gap;
+                const ry = diff * -18;
+                const tz = isCenter ? 60 : -(absDiff * 80);
+                const sc = isCenter ? 1.12 : Math.max(0.75, 1 - absDiff * 0.12);
+                const op = absDiff > 2 ? 0 : Math.max(0.4, 1 - absDiff * 0.25);
+                const z = isCenter ? 50 : 40 - absDiff * 5;
 
                 return (
                   <div
                     key={item.tag}
-                    className="absolute transition-all duration-[800ms] ease-[cubic-bezier(0.25,0.1,0.25,1)] cursor-pointer"
+                    className="absolute transition-all duration-[900ms] ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer select-none"
                     style={{
-                      transform: `translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${cardScale})`,
-                      zIndex,
-                      opacity: cardOpacity,
+                      transform: `translateX(${tx}px) translateZ(${tz}px) rotateY(${ry}deg) scale(${sc})`,
+                      zIndex: z,
+                      opacity: op,
                       transformStyle: 'preserve-3d',
                     }}
                     onClick={() => setActiveEcosystem(index)}
                   >
                     <div
-                      className={`overflow-hidden rounded-2xl transition-shadow duration-500 ${isCenter ? 'shadow-2xl shadow-black/20' : 'shadow-xl shadow-black/10'}`}
-                      style={{ width: '280px', height: '360px' }}
+                      className={`overflow-hidden rounded-3xl transition-shadow duration-700 bg-white ${isCenter ? 'shadow-[0_25px_60px_-12px_rgba(0,0,0,0.25)] ring-1 ring-black/5' : 'shadow-[0_10px_30px_-8px_rgba(0,0,0,0.12)]'}`}
+                      style={{ width: '240px', height: '320px' }}
                     >
                       <img
                         src={item.img}
                         alt={item.title}
-                        className="w-full h-full object-cover"
+                        className={`w-full h-full object-cover transition-all duration-700 ${isCenter ? 'brightness-100 saturate-100' : 'brightness-90 saturate-75'}`}
                         draggable={false}
                       />
                     </div>
@@ -372,8 +374,8 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Labels below */}
-          <div className="flex justify-center gap-16 md:gap-24 mt-4">
+          {/* Labels row */}
+          <div className="flex justify-center gap-10 sm:gap-14 md:gap-20">
             {[
               { tag: "#01", title: "White Label Website" },
               { tag: "#02", title: "Real-time Results" },
@@ -384,10 +386,10 @@ export default function LandingPage() {
               <button
                 key={idx}
                 onClick={() => setActiveEcosystem(idx)}
-                className={`flex flex-col items-center gap-1 transition-all duration-500 cursor-pointer group ${activeEcosystem === idx ? 'opacity-100' : 'opacity-40 hover:opacity-70'}`}
+                className={`flex flex-col items-center gap-1.5 transition-all duration-500 cursor-pointer ${activeEcosystem === idx ? 'opacity-100 scale-105' : 'opacity-30 hover:opacity-60'}`}
               >
-                <span className={`font-black text-sm tracking-widest transition-colors duration-500 ${activeEcosystem === idx ? 'text-red-500' : 'text-stone-500'}`}>{item.tag}</span>
-                <span className="text-stone-800 font-bold text-xs uppercase tracking-wider">{item.title}</span>
+                <span className={`font-black text-sm tracking-widest transition-colors duration-500 ${activeEcosystem === idx ? 'text-red-500' : 'text-stone-400'}`}>{item.tag}</span>
+                <span className="text-stone-800 font-bold text-[11px] uppercase tracking-wider whitespace-nowrap">{item.title}</span>
               </button>
             ))}
           </div>

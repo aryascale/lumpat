@@ -875,10 +875,28 @@ export default function EventPage() {
                       event.content.about.trim().toLowerCase().startsWith('<!doctype html>') || event.content.about.trim().toLowerCase().startsWith('<html') ? (
                         <iframe
                           title="Event Homepage"
-                          srcDoc={event.content.about.replace(
-                            /<\/head>/i,
-                            '<style>.hero-redbar { display: none !important; } .hero-badge, .hero-eyebrow, .hero-title, .hero-subtitle, .hero-strip, .hero-orgs { opacity: 1 !important; transform: none !important; animation: none !important; }</style></head>'
-                          )}
+                          srcDoc={(() => {
+                            const injectedCSS = `<style>
+                              * { animation-play-state: paused !important; animation-fill-mode: forwards !important; }
+                              [class*="hero"], [class*="badge"], [class*="title"], [class*="subtitle"], [class*="strip"], [class*="orgs"], [class*="eyebrow"],
+                              header *, section *, footer *, main *, body > div * {
+                                opacity: 1 !important;
+                                transform: none !important;
+                                animation: none !important;
+                              }
+                              .hero-redbar { display: none !important; }
+                              footer { border-top-color: transparent !important; }
+                            </style>`;
+                            let html = event.content.about;
+                            if (/<\/head>/i.test(html)) {
+                              html = html.replace(/<\/head>/i, injectedCSS + '</head>');
+                            } else if (/<body/i.test(html)) {
+                              html = html.replace(/<body/i, injectedCSS + '<body');
+                            } else {
+                              html = injectedCSS + html;
+                            }
+                            return html;
+                          })()}
                           className="w-full border-0 overflow-hidden block"
                           style={{ minHeight: '100vh', width: '100%' }}
                           onLoad={(e) => {
