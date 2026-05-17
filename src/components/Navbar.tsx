@@ -36,7 +36,7 @@ export default function Navbar({ showAdminButton = false }: NavbarProps) {
   // AUTH DISABLED: const initials = user ? ((user as any)?.name || user.username || user.email || '?').charAt(0).toUpperCase() : '';
 
   const navLinks = [
-    { to: '#about', label: 'About' },
+    { to: '#products', label: 'About' },
     { to: '/event', label: 'Events' },
   ];
 
@@ -50,7 +50,7 @@ export default function Navbar({ showAdminButton = false }: NavbarProps) {
         </Link>
 
         {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-6">
+        <div className="hidden md:flex items-center gap-6 ml-auto mr-8">
           {navLinks.map(link => (
             <Link key={link.to} to={link.to}
               className={`text-sm font-medium transition-colors ${
