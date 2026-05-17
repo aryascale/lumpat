@@ -76,7 +76,6 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   // Homepage content state
   const [homeContent, setHomeContent] = useState<{ about: string; schedule: string; rules: string }>({ about: '', schedule: '', rules: '' });
   const [savingHome, setSavingHome] = useState(false);
-  const [isRawHtmlMode, setIsRawHtmlMode] = useState(false);
 
   // Registration fields state
   const [regFields, setRegFields] = useState<Array<{ id?: string; label: string; type: string; required: boolean; options: string }>>([]);
@@ -156,9 +155,6 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
             schedule: evtData.content.schedule || '',
             rules: evtData.content.rules || '',
           });
-          if (aboutContent.trim().toLowerCase().startsWith('<!doctype html') || aboutContent.trim().toLowerCase().startsWith('<html')) {
-            setIsRawHtmlMode(true);
-          }
         }
         setEventData(evtData);
       }
@@ -597,7 +593,6 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
     reader.onload = (event) => {
       const htmlString = event.target?.result as string;
       setHomeContent(prev => ({ ...prev, about: htmlString }));
-      setIsRawHtmlMode(true);
     };
     reader.readAsText(file);
   };
@@ -1980,64 +1975,31 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           <div className="space-y-6">
             <div>
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-2 gap-3">
-                <label className="block text-sm font-bold text-gray-700">Konten Halaman Home</label>
+                <label className="block text-sm font-bold text-gray-700">Konten HTML Halaman Home</label>
                 <div className="flex flex-col items-end gap-2">
-                  <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-500 font-bold hidden sm:inline">Upload HTML:</span>
-                      <input
-                        type="file"
-                        accept=".html"
-                        onChange={handleHtmlFileUpload}
-                        className="text-[10px] file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-gray-200 file:font-bold file:text-gray-700 cursor-pointer hover:file:bg-gray-300 w-[180px]"
-                      />
-                    </div>
-                    <div className="flex bg-gray-200 p-1 rounded-lg">
-                      <button
-                        className={`px-3 py-1 text-[11px] font-bold rounded transition-colors ${!isRawHtmlMode ? 'bg-white shadow-sm text-stone-900' : 'text-gray-500 hover:text-gray-700'}`}
-                        onClick={() => setIsRawHtmlMode(false)}
-                      >
-                        Visual Editor
-                      </button>
-                      <button
-                        className={`px-3 py-1 text-[11px] font-bold rounded transition-colors ${isRawHtmlMode ? 'bg-white shadow-sm text-stone-900' : 'text-gray-500 hover:text-gray-700'}`}
-                        onClick={() => setIsRawHtmlMode(true)}
-                      >
-                        Raw HTML
-                      </button>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 font-bold hidden sm:inline">Upload File HTML:</span>
+                    <input
+                      type="file"
+                      accept=".html"
+                      onChange={handleHtmlFileUpload}
+                      className="text-[10px] file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-gray-200 file:font-bold file:text-gray-700 cursor-pointer hover:file:bg-gray-300 w-[180px]"
+                    />
                   </div>
-                  {isRawHtmlMode && (
-                    <span className="text-[10px] text-red-500 font-medium">
-                      ⚠️ Jangan pindah ke Visual Editor jika mem-paste file HTML utuh
-                    </span>
-                  )}
+                  <span className="text-[10px] text-gray-500 font-medium">
+                    (Paste kode HTML utuh atau upload file HTML dari Figma)
+                  </span>
                 </div>
               </div>
               <div className="bg-white border border-gray-200 rounded-lg overflow-hidden pb-12">
-                {!isRawHtmlMode ? (
-                  <ReactQuill 
-                    theme="snow" 
-                    value={homeContent.about} 
-                    onChange={(val) => setHomeContent({ ...homeContent, about: val })} 
-                    style={{ height: '400px' }} 
-                    className="bg-white"
-                    placeholder="Ketik isi konten homepage di sini... (mendukung format teks, gambar, video, dan styling)"
-                  />
-                ) : (
-                  <textarea
-                    value={homeContent.about}
-                    onChange={(e) => setHomeContent({ ...homeContent, about: e.target.value })}
-                    className="w-full h-[442px] p-4 font-mono text-xs bg-gray-900 text-green-400 border-none focus:ring-0 outline-none resize-y"
-                    placeholder="<!-- Paste kode HTML dari Figma di sini... -->"
-                    spellCheck="false"
-                  />
-                )}
+                <textarea
+                  value={homeContent.about}
+                  onChange={(e) => setHomeContent({ ...homeContent, about: e.target.value })}
+                  className="w-full h-[442px] p-4 font-mono text-xs bg-gray-900 text-green-400 border-none focus:ring-0 outline-none resize-y"
+                  placeholder="<!-- Paste kode HTML di sini... -->"
+                  spellCheck="false"
+                />
               </div>
-            </div>
-
-            <div className="p-3 bg-blue-50 border border-blue-400 rounded-lg text-blue-900 text-sm mt-8">
-              <strong>Tips:</strong> Untuk hasil maksimal, Anda bisa meng-export desain dari Figma ke HTML, lalu upload file HTML-nya atau paste kodenya di mode "Raw HTML".
             </div>
           </div>
         </div>
