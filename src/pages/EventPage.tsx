@@ -875,77 +875,74 @@ export default function EventPage() {
                       event.content.about.trim().toLowerCase().startsWith('<!doctype html>') || event.content.about.trim().toLowerCase().startsWith('<html') ? (
                         <iframe
                           title="Event Homepage"
-                          srcDoc={(() => {
-                            const injectedCSS = `<style>
-                              @keyframes none-override {}
-                              body, body * {
-                                opacity: 1 !important;
-                                visibility: visible !important;
-                                transform: none !important;
-                                animation: none !important;
-                                animation-delay: 0s !important;
-                              }
-                              .hero-redbar, .hero-wave { display: none !important; }
-                              footer { border-top-color: transparent !important; }
-                            </style>`;
-                            let html = event.content.about;
-                            if (/<\/head>/i.test(html)) {
-                              html = html.replace(/<\/head>/i, injectedCSS + '</head>');
-                            } else if (/<body/i.test(html)) {
-                              html = html.replace(/<body/i, injectedCSS + '<body');
-                            } else {
-                              html = injectedCSS + html;
-                            }
-                            return html;
-                          })()}
+                          srcDoc={event.content.about}
+                          sandbox="allow-same-origin allow-scripts allow-popups"
                           className="w-full border-0 overflow-hidden block"
                           style={{ minHeight: '100vh', width: '100%' }}
                           onLoad={(e) => {
                             try {
                               const iframe = e.target as HTMLIFrameElement;
-                              if (iframe.contentWindow) {
-                                const resize = () => {
-                                  iframe.style.height = iframe.contentWindow!.document.documentElement.scrollHeight + 'px';
-                                };
-                                setTimeout(resize, 100);
-                                setTimeout(resize, 500);
-                                
-                                // Set up a ResizeObserver inside the iframe to keep height updated
-                                const resizeObserver = new ResizeObserver(() => resize());
-                                resizeObserver.observe(iframe.contentWindow!.document.body);
+                              const doc = iframe.contentWindow?.document;
+                              if (!doc) return;
 
-                                // Intercept clicks on links or buttons that should open registration
-                                iframe.contentWindow.document.body.addEventListener('click', (ev) => {
-                                  const target = ev.target as HTMLElement;
-                                  // Look for links to #tickets or buttons with data-ticket
-                                  const btn = target.closest('a[href="#tickets"], a[href="#participants"], button[data-ticket], .btn-buy, .btn-fun');
-                                  
-                                  if (btn) {
-                                    // If it's the backToTop button, ignore interception
-                                    if (btn.id === 'backToTop') return;
-
-                                    ev.preventDefault();
-                                    
-                                    // Click the 'DAFTAR SEKARANG' or 'PARTICIPANTS' tab in the parent app
-                                    // The main CTA button has id="main-register-btn" or we can click the tab
-                                    const participantsTab = document.querySelector('button[data-tab="Participants"]') as HTMLButtonElement;
-                                    if (participantsTab) {
-                                      participantsTab.click();
-                                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                                    } else {
-                                      // Fallback to finding any button that says Daftar
-                                      const allBtns = Array.from(document.querySelectorAll('button'));
-                                      const daftarBtn = allBtns.find(b => b.textContent?.toLowerCase().includes('daftar'));
-                                      if (daftarBtn) {
-                                        daftarBtn.click();
-                                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                                      }
-                                    }
+                              // NUCLEAR: Force ALL elements visible via inline styles
+                              const forceVisible = () => {
+                                const all = doc.querySelectorAll('*');
+                                all.forEach((el: Element) => {
+                                  const htmlEl = el as HTMLElement;
+                                  if (htmlEl.style) {
+                                    htmlEl.style.setProperty('opacity', '1', 'important');
+                                    htmlEl.style.setProperty('visibility', 'visible', 'important');
+                                    htmlEl.style.setProperty('animation', 'none', 'important');
+                                    htmlEl.style.setProperty('transition', 'none', 'important');
                                   }
                                 });
-                              }
+                                // Remove transforms only on animated elements (keep layout transforms intact)
+                                doc.querySelectorAll('[class*="hero"], [class*="badge"], [class*="title"], [class*="subtitle"], [class*="strip"], [class*="org"], [class*="eyebrow"]').forEach((el: Element) => {
+                                  (el as HTMLElement).style.setProperty('transform', 'none', 'important');
+                                });
+                                // Hide red bar
+                                doc.querySelectorAll('.hero-redbar').forEach((el: Element) => {
+                                  (el as HTMLElement).style.setProperty('display', 'none', 'important');
+                                });
+                              };
+
+                              // Run immediately + delayed to catch late-loading content
+                              forceVisible();
+                              setTimeout(forceVisible, 50);
+                              setTimeout(forceVisible, 200);
+                              setTimeout(forceVisible, 500);
+
+                              // Auto-resize iframe height
+                              const resize = () => {
+                                const h = doc.documentElement.scrollHeight;
+                                if (h > 100) iframe.style.height = h + 'px';
+                              };
+                              setTimeout(resize, 100);
+                              setTimeout(resize, 600);
+                              setTimeout(resize, 1500);
+
+                              // ResizeObserver for dynamic content
+                              try {
+                                const ro = new ResizeObserver(() => resize());
+                                ro.observe(doc.body);
+                              } catch {}
+
+                              // Intercept CTA clicks
+                              doc.body.addEventListener('click', (ev) => {
+                                const target = ev.target as HTMLElement;
+                                const btn = target.closest('a[href="#tickets"], a[href="#participants"], button[data-ticket], .btn-buy, .btn-fun');
+                                if (btn && (btn as HTMLElement).id !== 'backToTop') {
+                                  ev.preventDefault();
+                                  const participantsTab = document.querySelector('button[data-tab="Participants"]') as HTMLButtonElement;
+                                  if (participantsTab) {
+                                    participantsTab.click();
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                  }
+                                }
+                              });
                             } catch (err) {
-                              console.error('Failed to setup iframe', err);
+                              console.error('iframe setup error:', err);
                             }
                           }}
                         />

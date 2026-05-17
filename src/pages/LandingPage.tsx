@@ -175,25 +175,35 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ===================== PLATFORM ECOSYSTEM — FULL-WIDTH FILMSTRIP ===================== */}
-      <section className="overflow-hidden" id="platform" style={{ backgroundColor: "#fafafa", padding: "80px 0 60px" }}>
-        <div className="text-center mb-12 px-6">
-          <span className="text-red-600 font-bold tracking-widest text-xs uppercase mb-2 block">SOFTWARE PLATFORM</span>
-          <h2 className="text-3xl md:text-5xl font-black uppercase text-stone-900 mb-4 tracking-tight">COMPLETE ECOSYSTEM</h2>
-          <p className="text-stone-500 max-w-xl mx-auto text-sm md:text-base">
+      {/* ===================== PLATFORM ECOSYSTEM — CINEMATIC 3D CAROUSEL ===================== */}
+      <section className="overflow-hidden relative" id="platform" style={{ backgroundColor: "#f5f5f5", padding: "100px 0 80px" }}>
+        {/* Section Header */}
+        <div className="text-center mb-24 px-6 relative z-10">
+          <span className="text-red-500 font-extrabold tracking-[0.25em] text-xs uppercase mb-3 block">SOFTWARE PLATFORM</span>
+          <h2 className="text-4xl md:text-6xl font-black uppercase text-stone-900 mb-5 tracking-[-0.04em] leading-[0.95]">COMPLETE ECOSYSTEM</h2>
+          <p className="text-stone-400 max-w-lg mx-auto text-sm md:text-base font-medium">
             Manage your entire event from one unified dashboard. From custom branding to real-time results.
           </p>
         </div>
 
-        {/* Filmstrip — full viewport width */}
-        <div className="relative w-screen left-1/2 -translate-x-1/2" style={{ perspective: '1400px' }}>
-          <div className="flex items-center justify-center" style={{ height: '380px', transformStyle: 'preserve-3d' }}>
+        {/* 3D Carousel Stage */}
+        <div className="relative w-screen left-1/2 -translate-x-1/2" style={{ perspective: '2000px' }}>
+          
+          {/* Atmospheric glow behind center */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-red-500/[0.06] blur-[80px] pointer-events-none" />
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[250px] rounded-full bg-blue-500/[0.04] blur-[60px] pointer-events-none" />
+
+          {/* Edge fade gradients */}
+          <div className="absolute left-0 top-0 h-full w-32 md:w-48 bg-gradient-to-r from-[#f5f5f5] to-transparent z-[60] pointer-events-none" />
+          <div className="absolute right-0 top-0 h-full w-32 md:w-48 bg-gradient-to-l from-[#f5f5f5] to-transparent z-[60] pointer-events-none" />
+
+          <div className="flex items-center justify-center relative" style={{ height: '480px', transformStyle: 'preserve-3d' }}>
             {[
-              { title: "White Label Website", img: "/Assets/landing2/White Label Website.png", tag: "#01" },
-              { title: "Real-time Results", img: "/Assets/landing2/result.png", tag: "#02" },
-              { title: "Route Mapping", img: "/Assets/landing2/map start and finish.png", tag: "#03" },
-              { title: "Multisport Support", img: "/Assets/landing2/multisport.png", tag: "#04" },
-              { title: "Event Portfolio", img: "/Assets/landing2/portfolio.png", tag: "#05" },
+              { title: "White Label", img: "/Assets/landing2/White Label Website.png", tag: "#01" },
+              { title: "Results", img: "/Assets/landing2/result.png", tag: "#02" },
+              { title: "Route Map", img: "/Assets/landing2/map start and finish.png", tag: "#03" },
+              { title: "Multisport", img: "/Assets/landing2/multisport.png", tag: "#04" },
+              { title: "Portfolio", img: "/Assets/landing2/portfolio.png", tag: "#05" },
             ].map((item, index) => {
               let diff = index - activeEcosystem;
               const total = 5;
@@ -202,19 +212,21 @@ export default function LandingPage() {
               const absDiff = Math.abs(diff);
               const isCenter = absDiff === 0;
 
-              const tx = diff * 220;
-              const ry = diff * -15;
-              const tz = isCenter ? 40 : -(absDiff * 60);
-              const sc = isCenter ? 1.05 : Math.max(0.85, 1 - absDiff * 0.06);
-              const op = absDiff > 2 ? 0.3 : 1;
+              // Cinematic 3D transforms
+              const tx = diff * 200;
+              const ry = diff * 22;         // Stronger rotation
+              const tz = isCenter ? 80 : -(absDiff * 100);  // Deeper Z push
+              const ty = absDiff * 15;      // Vertical stagger
+              const sc = isCenter ? 1.15 : Math.max(0.78, 0.92 - absDiff * 0.07);
+              const op = isCenter ? 1 : Math.max(0.35, 0.7 - absDiff * 0.15);
               const z = isCenter ? 50 : 40 - absDiff * 5;
 
               return (
                 <div
                   key={item.tag}
-                  className="absolute transition-all duration-[900ms] ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer select-none"
+                  className="absolute transition-all duration-[1000ms] ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer select-none group"
                   style={{
-                    transform: `translateX(${tx}px) translateZ(${tz}px) rotateY(${ry}deg) scale(${sc})`,
+                    transform: `translateX(${tx}px) translateY(${ty}px) translateZ(${tz}px) rotateY(${ry}deg) scale(${sc})`,
                     zIndex: z,
                     opacity: op,
                     transformStyle: 'preserve-3d',
@@ -222,15 +234,23 @@ export default function LandingPage() {
                   onClick={() => setActiveEcosystem(index)}
                 >
                   <div
-                    className={`overflow-hidden rounded-2xl transition-shadow duration-700 bg-stone-100 ${isCenter ? 'shadow-[0_20px_50px_-10px_rgba(0,0,0,0.3)]' : 'shadow-[0_8px_24px_-6px_rgba(0,0,0,0.15)]'}`}
-                    style={{ width: '200px', height: '280px' }}
+                    className={`overflow-hidden rounded-[20px] transition-all duration-700 bg-stone-200 relative ${
+                      isCenter 
+                        ? 'shadow-[0_40px_100px_-15px_rgba(0,0,0,0.3),0_15px_30px_-10px_rgba(0,0,0,0.15)] ring-1 ring-white/30' 
+                        : 'shadow-[0_15px_40px_-10px_rgba(0,0,0,0.12)] group-hover:-translate-y-3 group-hover:shadow-[0_25px_60px_-10px_rgba(0,0,0,0.2)]'
+                    }`}
+                    style={{ width: '220px', height: '340px' }}
                   >
                     <img
                       src={item.img}
                       alt={item.title}
-                      className={`w-full h-full object-cover transition-all duration-700 ${isCenter ? '' : 'brightness-[0.85] saturate-[0.8]'}`}
+                      className={`w-full h-full object-cover transition-all duration-700 ${
+                        isCenter ? 'brightness-105 saturate-110' : 'brightness-[0.75] saturate-[0.6]'
+                      }`}
                       draggable={false}
                     />
+                    {/* Glass overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/15 via-transparent to-black/10 pointer-events-none" />
                   </div>
                 </div>
               );
@@ -238,8 +258,8 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Labels */}
-        <div className="flex justify-center gap-8 sm:gap-12 md:gap-16 mt-6 px-4 flex-wrap">
+        {/* Labels with active indicator */}
+        <div className="flex justify-center gap-8 sm:gap-12 md:gap-16 mt-10 px-4 flex-wrap relative z-10">
           {[
             { tag: "#01", title: "White Label" },
             { tag: "#02", title: "Results" },
@@ -250,16 +270,19 @@ export default function LandingPage() {
             <button
               key={idx}
               onClick={() => setActiveEcosystem(idx)}
-              className={`flex flex-col items-center gap-1 transition-all duration-500 cursor-pointer ${activeEcosystem === idx ? 'opacity-100' : 'opacity-30 hover:opacity-60'}`}
+              className={`flex flex-col items-center gap-1.5 transition-all duration-500 cursor-pointer ${activeEcosystem === idx ? 'opacity-100' : 'opacity-25 hover:opacity-50'}`}
             >
-              <span className={`font-black text-xs md:text-sm tracking-widest transition-colors duration-500 ${activeEcosystem === idx ? 'text-red-500' : 'text-stone-400'}`}>{item.tag}</span>
+              <span className={`font-black text-xs md:text-sm tracking-[0.2em] transition-colors duration-500 ${activeEcosystem === idx ? 'text-red-500' : 'text-stone-400'}`}>{item.tag}</span>
               <span className="text-stone-800 font-bold text-[10px] md:text-xs uppercase tracking-wider whitespace-nowrap">{item.title}</span>
+              {/* Active indicator line */}
+              <div className={`h-[2px] rounded-full transition-all duration-500 ${activeEcosystem === idx ? 'w-8 bg-red-500' : 'w-0 bg-transparent'}`} />
             </button>
           ))}
         </div>
       </section>
 
-      {/* ===================== SECTION 2: PHOTO GRID ===================== */}
+      {/* ===================== SECTION 2: PHOTO GRID (PAUSED) ===================== */}
+      {/* Section ini di-pause sementara
       <section className="landing-section landing-section--white" id="photo-grid">
         <div className="landing-container">
           <div className="landing-photo-grid scroll-reveal">
@@ -282,6 +305,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      */}
 
       {/* ===================== SECTION 3: PARALLAX JOURNEY ===================== */}
       <section id="journey">
