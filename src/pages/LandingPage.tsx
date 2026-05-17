@@ -175,29 +175,35 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ===================== PLATFORM ECOSYSTEM — CINEMATIC 3D CAROUSEL ===================== */}
-      <section className="overflow-hidden relative" id="platform" style={{ backgroundColor: "#f5f5f5", padding: "100px 0 80px" }}>
+      {/* ===================== PLATFORM ECOSYSTEM — CINEMATIC 3D ===================== */}
+      <section className="overflow-hidden relative" id="platform" style={{ 
+        background: 'radial-gradient(ellipse 120% 80% at 50% 40%, #f0f0f0 0%, #e8e8e8 40%, #f5f5f5 100%)',
+        padding: '100px 0 80px' 
+      }}>
+        {/* Subtle top/bottom vignette */}
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(245,245,245,0.8) 0%, transparent 15%, transparent 85%, rgba(245,245,245,0.8) 100%)' }} />
+
         {/* Section Header */}
-        <div className="text-center mb-24 px-6 relative z-10">
-          <span className="text-red-500 font-extrabold tracking-[0.25em] text-xs uppercase mb-3 block">SOFTWARE PLATFORM</span>
-          <h2 className="text-4xl md:text-6xl font-black uppercase text-stone-900 mb-5 tracking-[-0.04em] leading-[0.95]">COMPLETE ECOSYSTEM</h2>
-          <p className="text-stone-400 max-w-lg mx-auto text-sm md:text-base font-medium">
-            Manage your entire event from one unified dashboard. From custom branding to real-time results.
+        <div className="text-center mb-20 md:mb-28 px-6 relative z-10">
+          <span className="text-red-500 font-extrabold tracking-[0.3em] text-[11px] uppercase mb-4 block">SOFTWARE PLATFORM</span>
+          <h2 className="text-4xl sm:text-5xl md:text-7xl font-black uppercase text-stone-900 mb-5 tracking-[-0.04em] leading-[0.92]">COMPLETE<br className="sm:hidden" /> ECOSYSTEM</h2>
+          <p className="text-stone-400 max-w-md mx-auto text-sm md:text-[15px] font-medium leading-relaxed">
+            Manage your entire event from one unified dashboard.<br className="hidden md:block" /> From custom branding to real-time results.
           </p>
         </div>
 
-        {/* 3D Carousel Stage */}
-        <div className="relative w-screen left-1/2 -translate-x-1/2" style={{ perspective: '2000px' }}>
+        {/* === 3D STAGE === */}
+        <div className="relative w-screen left-1/2 -translate-x-1/2" style={{ perspective: '2400px', perspectiveOrigin: '50% 50%' }}>
           
-          {/* Atmospheric glow behind center */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-red-500/[0.06] blur-[80px] pointer-events-none" />
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[250px] rounded-full bg-blue-500/[0.04] blur-[60px] pointer-events-none" />
+          {/* Atmospheric glows */}
+          <div className="absolute left-1/2 top-[45%] -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(220,38,38,0.07) 0%, transparent 70%)', filter: 'blur(60px)' }} />
+          <div className="absolute left-1/2 top-[55%] -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.04) 0%, transparent 70%)', filter: 'blur(50px)' }} />
 
-          {/* Edge fade gradients */}
-          <div className="absolute left-0 top-0 h-full w-32 md:w-48 bg-gradient-to-r from-[#f5f5f5] to-transparent z-[60] pointer-events-none" />
-          <div className="absolute right-0 top-0 h-full w-32 md:w-48 bg-gradient-to-l from-[#f5f5f5] to-transparent z-[60] pointer-events-none" />
+          {/* Edge fade — strong cinematic vignette */}
+          <div className="absolute left-0 top-0 h-full w-[15%] z-[60] pointer-events-none" style={{ background: 'linear-gradient(to right, #f0f0f0 0%, transparent 100%)' }} />
+          <div className="absolute right-0 top-0 h-full w-[15%] z-[60] pointer-events-none" style={{ background: 'linear-gradient(to left, #f0f0f0 0%, transparent 100%)' }} />
 
-          <div className="flex items-center justify-center relative" style={{ height: '480px', transformStyle: 'preserve-3d' }}>
+          <div className="flex items-center justify-center relative" style={{ height: '520px', transformStyle: 'preserve-3d' }}>
             {[
               { title: "White Label", img: "/Assets/landing2/White Label Website.png", tag: "#01" },
               { title: "Results", img: "/Assets/landing2/result.png", tag: "#02" },
@@ -211,46 +217,64 @@ export default function LandingPage() {
               if (diff < -Math.floor(total / 2)) diff += total;
               const absDiff = Math.abs(diff);
               const isCenter = absDiff === 0;
+              const side = diff > 0 ? 1 : diff < 0 ? -1 : 0;
 
-              // Cinematic 3D transforms
-              const tx = diff * 200;
-              const ry = diff * 22;         // Stronger rotation
-              const tz = isCenter ? 80 : -(absDiff * 100);  // Deeper Z push
-              const ty = absDiff * 15;      // Vertical stagger
-              const sc = isCenter ? 1.15 : Math.max(0.78, 0.92 - absDiff * 0.07);
-              const op = isCenter ? 1 : Math.max(0.35, 0.7 - absDiff * 0.15);
+              // === CINEMATIC TRANSFORMS ===
+              // Heavy overlap: cards are 300px wide, but only offset 190px apart
+              const tx = diff * 190;
+              // Strong rotation: 45° on outer cards, curves inward
+              const ry = diff * -40;
+              // Deep Z: center pops forward, sides pushed way back
+              const tz = isCenter ? 120 : -(absDiff * 180);
+              // Vertical stagger: side cards drift downward
+              const ty = isCenter ? -10 : absDiff * 20;
+              // Scale: center is dominant
+              const sc = isCenter ? 1.18 : Math.max(0.7, 0.88 - absDiff * 0.09);
+              // Opacity: aggressive falloff
+              const op = isCenter ? 1 : Math.max(0.3, 0.65 - absDiff * 0.15);
+              // Z-index layering
               const z = isCenter ? 50 : 40 - absDiff * 5;
 
               return (
                 <div
                   key={item.tag}
-                  className="absolute transition-all duration-[1000ms] ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer select-none group"
+                  className="absolute transition-all duration-[1100ms] ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer select-none group"
                   style={{
                     transform: `translateX(${tx}px) translateY(${ty}px) translateZ(${tz}px) rotateY(${ry}deg) scale(${sc})`,
                     zIndex: z,
                     opacity: op,
                     transformStyle: 'preserve-3d',
+                    transformOrigin: side >= 0 ? 'left center' : 'right center',
                   }}
                   onClick={() => setActiveEcosystem(index)}
                 >
+                  {/* Card */}
                   <div
-                    className={`overflow-hidden rounded-[20px] transition-all duration-700 bg-stone-200 relative ${
-                      isCenter 
-                        ? 'shadow-[0_40px_100px_-15px_rgba(0,0,0,0.3),0_15px_30px_-10px_rgba(0,0,0,0.15)] ring-1 ring-white/30' 
-                        : 'shadow-[0_15px_40px_-10px_rgba(0,0,0,0.12)] group-hover:-translate-y-3 group-hover:shadow-[0_25px_60px_-10px_rgba(0,0,0,0.2)]'
+                    className={`overflow-hidden rounded-[22px] transition-all duration-700 relative ${
+                      isCenter
+                        ? 'shadow-[0_50px_120px_-20px_rgba(0,0,0,0.35),0_20px_40px_-15px_rgba(0,0,0,0.2)] ring-1 ring-white/20'
+                        : 'shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] group-hover:-translate-y-2 group-hover:shadow-[0_30px_70px_-15px_rgba(0,0,0,0.25)]'
                     }`}
-                    style={{ width: '220px', height: '340px' }}
+                    style={{ width: '300px', height: '440px' }}
                   >
                     <img
                       src={item.img}
                       alt={item.title}
                       className={`w-full h-full object-cover transition-all duration-700 ${
-                        isCenter ? 'brightness-105 saturate-110' : 'brightness-[0.75] saturate-[0.6]'
+                        isCenter ? 'brightness-[1.05] contrast-[1.02] saturate-[1.1]' : 'brightness-[0.65] saturate-[0.5] contrast-[0.95]'
                       }`}
                       draggable={false}
                     />
-                    {/* Glass overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/15 via-transparent to-black/10 pointer-events-none" />
+                    {/* Cinematic glass overlay */}
+                    <div className={`absolute inset-0 pointer-events-none transition-opacity duration-700 ${
+                      isCenter 
+                        ? 'bg-gradient-to-br from-white/10 via-transparent to-transparent'
+                        : 'bg-gradient-to-br from-black/5 via-transparent to-black/20'
+                    }`} />
+                    {/* Edge light reflection for center */}
+                    {isCenter && (
+                      <div className="absolute inset-y-0 left-0 w-[2px] bg-gradient-to-b from-transparent via-white/30 to-transparent pointer-events-none" />
+                    )}
                   </div>
                 </div>
               );
@@ -259,7 +283,7 @@ export default function LandingPage() {
         </div>
 
         {/* Labels with active indicator */}
-        <div className="flex justify-center gap-8 sm:gap-12 md:gap-16 mt-10 px-4 flex-wrap relative z-10">
+        <div className="flex justify-center gap-8 sm:gap-12 md:gap-20 mt-12 px-4 flex-wrap relative z-10">
           {[
             { tag: "#01", title: "White Label" },
             { tag: "#02", title: "Results" },
@@ -270,12 +294,12 @@ export default function LandingPage() {
             <button
               key={idx}
               onClick={() => setActiveEcosystem(idx)}
-              className={`flex flex-col items-center gap-1.5 transition-all duration-500 cursor-pointer ${activeEcosystem === idx ? 'opacity-100' : 'opacity-25 hover:opacity-50'}`}
+              className={`flex flex-col items-center gap-1.5 transition-all duration-600 cursor-pointer ${activeEcosystem === idx ? 'opacity-100 scale-[1.08]' : 'opacity-20 hover:opacity-45 scale-100'}`}
             >
               <span className={`font-black text-xs md:text-sm tracking-[0.2em] transition-colors duration-500 ${activeEcosystem === idx ? 'text-red-500' : 'text-stone-400'}`}>{item.tag}</span>
-              <span className="text-stone-800 font-bold text-[10px] md:text-xs uppercase tracking-wider whitespace-nowrap">{item.title}</span>
-              {/* Active indicator line */}
-              <div className={`h-[2px] rounded-full transition-all duration-500 ${activeEcosystem === idx ? 'w-8 bg-red-500' : 'w-0 bg-transparent'}`} />
+              <span className={`font-bold text-[10px] md:text-xs uppercase tracking-wider whitespace-nowrap transition-colors duration-500 ${activeEcosystem === idx ? 'text-stone-900' : 'text-stone-500'}`}>{item.title}</span>
+              {/* Active indicator */}
+              <div className={`h-[2.5px] rounded-full transition-all duration-500 mt-0.5 ${activeEcosystem === idx ? 'w-10 bg-red-500' : 'w-0 bg-transparent'}`} />
             </button>
           ))}
         </div>
