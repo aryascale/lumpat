@@ -28,6 +28,18 @@ export async function runMigrations() {
       console.log('[MIGRATIONS] ✅ Performance index created');
     }
 
+    // Migration 3: Add isDeleted to Event for soft-deleting
+    try {
+      await query("ALTER TABLE Event ADD COLUMN isDeleted BOOLEAN DEFAULT FALSE");
+      console.log('[MIGRATIONS] ✅ Added isDeleted column to Event');
+    } catch (e: any) {
+      if (e.message && e.message.includes("Duplicate column name")) {
+        // Ignore if column already exists
+      } else {
+        throw e;
+      }
+    }
+
     console.log('[MIGRATIONS] All migrations complete ✅');
   } catch (error: any) {
     console.error('[MIGRATIONS] Error (non-fatal):', error.message);

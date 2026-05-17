@@ -44,9 +44,9 @@ export default function PaymentsPage() {
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
 
   useEffect(() => {
-    fetch('/api/events?showDrafts=true').then(r=>r.json()).then(data => {
+    fetch('/api/events?showDrafts=true&includeDeleted=true').then(r=>r.json()).then(data => {
       const list = Array.isArray(data) ? data : [];
-      setEvents(list.map((e:any)=>({id:e.id,name:e.name})));
+      setEvents(list.map((e:any)=>({id:e.id,name: (e.isDeleted === 1 || e.isDeleted === true) ? `${e.name} (Terhapus)` : e.name})));
       if (list.length > 0 && !eventFilter) setEventFilter(list[0].id);
     }).catch(()=>{});
   }, []);

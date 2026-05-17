@@ -30,6 +30,7 @@ model Event {
   bibCustomPrice     Int                 @default(0)
   tshirtSizes        String?
   isDraft            Boolean             @default(false)
+  isDeleted          Boolean             @default(false)
   publishAt          DateTime?
   content            Json?
   banners            Banner[]

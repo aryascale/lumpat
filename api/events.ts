@@ -48,7 +48,7 @@ export default async function handler(req: any) {
           `SELECT e.*, 
             (SELECT COUNT(*) FROM EventRegistration WHERE eventId = e.id AND paymentStatus = 'settlement') as participantCount 
            FROM Event e 
-           WHERE (e.id = ? OR e.slug = ?) LIMIT 1`,
+           WHERE (e.id = ? OR e.slug = ?) AND e.isDeleted = false LIMIT 1`,
           [eventId, eventId]
         );
         if (events.length === 0) return errorResponse('Event not found', 404);
@@ -72,13 +72,17 @@ export default async function handler(req: any) {
       }
 
       const showDrafts = req.queryStringParameters?.showDrafts === 'true';
+      const includeDeleted = req.queryStringParameters?.includeDeleted === 'true';
       let allEvents: any[];
       
+      const deleteCondition = includeDeleted ? '1=1' : 'e.isDeleted = false';
+
       if (showDrafts) {
         allEvents = await query(`
           SELECT e.*, 
             (SELECT COUNT(*) FROM EventRegistration WHERE eventId = e.id AND paymentStatus = 'settlement') as participantCount 
           FROM Event e 
+          WHERE ${deleteCondition}
           ORDER BY e.createdAt DESC
         `) as any[];
       } else {
@@ -86,7 +90,7 @@ export default async function handler(req: any) {
           SELECT e.*, 
             (SELECT COUNT(*) FROM EventRegistration WHERE eventId = e.id AND paymentStatus = 'settlement') as participantCount 
           FROM Event e 
-          WHERE e.isDraft = false OR (e.publishAt IS NOT NULL AND e.publishAt <= NOW()) 
+          WHERE ${deleteCondition} AND (e.isDraft = false OR (e.publishAt IS NOT NULL AND e.publishAt <= NOW())) 
           ORDER BY e.createdAt DESC
         `) as any[];
       }
@@ -191,15 +195,14 @@ export default async function handler(req: any) {
 
     if (req.httpMethod === 'DELETE') {
       if (!eventId) return errorResponse('eventId is required', 400);
-      // Auto-backup before destructive event delete
+      // Auto-backup before event delete
       try {
         const { createBackup } = await import('../src/lib/backup');
         await createBackup('event_delete');
       } catch (e) { console.error('[BACKUP] Failed before event delete:', e); }
-      await query('DELETE FROM Banner WHERE eventId = ?', [eventId]);
-      await query('DELETE FROM EventRegistration WHERE eventId = ?', [eventId]);
-      await query('DELETE FROM Category WHERE eventId = ?', [eventId]);
-      await query('DELETE FROM Event WHERE id = ?', [eventId]);
+      
+      // Soft delete: keep Event Registration (payment history) and categories
+      await query('UPDATE Event SET isDeleted = true WHERE id = ?', [eventId]);
       return successResponse({ success: true });
     }
 

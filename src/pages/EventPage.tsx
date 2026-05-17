@@ -808,7 +808,7 @@ export default function EventPage() {
                   <span className="md:hidden text-stone-400 text-[10px] font-medium">{event.location}</span>
                 )}
                 {event.description && (
-                  <p className="hidden md:block text-stone-300 text-base max-w-2xl font-medium tracking-wide mt-4 border-l-2 border-red-600 pl-4">{event.description}</p>
+                  <p className="hidden md:block text-stone-300 text-base max-w-2xl font-medium tracking-wide mt-4 border-l-2 border-white/50 pl-4">{event.description}</p>
                 )}
                 
                 <button 
@@ -832,7 +832,7 @@ export default function EventPage() {
                   data-tab={t}
                   className={`py-3 md:py-5 text-[10px] md:text-sm font-black tracking-widest uppercase transition-all whitespace-nowrap border-b-4 ${
                     activeTab === t 
-                      ? "border-red-600 text-white" 
+                      ? "border-white text-white" 
                       : "border-transparent text-stone-500 hover:text-stone-300 hover:border-stone-700"
                   }`}
                   onClick={() => setActiveTab(t)}
@@ -954,7 +954,7 @@ export default function EventPage() {
                         <div className="text-[10px] uppercase tracking-widest font-bold text-stone-400 mb-2">Total Participants</div>
                         <div className="text-5xl font-black tracking-tighter text-stone-900">{overall.length}</div>
                      </div>
-                     <div className="bg-white border-l-4 border-red-600 p-6 shadow-sm">
+                     <div className="bg-white border-l-4 border-stone-800 p-6 shadow-sm">
                         <div className="text-[10px] uppercase tracking-widest font-bold text-stone-400 mb-2">Finishers Validated</div>
                         <div className="text-5xl font-black tracking-tighter text-red-600">
                            {overall.filter(r => r.totalTimeDisplay !== "DNF" && r.totalTimeDisplay !== "DSQ").length}
@@ -993,7 +993,7 @@ export default function EventPage() {
           )}
 
           {activeTab === "Registered" && (
-            <div className="space-y-8 bg-white p-6 shadow-sm border-t-4 border-red-600">
+            <div className="space-y-8 bg-white p-6 shadow-sm border-t-4 border-stone-800">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-black uppercase tracking-tighter">Peserta Terdaftar</h2>
                 <span className="text-stone-500 text-sm font-medium">{registeredParticipants.filter(p => p.paymentStatus === 'settlement').length} Terdaftar</span>
@@ -1120,7 +1120,7 @@ export default function EventPage() {
               
               <div className="space-y-6">
                  {/* Details Box */}
-                 <div className="bg-stone-950 text-white p-8 border-t-4 border-red-600 shadow-lg">
+                 <div className="bg-stone-950 text-white p-8 border-t-4 border-stone-800 shadow-lg">
                     <h3 className="text-white font-black text-2xl uppercase tracking-tighter mb-6 pb-4 border-b border-stone-800">Route Telemetry</h3>
                     
                     <div className="space-y-6">
@@ -1181,7 +1181,7 @@ export default function EventPage() {
                   <div className="absolute left-8 right-8 top-4 h-[2px] bg-gray-200 -z-10"></div>
                   {/* Active Line */}
                   <div 
-                    className="absolute left-8 top-4 h-[2px] bg-red-600 -z-10 transition-all duration-500 overflow-hidden"
+                    className="absolute left-8 top-4 h-[2px] bg-stone-300 -z-10 transition-all duration-500 overflow-hidden"
                     style={{ width: currentStep === 1 ? '0%' : currentStep === 2 ? '50%' : 'calc(100% - 4rem)' }}
                   >
                     {currentStep < 3 && (
@@ -1191,7 +1191,7 @@ export default function EventPage() {
                   
                   {/* Step 1 */}
                   <div className="flex flex-col items-center gap-2 bg-white relative">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${currentStep === 1 ? 'bg-red-600 text-white ring-4 ring-red-100 scale-110 shadow-lg shadow-red-200' : currentStep > 1 ? 'bg-red-600 text-white' : 'bg-gray-400 text-white'}`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${currentStep === 1 ? 'bg-stone-800 text-white ring-4 ring-stone-200 scale-110 shadow-lg' : currentStep > 1 ? 'bg-stone-800 text-white' : 'bg-gray-400 text-white'}`}>
                       {currentStep > 1 ? '✓' : '1'}
                     </div>
                     <span className={`text-[11px] font-bold ${currentStep >= 1 ? 'text-stone-900' : 'text-gray-500'}`}>Data Diri</span>
@@ -1199,7 +1199,7 @@ export default function EventPage() {
                   
                   {/* Step 2 */}
                   <div className="flex flex-col items-center gap-2 bg-white relative">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${currentStep === 2 ? 'bg-red-600 text-white ring-4 ring-red-100 scale-110 shadow-lg shadow-red-200' : currentStep > 2 ? 'bg-red-600 text-white' : 'bg-gray-400 text-white'}`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${currentStep === 2 ? 'bg-stone-800 text-white ring-4 ring-stone-200 scale-110 shadow-lg' : currentStep > 2 ? 'bg-stone-800 text-white' : 'bg-gray-400 text-white'}`}>
                       {currentStep > 2 ? '✓' : '2'}
                     </div>
                     <span className={`text-[11px] font-bold ${currentStep >= 2 ? 'text-stone-900' : 'text-gray-500'}`}>Konfirmasi</span>
@@ -1207,7 +1207,7 @@ export default function EventPage() {
 
                   {/* Step 3 */}
                   <div className="flex flex-col items-center gap-2 bg-white relative">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${currentStep === 3 ? 'bg-red-600 text-white ring-4 ring-red-100 scale-110 shadow-lg shadow-red-200' : 'bg-gray-400 text-white'}`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${currentStep === 3 ? 'bg-stone-800 text-white ring-4 ring-stone-200 scale-110 shadow-lg' : 'bg-gray-400 text-white'}`}>
                       3
                     </div>
                     <span className={`text-[11px] font-bold ${currentStep >= 3 ? 'text-stone-900' : 'text-gray-500'}`}>Pembayaran</span>
