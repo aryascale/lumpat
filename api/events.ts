@@ -32,6 +32,7 @@ function formatEvent(event: any) {
     categories: event._categories || [],
     content,
     participantCount: event.participantCount || 0,
+    isDeleted: !!event.isDeleted,
     createdAt: event.createdAt instanceof Date ? event.createdAt.getTime() : event.createdAt,
   };
 }
