@@ -319,94 +319,76 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="relative w-full max-w-6xl mx-auto h-[550px] mt-16 flex justify-center items-center" style={{ perspective: '1200px' }}>
-            {[
-              {
-                title: "White Label Website",
-                desc: "Fully customizable event websites that match your brand identity. Own your entire registration process.",
-                img: "/Assets/landing2/White Label Website.png",
-                tag: "#01"
-              },
-              {
-                title: "Real-time Results",
-                desc: "Instant leaderboards, split times, and auto-generated finisher certificates for all participants.",
-                img: "/Assets/landing2/result.png",
-                tag: "#02"
-              },
-              {
-                title: "Route Mapping",
-                desc: "Interactive start/finish maps and strategic checkpoint placement for precise split tracking.",
-                img: "/Assets/landing2/map start and finish.png",
-                tag: "#03"
-              },
-              {
-                title: "Multisport Support",
-                desc: "Built from the ground up for triathlons, duathlons, and multi-stage races with seamless transitions.",
-                img: "/Assets/landing2/multisport.png",
-                tag: "#04"
-              },
-              {
-                title: "Event Portfolio",
-                desc: "Manage multiple events, track participant history, and analyze revenue across your entire organization.",
-                img: "/Assets/landing2/portfolio.png",
-                tag: "#05"
-              }
-            ].map((item, index) => {
-              let diff = index - activeEcosystem;
-              const total = 5;
-              
-              if (diff > Math.floor(total / 2)) diff -= total;
-              if (diff < -Math.floor(total / 2)) diff += total;
+          {/* Coverflow Image Strip */}
+          <div className="relative w-full mt-16" style={{ perspective: '1800px' }}>
+            <div className="flex items-center justify-center" style={{ height: '420px' }}>
+              {[
+                { title: "White Label Website", img: "/Assets/landing2/White Label Website.png", tag: "#01" },
+                { title: "Real-time Results", img: "/Assets/landing2/result.png", tag: "#02" },
+                { title: "Route Mapping", img: "/Assets/landing2/map start and finish.png", tag: "#03" },
+                { title: "Multisport Support", img: "/Assets/landing2/multisport.png", tag: "#04" },
+                { title: "Event Portfolio", img: "/Assets/landing2/portfolio.png", tag: "#05" },
+              ].map((item, index) => {
+                let diff = index - activeEcosystem;
+                const total = 5;
+                if (diff > Math.floor(total / 2)) diff -= total;
+                if (diff < -Math.floor(total / 2)) diff += total;
+                const absDiff = Math.abs(diff);
+                const isCenter = absDiff === 0;
+                const zIndex = 50 - absDiff * 10;
 
-              const absDiff = Math.abs(diff);
-              const isCenter = absDiff === 0;
-              const zIndex = 100 - absDiff;
-              
-              const translateX = diff * 260; // Spread out horizontally
-              const translateZ = absDiff * -200; // Push inactive items back
-              const rotateY = diff * -25; // Rotate items to face center
-              const scale = 1 - absDiff * 0.1;
-              const opacity = absDiff > 2 ? 0 : 1; // Hide items too far away
+                const translateX = diff * 200;
+                const rotateY = diff * -35;
+                const translateZ = isCenter ? 80 : absDiff * -120;
+                const cardScale = isCenter ? 1.08 : 1 - absDiff * 0.08;
+                const cardOpacity = absDiff > 2 ? 0 : 1 - absDiff * 0.15;
 
-              return (
-                <div
-                  key={item.tag}
-                  className="absolute transition-all duration-700 ease-out cursor-pointer"
-                  style={{
-                    transform: `translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
-                    zIndex,
-                    opacity,
-                    width: '340px',
-                  }}
-                  onClick={() => setActiveEcosystem(index)}
-                >
-                  <div className={`bg-white rounded-[2rem] p-8 flex flex-col items-center border border-gray-100 transition-shadow duration-500 ${isCenter ? 'shadow-2xl shadow-red-500/10 ring-1 ring-red-500/20' : 'shadow-lg'}`}>
-                    <div className="h-48 w-full flex items-center justify-center mb-8">
-                      <img src={item.img} alt={item.title} className={`max-h-full max-w-full object-contain transition-transform duration-700 ${isCenter ? 'scale-110 drop-shadow-lg' : 'drop-shadow-md grayscale-[20%]'}`} />
-                    </div>
-                    <div className="text-center w-full">
-                      <span className={`font-black text-sm tracking-widest mb-3 block transition-colors duration-500 ${isCenter ? 'text-red-500' : 'text-stone-400'}`}>{item.tag}</span>
-                      <h3 className={`text-xl font-black mb-3 uppercase tracking-tight transition-colors duration-500 ${isCenter ? 'text-stone-900' : 'text-stone-600'}`}>{item.title}</h3>
-                      <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isCenter ? 'max-h-32 opacity-100' : 'max-h-0 opacity-0'}`}>
-                        <p className="text-stone-500 text-sm font-medium leading-relaxed mt-2">
-                          {item.desc}
-                        </p>
-                      </div>
+                return (
+                  <div
+                    key={item.tag}
+                    className="absolute transition-all duration-[800ms] ease-[cubic-bezier(0.25,0.1,0.25,1)] cursor-pointer"
+                    style={{
+                      transform: `translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${cardScale})`,
+                      zIndex,
+                      opacity: cardOpacity,
+                      transformStyle: 'preserve-3d',
+                    }}
+                    onClick={() => setActiveEcosystem(index)}
+                  >
+                    <div
+                      className={`overflow-hidden rounded-2xl transition-shadow duration-500 ${isCenter ? 'shadow-2xl shadow-black/20' : 'shadow-xl shadow-black/10'}`}
+                      style={{ width: '280px', height: '360px' }}
+                    >
+                      <img
+                        src={item.img}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                        draggable={false}
+                      />
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-          
-          <div className="flex justify-center mt-8 gap-3">
-            {[0, 1, 2, 3, 4].map((idx) => (
+
+          {/* Labels below */}
+          <div className="flex justify-center gap-16 md:gap-24 mt-4">
+            {[
+              { tag: "#01", title: "White Label Website" },
+              { tag: "#02", title: "Real-time Results" },
+              { tag: "#03", title: "Route Mapping" },
+              { tag: "#04", title: "Multisport" },
+              { tag: "#05", title: "Event Portfolio" },
+            ].map((item, idx) => (
               <button
                 key={idx}
                 onClick={() => setActiveEcosystem(idx)}
-                className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${activeEcosystem === idx ? 'bg-red-500 w-8' : 'bg-stone-300 hover:bg-stone-400'}`}
-                aria-label={`Go to slide ${idx + 1}`}
-              />
+                className={`flex flex-col items-center gap-1 transition-all duration-500 cursor-pointer group ${activeEcosystem === idx ? 'opacity-100' : 'opacity-40 hover:opacity-70'}`}
+              >
+                <span className={`font-black text-sm tracking-widest transition-colors duration-500 ${activeEcosystem === idx ? 'text-red-500' : 'text-stone-500'}`}>{item.tag}</span>
+                <span className="text-stone-800 font-bold text-xs uppercase tracking-wider">{item.title}</span>
+              </button>
             ))}
           </div>
         </div>
