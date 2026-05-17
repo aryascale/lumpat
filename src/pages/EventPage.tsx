@@ -119,6 +119,23 @@ export default function EventPage() {
   const [scrollY, setScrollY] = useState(0);
   const [regDetailOpen, setRegDetailOpen] = useState(false);
   const [regDetailParticipant, setRegDetailParticipant] = useState<any>(null);
+  const [homepageBlobUrl, setHomepageBlobUrl] = useState<string | null>(null);
+
+  // Create blob URL for homepage HTML content (renders as normal page, not srcDoc)
+  useEffect(() => {
+    const aboutHtml = event?.content?.about;
+    if (aboutHtml && (aboutHtml.trim().toLowerCase().startsWith('<!doctype html>') || aboutHtml.trim().toLowerCase().startsWith('<html'))) {
+      const blob = new Blob([aboutHtml], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      setHomepageBlobUrl(url);
+      return () => {
+        URL.revokeObjectURL(url);
+        setHomepageBlobUrl(null);
+      };
+    } else {
+      setHomepageBlobUrl(null);
+    }
+  }, [event?.content?.about]);
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -872,10 +889,10 @@ export default function EventPage() {
                   {/* Homepage Content */}
                   <div className="w-full overflow-hidden">
                     {event?.content?.about ? (
-                      event.content.about.trim().toLowerCase().startsWith('<!doctype html>') || event.content.about.trim().toLowerCase().startsWith('<html') ? (
+                      homepageBlobUrl ? (
                         <iframe
                           title="Event Homepage"
-                          src={`/api/event-homepage?eventId=${event.id}`}
+                          src={homepageBlobUrl}
                           className="w-full border-0 overflow-hidden block"
                           style={{ minHeight: '100vh', width: '100%' }}
                           onLoad={(e) => {
@@ -891,9 +908,9 @@ export default function EventPage() {
                                   if (h > 100) iframe.style.height = h + 'px';
                                 } catch {}
                               };
-                              setTimeout(resize, 300);
-                              setTimeout(resize, 1000);
-                              setTimeout(resize, 2500);
+                              setTimeout(resize, 500);
+                              setTimeout(resize, 1500);
+                              setTimeout(resize, 3000);
 
                               try {
                                 const ro = new ResizeObserver(() => resize());
