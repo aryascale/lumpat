@@ -203,7 +203,7 @@ export default function LandingPage() {
           <div className="absolute left-0 top-0 h-full w-[15%] z-[60] pointer-events-none" style={{ background: 'linear-gradient(to right, #f0f0f0 0%, transparent 100%)' }} />
           <div className="absolute right-0 top-0 h-full w-[15%] z-[60] pointer-events-none" style={{ background: 'linear-gradient(to left, #f0f0f0 0%, transparent 100%)' }} />
 
-          <div className="flex items-center justify-center relative" style={{ height: '520px', transformStyle: 'preserve-3d' }}>
+          <div className="flex items-center justify-center relative" style={{ height: '400px', transformStyle: 'preserve-3d' }}>
             {[
               { title: "White Label", img: "/Assets/landing2/White Label Website.png", tag: "#01" },
               { title: "Results", img: "/Assets/landing2/result.png", tag: "#02" },
@@ -255,7 +255,7 @@ export default function LandingPage() {
                         ? 'shadow-[0_50px_120px_-20px_rgba(0,0,0,0.35),0_20px_40px_-15px_rgba(0,0,0,0.2)] ring-1 ring-white/20'
                         : 'shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] group-hover:-translate-y-2 group-hover:shadow-[0_30px_70px_-15px_rgba(0,0,0,0.25)]'
                     }`}
-                    style={{ width: '300px', height: '440px' }}
+                    style={{ width: '420px', height: '280px' }}
                   >
                     <img
                       src={item.img}

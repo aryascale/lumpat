@@ -877,35 +877,75 @@ export default function EventPage() {
                           title="Event Homepage"
                           srcDoc={(() => {
                             let html = event.content.about;
+                            console.log('[iframe] Raw HTML length:', html.length, 'starts:', html.substring(0, 30));
                             
-                            // STRATEGY: Strip ALL animations from source CSS
-                            // This is the only bulletproof approach — remove the problem, don't override it
+                            // === LAYER 1: Strip animation CSS from source ===
+                            // Remove @keyframes blocks
+                            html = html.replace(/@keyframes\s+[\w-]+\s*\{[^}]*(\{[^}]*\}[^}]*)*\}/gi, '');
+                            // Remove animation shorthand & longhand properties
+                            html = html.replace(/animation\s*:[^;]*;/gi, '');
+                            html = html.replace(/animation-[\w-]+\s*:[^;]*;/gi, '');
+                            // Remove hero-redbar element
+                            html = html.replace(/<div[^>]*class="hero-redbar"[^>]*><\/div>/gi, '');
                             
-                            // 1. Remove all @keyframes blocks entirely
-                            html = html.replace(/@keyframes\s+[\w-]+\s*\{[^}]*(\{[^}]*\}[^}]*)*\}/gi, '/* [animation removed] */');
-                            
-                            // 2. Remove all animation: declarations from CSS rules
-                            html = html.replace(/animation\s*:[^;]*;/gi, '/* animation removed */');
-                            html = html.replace(/animation-[a-z-]+\s*:[^;]*;/gi, '/* animation-prop removed */');
-                            
-                            // 3. Remove .hero-redbar styles and element  
-                            html = html.replace(/<div[^>]*class="hero-redbar"[^>]*>.*?<\/div>/gi, '');
-                            
-                            // 4. Inject a safety-net style at the end to ensure visibility
-                            const safetyCSS = `<style>
-  /* Safety net: force all elements visible */
-  * { opacity: 1 !important; visibility: visible !important; }
+                            // === LAYER 2: Inject STRONG CSS override (after last </style>) ===
+                            const overrideCSS = `<style id="lumpat-override">
+  /* Force everything visible - highest specificity override */
+  *, *::before, *::after,
+  body *, header *, section *, div *, p *, h1 *, h2 *, span *, a *,
+  .hero *, .hero-badge, .hero-eyebrow, .hero-title, .hero-subtitle,
+  .hero-strip, .hero-orgs, .org-chip, .strip-block, .strip-block * {
+    opacity: 1 !important;
+    visibility: visible !important;
+    animation: none !important;
+    transform: none !important;
+  }
+  .hero { overflow: visible !important; }
   .hero-redbar { display: none !important; }
 </style>`;
-                            
-                            if (/<\/head>/i.test(html)) {
-                              html = html.replace(/<\/head>/i, safetyCSS + '</head>');
-                            } else if (/<\/body>/i.test(html)) {
-                              html = html.replace(/<\/body>/i, safetyCSS + '</body>');
-                            } else {
-                              html = html + safetyCSS;
+
+                            // === LAYER 3: Inject JS that forces inline styles ===
+                            const overrideJS = `<script id="lumpat-force">
+(function(){
+  function fix(){
+    var els = document.querySelectorAll('*');
+    for(var i=0;i<els.length;i++){
+      var s = els[i].style;
+      if(s){
+        s.setProperty('opacity','1','important');
+        s.setProperty('visibility','visible','important');
+        s.setProperty('animation','none','important');
+      }
+    }
+    var rb = document.querySelectorAll('.hero-redbar');
+    for(var j=0;j<rb.length;j++) rb[j].style.display='none';
+    console.log('[lumpat-force] Fixed ' + els.length + ' elements');
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',fix);
+  }else{fix();}
+  window.addEventListener('load',fix);
+  setTimeout(fix,50);
+  setTimeout(fix,300);
+})();
+<\/script>`;
+
+                            // Inject CSS after the LAST </style> tag to override user styles
+                            const lastStyleIdx = html.lastIndexOf('</style>');
+                            if (lastStyleIdx > -1) {
+                              html = html.substring(0, lastStyleIdx + 8) + '\n' + overrideCSS + html.substring(lastStyleIdx + 8);
+                            } else if (/<\/head>/i.test(html)) {
+                              html = html.replace(/<\/head>/i, overrideCSS + '</head>');
                             }
                             
+                            // Inject JS before </body>
+                            if (/<\/body>/i.test(html)) {
+                              html = html.replace(/<\/body>/i, overrideJS + '</body>');
+                            } else {
+                              html += overrideJS;
+                            }
+                            
+                            console.log('[iframe] Processed HTML length:', html.length);
                             return html;
                           })()}
                           className="w-full border-0 overflow-hidden block"
