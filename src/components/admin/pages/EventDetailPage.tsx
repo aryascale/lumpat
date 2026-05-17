@@ -2009,7 +2009,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                   </div>
                   {isRawHtmlMode && (
                     <span className="text-[10px] text-red-500 font-medium">
-                      ⚠️ Jangan pindah ke Visual Editor jika Anda mem-paste file HTML utuh, kode akan rusak!
+                      ⚠️ Jangan pindah ke Visual Editor jika mem-paste file HTML utuh
                     </span>
                   )}
                 </div>

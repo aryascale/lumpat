@@ -875,7 +875,10 @@ export default function EventPage() {
                       event.content.about.trim().toLowerCase().startsWith('<!doctype html>') || event.content.about.trim().toLowerCase().startsWith('<html') ? (
                         <iframe
                           title="Event Homepage"
-                          srcDoc={event.content.about}
+                          srcDoc={event.content.about.replace(
+                            /<\/head>/i,
+                            '<style>.hero-redbar { display: none !important; } .hero-badge, .hero-eyebrow, .hero-title, .hero-subtitle, .hero-strip, .hero-orgs { opacity: 1 !important; transform: none !important; animation: none !important; }</style></head>'
+                          )}
                           className="w-full border-0 overflow-hidden block"
                           style={{ minHeight: '100vh', width: '100%' }}
                           onLoad={(e) => {
