@@ -121,22 +121,12 @@ export default function EventPage() {
   const [regDetailParticipant, setRegDetailParticipant] = useState<any>(null);
   const [homepageBlobUrl, setHomepageBlobUrl] = useState<string | null>(null);
 
-  // Create blob URL for homepage HTML — strip CSS animations first
-  // Animations with fill-mode:both lock elements at opacity:0 in iframe context
+  // Create blob URL for homepage HTML
+  // Blob URL renders as a normal page (unlike srcDoc), so CSS animations, fonts, and layouts work naturally.
   useEffect(() => {
     const aboutHtml = event?.content?.about;
     if (aboutHtml && (aboutHtml.trim().toLowerCase().startsWith('<!doctype html>') || aboutHtml.trim().toLowerCase().startsWith('<html'))) {
-      let processed = aboutHtml;
-      
-      // Strip @keyframes blocks (handles nested braces)
-      processed = processed.replace(/@keyframes\s+[\w-]+\s*\{[^}]*(\{[^}]*\}[^}]*)*\}/gi, '');
-      // Strip animation shorthand & longhand declarations
-      processed = processed.replace(/animation\s*:[^;]*;/gi, '');
-      processed = processed.replace(/animation-[\w-]+\s*:[^;]*;/gi, '');
-      // Remove hero-redbar decorative element
-      processed = processed.replace(/<div[^>]*class="hero-redbar"[^>]*>[\s\S]*?<\/div>/gi, '');
-      
-      const blob = new Blob([processed], { type: 'text/html;charset=utf-8' });
+      const blob = new Blob([aboutHtml], { type: 'text/html;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       setHomepageBlobUrl(url);
       return () => {
