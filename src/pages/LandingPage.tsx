@@ -11,6 +11,7 @@ export default function LandingPage() {
   const [scrollY, setScrollY] = useState(0);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [activeHardware, setActiveHardware] = useState(0);
+  const [activeEcosystem, setActiveEcosystem] = useState(0);
   const [heroIndex, setHeroIndex] = useState(0);
 
   const heroImages = [
@@ -26,6 +27,14 @@ export default function LandingPage() {
     }, 5000);
     return () => clearInterval(interval);
   }, [heroImages.length]);
+
+  // Rotate ecosystem carousel every 3.5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveEcosystem((prev) => (prev + 1) % 5);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, []);
 
   // Parallax scroll handler
   useEffect(() => {
@@ -300,7 +309,7 @@ export default function LandingPage() {
       </section>
 
       {/* ===================== SECTION 5: PLATFORM ECOSYSTEM ===================== */}
-      <section className="landing-section" id="platform" style={{ backgroundColor: "#f8f9fa", padding: "100px 0" }}>
+      <section className="landing-section overflow-hidden" id="platform" style={{ backgroundColor: "#f8f9fa", padding: "100px 0" }}>
         <div className="landing-container">
           <div className="landing-section-header scroll-reveal">
             <span className="landing-section-header__tag text-red-600 font-bold tracking-widest text-sm uppercase mb-2 block">SOFTWARE PLATFORM</span>
@@ -310,54 +319,95 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-16 scroll-reveal">
-            {/* Feature 1 */}
-            <div className="flex flex-col items-center bg-white p-8 rounded-3xl shadow-lg border border-gray-100 transition-all hover:-translate-y-2 hover:shadow-xl group">
-              <div className="h-56 w-full flex items-center justify-center mb-6">
-                <img src="/Assets/landing2/White Label Website.png" alt="White Label Website" className="max-h-full max-w-full object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-500" />
-              </div>
-              <h3 className="text-2xl font-black text-stone-900 mb-3 uppercase tracking-tight">White Label Website</h3>
-              <p className="text-stone-500 text-center font-medium leading-relaxed">Fully customizable event websites that match your brand identity. Own your entire registration process.</p>
-            </div>
-            
-            {/* Feature 2 */}
-            <div className="flex flex-col items-center bg-white p-8 rounded-3xl shadow-lg border border-gray-100 transition-all hover:-translate-y-2 hover:shadow-xl group">
-              <div className="h-56 w-full flex items-center justify-center mb-6">
-                <img src="/Assets/landing2/result.png" alt="Real-time Results" className="max-h-full max-w-full object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-500" />
-              </div>
-              <h3 className="text-2xl font-black text-stone-900 mb-3 uppercase tracking-tight">Real-time Results</h3>
-              <p className="text-stone-500 text-center font-medium leading-relaxed">Instant leaderboards, split times, and auto-generated finisher certificates for all participants.</p>
-            </div>
+          <div className="relative w-full max-w-6xl mx-auto h-[550px] mt-16 flex justify-center items-center" style={{ perspective: '1200px' }}>
+            {[
+              {
+                title: "White Label Website",
+                desc: "Fully customizable event websites that match your brand identity. Own your entire registration process.",
+                img: "/Assets/landing2/White Label Website.png",
+                tag: "#01"
+              },
+              {
+                title: "Real-time Results",
+                desc: "Instant leaderboards, split times, and auto-generated finisher certificates for all participants.",
+                img: "/Assets/landing2/result.png",
+                tag: "#02"
+              },
+              {
+                title: "Route Mapping",
+                desc: "Interactive start/finish maps and strategic checkpoint placement for precise split tracking.",
+                img: "/Assets/landing2/map start and finish.png",
+                tag: "#03"
+              },
+              {
+                title: "Multisport Support",
+                desc: "Built from the ground up for triathlons, duathlons, and multi-stage races with seamless transitions.",
+                img: "/Assets/landing2/multisport.png",
+                tag: "#04"
+              },
+              {
+                title: "Event Portfolio",
+                desc: "Manage multiple events, track participant history, and analyze revenue across your entire organization.",
+                img: "/Assets/landing2/portfolio.png",
+                tag: "#05"
+              }
+            ].map((item, index) => {
+              let diff = index - activeEcosystem;
+              const total = 5;
+              
+              if (diff > Math.floor(total / 2)) diff -= total;
+              if (diff < -Math.floor(total / 2)) diff += total;
 
-            {/* Feature 3 */}
-            <div className="flex flex-col items-center bg-white p-8 rounded-3xl shadow-lg border border-gray-100 transition-all hover:-translate-y-2 hover:shadow-xl group">
-              <div className="h-56 w-full flex items-center justify-center mb-6">
-                <img src="/Assets/landing2/map start and finish.png" alt="Route Mapping" className="max-h-full max-w-full object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-500" />
-              </div>
-              <h3 className="text-2xl font-black text-stone-900 mb-3 uppercase tracking-tight">Route Mapping</h3>
-              <p className="text-stone-500 text-center font-medium leading-relaxed">Interactive start/finish maps and strategic checkpoint placement for precise split tracking.</p>
-            </div>
+              const absDiff = Math.abs(diff);
+              const isCenter = absDiff === 0;
+              const zIndex = 100 - absDiff;
+              
+              const translateX = diff * 260; // Spread out horizontally
+              const translateZ = absDiff * -200; // Push inactive items back
+              const rotateY = diff * -25; // Rotate items to face center
+              const scale = 1 - absDiff * 0.1;
+              const opacity = absDiff > 2 ? 0 : 1; // Hide items too far away
 
-            {/* Feature 4 */}
-            <div className="flex flex-col items-center bg-white p-8 rounded-3xl shadow-lg border border-gray-100 transition-all hover:-translate-y-2 hover:shadow-xl group">
-              <div className="h-56 w-full flex items-center justify-center mb-6">
-                <img src="/Assets/landing2/multisport.png" alt="Multisport Support" className="max-h-full max-w-full object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-500" />
-              </div>
-              <h3 className="text-2xl font-black text-stone-900 mb-3 uppercase tracking-tight">Multisport Support</h3>
-              <p className="text-stone-500 text-center font-medium leading-relaxed">Built from the ground up for triathlons, duathlons, and multi-stage races with seamless transitions.</p>
-            </div>
+              return (
+                <div
+                  key={item.tag}
+                  className="absolute transition-all duration-700 ease-out cursor-pointer"
+                  style={{
+                    transform: `translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
+                    zIndex,
+                    opacity,
+                    width: '340px',
+                  }}
+                  onClick={() => setActiveEcosystem(index)}
+                >
+                  <div className={`bg-white rounded-[2rem] p-8 flex flex-col items-center border border-gray-100 transition-shadow duration-500 ${isCenter ? 'shadow-2xl shadow-red-500/10 ring-1 ring-red-500/20' : 'shadow-lg'}`}>
+                    <div className="h-48 w-full flex items-center justify-center mb-8">
+                      <img src={item.img} alt={item.title} className={`max-h-full max-w-full object-contain transition-transform duration-700 ${isCenter ? 'scale-110 drop-shadow-lg' : 'drop-shadow-md grayscale-[20%]'}`} />
+                    </div>
+                    <div className="text-center w-full">
+                      <span className={`font-black text-sm tracking-widest mb-3 block transition-colors duration-500 ${isCenter ? 'text-red-500' : 'text-stone-400'}`}>{item.tag}</span>
+                      <h3 className={`text-xl font-black mb-3 uppercase tracking-tight transition-colors duration-500 ${isCenter ? 'text-stone-900' : 'text-stone-600'}`}>{item.title}</h3>
+                      <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isCenter ? 'max-h-32 opacity-100' : 'max-h-0 opacity-0'}`}>
+                        <p className="text-stone-500 text-sm font-medium leading-relaxed mt-2">
+                          {item.desc}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
           
-          <div className="mt-8 flex justify-center scroll-reveal">
-            <div className="flex flex-col md:flex-row items-center gap-8 bg-white p-8 md:p-12 rounded-3xl shadow-lg border border-gray-100 max-w-5xl w-full transition-all hover:-translate-y-2 hover:shadow-xl group">
-              <div className="w-full md:w-1/2 flex items-center justify-center">
-                <img src="/Assets/landing2/portfolio.png" alt="Event Portfolio" className="max-h-72 object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-500" />
-              </div>
-              <div className="w-full md:w-1/2 text-center md:text-left">
-                <h3 className="text-3xl font-black text-stone-900 mb-4 uppercase tracking-tight">Event Portfolio</h3>
-                <p className="text-stone-500 font-medium leading-relaxed text-lg">Manage multiple events, track participant history, and analyze revenue across your entire organization with our comprehensive dashboard.</p>
-              </div>
-            </div>
+          <div className="flex justify-center mt-8 gap-3">
+            {[0, 1, 2, 3, 4].map((idx) => (
+              <button
+                key={idx}
+                onClick={() => setActiveEcosystem(idx)}
+                className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${activeEcosystem === idx ? 'bg-red-500 w-8' : 'bg-stone-300 hover:bg-stone-400'}`}
+                aria-label={`Go to slide ${idx + 1}`}
+              />
+            ))}
           </div>
         </div>
       </section>
