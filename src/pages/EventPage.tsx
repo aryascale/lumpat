@@ -875,8 +875,61 @@ export default function EventPage() {
                       event.content.about.trim().toLowerCase().startsWith('<!doctype html>') || event.content.about.trim().toLowerCase().startsWith('<html') ? (
                         <iframe
                           title="Event Homepage"
-                          srcDoc={event.content.about}
-                          sandbox="allow-same-origin allow-scripts allow-popups"
+                          srcDoc={(() => {
+                            let html = event.content.about;
+                            
+                            // Inject a SCRIPT that runs INSIDE the iframe to force everything visible
+                            // This is the "live preview extension" approach - bulletproof
+                            const injectedCode = `
+<style>
+  /* CSS fallback - override all animations */
+  *, *::before, *::after {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    animation-fill-mode: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  .hero-redbar { display: none !important; }
+</style>
+<script>
+  // Force all elements visible after DOM loads
+  function forceAllVisible() {
+    document.querySelectorAll('*').forEach(function(el) {
+      el.style.setProperty('opacity', '1', 'important');
+      el.style.setProperty('visibility', 'visible', 'important');
+      el.style.setProperty('animation', 'none', 'important');
+    });
+    // Remove animation-driven transforms on hero elements
+    document.querySelectorAll('[class*="hero"], [class*="badge"], [class*="title"], [class*="subtitle"], [class*="strip"], [class*="org"], [class*="eyebrow"]').forEach(function(el) {
+      el.style.setProperty('transform', 'none', 'important');
+    });
+    // Hide decorative red bar
+    document.querySelectorAll('.hero-redbar').forEach(function(el) {
+      el.style.display = 'none';
+    });
+  }
+  // Run at multiple points to catch everything
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', forceAllVisible);
+  } else {
+    forceAllVisible();
+  }
+  window.addEventListener('load', forceAllVisible);
+  setTimeout(forceAllVisible, 100);
+  setTimeout(forceAllVisible, 500);
+<\/script>`;
+                            
+                            // Inject before </body> if possible, else before </html>, else append
+                            if (/<\/body>/i.test(html)) {
+                              html = html.replace(/<\/body>/i, injectedCode + '</body>');
+                            } else if (/<\/html>/i.test(html)) {
+                              html = html.replace(/<\/html>/i, injectedCode + '</html>');
+                            } else {
+                              html = html + injectedCode;
+                            }
+                            return html;
+                          })()}
                           className="w-full border-0 overflow-hidden block"
                           style={{ minHeight: '100vh', width: '100%' }}
                           onLoad={(e) => {
@@ -885,42 +938,16 @@ export default function EventPage() {
                               const doc = iframe.contentWindow?.document;
                               if (!doc) return;
 
-                              // NUCLEAR: Force ALL elements visible via inline styles
-                              const forceVisible = () => {
-                                const all = doc.querySelectorAll('*');
-                                all.forEach((el: Element) => {
-                                  const htmlEl = el as HTMLElement;
-                                  if (htmlEl.style) {
-                                    htmlEl.style.setProperty('opacity', '1', 'important');
-                                    htmlEl.style.setProperty('visibility', 'visible', 'important');
-                                    htmlEl.style.setProperty('animation', 'none', 'important');
-                                    htmlEl.style.setProperty('transition', 'none', 'important');
-                                  }
-                                });
-                                // Remove transforms only on animated elements (keep layout transforms intact)
-                                doc.querySelectorAll('[class*="hero"], [class*="badge"], [class*="title"], [class*="subtitle"], [class*="strip"], [class*="org"], [class*="eyebrow"]').forEach((el: Element) => {
-                                  (el as HTMLElement).style.setProperty('transform', 'none', 'important');
-                                });
-                                // Hide red bar
-                                doc.querySelectorAll('.hero-redbar').forEach((el: Element) => {
-                                  (el as HTMLElement).style.setProperty('display', 'none', 'important');
-                                });
-                              };
-
-                              // Run immediately + delayed to catch late-loading content
-                              forceVisible();
-                              setTimeout(forceVisible, 50);
-                              setTimeout(forceVisible, 200);
-                              setTimeout(forceVisible, 500);
-
-                              // Auto-resize iframe height
+                              // Auto-resize iframe height to match content
                               const resize = () => {
-                                const h = doc.documentElement.scrollHeight;
-                                if (h > 100) iframe.style.height = h + 'px';
+                                try {
+                                  const h = doc.documentElement.scrollHeight;
+                                  if (h > 100) iframe.style.height = h + 'px';
+                                } catch {}
                               };
-                              setTimeout(resize, 100);
-                              setTimeout(resize, 600);
-                              setTimeout(resize, 1500);
+                              setTimeout(resize, 200);
+                              setTimeout(resize, 800);
+                              setTimeout(resize, 2000);
 
                               // ResizeObserver for dynamic content
                               try {
@@ -928,19 +955,21 @@ export default function EventPage() {
                                 ro.observe(doc.body);
                               } catch {}
 
-                              // Intercept CTA clicks
-                              doc.body.addEventListener('click', (ev) => {
-                                const target = ev.target as HTMLElement;
-                                const btn = target.closest('a[href="#tickets"], a[href="#participants"], button[data-ticket], .btn-buy, .btn-fun');
-                                if (btn && (btn as HTMLElement).id !== 'backToTop') {
-                                  ev.preventDefault();
-                                  const participantsTab = document.querySelector('button[data-tab="Participants"]') as HTMLButtonElement;
-                                  if (participantsTab) {
-                                    participantsTab.click();
-                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                              // Intercept CTA clicks to navigate to registration
+                              try {
+                                doc.body.addEventListener('click', (ev) => {
+                                  const target = ev.target as HTMLElement;
+                                  const btn = target.closest('a[href="#tickets"], a[href="#participants"], button[data-ticket], .btn-buy, .btn-fun');
+                                  if (btn && (btn as HTMLElement).id !== 'backToTop') {
+                                    ev.preventDefault();
+                                    const participantsTab = document.querySelector('button[data-tab="Participants"]') as HTMLButtonElement;
+                                    if (participantsTab) {
+                                      participantsTab.click();
+                                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }
                                   }
-                                }
-                              });
+                                });
+                              } catch {}
                             } catch (err) {
                               console.error('iframe setup error:', err);
                             }
