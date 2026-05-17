@@ -175,6 +175,23 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ===================== TICKER LOGO ===================== */}
+      <div className="w-full bg-white border-b border-gray-100 overflow-hidden py-5 sm:py-7 flex items-center relative shadow-[inset_0_-10px_20px_rgba(0,0,0,0.02)]">
+        {/* Gradients for smooth edges */}
+        <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+        
+        <div className="flex animate-marquee w-max">
+          {/* We repeat the items 16 times so it's wide enough. -50% translateX will loop exactly halfway. */}
+          {[...Array(16)].map((_, i) => (
+            <div key={i} className="flex items-center justify-center gap-3 sm:gap-4 px-8 sm:px-16 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300 cursor-default">
+              <span className="text-[10px] sm:text-xs font-bold tracking-[0.15em] text-gray-500 uppercase">Powered by</span>
+              <img src="/Assets/logo2.gif" alt="Logo" className="h-5 sm:h-7 object-contain" />
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* ===================== PLATFORM ECOSYSTEM — CINEMATIC 3D ===================== */}
       <section className="overflow-hidden relative" id="platform" style={{ 
         background: 'radial-gradient(ellipse 120% 80% at 50% 40%, #f0f0f0 0%, #e8e8e8 40%, #f5f5f5 100%)',
