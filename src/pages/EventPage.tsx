@@ -877,14 +877,15 @@ export default function EventPage() {
                           title="Event Homepage"
                           srcDoc={(() => {
                             const injectedCSS = `<style>
-                              * { animation-play-state: paused !important; animation-fill-mode: forwards !important; }
-                              [class*="hero"], [class*="badge"], [class*="title"], [class*="subtitle"], [class*="strip"], [class*="orgs"], [class*="eyebrow"],
-                              header *, section *, footer *, main *, body > div * {
+                              @keyframes none-override {}
+                              body, body * {
                                 opacity: 1 !important;
+                                visibility: visible !important;
                                 transform: none !important;
                                 animation: none !important;
+                                animation-delay: 0s !important;
                               }
-                              .hero-redbar { display: none !important; }
+                              .hero-redbar, .hero-wave { display: none !important; }
                               footer { border-top-color: transparent !important; }
                             </style>`;
                             let html = event.content.about;
