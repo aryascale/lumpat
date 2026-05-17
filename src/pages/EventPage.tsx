@@ -878,56 +878,34 @@ export default function EventPage() {
                           srcDoc={(() => {
                             let html = event.content.about;
                             
-                            // Inject a SCRIPT that runs INSIDE the iframe to force everything visible
-                            // This is the "live preview extension" approach - bulletproof
-                            const injectedCode = `
-<style>
-  /* CSS fallback - override all animations */
-  *, *::before, *::after {
-    animation-duration: 0s !important;
-    animation-delay: 0s !important;
-    animation-fill-mode: none !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-  }
-  .hero-redbar { display: none !important; }
-</style>
-<script>
-  // Force all elements visible after DOM loads
-  function forceAllVisible() {
-    document.querySelectorAll('*').forEach(function(el) {
-      el.style.setProperty('opacity', '1', 'important');
-      el.style.setProperty('visibility', 'visible', 'important');
-      el.style.setProperty('animation', 'none', 'important');
-    });
-    // Remove animation-driven transforms on hero elements
-    document.querySelectorAll('[class*="hero"], [class*="badge"], [class*="title"], [class*="subtitle"], [class*="strip"], [class*="org"], [class*="eyebrow"]').forEach(function(el) {
-      el.style.setProperty('transform', 'none', 'important');
-    });
-    // Hide decorative red bar
-    document.querySelectorAll('.hero-redbar').forEach(function(el) {
-      el.style.display = 'none';
-    });
-  }
-  // Run at multiple points to catch everything
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', forceAllVisible);
-  } else {
-    forceAllVisible();
-  }
-  window.addEventListener('load', forceAllVisible);
-  setTimeout(forceAllVisible, 100);
-  setTimeout(forceAllVisible, 500);
-<\/script>`;
+                            // STRATEGY: Strip ALL animations from source CSS
+                            // This is the only bulletproof approach — remove the problem, don't override it
                             
-                            // Inject before </body> if possible, else before </html>, else append
-                            if (/<\/body>/i.test(html)) {
-                              html = html.replace(/<\/body>/i, injectedCode + '</body>');
-                            } else if (/<\/html>/i.test(html)) {
-                              html = html.replace(/<\/html>/i, injectedCode + '</html>');
+                            // 1. Remove all @keyframes blocks entirely
+                            html = html.replace(/@keyframes\s+[\w-]+\s*\{[^}]*(\{[^}]*\}[^}]*)*\}/gi, '/* [animation removed] */');
+                            
+                            // 2. Remove all animation: declarations from CSS rules
+                            html = html.replace(/animation\s*:[^;]*;/gi, '/* animation removed */');
+                            html = html.replace(/animation-[a-z-]+\s*:[^;]*;/gi, '/* animation-prop removed */');
+                            
+                            // 3. Remove .hero-redbar styles and element  
+                            html = html.replace(/<div[^>]*class="hero-redbar"[^>]*>.*?<\/div>/gi, '');
+                            
+                            // 4. Inject a safety-net style at the end to ensure visibility
+                            const safetyCSS = `<style>
+  /* Safety net: force all elements visible */
+  * { opacity: 1 !important; visibility: visible !important; }
+  .hero-redbar { display: none !important; }
+</style>`;
+                            
+                            if (/<\/head>/i.test(html)) {
+                              html = html.replace(/<\/head>/i, safetyCSS + '</head>');
+                            } else if (/<\/body>/i.test(html)) {
+                              html = html.replace(/<\/body>/i, safetyCSS + '</body>');
                             } else {
-                              html = html + injectedCode;
+                              html = html + safetyCSS;
                             }
+                            
                             return html;
                           })()}
                           className="w-full border-0 overflow-hidden block"
@@ -938,7 +916,7 @@ export default function EventPage() {
                               const doc = iframe.contentWindow?.document;
                               if (!doc) return;
 
-                              // Auto-resize iframe height to match content
+                              // Auto-resize iframe height
                               const resize = () => {
                                 try {
                                   const h = doc.documentElement.scrollHeight;
@@ -949,13 +927,12 @@ export default function EventPage() {
                               setTimeout(resize, 800);
                               setTimeout(resize, 2000);
 
-                              // ResizeObserver for dynamic content
                               try {
                                 const ro = new ResizeObserver(() => resize());
                                 ro.observe(doc.body);
                               } catch {}
 
-                              // Intercept CTA clicks to navigate to registration
+                              // Intercept CTA clicks
                               try {
                                 doc.body.addEventListener('click', (ev) => {
                                   const target = ev.target as HTMLElement;

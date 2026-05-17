@@ -219,19 +219,19 @@ export default function LandingPage() {
               const isCenter = absDiff === 0;
               const side = diff > 0 ? 1 : diff < 0 ? -1 : 0;
 
-              // === CINEMATIC TRANSFORMS ===
-              // Heavy overlap: cards are 300px wide, but only offset 190px apart
-              const tx = diff * 190;
-              // Strong rotation: 45° on outer cards, curves inward
-              const ry = diff * -40;
-              // Deep Z: center pops forward, sides pushed way back
-              const tz = isCenter ? 120 : -(absDiff * 180);
-              // Vertical stagger: side cards drift downward
-              const ty = isCenter ? -10 : absDiff * 20;
-              // Scale: center is dominant
-              const sc = isCenter ? 1.18 : Math.max(0.7, 0.88 - absDiff * 0.09);
-              // Opacity: aggressive falloff
-              const op = isCenter ? 1 : Math.max(0.3, 0.65 - absDiff * 0.15);
+              // === SPREAD LAYOUT (fan across viewport like reference) ===
+              // Wide horizontal spread — each card offset by more than its width
+              const tx = diff * 280;
+              // Moderate rotation — enough arc but cards still visible
+              const ry = diff * -28;
+              // Subtle Z depth — center slightly forward, sides slightly back
+              const tz = isCenter ? 40 : -(absDiff * 40);
+              // Gentle vertical stagger
+              const ty = isCenter ? 0 : absDiff * 12;
+              // Center is dominant but sides remain visible
+              const sc = isCenter ? 1.12 : Math.max(0.82, 0.95 - absDiff * 0.06);
+              // Keep sides visible
+              const op = isCenter ? 1 : Math.max(0.6, 0.9 - absDiff * 0.12);
               // Z-index layering
               const z = isCenter ? 50 : 40 - absDiff * 5;
 
@@ -244,7 +244,7 @@ export default function LandingPage() {
                     zIndex: z,
                     opacity: op,
                     transformStyle: 'preserve-3d',
-                    transformOrigin: side >= 0 ? 'left center' : 'right center',
+                    transformOrigin: side > 0 ? 'left center' : side < 0 ? 'right center' : 'center center',
                   }}
                   onClick={() => setActiveEcosystem(index)}
                 >
