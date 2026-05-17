@@ -875,79 +875,7 @@ export default function EventPage() {
                       event.content.about.trim().toLowerCase().startsWith('<!doctype html>') || event.content.about.trim().toLowerCase().startsWith('<html') ? (
                         <iframe
                           title="Event Homepage"
-                          srcDoc={(() => {
-                            let html = event.content.about;
-                            console.log('[iframe] Raw HTML length:', html.length, 'starts:', html.substring(0, 30));
-                            
-                            // === LAYER 1: Strip animation CSS from source ===
-                            // Remove @keyframes blocks
-                            html = html.replace(/@keyframes\s+[\w-]+\s*\{[^}]*(\{[^}]*\}[^}]*)*\}/gi, '');
-                            // Remove animation shorthand & longhand properties
-                            html = html.replace(/animation\s*:[^;]*;/gi, '');
-                            html = html.replace(/animation-[\w-]+\s*:[^;]*;/gi, '');
-                            // Remove hero-redbar element
-                            html = html.replace(/<div[^>]*class="hero-redbar"[^>]*><\/div>/gi, '');
-                            
-                            // === LAYER 2: Inject STRONG CSS override (after last </style>) ===
-                            const overrideCSS = `<style id="lumpat-override">
-  /* Force everything visible - highest specificity override */
-  *, *::before, *::after,
-  body *, header *, section *, div *, p *, h1 *, h2 *, span *, a *,
-  .hero *, .hero-badge, .hero-eyebrow, .hero-title, .hero-subtitle,
-  .hero-strip, .hero-orgs, .org-chip, .strip-block, .strip-block * {
-    opacity: 1 !important;
-    visibility: visible !important;
-    animation: none !important;
-    transform: none !important;
-  }
-  .hero { overflow: visible !important; }
-  .hero-redbar { display: none !important; }
-</style>`;
-
-                            // === LAYER 3: Inject JS that forces inline styles ===
-                            const overrideJS = `<script id="lumpat-force">
-(function(){
-  function fix(){
-    var els = document.querySelectorAll('*');
-    for(var i=0;i<els.length;i++){
-      var s = els[i].style;
-      if(s){
-        s.setProperty('opacity','1','important');
-        s.setProperty('visibility','visible','important');
-        s.setProperty('animation','none','important');
-      }
-    }
-    var rb = document.querySelectorAll('.hero-redbar');
-    for(var j=0;j<rb.length;j++) rb[j].style.display='none';
-    console.log('[lumpat-force] Fixed ' + els.length + ' elements');
-  }
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',fix);
-  }else{fix();}
-  window.addEventListener('load',fix);
-  setTimeout(fix,50);
-  setTimeout(fix,300);
-})();
-<\/script>`;
-
-                            // Inject CSS after the LAST </style> tag to override user styles
-                            const lastStyleIdx = html.lastIndexOf('</style>');
-                            if (lastStyleIdx > -1) {
-                              html = html.substring(0, lastStyleIdx + 8) + '\n' + overrideCSS + html.substring(lastStyleIdx + 8);
-                            } else if (/<\/head>/i.test(html)) {
-                              html = html.replace(/<\/head>/i, overrideCSS + '</head>');
-                            }
-                            
-                            // Inject JS before </body>
-                            if (/<\/body>/i.test(html)) {
-                              html = html.replace(/<\/body>/i, overrideJS + '</body>');
-                            } else {
-                              html += overrideJS;
-                            }
-                            
-                            console.log('[iframe] Processed HTML length:', html.length);
-                            return html;
-                          })()}
+                          src={`/api/event-homepage?eventId=${event.id}`}
                           className="w-full border-0 overflow-hidden block"
                           style={{ minHeight: '100vh', width: '100%' }}
                           onLoad={(e) => {
@@ -963,9 +891,9 @@ export default function EventPage() {
                                   if (h > 100) iframe.style.height = h + 'px';
                                 } catch {}
                               };
-                              setTimeout(resize, 200);
-                              setTimeout(resize, 800);
-                              setTimeout(resize, 2000);
+                              setTimeout(resize, 300);
+                              setTimeout(resize, 1000);
+                              setTimeout(resize, 2500);
 
                               try {
                                 const ro = new ResizeObserver(() => resize());

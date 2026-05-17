@@ -219,19 +219,19 @@ export default function LandingPage() {
               const isCenter = absDiff === 0;
               const side = diff > 0 ? 1 : diff < 0 ? -1 : 0;
 
-              // === SPREAD LAYOUT (fan across viewport like reference) ===
-              // Wide horizontal spread — each card offset by more than its width
-              const tx = diff * 280;
-              // Moderate rotation — enough arc but cards still visible
-              const ry = diff * -28;
-              // Subtle Z depth — center slightly forward, sides slightly back
-              const tz = isCenter ? 40 : -(absDiff * 40);
+              // === SPREAD LAYOUT — fan across viewport ===
+              // Wider gaps between cards (420px cards with 350px offset = slight overlap)
+              const tx = diff * 350;
+              // Gentle rotation — cards mostly front-facing for readability
+              const ry = diff * -22;
+              // Subtle Z depth
+              const tz = isCenter ? 30 : -(absDiff * 35);
               // Gentle vertical stagger
-              const ty = isCenter ? 0 : absDiff * 12;
-              // Center is dominant but sides remain visible
-              const sc = isCenter ? 1.12 : Math.max(0.82, 0.95 - absDiff * 0.06);
-              // Keep sides visible
-              const op = isCenter ? 1 : Math.max(0.6, 0.9 - absDiff * 0.12);
+              const ty = isCenter ? 0 : absDiff * 8;
+              // Center dominant, sides still clear
+              const sc = isCenter ? 1.08 : Math.max(0.85, 0.95 - absDiff * 0.05);
+              // Keep sides clearly visible
+              const op = isCenter ? 1 : Math.max(0.65, 0.92 - absDiff * 0.1);
               // Z-index layering
               const z = isCenter ? 50 : 40 - absDiff * 5;
 
