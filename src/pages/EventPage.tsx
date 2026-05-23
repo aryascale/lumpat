@@ -779,7 +779,7 @@ export default function EventPage() {
       <Navbar />
       <div className="event-page min-h-screen bg-white">
         {/* Parallax Hero Header */}
-        <div className="relative w-full h-[300px] md:h-[450px] bg-stone-900 overflow-hidden">
+        <div className="relative w-full h-[340px] md:h-[450px] bg-stone-900 overflow-hidden">
           {coverImageUrl ? (
             <div 
               className="absolute inset-0 bg-center bg-cover scale-105 will-change-transform"
@@ -798,12 +798,12 @@ export default function EventPage() {
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-900/80 to-transparent"></div>
           
-          <div className="absolute bottom-0 left-0 w-full p-4 pb-6 md:p-12 z-10 flex items-center justify-center">
+          <div className="absolute bottom-0 left-0 w-full p-4 pb-4 md:p-12 z-10 flex items-center justify-center">
             <div className="flex flex-col items-center text-center md:flex-row md:items-end md:text-left gap-4 md:gap-6 w-full max-w-7xl mx-auto">
               {event.logoUrl ? (
-                <img src={event.logoUrl} alt={event.name} className="w-20 h-20 md:w-40 md:h-40 object-contain border-2 md:border-4 border-white shadow-2xl bg-white flex-shrink-0 rounded-xl md:rounded-none" />
+                <img src={event.logoUrl} alt={event.name} className="w-16 h-16 md:w-40 md:h-40 object-contain border-2 md:border-4 border-white shadow-2xl bg-white flex-shrink-0 rounded-xl md:rounded-none" />
               ) : (
-                <div className="w-20 h-20 md:w-40 md:h-40 border-2 md:border-4 border-stone-800 bg-stone-900 shadow-2xl flex items-center justify-center text-center p-1 flex-shrink-0 rounded-xl md:rounded-none">
+                <div className="w-16 h-16 md:w-40 md:h-40 border-2 md:border-4 border-stone-800 bg-stone-900 shadow-2xl flex items-center justify-center text-center p-1 flex-shrink-0 rounded-xl md:rounded-none">
                   <span className="text-stone-700 font-bold uppercase tracking-widest text-[7px] md:text-xs">No Logo</span>
                 </div>
               )}
@@ -819,7 +819,7 @@ export default function EventPage() {
                     <span className="hidden md:inline text-stone-400 text-sm font-medium tracking-wide">• {event.location}</span>
                   )}
                 </div>
-                <h1 className="text-xl md:text-5xl font-black text-white tracking-tight md:tracking-tighter uppercase leading-tight md:leading-none drop-shadow-lg mb-1 md:mb-2 whitespace-normal">
+                <h1 className="text-lg md:text-5xl font-black text-white tracking-tight md:tracking-tighter uppercase leading-tight md:leading-none drop-shadow-lg mb-1 md:mb-2 whitespace-normal">
                   {event.name}
                 </h1>
                 {event.location && (
