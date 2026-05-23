@@ -798,17 +798,17 @@ export default function EventPage() {
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-900/80 to-transparent"></div>
           
-          <div className="absolute bottom-0 left-0 w-full p-3 md:p-12 max-w-7xl mx-auto z-10">
-            <div className="flex items-end gap-3 md:gap-6 w-full">
+          <div className="absolute bottom-0 left-0 w-full p-4 pb-6 md:p-12 z-10 flex items-center justify-center">
+            <div className="flex flex-col items-center text-center md:flex-row md:items-end md:text-left gap-4 md:gap-6 w-full max-w-7xl mx-auto">
               {event.logoUrl ? (
-                <img src={event.logoUrl} alt={event.name} className="w-16 h-16 md:w-40 md:h-40 object-contain border-2 md:border-4 border-white shadow-2xl bg-white flex-shrink-0" />
+                <img src={event.logoUrl} alt={event.name} className="w-20 h-20 md:w-40 md:h-40 object-contain border-2 md:border-4 border-white shadow-2xl bg-white flex-shrink-0 rounded-xl md:rounded-none" />
               ) : (
-                <div className="w-16 h-16 md:w-40 md:h-40 border-2 md:border-4 border-stone-800 bg-stone-900 shadow-2xl flex items-center justify-center text-center p-1 flex-shrink-0">
+                <div className="w-20 h-20 md:w-40 md:h-40 border-2 md:border-4 border-stone-800 bg-stone-900 shadow-2xl flex items-center justify-center text-center p-1 flex-shrink-0 rounded-xl md:rounded-none">
                   <span className="text-stone-700 font-bold uppercase tracking-widest text-[7px] md:text-xs">No Logo</span>
                 </div>
               )}
-              <div className="flex-1 min-w-0 pb-1 md:pb-2">
-                <div className="flex items-center gap-2 md:gap-4 mb-1 md:mb-3 flex-wrap">
+              <div className="flex-1 w-full min-w-0 pb-1 md:pb-2">
+                <div className="flex items-center justify-center md:justify-start gap-2 md:gap-4 mb-2 md:mb-3 flex-wrap">
                   <span className="bg-red-600 text-white px-2 md:px-3 py-0.5 md:py-1 text-[9px] md:text-xs font-black tracking-widest uppercase">
                     {event.eventDate ? new Date(event.eventDate).getFullYear() : 'RACE'}
                   </span>
@@ -819,11 +819,11 @@ export default function EventPage() {
                     <span className="hidden md:inline text-stone-400 text-sm font-medium tracking-wide">• {event.location}</span>
                   )}
                 </div>
-                <h1 className="text-base md:text-5xl font-black text-white tracking-tight md:tracking-tighter uppercase leading-tight md:leading-none drop-shadow-lg mb-0.5 md:mb-2 truncate md:whitespace-normal">
+                <h1 className="text-xl md:text-5xl font-black text-white tracking-tight md:tracking-tighter uppercase leading-tight md:leading-none drop-shadow-lg mb-1 md:mb-2 whitespace-normal">
                   {event.name}
                 </h1>
                 {event.location && (
-                  <span className="md:hidden text-stone-400 text-[10px] font-medium">{event.location}</span>
+                  <span className="md:hidden text-stone-300 text-xs font-semibold tracking-wide mt-1 uppercase block">{event.location}</span>
                 )}
                 {event.description && (
                   <p className="hidden md:block text-stone-300 text-base max-w-2xl font-medium tracking-wide mt-4 border-l-2 border-white/50 pl-4">{event.description}</p>
@@ -831,7 +831,7 @@ export default function EventPage() {
                 
                 <button 
                   onClick={() => setRegisterModalOpen(true)}
-                  className="mt-2 md:mt-6 bg-white text-black font-bold py-1.5 md:py-3 px-4 md:px-10 rounded-full uppercase tracking-widest text-[9px] md:text-xs transition-all hover:bg-stone-100 hover:scale-105 cursor-pointer"
+                  className="mt-3 md:mt-6 bg-white text-black font-bold py-2 md:py-3 px-6 md:px-10 rounded-full uppercase tracking-widest text-[10px] md:text-xs transition-all hover:bg-stone-100 hover:scale-105 cursor-pointer mx-auto md:mx-0 block md:inline-block"
                 >
                   Daftar Sekarang →
                 </button>
