@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import EventSearchModal from "../components/EventSearchModal";
+import ImageSlider3D from "../components/lightswind/3d-image-slider";
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -13,6 +14,15 @@ export default function LandingPage() {
   const [activeHardware, setActiveHardware] = useState(0);
   const [activeEcosystem, setActiveEcosystem] = useState(0);
   const [heroIndex, setHeroIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Responsive state observer
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const heroImages = [
     "/Assets/landing/hero.webp",
@@ -195,112 +205,50 @@ export default function LandingPage() {
       {/* ===================== PLATFORM ECOSYSTEM — CINEMATIC 3D ===================== */}
       <section className="overflow-hidden relative" id="platform" style={{ 
         background: 'radial-gradient(ellipse 120% 80% at 50% 40%, #f0f0f0 0%, #e8e8e8 40%, #f5f5f5 100%)',
-        padding: '100px 0 80px' 
+        padding: isMobile ? '50px 0 30px' : '100px 0 80px' 
       }}>
         {/* Subtle top/bottom vignette */}
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(245,245,245,0.8) 0%, transparent 15%, transparent 85%, rgba(245,245,245,0.8) 100%)' }} />
 
         {/* Section Header */}
-        <div className="text-center mb-20 md:mb-28 px-6 relative z-10">
-          <span className="text-red-500 font-extrabold tracking-[0.3em] text-[11px] uppercase mb-4 block">SOFTWARE PLATFORM</span>
-          <h2 className="text-4xl sm:text-5xl md:text-7xl font-black uppercase text-stone-900 mb-5 tracking-[-0.04em] leading-[0.92]">COMPLETE<br className="sm:hidden" /> ECOSYSTEM</h2>
+        <div className="text-center mb-8 md:mb-20 px-6 relative z-10">
+          <span className="text-red-500 font-extrabold tracking-[0.3em] text-[11px] uppercase mb-3 block">SOFTWARE PLATFORM</span>
+          <h2 className="text-4xl sm:text-5xl md:text-7xl font-black uppercase text-stone-900 mb-4 tracking-[-0.04em] leading-[0.92]">COMPLETE<br className="sm:hidden" /> ECOSYSTEM</h2>
           <p className="text-stone-400 max-w-md mx-auto text-sm md:text-[15px] font-medium leading-relaxed">
             Manage your entire event from one unified dashboard.<br className="hidden md:block" /> From custom branding to real-time results.
           </p>
         </div>
 
         {/* === 3D STAGE === */}
-        <div className="relative w-screen left-1/2 -translate-x-1/2" style={{ perspective: '2400px', perspectiveOrigin: '50% 50%' }}>
-          
+        <div className={`relative w-full max-w-6xl mx-auto flex items-center justify-center transition-all duration-500 ${isMobile ? 'h-[240px]' : 'h-[460px]'}`}>
           {/* Atmospheric glows */}
-          <div className="absolute left-1/2 top-[45%] -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(220,38,38,0.07) 0%, transparent 70%)', filter: 'blur(60px)' }} />
-          <div className="absolute left-1/2 top-[55%] -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.04) 0%, transparent 70%)', filter: 'blur(50px)' }} />
-
-          {/* Edge fade — strong cinematic vignette */}
-          <div className="absolute left-0 top-0 h-full w-[15%] z-[60] pointer-events-none" style={{ background: 'linear-gradient(to right, #f0f0f0 0%, transparent 100%)' }} />
-          <div className="absolute right-0 top-0 h-full w-[15%] z-[60] pointer-events-none" style={{ background: 'linear-gradient(to left, #f0f0f0 0%, transparent 100%)' }} />
-
-          <div className="flex items-center justify-center relative" style={{ height: '400px', transformStyle: 'preserve-3d' }}>
-            {[
-              { title: "White Label", img: "/Assets/landing2/White Label Website.png", tag: "#01" },
-              { title: "Results", img: "/Assets/landing2/result.png", tag: "#02" },
-              { title: "Route Map", img: "/Assets/landing2/map start and finish.png", tag: "#03" },
-              { title: "Multisport", img: "/Assets/landing2/multisport.png", tag: "#04" },
-              { title: "Portfolio", img: "/Assets/landing2/portfolio.png", tag: "#05" },
-            ].map((item, index) => {
-              let diff = index - activeEcosystem;
-              const total = 5;
-              if (diff > Math.floor(total / 2)) diff -= total;
-              if (diff < -Math.floor(total / 2)) diff += total;
-              const absDiff = Math.abs(diff);
-              const isCenter = absDiff === 0;
-              const side = diff > 0 ? 1 : diff < 0 ? -1 : 0;
-
-              // === SPREAD LAYOUT — fan across viewport ===
-              // Wider gaps between cards (420px cards with 350px offset = slight overlap)
-              const tx = diff * 350;
-              // Gentle rotation — cards mostly front-facing for readability
-              const ry = diff * -22;
-              // Subtle Z depth
-              const tz = isCenter ? 30 : -(absDiff * 35);
-              // Gentle vertical stagger
-              const ty = isCenter ? 0 : absDiff * 8;
-              // Center dominant, sides still clear
-              const sc = isCenter ? 1.08 : Math.max(0.85, 0.95 - absDiff * 0.05);
-              // Keep sides clearly visible
-              const op = isCenter ? 1 : Math.max(0.65, 0.92 - absDiff * 0.1);
-              // Z-index layering
-              const z = isCenter ? 50 : 40 - absDiff * 5;
-
-              return (
-                <div
-                  key={item.tag}
-                  className="absolute transition-all duration-[1100ms] ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer select-none group"
-                  style={{
-                    transform: `translateX(${tx}px) translateY(${ty}px) translateZ(${tz}px) rotateY(${ry}deg) scale(${sc})`,
-                    zIndex: z,
-                    opacity: op,
-                    transformStyle: 'preserve-3d',
-                    transformOrigin: side > 0 ? 'left center' : side < 0 ? 'right center' : 'center center',
-                  }}
-                  onClick={() => setActiveEcosystem(index)}
-                >
-                  {/* Card */}
-                  <div
-                    className={`overflow-hidden rounded-[22px] transition-all duration-700 relative ${
-                      isCenter
-                        ? 'shadow-[0_50px_120px_-20px_rgba(0,0,0,0.35),0_20px_40px_-15px_rgba(0,0,0,0.2)] ring-1 ring-white/20'
-                        : 'shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] group-hover:-translate-y-2 group-hover:shadow-[0_30px_70px_-15px_rgba(0,0,0,0.25)]'
-                    }`}
-                    style={{ width: '420px', height: '280px' }}
-                  >
-                    <img
-                      src={item.img}
-                      alt={item.title}
-                      className={`w-full h-full object-cover transition-all duration-700 ${
-                        isCenter ? 'brightness-[1.05] contrast-[1.02] saturate-[1.1]' : 'brightness-[0.65] saturate-[0.5] contrast-[0.95]'
-                      }`}
-                      draggable={false}
-                    />
-                    {/* Cinematic glass overlay */}
-                    <div className={`absolute inset-0 pointer-events-none transition-opacity duration-700 ${
-                      isCenter 
-                        ? 'bg-gradient-to-br from-white/10 via-transparent to-transparent'
-                        : 'bg-gradient-to-br from-black/5 via-transparent to-black/20'
-                    }`} />
-                    {/* Edge light reflection for center */}
-                    {isCenter && (
-                      <div className="absolute inset-y-0 left-0 w-[2px] bg-gradient-to-b from-transparent via-white/30 to-transparent pointer-events-none" />
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(220,38,38,0.07) 0%, transparent 70%)', filter: 'blur(60px)' }} />
+          
+          <ImageSlider3D 
+            images={[
+              "/Assets/landing2/White Label Website.png",
+              "/Assets/landing2/result.png",
+              "/Assets/landing2/map start and finish.png",
+              "/Assets/landing2/multisport.png",
+              "/Assets/landing2/portfolio.png",
+              "/Assets/landing2/White Label Website.png",
+              "/Assets/landing2/result.png",
+              "/Assets/landing2/map start and finish.png",
+              "/Assets/landing2/multisport.png",
+              "/Assets/landing2/portfolio.png"
+            ]}
+            duration={45}
+            cardWidth={isMobile ? "12.5rem" : "28rem"}
+            cardAspectRatio={isMobile ? "12/10" : "15/10"}
+            perspective={isMobile ? "45rem" : "60rem"}
+            withMask={true}
+            containerClassName="w-full h-full"
+            imageClassName="border border-stone-200/20 shadow-[0_20px_50px_rgba(0,0,0,0.15)] select-none pointer-events-none brightness-[1.02] saturate-[1.05]"
+          />
         </div>
 
         {/* Labels with active indicator */}
-        <div className="flex justify-center gap-8 sm:gap-12 md:gap-20 mt-12 px-4 flex-wrap relative z-10">
+        <div className="flex justify-center gap-4 sm:gap-10 md:gap-20 mt-6 md:mt-12 px-4 flex-wrap relative z-10">
           {[
             { tag: "#01", title: "White Label" },
             { tag: "#02", title: "Results" },
