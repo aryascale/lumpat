@@ -1666,10 +1666,10 @@ export default function EventPage() {
 
           {/* QR Scanner Modal */}
           {scannerOpen && (
-            <div className="fixed inset-0 bg-stone-950 z-[100] flex flex-col items-center justify-center">
-              <div className="absolute top-4 right-4 z-[110]">
+            <div className="fixed inset-0 bg-stone-950/95 backdrop-blur-3xl z-[100] flex flex-col items-center justify-center p-4">
+              <div className="absolute top-6 right-6 sm:top-8 sm:right-8 z-[110]">
                 <button 
-                  className="bg-white/10 hover:bg-white/20 text-white rounded-full p-2 backdrop-blur-md transition"
+                  className="bg-stone-800/50 hover:bg-stone-700/50 border border-stone-700 text-stone-300 hover:text-white rounded-full p-3 backdrop-blur-md transition-all duration-300"
                   onClick={() => {
                     setScannerOpen(false);
                     setScanValidResult(null);
@@ -1682,43 +1682,100 @@ export default function EventPage() {
                 </button>
               </div>
 
-              <div className="text-center text-white mb-6 z-[105]">
-                <h2 className="text-2xl font-bold mb-2">Scan QR Peserta</h2>
-                <p className="text-stone-400">Arahkan kamera ke QR Code tiket peserta.</p>
+              <div className="text-center text-white mb-8 z-[105]">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-stone-800/50 border border-stone-700/50 rounded-full mb-6">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[10px] font-bold tracking-widest uppercase text-stone-300">Scanner Active</span>
+                </div>
+                <h2 className="text-3xl sm:text-4xl font-black mb-3 tracking-tighter">Validasi Peserta</h2>
+                <p className="text-stone-400 font-medium max-w-xs mx-auto text-sm">Arahkan kamera ke QR Code / Barcode tiket peserta.</p>
               </div>
 
-              <div className="relative w-full max-w-sm aspect-square bg-black rounded-2xl overflow-hidden ring-4 ring-white/10 shadow-2xl z-[105]">
-                <div id="reader" className="w-full h-full object-cover"></div>
+              <div className="relative w-full max-w-sm aspect-square bg-stone-900 rounded-[2.5rem] overflow-hidden border-8 border-stone-800/50 shadow-2xl z-[105]">
+                {/* Target reticle overlay */}
+                <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center p-12">
+                  <div className="w-full h-full border-2 border-white/20 rounded-[2rem] relative">
+                    {/* Corners */}
+                    <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-white rounded-tl-[2rem]" />
+                    <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-white rounded-tr-[2rem]" />
+                    <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-white rounded-bl-[2rem]" />
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-white rounded-br-[2rem]" />
+                  </div>
+                </div>
+                <div id="reader" className="w-full h-full object-cover relative z-0 [&_video]:object-cover [&_video]:w-full [&_video]:h-full"></div>
               </div>
 
               {/* Valid Overlay */}
               {scanValidResult && (
-                <div className="absolute inset-0 bg-emerald-500/95 backdrop-blur-md z-[120] flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-200">
-                  <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-6 shadow-xl">
-                    <svg className="w-12 h-12 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <h1 className="text-4xl md:text-6xl font-black text-white mb-2 uppercase tracking-tight">{scanValidResult.name}</h1>
-                  <div className="text-emerald-100 text-xl font-medium mb-8 uppercase tracking-widest">{scanValidResult.category?.name || '-'}</div>
-                  
-                  <div className="bg-white/20 rounded-2xl px-12 py-6 border border-white/30 backdrop-blur-sm">
-                    <div className="text-emerald-100 text-sm font-bold tracking-widest uppercase mb-1">BIB Number</div>
-                    <div className="text-5xl font-black text-white">{scanValidResult.bib}</div>
+                <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-2xl z-[120] flex flex-col items-center justify-center p-4 sm:p-8 animate-in fade-in zoom-in-95 duration-300">
+                  <div className="w-full max-w-md bg-stone-900/90 border border-stone-800 rounded-3xl p-8 flex flex-col items-center text-center shadow-[0_0_100px_rgba(16,185,129,0.15)] backdrop-blur-xl relative overflow-hidden">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-emerald-500/20 blur-[60px] rounded-full pointer-events-none" />
+                    
+                    <div className="relative w-20 h-20 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                      <div className="w-14 h-14 bg-emerald-500 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.5)]">
+                        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    </div>
+
+                    <div className="text-[10px] font-black tracking-[0.2em] text-emerald-400 uppercase mb-3">Peserta Valid</div>
+                    
+                    <h1 className="text-3xl sm:text-4xl font-black text-white mb-1 uppercase tracking-tighter leading-tight">
+                      {scanValidResult.name}
+                    </h1>
+                    
+                    <div className="text-stone-400 font-medium mb-8 uppercase tracking-widest text-sm">
+                      {scanValidResult.category?.name || '-'}
+                    </div>
+                    
+                    <div className="w-full bg-white rounded-2xl p-6 shadow-xl relative overflow-hidden">
+                      <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500" />
+                      <div className="text-stone-400 text-[10px] font-black tracking-widest uppercase mb-1">BIB Number</div>
+                      <div className="text-5xl sm:text-6xl font-black text-stone-900 tracking-tighter">
+                        {scanValidResult.bib}
+                      </div>
+                    </div>
+                    
+                    <div className="mt-8 text-stone-500 text-xs font-medium uppercase tracking-widest flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      LUMPAT EVENT SYSTEM
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* Error Overlay */}
               {scanErrorResult && (
-                <div className="absolute inset-0 bg-red-600/95 backdrop-blur-md z-[120] flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-200">
-                  <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-6 shadow-xl">
-                    <svg className="w-12 h-12 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-2xl z-[120] flex flex-col items-center justify-center p-4 sm:p-8 animate-in fade-in zoom-in-95 duration-300">
+                  <div className="w-full max-w-md bg-stone-900/90 border border-stone-800 rounded-3xl p-8 flex flex-col items-center text-center shadow-[0_0_100px_rgba(239,68,68,0.15)] backdrop-blur-xl relative overflow-hidden">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-red-500/20 blur-[60px] rounded-full pointer-events-none" />
+                    
+                    <div className="relative w-20 h-20 bg-red-500/10 border border-red-500/30 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                      <div className="w-14 h-14 bg-red-500 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.5)]">
+                        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </div>
+                    </div>
+
+                    <div className="text-[10px] font-black tracking-[0.2em] text-red-400 uppercase mb-3">Akses Ditolak</div>
+                    
+                    <h1 className="text-3xl font-black text-white mb-4 tracking-tighter leading-tight">
+                      Gagal Validasi
+                    </h1>
+                    
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 w-full">
+                      <p className="text-red-200 text-sm font-medium">
+                        {scanErrorResult}
+                      </p>
+                    </div>
+
+                    <div className="mt-8 text-stone-500 text-xs font-medium uppercase tracking-widest flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                      LUMPAT EVENT SYSTEM
+                    </div>
                   </div>
-                  <h2 className="text-3xl font-bold text-white mb-4">Gagal Validasi</h2>
-                  <p className="text-red-100 text-lg max-w-md">{scanErrorResult}</p>
                 </div>
               )}
             </div>
