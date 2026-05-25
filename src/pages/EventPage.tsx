@@ -1,6 +1,7 @@
 // src/pages/EventPage.tsx - User facing event detail page
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { Html5Qrcode } from "html5-qrcode";
 import { useParams, Link } from "react-router-dom";
 import RaceClock from "../components/RaceClock";
 import CategorySection from "../components/CategorySection";
@@ -122,6 +123,82 @@ export default function EventPage() {
   const [masterParticipants, setMasterParticipants] = useState<any[]>([]);
   const [homepageBlobUrl, setHomepageBlobUrl] = useState<string | null>(null);
   const [regSearchTerm, setRegSearchTerm] = useState("");
+
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scanValidResult, setScanValidResult] = useState<any | null>(null);
+  const [scanErrorResult, setScanErrorResult] = useState<string | null>(null);
+  const scannerStateRef = useRef({
+    isPaused: false,
+    timeoutId: null as any
+  });
+
+  // Scanner Logic
+  useEffect(() => {
+    let html5QrCode: Html5Qrcode | null = null;
+
+    if (scannerOpen) {
+      html5QrCode = new Html5Qrcode("reader");
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          if (scannerStateRef.current.isPaused) return;
+          
+          let id = decodedText;
+          if (decodedText.includes('/verify/')) {
+            id = decodedText.split('/verify/').pop() || decodedText;
+          }
+          
+          const p = registeredParticipants.find(x => x.id === id);
+          if (p) {
+            if (p.paymentStatus === 'settlement') {
+               const leader = masterParticipants.find(o => o.epc === p.id || o.name.toLowerCase() === p.name.toLowerCase());
+               setScanValidResult({ ...p, bib: leader?.bib || '-' });
+               setScanErrorResult(null);
+               
+               scannerStateRef.current.isPaused = true;
+               if (scannerStateRef.current.timeoutId) clearTimeout(scannerStateRef.current.timeoutId);
+               
+               scannerStateRef.current.timeoutId = setTimeout(() => {
+                 setScanValidResult(null);
+                 scannerStateRef.current.isPaused = false;
+               }, 4000);
+            } else {
+               setScanErrorResult(`Peserta (${p.name}) ditemukan, tapi status pembayaran belum lunas (${p.paymentStatus}).`);
+               scannerStateRef.current.isPaused = true;
+               if (scannerStateRef.current.timeoutId) clearTimeout(scannerStateRef.current.timeoutId);
+               
+               scannerStateRef.current.timeoutId = setTimeout(() => {
+                 setScanErrorResult(null);
+                 scannerStateRef.current.isPaused = false;
+               }, 3000);
+            }
+          } else {
+            setScanErrorResult("QR Code tidak dikenali atau bukan peserta event ini.");
+            scannerStateRef.current.isPaused = true;
+            if (scannerStateRef.current.timeoutId) clearTimeout(scannerStateRef.current.timeoutId);
+            
+            scannerStateRef.current.timeoutId = setTimeout(() => {
+              setScanErrorResult(null);
+              scannerStateRef.current.isPaused = false;
+            }, 3000);
+          }
+        },
+        () => {
+          // Ignore parse errors (runs frequently when camera is scanning empty space)
+        }
+      ).catch(err => {
+        console.error("Scanner error:", err);
+      });
+    }
+
+    return () => {
+      if (scannerStateRef.current.timeoutId) clearTimeout(scannerStateRef.current.timeoutId);
+      if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().then(() => html5QrCode?.clear()).catch(console.error);
+      }
+    };
+  }, [scannerOpen, registeredParticipants, masterParticipants]);
 
   // Create blob URL for homepage HTML
   // Blob URL renders as a normal page (unlike srcDoc), so CSS animations, fonts, and layouts work naturally.
@@ -1027,6 +1104,15 @@ export default function EventPage() {
                     onChange={e => setRegSearchTerm(e.target.value)}
                   />
                 </div>
+                <button 
+                  onClick={() => setScannerOpen(true)}
+                  className="btn primary px-4 py-2 flex items-center gap-2 rounded-xl"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h4v4H3v-4zM3 3h4v4H3V3zM10 3h4v4h-4V3zM3 17h4v4H3v-4zM10 17h4v4h-4v-4zM17 17h4v4h-4v-4zM17 10h4v4h-4v-4zM17 3h4v4h-4V3z" />
+                  </svg>
+                  Scan Peserta
+                </button>
               </div>
               {(() => {
                 const settled = registeredParticipants.filter(p => p.paymentStatus === 'settlement');
@@ -1577,6 +1663,66 @@ export default function EventPage() {
               )}
             </div>
           </Modal>
+
+          {/* QR Scanner Modal */}
+          {scannerOpen && (
+            <div className="fixed inset-0 bg-stone-950 z-[100] flex flex-col items-center justify-center">
+              <div className="absolute top-4 right-4 z-[110]">
+                <button 
+                  className="bg-white/10 hover:bg-white/20 text-white rounded-full p-2 backdrop-blur-md transition"
+                  onClick={() => {
+                    setScannerOpen(false);
+                    setScanValidResult(null);
+                    setScanErrorResult(null);
+                  }}
+                >
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="text-center text-white mb-6 z-[105]">
+                <h2 className="text-2xl font-bold mb-2">Scan QR Peserta</h2>
+                <p className="text-stone-400">Arahkan kamera ke QR Code tiket peserta.</p>
+              </div>
+
+              <div className="relative w-full max-w-sm aspect-square bg-black rounded-2xl overflow-hidden ring-4 ring-white/10 shadow-2xl z-[105]">
+                <div id="reader" className="w-full h-full object-cover"></div>
+              </div>
+
+              {/* Valid Overlay */}
+              {scanValidResult && (
+                <div className="absolute inset-0 bg-emerald-500/95 backdrop-blur-md z-[120] flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-200">
+                  <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-6 shadow-xl">
+                    <svg className="w-12 h-12 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h1 className="text-4xl md:text-6xl font-black text-white mb-2 uppercase tracking-tight">{scanValidResult.name}</h1>
+                  <div className="text-emerald-100 text-xl font-medium mb-8 uppercase tracking-widest">{scanValidResult.category?.name || '-'}</div>
+                  
+                  <div className="bg-white/20 rounded-2xl px-12 py-6 border border-white/30 backdrop-blur-sm">
+                    <div className="text-emerald-100 text-sm font-bold tracking-widest uppercase mb-1">BIB Number</div>
+                    <div className="text-5xl font-black text-white">{scanValidResult.bib}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Error Overlay */}
+              {scanErrorResult && (
+                <div className="absolute inset-0 bg-red-600/95 backdrop-blur-md z-[120] flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-200">
+                  <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-6 shadow-xl">
+                    <svg className="w-12 h-12 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                  <h2 className="text-3xl font-bold text-white mb-4">Gagal Validasi</h2>
+                  <p className="text-red-100 text-lg max-w-md">{scanErrorResult}</p>
+                </div>
+              )}
+            </div>
+          )}
 
         <ParticipantModal
           open={modalOpen}
