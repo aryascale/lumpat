@@ -403,6 +403,37 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
     alert("Semua CSV telah dihapus");
   };
 
+  const exportMasterTemplate = () => {
+    if (!participants || participants.length === 0) {
+      alert("Tidak ada peserta terdaftar untuk diekspor.");
+      return;
+    }
+    const settled = participants.filter(p => p.paymentStatus === 'settlement');
+    if (settled.length === 0) {
+      alert("Tidak ada peserta yang sudah melakukan pembayaran (settlement).");
+      return;
+    }
+
+    const headers = ['Nama', 'Kategori', 'Kelamin', 'BIB Number', 'Warna BIB', 'EPC'];
+    const rows = settled.map(p => {
+      const name = `"${(p.name || '').replace(/"/g, '""')}"`;
+      const category = `"${(p.category?.name || '').replace(/"/g, '""')}"`;
+      const gender = `"${(p.gender || '').replace(/"/g, '""')}"`;
+      const epc = `"${(p.id || '').replace(/"/g, '""')}"`;
+      return [name, category, gender, '""', '""', epc].join(',');
+    });
+    
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Master_Template_${eventData?.name || 'Event'}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Banner handlers
   const handleBannerUpload = async () => {
     if (!bannerFile) {
@@ -990,9 +1021,14 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                 Upload CSV data untuk event ini. Master & Finish wajib.
               </div>
             </div>
-            <button className="btn ghost w-full sm:w-auto" onClick={clearAllCsv}>
-              Reset All CSV
-            </button>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <button className="btn secondary w-full sm:w-auto border border-stone-200" onClick={exportMasterTemplate}>
+                Export Master Template
+              </button>
+              <button className="btn ghost w-full sm:w-auto" onClick={clearAllCsv}>
+                Reset All CSV
+              </button>
+            </div>
           </div>
 
           {/* Desktop Table - hidden on mobile */}
