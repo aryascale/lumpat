@@ -11,7 +11,6 @@ export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [scrollY, setScrollY] = useState(0);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [activeHardware, setActiveHardware] = useState(0);
   const [activeEcosystem, setActiveEcosystem] = useState(0);
   const [heroIndex, setHeroIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
@@ -101,35 +100,7 @@ export default function LandingPage() {
     },
   ];
 
-  const products = [
-    {
-      name: "Pro Time Decoder",
-      desc: "The core timing unit that processes transponder reads with extreme accuracy and reliability.",
-      type: "hardware",
-    },
-    {
-      name: "Magic Antenna",
-      desc: "Advanced high-gain antenna system ensuring maximum read rates in dense race conditions.",
-      type: "hardware",
-    },
-    {
-      name: "Active Chip",
-      desc: "High precision active transponder designed for professional cycling and high-speed sports.",
-      type: "reusable",
-    },
-    {
-      name: "Running Chip",
-      desc: "Lightweight passive UHF transponder optimized for mass running events and marathons.",
-      type: "disposable",
-    },
-  ];
 
-  const hardwareImages = [
-    "/Assets/landing2/PRO TIME DECODER.png",
-    "/Assets/landing2/MAGIC ANTENNA.png",
-    "/Assets/landing2/Active Chip.png",
-    "/Assets/landing2/RUNNING Chip.png"
-  ];
 
 
   return (
@@ -357,50 +328,107 @@ export default function LandingPage() {
       </section>
 
       {/* ===================== SECTION 4: PRODUCT SHOWCASE ===================== */}
-      <section className="landing-section landing-section--white" id="products">
-        <div className="landing-container">
-          <div className="landing-section-header scroll-reveal">
-            <span className="landing-section-header__tag">TIMING HARDWARE</span>
-            <h2 className="landing-section-header__title">TRANSPONDER LINEUP</h2>
-            <p className="landing-section-header__subtitle">
-              Purpose-built transponders for every race format. Different tags can
-              be used in the same event.
+      {/* ===================== SECTION 4: PRODUCT SHOWCASE — APPLE STYLE ===================== */}
+      <section className="bg-[#f5f5f7] py-20 md:py-28" id="products">
+        <div className="max-w-7xl mx-auto px-6">
+          
+          {/* Partnership Editorial Header */}
+          <div className="text-center mb-16 md:mb-24 scroll-reveal">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <span className="text-red-500 font-extrabold tracking-[0.3em] text-[10px] md:text-xs uppercase">LUMPAT</span>
+              <span className="text-stone-300 text-sm font-light">×</span>
+              <span className="text-stone-500 font-extrabold tracking-[0.3em] text-[10px] md:text-xs uppercase">IZT TIMING</span>
+            </div>
+            <h2 className="text-4xl sm:text-5xl md:text-6xl font-black uppercase text-stone-900 tracking-[-0.04em] mb-6 leading-none">
+              PROFESSIONAL TIMING LINEUP
+            </h2>
+            <p className="text-stone-500 max-w-2xl mx-auto text-base md:text-lg font-medium leading-relaxed">
+              LUMPAT partners with IZT, Indonesia’s trusted multi-sport timing specialist. Together, we deliver state-of-the-art transponders and decoders for error-free splits.
             </p>
           </div>
 
-          <div className="landing-products scroll-reveal">
-            <div className="landing-products__image landing-img-wrapper transition-all duration-500 bg-stone-50 rounded-xl flex items-center justify-center p-8">
-              <img
-                src={hardwareImages[activeHardware]}
-                alt={products[activeHardware].name}
-                loading="lazy"
-                className="max-h-[400px] object-contain drop-shadow-2xl transition-all duration-500 scale-100"
-                key={activeHardware}
-              />
+          {/* Grid Layout — Apple Editorial Style */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 scroll-reveal">
+            
+            {/* CARD 1: Large Featured Card (Span 2 columns on desktop) */}
+            <div className="md:col-span-2 bg-white rounded-3xl p-8 md:p-12 flex flex-col justify-between overflow-hidden relative shadow-sm border border-stone-200/40 group hover:shadow-md transition-all duration-500 min-h-[460px]">
+              <div className="max-w-md z-10">
+                <span className="text-stone-400 font-extrabold tracking-widest text-[9px] uppercase">CORE SYSTEM</span>
+                <h3 className="text-3xl md:text-4xl font-black uppercase text-stone-900 mt-2 mb-4 leading-none">Pro Time Decoder</h3>
+                <p className="text-stone-500 text-sm md:text-base font-medium leading-relaxed">
+                  Our professional timing hub that decrypts transponder reads with industry-leading precision. Equipped with dual-frequency sync and internal batteries for robust failproof deployment.
+                </p>
+              </div>
+              <div className="mt-8 md:mt-0 z-10">
+                <span className="text-stone-400 font-bold text-xs">Partnered with IZT Tech</span>
+              </div>
+              {/* Product Image sitting at the bottom right */}
+              <div className="md:absolute right-8 bottom-0 w-full md:w-[45%] h-[240px] md:h-[90%] flex items-center justify-center p-4">
+                <img 
+                  src="/Assets/landing2/PRO TIME DECODER.png" 
+                  alt="Pro Time Decoder" 
+                  className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-700 group-hover:scale-105"
+                />
+              </div>
             </div>
-            <div className="landing-products__list">
-              {products.map((product, idx) => (
-                <div 
-                  key={idx} 
-                  className={`landing-product-card cursor-pointer transition-all duration-300 border-2 ${activeHardware === idx ? 'border-red-500 bg-red-50' : 'border-transparent hover:border-red-200'}`}
-                  onClick={() => setActiveHardware(idx)}
-                >
-                  <div className="landing-product-card__header">
-                    <h4 className={`landing-product-card__name ${activeHardware === idx ? 'text-red-600' : ''}`}>{product.name}</h4>
-                    <span
-                      className={`landing-product-card__badge ${
-                        product.type === "reusable"
-                          ? "landing-product-card__badge--reusable"
-                          : ""
-                      }`}
-                    >
-                      {product.type}
-                    </span>
-                  </div>
-                  <p className="landing-product-card__desc">{product.desc}</p>
-                </div>
-              ))}
+
+            {/* CARD 2: Magic Antenna */}
+            <div className="bg-white rounded-3xl p-8 flex flex-col justify-between overflow-hidden relative shadow-sm border border-stone-200/40 group hover:shadow-md transition-all duration-500 min-h-[460px]">
+              <div>
+                <span className="text-stone-400 font-extrabold tracking-widest text-[9px] uppercase">ANTENNA GRID</span>
+                <h3 className="text-2xl font-black uppercase text-stone-900 mt-2 mb-3 leading-none">Magic Antenna</h3>
+                <p className="text-stone-500 text-xs md:text-sm font-medium leading-relaxed">
+                  Advanced high-gain UHF antenna system ensuring maximum transponder detection density even in packed start and finish zones.
+                </p>
+              </div>
+              <div className="mt-8 flex items-center justify-center h-[200px]">
+                <img 
+                  src="/Assets/landing2/MAGIC ANTENNA.png" 
+                  alt="Magic Antenna" 
+                  className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-700 group-hover:scale-105"
+                />
+              </div>
             </div>
+
+            {/* CARD 3: Active Chip */}
+            <div className="bg-white rounded-3xl p-8 flex flex-col justify-between overflow-hidden relative shadow-sm border border-stone-200/40 group hover:shadow-md transition-all duration-500 min-h-[460px]">
+              <div>
+                <span className="text-red-500 font-extrabold tracking-widest text-[9px] uppercase">REUSABLE TAG</span>
+                <h3 className="text-2xl font-black uppercase text-stone-900 mt-2 mb-3 leading-none">Active Chip</h3>
+                <p className="text-stone-500 text-xs md:text-sm font-medium leading-relaxed">
+                  Sub-millisecond precision transponder designed for high-speed cycling, triathlons, and professional sports requiring active power backup.
+                </p>
+              </div>
+              <div className="mt-8 flex items-center justify-center h-[200px]">
+                <img 
+                  src="/Assets/landing2/Active Chip.png" 
+                  alt="Active Chip" 
+                  className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-700 group-hover:scale-105"
+                />
+              </div>
+            </div>
+
+            {/* CARD 4: Running Chip (Span 2 columns on desktop) */}
+            <div className="md:col-span-2 bg-white rounded-3xl p-8 md:p-12 flex flex-col justify-between overflow-hidden relative shadow-sm border border-stone-200/40 group hover:shadow-md transition-all duration-500 min-h-[460px]">
+              <div className="max-w-md z-10">
+                <span className="text-stone-400 font-extrabold tracking-widest text-[9px] uppercase">DISPOSABLE TAG</span>
+                <h3 className="text-3xl md:text-4xl font-black uppercase text-stone-900 mt-2 mb-4 leading-none">Running Chip</h3>
+                <p className="text-stone-500 text-sm md:text-base font-medium leading-relaxed">
+                  Ultra-lightweight passive UHF tags optimized for mass-participation marathons. Designed to be attached to bibs, they deliver reliable start/split splits effortlessly.
+                </p>
+              </div>
+              <div className="mt-8 md:mt-0 z-10">
+                <span className="text-stone-400 font-bold text-xs">Standard Passive UHF tag technology</span>
+              </div>
+              <div className="md:absolute right-8 bottom-0 w-full md:w-[45%] h-[240px] md:h-[90%] flex items-center justify-center p-4">
+                <img 
+                  src="/Assets/landing2/RUNNING Chip.png" 
+                  alt="Running Chip" 
+                  className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-700 group-hover:scale-105"
+                />
+              </div>
+            </div>
+
           </div>
         </div>
       </section>

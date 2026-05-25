@@ -120,6 +120,7 @@ export default function EventPage() {
   const [regDetailOpen, setRegDetailOpen] = useState(false);
   const [regDetailParticipant, setRegDetailParticipant] = useState<any>(null);
   const [homepageBlobUrl, setHomepageBlobUrl] = useState<string | null>(null);
+  const [regSearchTerm, setRegSearchTerm] = useState("");
 
   // Create blob URL for homepage HTML
   // Blob URL renders as a normal page (unlike srcDoc), so CSS animations, fonts, and layouts work naturally.
@@ -1005,97 +1006,110 @@ export default function EventPage() {
 
           {activeTab === "Registered" && (
             <div className="space-y-8 bg-white p-6 shadow-sm border-t-4 border-stone-800">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-black uppercase tracking-tighter">Peserta Terdaftar</h2>
-                <span className="text-stone-500 text-sm font-medium">{registeredParticipants.filter(p => p.paymentStatus === 'settlement').length} Terdaftar</span>
-              </div>
-              {registeredParticipants.filter(p => p.paymentStatus === 'settlement').length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b-2 border-stone-200">
-                        <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500" style={{width: 60}}>No</th>
-                        <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500">Nama</th>
-                        <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500">Kategori</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {registeredParticipants.filter(p => p.paymentStatus === 'settlement').map((p: any, idx: number) => (
-                        <tr 
-                          key={p.id} 
-                          className="border-b border-stone-100 hover:bg-stone-50 cursor-pointer transition-colors"
-                          onClick={() => { setRegDetailParticipant(p); setRegDetailOpen(true); }}
-                        >
-                          <td className="py-3 px-2 font-mono text-stone-400">{idx + 1}</td>
-                          <td className="py-3 px-2 font-bold text-stone-900">{p.name}</td>
-                          <td className="py-3 px-2 text-stone-600">{p.category?.name}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+                <div className="shrink-0">
+                  <h2 className="text-2xl font-black uppercase tracking-tighter">Peserta Terdaftar</h2>
+                  <span className="text-stone-500 text-sm font-medium">{registeredParticipants.filter(p => p.paymentStatus === 'settlement').length} Terdaftar</span>
                 </div>
-              ) : (
-                <p className="text-stone-500">Belum ada peserta yang terdaftar.</p>
-              )}
+                <div className="relative w-full sm:w-80 shrink-0">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="h-4 w-4 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Cari nama atau No. BIB..." 
+                    className="w-full pl-10 pr-4 py-2 border-2 border-stone-200 rounded-xl text-sm focus:border-stone-800 focus:ring-0 outline-none transition-colors font-medium text-stone-900 placeholder:text-stone-400"
+                    value={regSearchTerm}
+                    onChange={e => setRegSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+              {(() => {
+                const settled = registeredParticipants.filter(p => p.paymentStatus === 'settlement');
+                const filtered = settled.filter(p => {
+                  const bib = overall.find(o => o.epc === p.id || o.name.toLowerCase() === p.name.toLowerCase())?.bib || '';
+                  const term = regSearchTerm.toLowerCase();
+                  return p.name.toLowerCase().includes(term) || bib.toLowerCase().includes(term);
+                });
+                return filtered.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b-2 border-stone-200">
+                          <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500" style={{width: 60}}>No</th>
+                          <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500">Nama</th>
+                          <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500">Kategori</th>
+                          <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500">No BIB</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filtered.map((p: any, idx: number) => {
+                          const leader = overall.find(o => o.epc === p.id || o.name.toLowerCase() === p.name.toLowerCase());
+                          const bib = leader && leader.bib !== 'RDY' ? leader.bib : '-';
+                          return (
+                            <tr 
+                              key={p.id} 
+                              className="border-b border-stone-100 hover:bg-stone-50 cursor-pointer transition-colors"
+                              onClick={() => { setRegDetailParticipant(p); setRegDetailOpen(true); }}
+                            >
+                              <td className="py-3 px-2 font-mono text-stone-400">{idx + 1}</td>
+                              <td className="py-3 px-2 font-bold text-stone-900">{p.name}</td>
+                              <td className="py-3 px-2 text-stone-600">{p.category?.name}</td>
+                              <td className="py-3 px-2 font-mono font-bold text-stone-900">{bib}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-stone-500">Belum ada peserta yang terdaftar atau ditemukan.</p>
+                );
+              })()}
             </div>
           )}
 
           {/* Registered Participant Detail Modal */}
-          {regDetailOpen && regDetailParticipant && (
-            <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setRegDetailOpen(false)}>
-              <div className="bg-white rounded-2xl max-w-md w-full max-h-[80vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
-                <div className="p-6 border-b border-stone-100">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-black uppercase tracking-tight">Detail Peserta</h3>
-                    <button onClick={() => setRegDetailOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-100 text-stone-400 text-lg font-bold">✕</button>
-                  </div>
-                </div>
-                <div className="p-6 space-y-4">
-                  <div className="flex justify-between items-start py-2 border-b border-stone-100">
-                    <span className="text-[10px] font-black text-stone-400 uppercase">Nama</span>
-                    <span className="font-bold text-stone-900">{regDetailParticipant.name}</span>
-                  </div>
-                  <div className="flex justify-between items-start py-2 border-b border-stone-100">
-                    <span className="text-[10px] font-black text-stone-400 uppercase">Kategori</span>
-                    <span className="text-sm text-stone-700">{regDetailParticipant.category?.name}</span>
-                  </div>
-                  <div className="flex justify-between items-start py-2 border-b border-stone-100">
-                    <span className="text-[10px] font-black text-stone-400 uppercase">Email</span>
-                    <span className="text-sm text-stone-700">{regDetailParticipant.email}</span>
-                  </div>
-                  {regDetailParticipant.bibName && (
-                    <div className="flex justify-between items-start py-2 border-b border-stone-100">
-                      <span className="text-[10px] font-black text-stone-400 uppercase">BIB Name</span>
-                      <span className="text-sm font-mono font-bold text-stone-900">{regDetailParticipant.bibName}</span>
+          {regDetailOpen && regDetailParticipant && (() => {
+            const leader = overall.find(o => o.epc === regDetailParticipant.id || o.name.toLowerCase() === regDetailParticipant.name.toLowerCase());
+            const bib = leader && leader.bib !== 'RDY' ? leader.bib : '-';
+            return (
+              <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setRegDetailOpen(false)}>
+                <div className="bg-white rounded-2xl max-w-md w-full max-h-[80vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+                  <div className="p-6 border-b border-stone-100">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-black uppercase tracking-tight">Detail Peserta</h3>
+                      <button onClick={() => setRegDetailOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-100 text-stone-400 text-lg font-bold">✕</button>
                     </div>
-                  )}
-                  {regDetailParticipant.tshirtSize && (
+                  </div>
+                  <div className="p-6 space-y-4">
                     <div className="flex justify-between items-start py-2 border-b border-stone-100">
-                      <span className="text-[10px] font-black text-stone-400 uppercase">T-Shirt Size</span>
-                      <span className="text-sm text-stone-700">{regDetailParticipant.tshirtSize}</span>
+                      <span className="text-[10px] font-black text-stone-400 uppercase">Nama</span>
+                      <span className="font-bold text-stone-900">{regDetailParticipant.name}</span>
                     </div>
-                  )}
-                  {/* Render all custom fields */}
-                  {regDetailParticipant.customData && Object.entries(regDetailParticipant.customData).map(([key, val]: [string, any]) => {
-                    if (!val || key === 'categoryId' || key === 'paymentStatus' || key === 'tshirtSize' || key === 'bibName') return null;
-                    // Try to find a label from customFields
-                    const fieldDef = customFields.find(f => f.id === key);
-                    const label = fieldDef?.label || key;
-                    return (
-                      <div key={key} className="flex justify-between items-start py-2 border-b border-stone-100">
-                        <span className="text-[10px] font-black text-stone-400 uppercase">{label}</span>
-                        <span className="text-sm text-stone-700 text-right max-w-[60%]">{String(val)}</span>
-                      </div>
-                    );
-                  })}
-                  <div className="flex justify-between items-start py-2">
-                    <span className="text-[10px] font-black text-stone-400 uppercase">Tgl Bayar</span>
-                    <span className="text-sm text-stone-500">{regDetailParticipant.paidAt ? new Date(regDetailParticipant.paidAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}</span>
+                    <div className="flex justify-between items-start py-2 border-b border-stone-100">
+                      <span className="text-[10px] font-black text-stone-400 uppercase">Kategori</span>
+                      <span className="text-sm text-stone-700">{regDetailParticipant.category?.name}</span>
+                    </div>
+                    <div className="flex justify-between items-start py-2 border-b border-stone-100">
+                      <span className="text-[10px] font-black text-stone-400 uppercase">Email</span>
+                      <span className="text-sm text-stone-700">{regDetailParticipant.email}</span>
+                    </div>
+                    <div className="flex justify-between items-start py-2 border-b border-stone-100">
+                      <span className="text-[10px] font-black text-stone-400 uppercase">No BIB</span>
+                      <span className="text-sm font-mono font-bold text-stone-900">{bib}</span>
+                    </div>
+                    <div className="flex justify-between items-start py-2">
+                      <span className="text-[10px] font-black text-stone-400 uppercase">Tgl Bayar</span>
+                      <span className="text-sm text-stone-500">{regDetailParticipant.paidAt ? new Date(regDetailParticipant.paidAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {activeTab !== "Home" && activeTab !== "Participants" && activeTab !== "Registered" && activeTab !== "Results" && activeTab !== "Route" && (
             <div className="space-y-8">
