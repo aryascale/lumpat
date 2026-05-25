@@ -419,7 +419,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       const name = `"${(p.name || '').replace(/"/g, '""')}"`;
       const category = `"${(p.category?.name || '').replace(/"/g, '""')}"`;
       const gender = `"${(p.gender || '').replace(/"/g, '""')}"`;
-      const epc = `"${(p.id || '').replace(/"/g, '""')}"`;
+      const epc = `""`;
       return [name, category, gender, '""', '""', epc].join(',');
     });
     

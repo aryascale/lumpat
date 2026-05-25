@@ -119,6 +119,7 @@ export default function EventPage() {
   const [scrollY, setScrollY] = useState(0);
   const [regDetailOpen, setRegDetailOpen] = useState(false);
   const [regDetailParticipant, setRegDetailParticipant] = useState<any>(null);
+  const [masterParticipants, setMasterParticipants] = useState<any[]>([]);
   const [homepageBlobUrl, setHomepageBlobUrl] = useState<string | null>(null);
   const [regSearchTerm, setRegSearchTerm] = useState("");
 
@@ -517,6 +518,7 @@ export default function EventPage() {
         }
 
         const master = await loadMasterParticipants(event.id);
+        setMasterParticipants(master.all);
         const startMap = await loadTimesMap("start", event.id);
         const finishMap = await loadTimesMap("finish", event.id);
         const cpMap = await loadCheckpointTimesMap(event.id);
@@ -1029,7 +1031,8 @@ export default function EventPage() {
               {(() => {
                 const settled = registeredParticipants.filter(p => p.paymentStatus === 'settlement');
                 const filtered = settled.filter(p => {
-                  const bib = overall.find(o => o.epc === p.id || o.name.toLowerCase() === p.name.toLowerCase())?.bib || '';
+                  const leader = masterParticipants.find(o => o.epc === p.id || o.name.toLowerCase() === p.name.toLowerCase());
+                  const bib = leader?.bib || '';
                   const term = regSearchTerm.toLowerCase();
                   return p.name.toLowerCase().includes(term) || bib.toLowerCase().includes(term);
                 });
@@ -1046,7 +1049,7 @@ export default function EventPage() {
                       </thead>
                       <tbody>
                         {filtered.map((p: any, idx: number) => {
-                          const leader = overall.find(o => o.epc === p.id || o.name.toLowerCase() === p.name.toLowerCase());
+                          const leader = masterParticipants.find(o => o.epc === p.id || o.name.toLowerCase() === p.name.toLowerCase());
                           const bib = leader && leader.bib !== 'RDY' ? leader.bib : '-';
                           return (
                             <tr 
@@ -1073,7 +1076,7 @@ export default function EventPage() {
 
           {/* Registered Participant Detail Modal */}
           {regDetailOpen && regDetailParticipant && (() => {
-            const leader = overall.find(o => o.epc === regDetailParticipant.id || o.name.toLowerCase() === regDetailParticipant.name.toLowerCase());
+            const leader = masterParticipants.find(o => o.epc === regDetailParticipant.id || o.name.toLowerCase() === regDetailParticipant.name.toLowerCase());
             const bib = leader && leader.bib !== 'RDY' ? leader.bib : '-';
             return (
               <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setRegDetailOpen(false)}>
