@@ -2,21 +2,9 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
-// Using local website assets
-const LOCAL_IMAGES = [
-  "/Assets/landing2/White Label Website.png",
-  "/Assets/landing2/result.png",
-  "/Assets/landing2/map start and finish.png",
-  "/Assets/landing2/multisport.png",
-  "/Assets/landing2/portfolio.png",
-  "/Assets/landing2/PRO TIME DECODER.png",
-  "/Assets/landing2/MAGIC ANTENNA.png",
-  "/Assets/landing2/Active Chip.png",
-  "/Assets/landing2/RUNNING Chip.png",
-];
-
+// Using dummy sport images for Indonesia timing context
 const PLACEHOLDER_IMAGES = Array.from({ length: 24 }).map(
-  (_, i) => LOCAL_IMAGES[i % LOCAL_IMAGES.length]
+  (_, i) => `https://loremflickr.com/400/400/sports,indonesia,timing?lock=${i + 150}`
 );
 
 export default function HeroCircularGallery() {
@@ -27,7 +15,7 @@ export default function HeroCircularGallery() {
   // Responsive radius
   useEffect(() => {
     const handleResize = () => {
-      setRadius(window.innerWidth < 768 ? 140 : 340);
+      setRadius(window.innerWidth < 768 ? 160 : 380);
     };
     handleResize(); // Set initial
     window.addEventListener("resize", handleResize);
@@ -53,7 +41,7 @@ export default function HeroCircularGallery() {
             transition={
               isExploded
                 ? { 
-                    duration: 65, 
+                    duration: 30, // Faster spin
                     ease: "linear", 
                     repeat: Infinity,
                     delay: 1.0 // Wait 1s for the explosion spring to settle
@@ -99,13 +87,21 @@ export default function HeroCircularGallery() {
                       duration: isExploded ? undefined : 1.4,
                       ease: isExploded ? undefined : [0.16, 1, 0.3, 1],
                     }}
-                    className="w-[38px] h-[50px] md:w-[60px] md:h-[80px] overflow-hidden rounded-md shadow-sm border border-stone-200 bg-white p-1"
+                    className="w-[48px] h-[48px] md:w-[72px] md:h-[72px] overflow-hidden rounded-lg shadow-md bg-stone-50 flex items-center justify-center"
                   >
-                    <img
-                      src={src}
-                      alt={`Platform asset ${i}`}
-                      className="w-full h-full object-contain"
-                    />
+                    {i === 0 ? (
+                      <div className="w-full h-full flex items-center justify-center bg-white border border-gray-100">
+                        <span className="font-black text-[12px] md:text-[16px] tracking-tighter text-slate-900">
+                          LUMPAT
+                        </span>
+                      </div>
+                    ) : (
+                      <img
+                        src={src}
+                        alt={`Dummy sport ${i}`}
+                        className="w-full h-full object-cover opacity-90 mix-blend-multiply"
+                      />
+                    )}
                   </motion.div>
                 </div>
               );
@@ -121,23 +117,23 @@ export default function HeroCircularGallery() {
             opacity: isExploded ? 1 : 0,
           }}
           transition={{
-            delay: isExploded ? 0.6 : 0, // 0.6s delay after explosion starts
+            delay: isExploded ? 0.6 : 0,
             duration: 1.2,
             ease: [0.16, 1, 0.3, 1],
           }}
-          className="relative z-10 flex flex-col items-center text-center max-w-[280px] md:max-w-2xl px-2 md:px-6 pointer-events-auto"
+          className="relative z-10 flex flex-col items-center text-center max-w-[320px] md:max-w-2xl px-2 md:px-6 pointer-events-auto mt-4 md:mt-0"
         >
-          <h1 className="text-[28px] sm:text-4xl md:text-6xl lg:text-7xl font-black text-slate-900 leading-[1.1] md:leading-[1.05] tracking-tight mb-3 md:mb-4">
-            The Future of <br className="hidden md:block" />
-            Running Events.
+          <h1 className="flex flex-col items-center justify-center tracking-tight mb-4 md:mb-5">
+            <span className="text-[20px] sm:text-[24px] md:text-[36px] font-normal text-slate-400 mb-1 md:mb-3">The future of</span>
+            <span className="text-[32px] sm:text-4xl md:text-[56px] font-semibold text-slate-900 leading-[1.1]">Running Events</span>
           </h1>
-          <p className="text-slate-600 text-[11px] sm:text-xs md:text-base font-medium leading-relaxed max-w-[240px] md:max-w-md mb-6 md:mb-8">
+          <p className="text-slate-500 text-[12px] sm:text-sm md:text-[15px] font-medium leading-relaxed max-w-[260px] md:max-w-md mb-8 md:mb-10">
             Satu ekosistem digital untuk manajemen registrasi, pengambilan racepack QR, hingga akurasi live timing kit iZT.
           </p>
           <motion.button
             whileHover={{ scale: 1.03 }}
             onClick={() => navigate("/event")}
-            className="px-6 py-2.5 md:px-8 md:py-3.5 text-xs md:text-base bg-slate-900 text-white rounded-full font-bold shadow-lg hover:shadow-xl transition-shadow active:scale-95"
+            className="px-6 py-3 md:px-8 md:py-4 text-xs md:text-sm bg-[#1A1A1A] text-white rounded-full font-medium shadow-[0_8px_20px_rgba(0,0,0,0.15)] hover:bg-black transition-colors active:scale-95"
           >
             Mulai Jelajah
           </motion.button>
