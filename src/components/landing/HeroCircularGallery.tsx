@@ -2,9 +2,24 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
-// Using dummy sport images for Indonesia timing context
+// Guaranteed high-quality Unsplash images for sports/running/events
+const UNSPLASH_IDS = [
+  "1552674605-15cff24f36e6", // Running
+  "1476480862126-209bcaa8ea6a", // Marathon
+  "1534438327276-14e5300c3a48", // Sneakers
+  "1502224525925-807096fb0847", // Cyclist
+  "1461896836934-ffe607ba8211", // Runner in nature
+  "1571008840902-1262d1cdd9de", // Athletics
+  "1583454110551-21f2fa2afe61", // Fitness
+  "1513267784013-1f198d022b72", // Cycling
+  "1540329064121-6571b0586e37", // Triathlon
+  "1486218119243-13883505764c", // Runner track
+  "1452626038306-9a5157ebea1b", // Running group
+  "1506526194305-b04043fbb1fb", // Marathon race
+];
+
 const PLACEHOLDER_IMAGES = Array.from({ length: 24 }).map(
-  (_, i) => `https://loremflickr.com/400/400/sports,indonesia,timing?lock=${i + 150}`
+  (_, i) => `https://images.unsplash.com/photo-${UNSPLASH_IDS[i % UNSPLASH_IDS.length]}?auto=format&fit=crop&q=80&w=400&h=400`
 );
 
 export default function HeroCircularGallery() {
