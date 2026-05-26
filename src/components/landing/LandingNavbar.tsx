@@ -134,7 +134,7 @@ export default function LandingNavbar() {
                   }}
                   className="w-full py-3 bg-[#0F172A] text-white text-sm font-semibold rounded-full cursor-pointer border-none shadow-md"
                 >
-                  Mulai Sekarang
+                  Lihat Event
                 </button>
               </div>
             </motion.div>

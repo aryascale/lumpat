@@ -328,7 +328,7 @@ export default function HeroCircularGallery() {
               color: "#FFFFFF",
             }}
           >
-            Mulai Sekarang
+            Lihat Event
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.04 }}
