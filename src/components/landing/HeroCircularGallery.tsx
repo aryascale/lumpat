@@ -19,7 +19,7 @@ export default function HeroCircularGallery() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const radius = isMobile ? 160 : 380;
+  const radius = isMobile ? 190 : 380;
   const explodedScale = 1; // Square cards don't need scaling down as much as vertical ones
 
   // 1.4s delay for Explosion Trigger (Phase 2)
@@ -84,7 +84,7 @@ export default function HeroCircularGallery() {
                     duration: isExploded ? undefined : 1.4,
                     ease: isExploded ? undefined : [0.16, 1, 0.3, 1],
                   }}
-                  className="absolute w-[48px] h-[48px] md:w-[72px] md:h-[72px] overflow-hidden rounded-lg shadow-md bg-stone-50 flex items-center justify-center"
+                  className="absolute w-[48px] h-[48px] md:w-[72px] md:h-[72px] overflow-hidden rounded-lg shadow-md bg-stone-50 flex items-center justify-center pointer-events-none"
                 >
                   <img
                     src={src}
