@@ -11,15 +11,17 @@ export default function HeroCircularGallery() {
   const [radius, setRadius] = useState(340);
   const [isExploded, setIsExploded] = useState(false);
 
-  // Responsive radius
+  // Responsive setup
+  const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
-    const handleResize = () => {
-      setRadius(window.innerWidth < 768 ? 160 : 380);
-    };
-    handleResize(); // Set initial
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  const radius = isMobile ? 125 : 350;
+  const explodedScale = isMobile ? 0.65 : 0.95;
 
   // 1.4s delay for Explosion Trigger (Phase 2)
   useEffect(() => {
@@ -30,7 +32,7 @@ export default function HeroCircularGallery() {
   }, []);
 
   return (
-    <div className="relative w-full h-[100svh] flex items-center justify-center bg-white overflow-hidden">
+    <div className="relative w-full h-[100svh] flex items-center justify-center bg-[#F1F3F6] overflow-hidden">
       <AnimatePresence>
         {/* The Main Animation Asset: Outer Container */}
         <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
@@ -40,7 +42,7 @@ export default function HeroCircularGallery() {
             transition={
               isExploded
                 ? { 
-                    duration: 30, // Faster spin
+                    duration: 70, // 70s slow orbit
                     ease: "linear", 
                     repeat: Infinity,
                     delay: 1.0 // Wait 1s for the explosion spring to settle
@@ -52,49 +54,47 @@ export default function HeroCircularGallery() {
           >
             {PLACEHOLDER_IMAGES.map((src, i) => {
               const angle = (i / 24) * 2 * Math.PI;
-              const targetX = Math.cos(angle) * radius;
-              const targetY = Math.sin(angle) * radius;
-              // Tangential Rotation: align perfectly pointing outward
-              const targetRotation = angle * (180 / Math.PI) + 90;
+              const targetX = isExploded ? Math.cos(angle) * radius : 0;
+              const targetY = isExploded ? Math.sin(angle) * radius : 0;
+              // Tangential Rotation: point bottom toward center
+              const targetRotation = isExploded ? (angle + Math.PI / 2) * (180 / Math.PI) : 0;
 
               return (
-                <div
+                <motion.div
                   key={i}
-                  className="absolute flex items-center justify-center"
+                  initial={{
+                    x: 0,
+                    y: 0,
+                    scale: i === 0 ? 0.3 : 0,
+                    opacity: 0,
+                    rotate: 0,
+                  }}
+                  animate={{
+                    x: targetX,
+                    y: targetY,
+                    scale: isExploded ? explodedScale : (i === 0 ? 1.6 : 0),
+                    opacity: isExploded ? 1 : (i === 0 ? 1 : 0),
+                    rotate: targetRotation,
+                  }}
+                  transition={{
+                    type: isExploded ? "spring" : "tween",
+                    stiffness: isExploded ? 30 : undefined,
+                    damping: isExploded ? 15 : undefined,
+                    mass: isExploded ? 1.2 : undefined,
+                    delay: isExploded ? i * 0.015 : 0,
+                    duration: isExploded ? undefined : 1.4,
+                    ease: isExploded ? undefined : [0.16, 1, 0.3, 1],
+                  }}
+                  className="absolute w-[38px] h-[50px] md:w-[60px] md:h-[80px] p-[4px] md:p-1.5 overflow-hidden rounded-md md:rounded-lg shadow-xl bg-white flex items-center justify-center"
                 >
-                  <motion.div
-                    initial={{
-                      x: 0,
-                      y: 0,
-                      scale: i === 0 ? 0.3 : 0,
-                      opacity: i === 0 ? 0 : 0,
-                      rotate: 0,
-                    }}
-                    animate={{
-                      x: isExploded ? targetX : 0,
-                      y: isExploded ? targetY : 0,
-                      scale: isExploded ? 1 : i === 0 ? 1.6 : 0,
-                      opacity: isExploded ? 1 : i === 0 ? 1 : 0,
-                      rotate: isExploded ? targetRotation : 0,
-                    }}
-                    transition={{
-                      type: isExploded ? "spring" : "tween",
-                      stiffness: isExploded ? 35 : undefined,
-                      damping: isExploded ? 14 : undefined,
-                      mass: isExploded ? 1.2 : undefined,
-                      delay: isExploded ? i * 0.012 : 0,
-                      duration: isExploded ? undefined : 1.4,
-                      ease: isExploded ? undefined : [0.16, 1, 0.3, 1],
-                    }}
-                    className="w-[48px] h-[48px] md:w-[72px] md:h-[72px] overflow-hidden rounded-lg shadow-md bg-stone-50 flex items-center justify-center"
-                  >
+                  <div className="w-full h-full overflow-hidden rounded-[2px] md:rounded-[4px]">
                     <img
                       src={src}
-                      alt={`Dummy sport ${i}`}
-                      className="w-full h-full object-cover opacity-90 mix-blend-multiply"
+                      alt={`Sport asset ${i}`}
+                      className="w-full h-full object-cover"
                     />
-                  </motion.div>
-                </div>
+                  </div>
+                </motion.div>
               );
             })}
           </motion.div>
@@ -102,29 +102,30 @@ export default function HeroCircularGallery() {
 
         {/* Centered Hero Content */}
         <motion.div
-          initial={{ y: 35, opacity: 0 }}
+          initial={{ y: 40, opacity: 0 }}
           animate={{
-            y: isExploded ? 0 : 35,
+            y: isExploded ? 0 : 40,
             opacity: isExploded ? 1 : 0,
           }}
           transition={{
-            delay: isExploded ? 0.6 : 0,
+            delay: isExploded ? 0.4 : 0, // slight delay after explosion starts
             duration: 1.2,
             ease: [0.16, 1, 0.3, 1],
           }}
-          className="relative z-10 flex flex-col items-center text-center max-w-[320px] md:max-w-2xl px-2 md:px-6 pointer-events-auto mt-4 md:mt-0"
+          className="relative z-10 flex flex-col items-center text-center max-w-[320px] md:max-w-3xl px-4 pointer-events-auto mt-6 md:mt-0"
         >
-          <h1 className="flex flex-col items-center justify-center tracking-tight mb-4 md:mb-5">
-            <span className="text-[20px] sm:text-[24px] md:text-[36px] font-normal text-slate-400 mb-1 md:mb-3">The future of</span>
-            <span className="text-[32px] sm:text-4xl md:text-[56px] font-semibold text-slate-900 leading-[1.1]">Running Events</span>
+          <h1 className="text-[28px] sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-[1.1] tracking-tight mb-4 md:mb-6">
+            Masa Depan Manajemen <br className="hidden md:block" />
+            Event Olahraga.
           </h1>
-          <p className="text-slate-500 text-[12px] sm:text-sm md:text-[15px] font-medium leading-relaxed max-w-[260px] md:max-w-md mb-8 md:mb-10">
-            Satu ekosistem digital untuk manajemen registrasi, pengambilan racepack QR, hingga akurasi live timing kit iZT.
+          <p className="text-slate-500 text-[13px] sm:text-sm md:text-base font-medium leading-relaxed max-w-[280px] md:max-w-md mb-8 md:mb-10">
+            Satu ekosistem digital terintegrasi untuk otomatisasi registrasi, sistem praktis QR Code Racepack, hingga akurasi tinggi Live Timing Kit iZT.
           </p>
           <motion.button
             whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => navigate("/event")}
-            className="px-6 py-3 md:px-8 md:py-4 text-xs md:text-sm bg-[#1A1A1A] text-white rounded-full font-medium shadow-[0_8px_20px_rgba(0,0,0,0.15)] hover:bg-black transition-colors active:scale-95"
+            className="px-8 py-3.5 md:px-10 md:py-4 text-[13px] md:text-[15px] bg-slate-900 text-white rounded-full font-bold shadow-[0_8px_20px_rgba(15,23,42,0.2)] hover:bg-slate-800 transition-colors"
           >
             Mulai Jelajah
           </motion.button>
