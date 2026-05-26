@@ -144,7 +144,7 @@ export default function LandingPage() {
         </div>
 
         {/* === 3D STAGE === */}
-        <div className={`relative w-full max-w-6xl mx-auto flex items-center justify-center transition-all duration-500 ${isMobile ? 'h-[240px]' : 'h-[460px]'}`}>
+        <div className={`relative w-full max-w-7xl mx-auto flex items-center justify-center transition-all duration-500 ${isMobile ? 'h-[320px]' : 'h-[600px]'}`}>
           {/* Atmospheric glows */}
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(220,38,38,0.07) 0%, transparent 70%)', filter: 'blur(60px)' }} />
           
@@ -162,7 +162,7 @@ export default function LandingPage() {
               "/Assets/landing2/portfolio.png"
             ]}
             duration={45}
-            cardWidth={isMobile ? "12.5rem" : "28rem"}
+            cardWidth={isMobile ? "16rem" : "36rem"}
             cardAspectRatio={isMobile ? "12/10" : "15/10"}
             perspective={isMobile ? "45rem" : "60rem"}
             withMask={true}
@@ -282,7 +282,7 @@ export default function LandingPage() {
 
       {/* ===================== SECTION 4: PRODUCT SHOWCASE ===================== */}
       {/* ===================== SECTION 4: PRODUCT SHOWCASE — APPLE STYLE ===================== */}
-      <section className="bg-[#f5f5f7] py-20 md:py-28" id="products">
+      <section className="bg-white py-20 md:py-28" id="products">
         <div className="max-w-7xl mx-auto px-6">
           
           {/* Partnership Editorial Header */}
@@ -391,50 +391,54 @@ export default function LandingPage() {
 
 
       {/* ===================== SECTION 8: FAQ ===================== */}
-      <section className="landing-section landing-section--white" id="faq">
-        <div className="landing-container landing-container--narrow">
-          <div className="landing-section-header scroll-reveal">
-            <h2 className="landing-section-header__title">FREQUENTLY ASKED QUESTIONS</h2>
+      <section className="bg-white py-20 md:py-32" id="faq">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-16 items-start">
+          
+          {/* Left Side: Header & Context */}
+          <div className="md:col-span-5 flex flex-col items-start text-left">
+            <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight leading-[1.1]">
+              Frequently asked<br className="hidden md:block" /> questions
+            </h2>
+            <p className="text-slate-600 text-[15px] md:text-lg mb-8 leading-relaxed max-w-md">
+              Find quick solutions and helpful tips for using our timing ecosystem. We've compiled answers to the most frequently asked questions right here to ensure a seamless experience.
+            </p>
+            <button className="px-6 py-3 bg-[#4F7CFF] text-white text-sm md:text-base rounded-full font-medium shadow-md hover:bg-[#436AE6] transition-colors flex items-center gap-2">
+              Contact support <span>→</span>
+            </button>
           </div>
 
-          <div className="landing-faq scroll-reveal">
-            {faqs.map((faq, idx) => (
-              <div
-                key={idx}
-                className={`landing-faq__item ${openFaq === idx ? "landing-faq__item--open" : ""}`}
-              >
-                <button
-                  onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                  className="landing-faq__trigger"
+          {/* Right Side: Accordion */}
+          <div className="md:col-span-7 flex flex-col gap-4">
+            {faqs.map((faq, idx) => {
+              const isOpen = openFaq === idx;
+              return (
+                <div 
+                  key={idx} 
+                  className={`rounded-2xl overflow-hidden transition-all duration-300 ${isOpen ? 'bg-[#4F7CFF] text-white shadow-xl md:scale-[1.02]' : 'bg-white text-slate-900 shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-gray-100 hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]'}`}
                 >
-                  <span className="landing-faq__question">{faq.question}</span>
-                  <svg
-                    className={`landing-faq__chevron ${
-                      openFaq === idx ? "landing-faq__chevron--open" : ""
-                    }`}
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
+                  <button
+                    onClick={() => setOpenFaq(isOpen ? null : idx)}
+                    className="w-full px-6 py-5 flex items-center justify-between text-left"
                   >
-                    <path d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                <div
-                  className="landing-faq__answer"
-                  style={{
-                    maxHeight: openFaq === idx ? "300px" : "0",
-                    opacity: openFaq === idx ? 1 : 0,
-                    paddingBottom: openFaq === idx ? "20px" : "0",
-                  }}
-                >
-                  <p>{faq.answer}</p>
+                    <span className="font-medium text-[16px] md:text-[18px] pr-4">{faq.question}</span>
+                    <span className={`transition-transform duration-300 ${isOpen ? 'rotate-180 text-[#00FF66]' : 'text-slate-900'}`}>
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </span>
+                  </button>
+                  <div 
+                    className={`px-6 transition-all duration-300 overflow-hidden ${isOpen ? 'max-h-96 pb-6 opacity-100' : 'max-h-0 opacity-0'}`}
+                  >
+                    <p className={`text-[14px] md:text-base leading-relaxed ${isOpen ? 'text-white/90' : 'text-slate-600'}`}>
+                      {faq.answer}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
+
         </div>
       </section>
 

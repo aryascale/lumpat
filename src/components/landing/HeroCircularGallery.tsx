@@ -2,9 +2,21 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
-// Using loremflickr to get topic-specific stable images (running, sports, bike)
+// Using local website assets
+const LOCAL_IMAGES = [
+  "/Assets/landing2/White Label Website.png",
+  "/Assets/landing2/result.png",
+  "/Assets/landing2/map start and finish.png",
+  "/Assets/landing2/multisport.png",
+  "/Assets/landing2/portfolio.png",
+  "/Assets/landing2/PRO TIME DECODER.png",
+  "/Assets/landing2/MAGIC ANTENNA.png",
+  "/Assets/landing2/Active Chip.png",
+  "/Assets/landing2/RUNNING Chip.png",
+];
+
 const PLACEHOLDER_IMAGES = Array.from({ length: 24 }).map(
-  (_, i) => `https://loremflickr.com/400/600/running,sports,biking?lock=${i + 150}`
+  (_, i) => LOCAL_IMAGES[i % LOCAL_IMAGES.length]
 );
 
 export default function HeroCircularGallery() {
@@ -79,8 +91,6 @@ export default function HeroCircularGallery() {
                       rotate: isExploded ? targetRotation : 0,
                     }}
                     transition={{
-                      // Phase 2 (Explosion) uses premium spring physics
-                      // Phase 1 (Intro) uses tween bezier for the initial pop
                       type: isExploded ? "spring" : "tween",
                       stiffness: isExploded ? 35 : undefined,
                       damping: isExploded ? 14 : undefined,
@@ -89,12 +99,12 @@ export default function HeroCircularGallery() {
                       duration: isExploded ? undefined : 1.4,
                       ease: isExploded ? undefined : [0.16, 1, 0.3, 1],
                     }}
-                    className="w-[38px] h-[50px] md:w-[60px] md:h-[80px] overflow-hidden rounded-md shadow-md border border-white/50 bg-white"
+                    className="w-[38px] h-[50px] md:w-[60px] md:h-[80px] overflow-hidden rounded-md shadow-sm border border-stone-200 bg-white p-1"
                   >
                     <img
                       src={src}
-                      alt={`Runner event ${i}`}
-                      className="w-full h-full object-cover"
+                      alt={`Platform asset ${i}`}
+                      className="w-full h-full object-contain"
                     />
                   </motion.div>
                 </div>
