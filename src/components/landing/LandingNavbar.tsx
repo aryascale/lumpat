@@ -40,14 +40,14 @@ export default function LandingNavbar() {
         </div>
 
         {/* Right: Login Button */}
-        <div>
+        {/* <div>
           <button
             onClick={() => navigate("/login")}
             className="px-6 py-2.5 rounded-full bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 transition-all shadow-md hover:shadow-lg active:scale-95"
           >
             Login
           </button>
-        </div>
+        </div> */}
       </div>
     </motion.nav>
   );

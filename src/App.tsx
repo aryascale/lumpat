@@ -24,12 +24,12 @@ import VerifyPage from "./pages/VerifyPage";
 export default function App() {
   return (
     <EventProvider>
-      <SplashScreen />
+      {/* <SplashScreen /> */}
       <Routes>
-        <Route path="/login" element={<Login />} />
+        {/* <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/verify/:id" element={<VerifyPage />} />
+        <Route path="/verify/:id" element={<VerifyPage />} /> */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/leaderboard" element={<UserEventPage />} />
         <Route path="/event" element={<UserEventPage />} />
