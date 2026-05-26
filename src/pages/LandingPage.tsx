@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import EventSearchModal from "../components/EventSearchModal";
 import ImageSlider3D from "../components/lightswind/3d-image-slider";
-import CoolBentoEffect from "../components/ui/cool-bento-effect";
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -348,9 +347,91 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Grid Layout — Bento Effect */}
-          <div className="scroll-reveal w-full flex items-center justify-center">
-            <CoolBentoEffect className="w-full" />
+          {/* Grid Layout — Apple Editorial Style */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 scroll-reveal">
+            
+            {/* CARD 1: Large Featured Card (Span 2 columns on desktop) */}
+            <div className="md:col-span-2 bg-white rounded-[32px] p-8 md:p-12 flex flex-col md:flex-row justify-between items-center overflow-hidden shadow-sm border border-stone-200/40 group hover:shadow-md transition-all duration-500">
+              <div className="w-full md:w-[55%] flex flex-col justify-start h-full mb-8 md:mb-0 md:pr-8">
+                <div>
+                  <span className="text-stone-400 font-extrabold tracking-widest text-[9px] uppercase">CORE SYSTEM</span>
+                  <h3 className="text-3xl md:text-4xl font-black uppercase text-stone-900 mt-2 mb-4 leading-none tracking-tight">Pro Time Decoder</h3>
+                  <p className="text-stone-500 text-sm md:text-base font-medium leading-relaxed">
+                    Our professional timing hub that decrypts transponder reads with industry-leading precision. Equipped with dual-frequency sync and internal batteries for robust failproof deployment.
+                  </p>
+                </div>
+                <div className="mt-8 md:mt-auto pt-8">
+                  <span className="text-stone-400 font-bold text-xs">Partnered with IZT Tech</span>
+                </div>
+              </div>
+              <div className="w-full md:w-[45%] h-[240px] md:h-[300px] flex items-center justify-center">
+                <img 
+                  src="/Assets/landing2/PRO TIME DECODER.png" 
+                  alt="Pro Time Decoder" 
+                  className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-700 group-hover:scale-105"
+                />
+              </div>
+            </div>
+
+            {/* CARD 2: Magic Antenna */}
+            <div className="bg-white rounded-[32px] p-8 md:p-10 flex flex-col justify-between overflow-hidden shadow-sm border border-stone-200/40 group hover:shadow-md transition-all duration-500">
+              <div className="mb-8">
+                <span className="text-stone-400 font-extrabold tracking-widest text-[9px] uppercase">ANTENNA GRID</span>
+                <h3 className="text-2xl md:text-3xl font-black uppercase text-stone-900 mt-2 mb-3 leading-none tracking-tight">Magic Antenna</h3>
+                <p className="text-stone-500 text-sm font-medium leading-relaxed">
+                  Advanced high-gain UHF antenna system ensuring maximum transponder detection density even in packed start and finish zones.
+                </p>
+              </div>
+              <div className="w-full h-[200px] md:h-[220px] flex items-center justify-center mt-auto">
+                <img 
+                  src="/Assets/landing2/MAGIC ANTENNA.png" 
+                  alt="Magic Antenna" 
+                  className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-700 group-hover:scale-105"
+                />
+              </div>
+            </div>
+
+            {/* CARD 3: Active Chip */}
+            <div className="bg-white rounded-[32px] p-8 md:p-10 flex flex-col justify-between overflow-hidden shadow-sm border border-stone-200/40 group hover:shadow-md transition-all duration-500">
+              <div className="mb-8">
+                <span className="text-red-500 font-extrabold tracking-widest text-[9px] uppercase">REUSABLE TAG</span>
+                <h3 className="text-2xl md:text-3xl font-black uppercase text-stone-900 mt-2 mb-3 leading-none tracking-tight">Active Chip</h3>
+                <p className="text-stone-500 text-sm font-medium leading-relaxed">
+                  Sub-millisecond precision transponder designed for high-speed cycling, triathlons, and professional sports requiring active power backup.
+                </p>
+              </div>
+              <div className="w-full h-[200px] md:h-[220px] flex items-center justify-center mt-auto">
+                <img 
+                  src="/Assets/landing2/Active Chip.png" 
+                  alt="Active Chip" 
+                  className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-700 group-hover:scale-105"
+                />
+              </div>
+            </div>
+
+            {/* CARD 4: Running Chip (Span 2 columns on desktop) */}
+            <div className="md:col-span-2 bg-white rounded-[32px] p-8 md:p-12 flex flex-col md:flex-row justify-between items-center overflow-hidden shadow-sm border border-stone-200/40 group hover:shadow-md transition-all duration-500">
+              <div className="w-full md:w-[55%] flex flex-col justify-start h-full mb-8 md:mb-0 md:pr-8">
+                <div>
+                  <span className="text-stone-400 font-extrabold tracking-widest text-[9px] uppercase">DISPOSABLE TAG</span>
+                  <h3 className="text-3xl md:text-4xl font-black uppercase text-stone-900 mt-2 mb-4 leading-none tracking-tight">Running Chip</h3>
+                  <p className="text-stone-500 text-sm md:text-base font-medium leading-relaxed">
+                    Ultra-lightweight passive UHF tags optimized for mass-participation marathons. Designed to be attached to bibs, they deliver reliable start/split splits effortlessly.
+                  </p>
+                </div>
+                <div className="mt-8 md:mt-auto pt-8">
+                  <span className="text-stone-400 font-bold text-xs">Standard Passive UHF tag technology</span>
+                </div>
+              </div>
+              <div className="w-full md:w-[45%] h-[240px] md:h-[300px] flex items-center justify-center">
+                <img 
+                  src="/Assets/landing2/RUNNING Chip.png" 
+                  alt="Running Chip" 
+                  className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-700 group-hover:scale-105"
+                />
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
