@@ -18,33 +18,25 @@ export default function LandingNavbar() {
     >
       <div className="max-w-6xl mx-auto flex items-center justify-between">
         {/* Left: Logo */}
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
-          <div className="flex items-center justify-center w-8 h-8 bg-slate-900 rounded-md relative overflow-hidden">
-            <span className="text-white font-black text-[15px] z-10 relative">L</span>
-            <div className="absolute top-1 right-1">
-              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#CCFF00" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M7 17l9.2-9.2M17 17V7H7"/>
-              </svg>
-            </div>
-          </div>
-          <span className="text-[14px] font-bold tracking-tight text-slate-900 mt-1">
-            lumpat.online
+        <div className="flex items-center cursor-pointer" onClick={() => navigate("/")}>
+          <span className="text-[14px] md:text-[15px] font-extrabold tracking-tight text-slate-900">
+            LUMPAT
           </span>
         </div>
 
         {/* Center: Nav Links */}
-        <div className="hidden md:flex items-center gap-8 text-[13px] font-semibold text-slate-500 tracking-wide">
+        <div className="hidden md:flex items-center gap-10 text-[12px] font-medium text-slate-600 tracking-wide">
           <a onClick={() => navigate("/event")} className="hover:text-slate-900 transition-colors cursor-pointer">
-            Eksplorasi Event
+            Events
           </a>
           <a href="#izt-timing" className="hover:text-slate-900 transition-colors">
-            Teknologi Timing iZT
+            iZT Timing Kit
           </a>
-          <a href="#solusi-eo" className="hover:text-slate-900 transition-colors">
-            Solusi EO
+          <a href="#live-results" className="hover:text-slate-900 transition-colors">
+            Live Results
           </a>
           <a href="#about" className="hover:text-slate-900 transition-colors">
-            Tentang Kami
+            About
           </a>
         </div>
 
@@ -53,16 +45,6 @@ export default function LandingNavbar() {
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 8h16M4 16h16" />
           </svg>
-        </div>
-
-        {/* Right: Login Button */}
-        <div className="hidden md:block">
-          <button
-            onClick={() => navigate("/login")}
-            className="px-6 py-2.5 rounded-full bg-slate-900 text-white text-[13px] font-bold hover:bg-slate-800 transition-all shadow-md active:scale-95"
-          >
-            Masuk
-          </button>
         </div>
       </div>
     </motion.nav>
