@@ -17,6 +17,7 @@ import {
 } from "../lib/data";
 import { LS_DATA_VERSION } from "../lib/config";
 import parseTimeToMs, { extractTimeOfDay, formatDuration } from "../lib/time";
+import type { MasterParticipant } from "../lib/data";
 
 function loadDQMap(eventId: string): Record<string, boolean> {
   try {
@@ -25,6 +26,36 @@ function loadDQMap(eventId: string): Record<string, boolean> {
   } catch {
     return {};
   }
+}
+
+/**
+ * Match a registered participant (from DB) to a master CSV participant.
+ * Strategy: name+category (most reliable) → name-only fallback.
+ */
+function matchRegisteredToMaster(
+  participant: { name?: string; category?: { name?: string } },
+  masterList: MasterParticipant[]
+): MasterParticipant | undefined {
+  const pName = (participant.name || '').trim().toLowerCase();
+  if (!pName) return undefined;
+
+  const pCategory = (participant.category?.name || '').trim().toLowerCase();
+
+  // 1st pass: exact name + category
+  if (pCategory) {
+    const exactMatch = masterList.find(o => {
+      const oName = (o.name || '').trim().toLowerCase();
+      const oCat = (o.category || '').trim().toLowerCase();
+      return oName === pName && oCat === pCategory;
+    });
+    if (exactMatch) return exactMatch;
+  }
+
+  // 2nd pass: exact name only
+  const nameMatch = masterList.find(o =>
+    (o.name || '').trim().toLowerCase() === pName
+  );
+  return nameMatch;
 }
 
 interface EventData {
@@ -152,7 +183,7 @@ export default function EventPage() {
           const p = registeredParticipants.find(x => x.id === id);
           if (p) {
             if (p.paymentStatus === 'settlement') {
-               const leader = masterParticipants.find(o => o.epc === p.id || o.name.toLowerCase() === p.name.toLowerCase());
+               const leader = matchRegisteredToMaster(p, masterParticipants);
                setScanValidResult({ ...p, bib: leader?.bib || '-' });
                setScanErrorResult(null);
                
@@ -1117,7 +1148,7 @@ export default function EventPage() {
               {(() => {
                 const settled = registeredParticipants.filter(p => p.paymentStatus === 'settlement');
                 const filtered = settled.filter(p => {
-                  const leader = masterParticipants.find(o => o.epc === p.id || o.name.toLowerCase() === p.name.toLowerCase());
+                  const leader = matchRegisteredToMaster(p, masterParticipants);
                   const bib = leader?.bib || '';
                   const term = regSearchTerm.toLowerCase();
                   return p.name.toLowerCase().includes(term) || bib.toLowerCase().includes(term);
@@ -1135,7 +1166,7 @@ export default function EventPage() {
                       </thead>
                       <tbody>
                         {filtered.map((p: any, idx: number) => {
-                          const leader = masterParticipants.find(o => o.epc === p.id || o.name.toLowerCase() === p.name.toLowerCase());
+                          const leader = matchRegisteredToMaster(p, masterParticipants);
                           const bib = leader && leader.bib !== 'RDY' ? leader.bib : '-';
                           return (
                             <tr 
@@ -1162,7 +1193,7 @@ export default function EventPage() {
 
           {/* Registered Participant Detail Modal */}
           {regDetailOpen && regDetailParticipant && (() => {
-            const leader = masterParticipants.find(o => o.epc === regDetailParticipant.id || o.name.toLowerCase() === regDetailParticipant.name.toLowerCase());
+            const leader = matchRegisteredToMaster(regDetailParticipant, masterParticipants);
             const bib = leader && leader.bib !== 'RDY' ? leader.bib : '-';
             return (
               <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setRegDetailOpen(false)}>
