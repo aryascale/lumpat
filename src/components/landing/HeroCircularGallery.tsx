@@ -81,6 +81,7 @@ export default function HeroCircularGallery() {
   const [phase, setPhase] = useState<Phase>("init");
   const [isMobile, setIsMobile] = useState(false);
   const [masterRotation, setMasterRotation] = useState(0);
+  const [isPulledUp, setIsPulledUp] = useState(false);
 
   // ─── Deterministic splash offsets (never re-generated) ───
   const splashSeeds = useMemo(() => generateSplashSeeds(TOTAL_CARDS), []);
@@ -93,12 +94,31 @@ export default function HeroCircularGallery() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // ─── Initial entrance delay: Intro Focus Stage ───
+  // ─── Intro Sequence: 1.2s delay before transition to splash ───
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const initTimer = setTimeout(() => {
       setPhase("splash");
     }, 1200);
-    return () => clearTimeout(timer);
+
+    const circleTimer = setTimeout(() => {
+      setPhase("circle");
+    }, 3200); // 1.2s + 2.0s
+
+    return () => {
+      clearTimeout(initTimer);
+      clearTimeout(circleTimer);
+    };
+  }, []);
+
+  // Reset pull up when user scrolls back up
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY < 100) {
+        setIsPulledUp(false);
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   // ─── 3-Phase State Machine Loop ───
@@ -210,19 +230,19 @@ export default function HeroCircularGallery() {
                 }}
                 animate={{
                   x: targetX,
-                  y: targetY,
+                  y: isPulledUp ? -1500 : targetY,
                   scale: isInit ? (index === 0 ? 1.6 : 0) : 1,
                   opacity: isInit ? (index === 0 ? 1 : 0) : (isSplash ? 0.7 : 1),
                   rotate: targetRotation + counterRotate,
                 }}
                 transition={{
                   type: "spring",
-                  stiffness: isInit ? 40 : (isSplash ? 25 : 40),
-                  damping: isInit ? 15 : (isSplash ? 12 : 15),
+                  stiffness: isPulledUp ? 60 : (isInit ? 40 : (isSplash ? 25 : 40)),
+                  damping: isPulledUp ? 20 : (isInit ? 15 : (isSplash ? 12 : 15)),
                   mass: 1.1,
-                  delay: isInit ? 0 : (isSplash
+                  delay: isPulledUp ? index * 0.01 : (isInit ? 0 : (isSplash
                     ? index * 0.015
-                    : index * 0.02),
+                    : index * 0.02)),
                 }}
                 className="absolute"
                 style={{
@@ -263,16 +283,18 @@ export default function HeroCircularGallery() {
       <motion.div
         initial={{ y: 40, opacity: 0 }}
         animate={{
-          y: phase === "init" ? 40 : 0,
-          opacity: phase === "init" ? 0 : 1,
+          y: isPulledUp ? -800 : (phase === "init" ? 40 : 0),
+          opacity: isPulledUp ? 0 : (phase === "init" ? 0 : 1),
         }}
         transition={{
-          delay: phase === "init" ? 0 : 0.2,
-          duration: 1.2,
+          delay: phase === "init" ? 0 : (isPulledUp ? 0 : 0.2),
+          duration: isPulledUp ? 0.6 : 1.2,
           ease: [0.16, 1, 0.3, 1],
         }}
-        className="relative z-40 flex flex-col items-center text-center pointer-events-auto"
+        className="absolute z-40 flex flex-col items-center justify-center pointer-events-none"
         style={{
+          width: "100%",
+          height: "100%",
           maxWidth: isMobile ? 240 : 520,
           padding: isMobile ? "0 12px" : "0 24px",
         }}
@@ -315,7 +337,7 @@ export default function HeroCircularGallery() {
         </p>
 
         {/* CTA Buttons */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 pointer-events-auto">
           <motion.button
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.97 }}
@@ -334,7 +356,10 @@ export default function HeroCircularGallery() {
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => {
-              document.getElementById("platform")?.scrollIntoView({ behavior: "smooth" });
+              setIsPulledUp(true);
+              setTimeout(() => {
+                document.getElementById("platform")?.scrollIntoView({ behavior: "smooth" });
+              }, 600);
             }}
             className="cursor-pointer font-semibold rounded-full transition-colors"
             style={{
