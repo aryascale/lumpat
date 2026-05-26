@@ -116,7 +116,6 @@ export default function UserEventPage() {
                   {filtered.map((event, i) => {
                     const hasBanner = !!event.bannerUrl;
                     const dateStr = formatDate(event.eventDate);
-                    const categoryText = event.categories && event.categories.length > 0 ? event.categories[0] : 'Event';
                     
                     return (
                       <div key={event.id} onClick={() => handleView(event.slug)}
@@ -160,13 +159,33 @@ export default function UserEventPage() {
                           </h3>
 
                           {/* Bottom Row: Category */}
-                          <div className="flex items-center gap-2 mt-auto">
-                            <div className="flex items-center text-[10px] sm:text-xs text-gray-600 font-bold bg-gray-50 px-2.5 py-1 uppercase tracking-wider border border-gray-200">
-                              <svg className="w-3.5 h-3.5 mr-1.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M13 4a2 2 0 100-4 2 2 0 000 4z"/><path d="M4 17l5-5 4-2 3 3 2.5-1M12 10V4M10 21l3-5 3 2.5M7 12l2-4"/>
-                              </svg>
-                              {categoryText}
-                            </div>
+                          <div className="flex flex-wrap items-center gap-2 mt-auto">
+                            {!event.categories || event.categories.length === 0 ? (
+                              <div className="flex items-center text-[10px] sm:text-xs text-gray-600 font-bold bg-gray-50 px-2.5 py-1 uppercase tracking-wider border border-gray-200">
+                                <svg className="w-3.5 h-3.5 mr-1.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M13 4a2 2 0 100-4 2 2 0 000 4z"/><path d="M4 17l5-5 4-2 3 3 2.5-1M12 10V4M10 21l3-5 3 2.5M7 12l2-4"/>
+                                </svg>
+                                Event
+                              </div>
+                            ) : (
+                              <>
+                                {event.categories.slice(0, 3).map((cat, idx) => (
+                                  <div key={idx} className="flex items-center text-[10px] sm:text-xs text-gray-600 font-bold bg-gray-50 px-2.5 py-1 uppercase tracking-wider border border-gray-200">
+                                    {idx === 0 && (
+                                      <svg className="w-3.5 h-3.5 mr-1.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M13 4a2 2 0 100-4 2 2 0 000 4z"/><path d="M4 17l5-5 4-2 3 3 2.5-1M12 10V4M10 21l3-5 3 2.5M7 12l2-4"/>
+                                      </svg>
+                                    )}
+                                    {cat}
+                                  </div>
+                                ))}
+                                {event.categories.length > 3 && (
+                                  <div className="flex items-center text-[10px] sm:text-xs text-gray-500 font-bold bg-gray-100 px-2 py-1 uppercase tracking-wider border border-gray-200">
+                                    +{event.categories.length - 3}
+                                  </div>
+                                )}
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>

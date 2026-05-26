@@ -483,32 +483,63 @@ export default function LandingPage() {
       </section>
 
       {/* ===================== FOOTER ===================== */}
-      <footer className="landing-footer">
-        <div className="landing-container">
-          <div className="landing-footer__top">
-            <div className="landing-footer__brand">
-              <img src="/Assets/logo2.gif" alt="IJT Logo" className="landing-footer__logo" />
-              <p className="landing-footer__tagline">
-                Indonesia's Triathlon Timing System
-              </p>
+      <footer className="bg-white border-t border-gray-200 text-xs text-gray-500 py-10 mt-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-8">
+            <div className="flex flex-col space-y-2.5">
+              <h5 className="font-semibold text-gray-900 mb-1">Platform</h5>
+              <a onClick={() => navigate("/leaderboard")} className="hover:text-gray-900 hover:underline cursor-pointer transition-colors">Leaderboard</a>
+              <a onClick={() => setIsSearchOpen(true)} className="hover:text-gray-900 hover:underline cursor-pointer transition-colors">Search Events</a>
+              <a href="#products" className="hover:text-gray-900 hover:underline transition-colors">Transponders</a>
+              <a href="#features" className="hover:text-gray-900 hover:underline transition-colors">Features</a>
+              <a href="#live-results" className="hover:text-gray-900 hover:underline transition-colors">Live Results</a>
             </div>
-            <div className="landing-footer__links">
-              <div className="landing-footer__col">
-                <h5>Platform</h5>
-                <a onClick={() => navigate("/leaderboard")}>Leaderboard</a>
-                <a onClick={() => setIsSearchOpen(true)}>Events</a>
-                <a href="#products">Transponders</a>
-              </div>
-              <div className="landing-footer__col">
-                <h5>Company</h5>
-                <a href="#organizers">For Organizers</a>
-                <a href="#faq">FAQ</a>
-                <a href="#cta">Contact</a>
-              </div>
+            <div className="flex flex-col space-y-2.5">
+              <h5 className="font-semibold text-gray-900 mb-1">Company</h5>
+              <a href="#about" className="hover:text-gray-900 hover:underline transition-colors">About IJT</a>
+              <a href="#organizers" className="hover:text-gray-900 hover:underline transition-colors">For Organizers</a>
+              <a href="#careers" className="hover:text-gray-900 hover:underline transition-colors">Careers</a>
+              <a href="#contact" className="hover:text-gray-900 hover:underline transition-colors">Contact Us</a>
+            </div>
+            <div className="flex flex-col space-y-2.5">
+              <h5 className="font-semibold text-gray-900 mb-1">Support</h5>
+              <a href="#faq" className="hover:text-gray-900 hover:underline transition-colors">FAQ</a>
+              <a href="#help-center" className="hover:text-gray-900 hover:underline transition-colors">Help Center</a>
+              <a href="#timing-guide" className="hover:text-gray-900 hover:underline transition-colors">Timing Guide</a>
+              <a href="#status" className="hover:text-gray-900 hover:underline transition-colors">System Status</a>
+            </div>
+            <div className="flex flex-col space-y-2.5">
+              <h5 className="font-semibold text-gray-900 mb-1">Values</h5>
+              <a href="#accessibility" className="hover:text-gray-900 hover:underline transition-colors">Accessibility</a>
+              <a href="#environment" className="hover:text-gray-900 hover:underline transition-colors">Environment</a>
+              <a href="#privacy" className="hover:text-gray-900 hover:underline transition-colors">Privacy</a>
+              <a href="#responsibility" className="hover:text-gray-900 hover:underline transition-colors">Responsibility</a>
+            </div>
+            <div className="flex flex-col space-y-2.5">
+              <h5 className="font-semibold text-gray-900 mb-1">About IJT</h5>
+              <a href="#news" className="hover:text-gray-900 hover:underline transition-colors">Newsroom</a>
+              <a href="#leadership" className="hover:text-gray-900 hover:underline transition-colors">Leadership</a>
+              <a href="#events" className="hover:text-gray-900 hover:underline transition-colors">Events</a>
+              <a href="#contact" className="hover:text-gray-900 hover:underline transition-colors">Contact IJT</a>
             </div>
           </div>
-          <div className="landing-footer__bottom">
-            <span>© 2026 IJT — Indonesia Timing System. All rights reserved.</span>
+          
+          <div className="border-t border-gray-200 pt-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex flex-col gap-2">
+              <p className="text-gray-400">Hak cipta © 2026 IJT — Indonesia Timing System. Seluruh hak cipta dilindungi undang-undang.</p>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-gray-500">
+                <a href="#privacy" className="hover:text-gray-900 hover:underline transition-colors">Kebijakan Privasi</a>
+                <span className="hidden md:inline text-gray-300">|</span>
+                <a href="#terms" className="hover:text-gray-900 hover:underline transition-colors">Ketentuan Penggunaan</a>
+                <span className="hidden md:inline text-gray-300">|</span>
+                <a href="#legal" className="hover:text-gray-900 hover:underline transition-colors">Legal</a>
+                <span className="hidden md:inline text-gray-300">|</span>
+                <a href="#sitemap" className="hover:text-gray-900 hover:underline transition-colors">Peta Situs</a>
+              </div>
+            </div>
+            <div className="text-gray-900 hover:text-black transition-colors cursor-pointer font-medium whitespace-nowrap">
+              Indonesia
+            </div>
           </div>
         </div>
       </footer>
