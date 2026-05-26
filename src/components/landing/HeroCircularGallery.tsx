@@ -8,7 +8,6 @@ const PLACEHOLDER_IMAGES = Array.from({ length: 24 }).map(
 
 export default function HeroCircularGallery() {
   const navigate = useNavigate();
-  const [radius, setRadius] = useState(340);
   const [isExploded, setIsExploded] = useState(false);
 
   // Responsive setup
