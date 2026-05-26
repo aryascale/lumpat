@@ -443,7 +443,7 @@ export default function LandingPage() {
       </section>
 
       {/* ===================== FOOTER ===================== */}
-      <footer className="bg-white border-t border-gray-200 text-xs text-gray-500 py-10 mt-20">
+      <footer className="bg-white border-t border-gray-200 text-xs text-gray-500 py-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-8">
             <div className="flex flex-col space-y-2.5">
