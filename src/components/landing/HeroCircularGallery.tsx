@@ -86,19 +86,11 @@ export default function HeroCircularGallery() {
                   }}
                   className="absolute w-[48px] h-[48px] md:w-[72px] md:h-[72px] overflow-hidden rounded-lg shadow-md bg-stone-50 flex items-center justify-center"
                 >
-                  {i === 0 && !isExploded ? (
-                    <img
-                      src="/Assets/landing2/result.png"
-                      alt="Platform Result"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <img
-                      src={src}
-                      alt={`Dummy sport ${i}`}
-                      className="w-full h-full object-cover opacity-90 mix-blend-multiply"
-                    />
-                  )}
+                  <img
+                    src={src}
+                    alt={`Dummy sport ${i}`}
+                    className="w-full h-full object-cover opacity-90 mix-blend-multiply"
+                  />
                 </motion.div>
               );
             })}
