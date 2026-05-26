@@ -109,7 +109,7 @@ export default function HeroCircularGallery() {
             duration: 1.2,
             ease: [0.16, 1, 0.3, 1],
           }}
-          className="relative z-10 flex flex-col items-center text-center max-w-[320px] md:max-w-2xl px-2 md:px-6 pointer-events-auto mt-4 md:mt-0"
+          className="relative z-40 flex flex-col items-center text-center max-w-[320px] md:max-w-2xl px-2 md:px-6 pointer-events-auto mt-4 md:mt-0"
         >
           <h1 className="flex flex-col items-center justify-center tracking-tight mb-4 md:mb-5">
             <span className="text-[20px] sm:text-[24px] md:text-[36px] font-normal text-slate-400 mb-1 md:mb-3">The future of</span>
@@ -121,7 +121,7 @@ export default function HeroCircularGallery() {
           <motion.button
             whileHover={{ scale: 1.03 }}
             onClick={() => navigate("/event")}
-            className="px-6 py-3 md:px-8 md:py-4 text-xs md:text-sm bg-[#1A1A1A] text-white rounded-full font-medium shadow-[0_8px_20px_rgba(0,0,0,0.15)] hover:bg-black transition-colors active:scale-95"
+            className="relative z-50 px-6 py-3 md:px-8 md:py-4 text-xs md:text-sm bg-[#1A1A1A] text-white rounded-full font-medium shadow-[0_8px_20px_rgba(0,0,0,0.15)] hover:bg-black transition-colors active:scale-95 cursor-pointer"
           >
             Mulai Jelajah
           </motion.button>
