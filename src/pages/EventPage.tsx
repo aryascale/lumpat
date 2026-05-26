@@ -690,8 +690,28 @@ export default function EventPage() {
           });
         } else {
           master.all.forEach((p) => {
+            const isDQ = !!dqMap[p.epc];
             const finishEntry = finishMap.get(p.epc);
-            if (!finishEntry?.ms) return;
+
+            const pushIncompleteRow = (status: string) => {
+              baseRows.push({
+                rank: null,
+                bib: p.bib,
+                name: p.name,
+                gender: p.gender,
+                category: p.category || p.sourceCategoryKey,
+                sourceCategoryKey: p.sourceCategoryKey,
+                finishTimeRaw: finishEntry ? extractTimeOfDay(finishEntry.raw) : '-',
+                totalTimeMs: 0,
+                totalTimeDisplay: isDQ ? "DSQ" : status,
+                epc: p.epc,
+              });
+            };
+
+            if (!finishEntry?.ms) {
+              pushIncompleteRow("ACTIVE");
+              return;
+            }
 
             const catKey = p.sourceCategoryKey;
             const absMs = absOverrideMs[catKey] ?? null;
@@ -705,7 +725,10 @@ export default function EventPage() {
                 total = delta;
               } else {
                 const startEntry = startMap.get(p.epc);
-                if (!startEntry?.ms) return;
+                if (!startEntry?.ms) {
+                  pushIncompleteRow("ACTIVE");
+                  return;
+                }
                 total = finishEntry.ms - startEntry.ms;
               }
             } else if (timeOnly) {
@@ -716,23 +739,34 @@ export default function EventPage() {
                   total = delta;
                 } else {
                   const startEntry = startMap.get(p.epc);
-                  if (!startEntry?.ms) return;
+                  if (!startEntry?.ms) {
+                    pushIncompleteRow("ACTIVE");
+                    return;
+                  }
                   total = finishEntry.ms - startEntry.ms;
                 }
               } else {
                 const startEntry = startMap.get(p.epc);
-                if (!startEntry?.ms) return;
+                if (!startEntry?.ms) {
+                  pushIncompleteRow("ACTIVE");
+                  return;
+                }
                 total = finishEntry.ms - startEntry.ms;
               }
             } else {
               const startEntry = startMap.get(p.epc);
-              if (!startEntry?.ms) return;
+              if (!startEntry?.ms) {
+                pushIncompleteRow("ACTIVE");
+                return;
+              }
               total = finishEntry.ms - startEntry.ms;
             }
 
-            if (!Number.isFinite(total) || total == null || total < 0) return;
+            if (!Number.isFinite(total) || total == null || total < 0) {
+              pushIncompleteRow("ACTIVE");
+              return;
+            }
 
-            const isDQ = !!dqMap[p.epc];
             const isDNF = cutoffMs != null && total > cutoffMs;
 
             baseRows.push({
@@ -751,7 +785,7 @@ export default function EventPage() {
         }
 
         const finishers = baseRows.filter(
-          (r) => r.totalTimeDisplay !== "DNF" && r.totalTimeDisplay !== "DSQ"
+          (r) => r.totalTimeDisplay !== "DNF" && r.totalTimeDisplay !== "DSQ" && r.totalTimeDisplay !== "ACTIVE"
         );
 
         const finisherSorted = [...finishers]
@@ -776,9 +810,11 @@ export default function EventPage() {
           .filter((r) => r.totalTimeDisplay === "DNF")
           .sort((a, b) => a.totalTimeMs - b.totalTimeMs);
         const dsqs = baseRows.filter((r) => r.totalTimeDisplay === "DSQ");
+        const actives = baseRows.filter((r) => r.totalTimeDisplay === "ACTIVE");
 
         const overallFinal: LeaderRow[] = [
           ...finisherSorted,
+          ...actives.map((r) => ({ ...r, rank: null })),
           ...dnfs.map((r) => ({ ...r, rank: null })),
           ...dsqs.map((r) => ({ ...r, rank: null })),
         ];
@@ -1189,6 +1225,15 @@ export default function EventPage() {
                   <p className="text-stone-500">Belum ada peserta yang terdaftar atau ditemukan.</p>
                 );
               })()}
+              
+              <div className="mt-6 pt-4 border-t border-stone-100 flex items-center gap-2">
+                <svg className="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span className="text-sm text-stone-600">
+                  Pembayaran gagal, pending, atau nama tidak ditemukan? <a href={`/bantuan?eventId=${event?.id}`} className="text-blue-600 font-bold hover:underline" target="_blank" rel="noopener noreferrer">Lapor Kendala</a>
+                </span>
+              </div>
             </div>
           )}
 
@@ -1692,6 +1737,12 @@ export default function EventPage() {
                   </div>
                 </div>
               )}
+
+              <div className="mt-8 pt-6 border-t border-stone-200 text-center">
+                <p className="text-sm text-gray-500">
+                  Ada kendala saat mendaftar? <a href={`/bantuan?eventId=${event?.id}`} className="text-stone-900 font-bold hover:underline" target="_blank" rel="noopener noreferrer">Lapor di sini</a>
+                </p>
+              </div>
             </div>
           </Modal>
 

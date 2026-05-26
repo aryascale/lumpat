@@ -36,6 +36,7 @@ model Event {
   banners            Banner[]
   categories         Category[]
   registrations      EventRegistration[]
+  supportTickets     SupportTicket[]
 }
 
 model Category {
@@ -166,4 +167,29 @@ model TshirtInventory {
 
   @@unique([eventId, size])
   @@index([eventId])
+}
+
+model SupportTicket {
+  id              String   @id @default(uuid())
+  eventId         String?
+  ticketNumber    String   @unique
+  name            String
+  email           String
+  phoneNumber     String?
+  category        String
+  subject         String
+  description     String   @db.Text
+  status          String   @default("open") // open, in_progress, resolved
+  priority        String   @default("medium")
+  resolvedAt      DateTime?
+  resolvedBy      String?
+  resolutionNotes String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  event           Event?   @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@index([status])
+  @@index([ticketNumber])
 }

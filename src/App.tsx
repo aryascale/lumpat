@@ -1,10 +1,14 @@
-
+import { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { initFrontendLogger } from "./lib/frontend-logger";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import LandingPage from "./pages/LandingPage";
 import UserEventPage from "./pages/UserEventPage";
 import HomePage from "./pages/HomePage";
 import CreateEventPage from "./pages/CreateEventPage";
 import EventPage from "./pages/EventPage";
+import SupportTicketPage from "./pages/SupportTicketPage";
+import CheckTicketPage from "./pages/CheckTicketPage";
 
 import AdminLayout from "./components/admin/AdminLayout";
 import {
@@ -14,6 +18,7 @@ import {
 } from "./components/admin/wrappers";
 import PaymentsPage from "./components/admin/pages/PaymentsPage";
 import ActivityLogsPage from "./components/admin/pages/ActivityLogsPage";
+import TicketsPage from "./components/admin/pages/TicketsPage";
 import { EventProvider } from "./contexts/EventContext";
 import SplashScreen from "./components/SplashScreen";
 import Login from "./pages/Login";
@@ -22,8 +27,13 @@ import Profile from "./pages/Profile";
 import VerifyPage from "./pages/VerifyPage";
 
 export default function App() {
+  useEffect(() => {
+    initFrontendLogger();
+  }, []);
+
   return (
-    <EventProvider>
+    <ErrorBoundary>
+      <EventProvider>
       {/* <SplashScreen /> */}
       <Routes>
         {/* <Route path="/login" element={<Login />} />
@@ -33,6 +43,8 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/leaderboard" element={<UserEventPage />} />
         <Route path="/event" element={<UserEventPage />} />
+        <Route path="/bantuan" element={<SupportTicketPage />} />
+        <Route path="/cek-tiket" element={<CheckTicketPage />} />
 
         <Route path="/admin/home" element={<HomePage />} />
         <Route path="/admin/create-event" element={<CreateEventPage />} />
@@ -45,9 +57,11 @@ export default function App() {
           <Route path="events" element={<EventsPageWrapper />} />
           <Route path="banners" element={<BannersPageWrapper />} />
           <Route path="payments" element={<PaymentsPage />} />
+          <Route path="tickets" element={<TicketsPage />} />
           <Route path="activity-logs" element={<ActivityLogsPage />} />
         </Route>
       </Routes>
     </EventProvider>
+    </ErrorBoundary>
   );
 }

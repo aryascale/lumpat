@@ -5,13 +5,14 @@ export default function ActivityLogsPage() {
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [category, setCategory] = useState('ALL');
   const limit = 50;
 
   const loadLogs = async () => {
     try {
       setLoading(true);
       const offset = (page - 1) * limit;
-      const res = await fetch(`/api/activity-logs?limit=${limit}&offset=${offset}`);
+      const res = await fetch(`/api/activity-logs?limit=${limit}&offset=${offset}&category=${category}`);
       if (res.ok) {
         const data = await res.json();
         setLogs(data.logs || []);
@@ -32,7 +33,7 @@ export default function ActivityLogsPage() {
       if (page === 1) loadLogs();
     }, 30000);
     return () => clearInterval(interval);
-  }, [page]);
+  }, [page, category]);
 
   return (
     <div className="flex flex-col">
@@ -42,9 +43,23 @@ export default function ActivityLogsPage() {
             <h2 className="section-title">Activity Logs</h2>
             <div className="subtle">Riwayat aktivitas sistem dan transaksi.</div>
           </div>
-          <button className="btn" onClick={loadLogs} disabled={loading}>
-            {loading ? 'Memuat...' : 'Refresh'}
-          </button>
+          <div className="flex gap-2">
+            <select
+              value={category}
+              onChange={(e) => { setCategory(e.target.value); setPage(1); }}
+              className="search text-sm w-32 sm:w-40"
+            >
+              <option value="ALL">Semua Log</option>
+              <option value="ERROR">Errors & Fails</option>
+              <option value="AUTH">Authentication</option>
+              <option value="PAYMENT">Payments</option>
+              <option value="ADMIN">Admin Actions</option>
+              <option value="SYSTEM">System/Webhooks</option>
+            </select>
+            <button className="btn" onClick={loadLogs} disabled={loading}>
+              {loading ? 'Memuat...' : 'Refresh'}
+            </button>
+          </div>
         </div>
 
         {/* Desktop Table - hidden on mobile */}
@@ -66,8 +81,10 @@ export default function ActivityLogsPage() {
                   </td>
                 </tr>
               ) : (
-                logs.map((log) => (
-                  <tr key={log.id} className="row-hover">
+                logs.map((log) => {
+                  const isError = log.action.includes('ERROR') || log.action.includes('FAIL');
+                  return (
+                  <tr key={log.id} className={`row-hover ${isError ? 'bg-red-50/30' : ''}`}>
                     <td className="mono text-[10px] text-gray-500 whitespace-nowrap">
                       {new Date(log.createdAt).toLocaleDateString('id-ID', {
                         day: 'numeric', month: 'short', year: 'numeric',
@@ -75,14 +92,15 @@ export default function ActivityLogsPage() {
                       })}
                     </td>
                     <td>
-                      <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-gray-100 text-gray-600 border border-gray-200">
+                      <span className={`px-2 py-0.5 text-[9px] font-black uppercase rounded border ${isError ? 'bg-red-100 text-red-700 border-red-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>
                         {log.action}
                       </span>
                     </td>
                     <td className="font-bold text-sm text-gray-900">{log.actor}</td>
-                    <td className="text-xs text-gray-600 leading-relaxed">{log.detail}</td>
+                    <td className={`text-xs leading-relaxed ${isError ? 'text-red-600 font-medium' : 'text-gray-600'}`}>{log.detail}</td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -95,15 +113,17 @@ export default function ActivityLogsPage() {
               {loading ? 'Memuat data log...' : 'Belum ada log aktivitas.'}
             </div>
           ) : (
-            logs.map((log) => (
-              <div key={log.id} className="bg-white border border-gray-100 p-3 rounded-lg shadow-sm">
+            logs.map((log) => {
+              const isError = log.action.includes('ERROR') || log.action.includes('FAIL');
+              return (
+              <div key={log.id} className={`bg-white border p-3 rounded-lg shadow-sm ${isError ? 'border-red-200 bg-red-50/30' : 'border-gray-100'}`}>
                 <div className="flex justify-between items-start mb-2">
                   <span className="font-bold text-sm text-gray-900">{log.actor}</span>
-                  <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-gray-100 text-gray-600 border border-gray-200">
+                  <span className={`px-2 py-0.5 text-[9px] font-black uppercase rounded border ${isError ? 'bg-red-100 text-red-700 border-red-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>
                     {log.action}
                   </span>
                 </div>
-                <div className="text-xs text-gray-600 leading-relaxed mb-2 bg-gray-50 p-2 rounded">
+                <div className={`text-xs leading-relaxed mb-2 p-2 rounded ${isError ? 'bg-red-50 text-red-700 font-medium' : 'bg-gray-50 text-gray-600'}`}>
                   {log.detail}
                 </div>
                 <div className="text-[10px] text-gray-400 text-right">
@@ -113,7 +133,8 @@ export default function ActivityLogsPage() {
                   })}
                 </div>
               </div>
-            ))
+              );
+            })
           )}
         </div>
 

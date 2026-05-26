@@ -8,6 +8,7 @@ export default async function handler(event: any) {
   try {
     const eventId = event.queryStringParameters?.eventId;
     const action = event.queryStringParameters?.action;
+    const category = event.queryStringParameters?.category;
     const limit = parseInt(event.queryStringParameters?.limit || '50');
     const offset = parseInt(event.queryStringParameters?.offset || '0');
 
@@ -18,7 +19,33 @@ export default async function handler(event: any) {
       where += ' AND (eventId = ? OR eventId IS NULL)'; 
       params.push(eventId); 
     }
-    if (action) { where += ' AND action LIKE ?'; params.push(`${action}%`); }
+    
+    if (action) { 
+      where += ' AND action LIKE ?'; 
+      params.push(`${action}%`); 
+    }
+
+    if (category && category !== 'ALL') {
+      if (category === 'ERROR') {
+        where += ' AND (action LIKE ? OR action LIKE ?)';
+        params.push('%ERROR%', '%FAIL%');
+      } else if (category === 'AUTH') {
+        where += ' AND (action LIKE ? OR action LIKE ? OR action LIKE ?)';
+        params.push('%LOGIN%', '%LOGOUT%', '%REGISTER%');
+      } else if (category === 'PAYMENT') {
+        where += ' AND (action LIKE ? OR action LIKE ? OR action LIKE ?)';
+        params.push('%PAYMENT%', '%CHECKOUT%', '%SETTLE%');
+      } else if (category === 'ADMIN') {
+        where += ' AND action LIKE ?';
+        params.push('ADMIN%');
+      } else if (category === 'SYSTEM') {
+        where += ' AND (action LIKE ? OR action LIKE ? OR action LIKE ?)';
+        params.push('SYSTEM%', 'WEBHOOK%', 'CRON%');
+      } else {
+        where += ' AND action LIKE ?';
+        params.push(`${category}%`);
+      }
+    }
 
     const logs: any = await query(
       `SELECT * FROM ActivityLog ${where} ORDER BY createdAt DESC LIMIT ? OFFSET ?`,
