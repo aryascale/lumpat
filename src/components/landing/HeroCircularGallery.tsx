@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
 // ─── Triathlon-focused Unsplash images: swim, bike, run ───
@@ -158,6 +158,13 @@ export default function HeroCircularGallery() {
   const cardW = isMobile ? 38 : 60;
   const cardH = isMobile ? 50 : 80;
 
+  // ─── Scroll-linked Parallax Animation ───
+  const { scrollY } = useScroll();
+  const heroY = useTransform(scrollY, [0, 800], [0, 250]);
+  const heroScale = useTransform(scrollY, [0, 800], [1, 0.85]);
+  const heroOpacity = useTransform(scrollY, [0, 800], [1, 0]);
+  const heroBlur = useTransform(scrollY, [0, 800], ["blur(0px)", "blur(12px)"]);
+
   return (
     <section
       id="hero-gallery"
@@ -167,7 +174,16 @@ export default function HeroCircularGallery() {
         background: "linear-gradient(180deg, #F1F3F6 0%, #EAECF0 50%, #F1F3F6 100%)",
       }}
     >
-      {/* Subtle radial glow behind the orbit */}
+      <motion.div
+        className="absolute inset-0 w-full h-full flex items-center justify-center"
+        style={{
+          y: heroY,
+          scale: heroScale,
+          opacity: heroOpacity,
+          filter: heroBlur,
+        }}
+      >
+        {/* Subtle radial glow behind the orbit */}
       <div
         className="absolute pointer-events-none"
         style={{
@@ -375,14 +391,15 @@ export default function HeroCircularGallery() {
         </div>
       </motion.div>
 
-      {/* ─── Bottom fade-out gradient ─── */}
-      <div
-        className="absolute bottom-0 left-0 w-full pointer-events-none"
-        style={{
-          height: 100,
-          background: "linear-gradient(to top, #F1F3F6 0%, transparent 100%)",
-        }}
-      />
+        {/* ─── Bottom fade-out gradient ─── */}
+        <div
+          className="absolute bottom-0 left-0 w-full pointer-events-none"
+          style={{
+            height: 100,
+            background: "linear-gradient(to top, #F1F3F6 0%, transparent 100%)",
+          }}
+        />
+      </motion.div>
     </section>
   );
 }
