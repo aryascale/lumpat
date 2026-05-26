@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
+import LandingNavbar from "../components/landing/LandingNavbar";
+import HeroCircularGallery from "../components/landing/HeroCircularGallery";
 import EventSearchModal from "../components/EventSearchModal";
 import ImageSlider3D from "../components/lightswind/3d-image-slider";
 
@@ -104,57 +105,9 @@ export default function LandingPage() {
 
 
   return (
-    <>
-      <Navbar />
-
-      {/* ===================== SECTION 1: HERO ===================== */}
-      <section
-        id="hero"
-        className="landing-hero relative transition-all duration-1000 bg-cover bg-center"
-        style={{
-          backgroundImage: `url('${heroImages[heroIndex]}')`,
-          backgroundPositionY: `${scrollY * 0.4}px`,
-        }}
-      >
-        <div className="landing-hero__overlay absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-900/70 to-stone-900/40" />
-        <div className="scroll-reveal relative z-10 w-full h-full flex flex-col justify-end pb-16 sm:pb-32 px-6 sm:px-12 max-w-7xl mx-auto">
-          
-          <div className="flex flex-col md:flex-row justify-between items-end gap-8 w-full">
-            <div className="text-left max-w-2xl">
-              <h1 className="text-white text-5xl sm:text-6xl md:text-7xl font-black uppercase tracking-tight leading-tight mb-4 shadow-sm">
-                CHASE THE FINISH,
-                <br />
-                OWN YOUR TIME
-              </h1>
-              <p className="text-white/90 text-lg sm:text-xl leading-relaxed max-w-xl shadow-sm">
-                Discover events, push your limits, and see your results in real time.
-              </p>
-            </div>
-            
-            <div className="mb-4 sm:mb-8">
-              <button
-                onClick={() => navigate("/event")}
-                className="px-8 py-4 bg-white text-gray-900 text-lg font-bold rounded-xl hover:bg-gray-100 transition-all flex items-center gap-2 shadow-2xl hover:-translate-y-1 active:scale-95"
-              >
-                Find Event
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
-              </button>
-            </div>
-          </div>
-          
-          {/* Carousel Indicators */}
-          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-2">
-             {heroImages.map((_, i) => (
-                <button 
-                  key={i}
-                  onClick={() => setHeroIndex(i)}
-                  className={`h-2 rounded-full transition-all duration-300 ${i === heroIndex ? 'w-8 bg-white' : 'w-2 bg-white/40 hover:bg-white/80'}`}
-                  aria-label={`Go to slide ${i+1}`}
-                />
-             ))}
-          </div>
-        </div>
-      </section>
+    <div className="w-full overflow-hidden relative bg-[#F1F3F6]">
+      <LandingNavbar />
+      <HeroCircularGallery />
 
       {/* ===================== TICKER LOGO ===================== */}
       <div className="w-full bg-white border-b border-gray-100 overflow-hidden py-5 sm:py-7 flex items-center relative shadow-[inset_0_-10px_20px_rgba(0,0,0,0.02)]">
@@ -549,6 +502,6 @@ export default function LandingPage() {
 
       {/* Popups */}
       <EventSearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
-    </>
+    </div>
   );
 }
