@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
-// Using picsum seeds to guarantee stable, high-quality images that don't break
+// Using loremflickr to get topic-specific stable images (running, sports, bike)
 const PLACEHOLDER_IMAGES = Array.from({ length: 24 }).map(
-  (_, i) => `https://picsum.photos/seed/${i + 150}/400/600`
+  (_, i) => `https://loremflickr.com/400/600/running,sports,biking?lock=${i + 150}`
 );
 
 export default function HeroCircularGallery() {
@@ -31,7 +31,7 @@ export default function HeroCircularGallery() {
   }, []);
 
   return (
-    <div className="relative w-full h-[100svh] flex items-center justify-center bg-[#F1F3F6] overflow-hidden">
+    <div className="relative w-full h-[100svh] flex items-center justify-center bg-white overflow-hidden">
       <AnimatePresence>
         {/* The Main Animation Asset: Outer Container */}
         <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
