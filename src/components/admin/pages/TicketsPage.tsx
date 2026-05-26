@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Tag, Modal, Button, Select, Input, message } from 'antd';
-import { Ticket, Search, Filter, MessageCircle, Mail } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Modal, Input } from 'antd';
+import { MessageCircle, Mail } from 'lucide-react';
 import { useEvent } from '../../../contexts/EventContext';
 
 export default function TicketsPage() {
@@ -11,16 +11,16 @@ export default function TicketsPage() {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
   
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterEvent, setFilterEvent] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [filterEvent, setFilterEvent] = useState<string>('');
   const [searchText, setSearchText] = useState('');
 
   const fetchTickets = async () => {
     setLoading(true);
     try {
       const query = new URLSearchParams();
-      if (filterStatus !== 'all') query.append('status', filterStatus);
-      if (filterEvent !== 'all') query.append('eventId', filterEvent);
+      if (filterStatus) query.append('status', filterStatus);
+      if (filterEvent) query.append('eventId', filterEvent);
       
       const res = await fetch(`/api/admin/tickets?${query.toString()}`);
       const data = await res.json();
@@ -28,7 +28,7 @@ export default function TicketsPage() {
         setTickets(data.tickets || []);
       }
     } catch (err) {
-      message.error('Gagal memuat data tiket');
+      alert('Gagal memuat data tiket');
     } finally {
       setLoading(false);
     }
@@ -48,15 +48,15 @@ export default function TicketsPage() {
         body: JSON.stringify({ status, resolutionNotes: notes, resolvedBy: 'Admin' }),
       });
       if (res.ok) {
-        message.success('Status tiket berhasil diperbarui');
+        alert('Status tiket berhasil diperbarui');
         setDetailModalOpen(false);
         fetchTickets();
       } else {
         const data = await res.json();
-        message.error(data.error || 'Gagal update status');
+        alert(data.error || 'Gagal update status');
       }
     } catch (err) {
-      message.error('Terjadi kesalahan');
+      alert('Terjadi kesalahan');
     } finally {
       setUpdating(false);
     }
@@ -64,10 +64,10 @@ export default function TicketsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'open': return 'orange';
-      case 'in_progress': return 'blue';
-      case 'resolved': return 'green';
-      default: return 'default';
+      case 'open': return 'bg-yellow-100 text-yellow-800';
+      case 'in_progress': return 'bg-blue-100 text-blue-800';
+      case 'resolved': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -77,68 +77,16 @@ export default function TicketsPage() {
     t.email.toLowerCase().includes(searchText.toLowerCase())
   );
 
-  const columns = [
-    {
-      title: 'No Tiket',
-      dataIndex: 'ticketNumber',
-      key: 'ticketNumber',
-      render: (text: string) => <span className="font-mono font-bold">{text}</span>
-    },
-    {
-      title: 'Pelapor',
-      key: 'reporter',
-      render: (_: any, record: any) => (
-        <div>
-          <div className="font-medium">{record.name}</div>
-          <div className="text-xs text-gray-500">{record.email}</div>
-        </div>
-      )
-    },
-    {
-      title: 'Event',
-      key: 'event',
-      render: (_: any, record: any) => record.event?.name || '-'
-    },
-    {
-      title: 'Kategori',
-      dataIndex: 'category',
-      key: 'category',
-      render: (text: string) => <span className="uppercase text-xs font-bold tracking-wider">{text.replace('_', ' ')}</span>
-    },
-    {
-      title: 'Subjek',
-      dataIndex: 'subject',
-      key: 'subject',
-      ellipsis: true,
-    },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: string) => (
-        <Tag color={getStatusColor(status)} className="uppercase font-bold">
-          {status.replace('_', ' ')}
-        </Tag>
-      )
-    },
-    {
-      title: 'Tanggal',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      render: (date: string) => new Date(date).toLocaleDateString('id-ID', {
-        day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-      })
-    },
-    {
-      title: 'Aksi',
-      key: 'action',
-      render: (_: any, record: any) => (
-        <Button size="small" onClick={() => { setSelectedTicket(record); setDetailModalOpen(true); }}>
-          Detail
-        </Button>
-      )
-    }
-  ];
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(filteredTickets.length / itemsPerPage);
+  const currentTickets = filteredTickets.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  // Reset page when search or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchText, filterStatus]);
 
   const handleWhatsApp = (phone: string) => {
     let formatted = phone.replace(/\D/g, '');
@@ -151,151 +99,291 @@ export default function TicketsPage() {
   };
 
   return (
-    <div className="p-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+    <div className="flex flex-col">
+      <div className="header-row mb-4 md:mb-6">
         <div>
-          <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
-            <Ticket className="w-6 h-6 text-blue-600" /> Ticketing Kendala
+          <h1 className="text-lg md:text-2xl font-black tracking-tight text-gray-900 uppercase flex items-center gap-2">
+            Ticketing Kendala
           </h1>
-          <p className="text-slate-500">Kelola laporan kendala dari pendaftar</p>
+          <p className="text-xs md:text-sm text-gray-500 mt-1">Kelola laporan kendala dari pendaftar</p>
         </div>
-        
-        <div className="flex flex-wrap items-center gap-3">
-          <Input 
-            prefix={<Search className="w-4 h-4 text-gray-400" />}
-            placeholder="Cari Tiket / Nama..."
-            value={searchText}
-            onChange={e => setSearchText(e.target.value)}
-            className="w-48"
-          />
-          <Select
-            value={filterStatus}
-            onChange={setFilterStatus}
-            className="w-36"
-            options={[
-              { value: 'all', label: 'Semua Status' },
-              { value: 'open', label: 'Open' },
-              { value: 'in_progress', label: 'In Progress' },
-              { value: 'resolved', label: 'Resolved' },
-            ]}
-          />
-          <Select
-            value={filterEvent}
-            onChange={setFilterEvent}
-            className="w-48"
-            showSearch
-            optionFilterProp="label"
-            options={[
-              { value: 'all', label: 'Semua Event' },
-              ...events.map(e => ({ value: e.id, label: e.name }))
-            ]}
-          />
-          <Button icon={<Filter className="w-4 h-4" />} onClick={fetchTickets}>Refresh</Button>
+      </div>
+      
+      {/* Filters */}
+      <div className="card mb-4 !p-3 md:!p-4">
+        <div className="flex flex-col gap-2 md:gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
+            <input
+              className="search flex-1"
+              placeholder="Cari Tiket / Nama..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+            />
+            <select
+              className="search"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <option value="">Semua Status</option>
+              <option value="open">Open</option>
+              <option value="in_progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+            </select>
+            <select
+              className="search"
+              value={filterEvent}
+              onChange={(e) => setFilterEvent(e.target.value)}
+            >
+              <option value="">Semua Event</option>
+              {events.map(ev => <option key={ev.id} value={ev.id}>{ev.name}</option>)}
+            </select>
+          </div>
+          <button 
+            className="btn ghost whitespace-nowrap w-full sm:w-auto text-xs"
+            onClick={fetchTickets}
+          >
+            Refresh Data
+          </button>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <Table 
-          columns={columns} 
-          dataSource={filteredTickets} 
-          rowKey="id" 
-          loading={loading}
-          pagination={{ pageSize: 15 }}
-        />
+      {/* Table Card */}
+      <div className="card flex-1 flex flex-col mb-4" style={{ minHeight: 'calc(100vh - 400px)' }}>
+        {loading ? (
+          <div className="text-center py-24 text-gray-400 font-medium">Loading tickets data...</div>
+        ) : (
+          <>
+            <div className="flex-1 overflow-auto">
+              <div className="hidden md:block table-wrap">
+                <table className="f1-table compact">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 120 }}>No Tiket</th>
+                      <th>Pelapor</th>
+                      <th>Event</th>
+                      <th>Kategori</th>
+                      <th>Subjek</th>
+                      <th style={{ width: 100 }}>Status</th>
+                      <th style={{ width: 120 }}>Tanggal</th>
+                      <th style={{ width: 80 }}>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentTickets.length === 0 ? (
+                      <tr><td colSpan={8} className="empty py-20">Tidak ada tiket ditemukan</td></tr>
+                    ) : (
+                      currentTickets.map(t => (
+                        <tr key={t.id} className="row-hover">
+                          <td className="mono text-[10px] font-bold">{t.ticketNumber}</td>
+                          <td>
+                            <div className="font-bold text-sm text-gray-900">{t.name}</div>
+                            <div className="text-[10px] text-gray-500">{t.email}</div>
+                          </td>
+                          <td className="text-xs font-medium">{t.event?.name || '-'}</td>
+                          <td className="text-xs uppercase font-bold text-gray-600 tracking-wider">{t.category.replace('_', ' ')}</td>
+                          <td className="text-xs text-gray-700 truncate max-w-[150px]">{t.subject}</td>
+                          <td>
+                            <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase ${getStatusColor(t.status)}`}>
+                              {t.status.replace('_', ' ')}
+                            </span>
+                          </td>
+                          <td className="text-[10px] text-gray-400">
+                            {new Date(t.createdAt).toLocaleDateString('id-ID', {
+                              day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                            })}
+                          </td>
+                          <td>
+                            <button
+                              className="px-2 py-1 bg-blue-500 text-white text-[10px] font-bold uppercase rounded hover:bg-blue-600 transition-colors"
+                              onClick={() => {
+                                setSelectedTicket(t);
+                                setDetailModalOpen(true);
+                              }}
+                            >
+                              Detail
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="md:hidden space-y-3">
+                {currentTickets.length === 0 ? (
+                  <div className="text-center text-gray-500 py-12">Tidak ada tiket ditemukan</div>
+                ) : (
+                  currentTickets.map(t => (
+                    <div key={t.id} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="min-w-0 flex-1 mr-2">
+                          <div className="font-mono text-xs font-bold text-gray-900 mb-1">{t.ticketNumber}</div>
+                          <div className="font-bold text-gray-900 text-sm truncate">{t.name}</div>
+                          <div className="text-[10px] text-gray-400 truncate">{t.email}</div>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 ${getStatusColor(t.status)}`}>
+                          {t.status.replace('_', ' ')}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-600 mb-1 truncate">{t.subject}</div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-xs uppercase font-bold text-gray-500 tracking-wider">{t.category.replace('_', ' ')}</span>
+                        <span className="text-gray-400 text-[10px]">
+                          {new Date(t.createdAt).toLocaleDateString('id-ID')}
+                        </span>
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-gray-100">
+                        <button 
+                          className="w-full px-2 py-1.5 bg-blue-500 text-white text-[10px] font-bold uppercase rounded" 
+                          onClick={() => { setSelectedTicket(t); setDetailModalOpen(true); }}
+                        >
+                          Detail
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between border-t border-gray-100 pt-4 mt-auto">
+                <div className="text-sm text-gray-500">
+                  Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredTickets.length)}</span> of <span className="font-medium">{filteredTickets.length}</span> tickets
+                </div>
+                <div className="flex gap-1">
+                  <button
+                    className="btn ghost sm"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(prev => prev - 1)}
+                  >
+                    Previous
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <button
+                      key={page}
+                      className={`btn sm w-8 h-8 p-0 flex items-center justify-center ${currentPage === page ? '' : 'ghost'}`}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  <button
+                    className="btn ghost sm"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(prev => prev + 1)}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       <Modal
         title={
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 border-b border-gray-100 pb-2">
             <span className="text-lg font-black uppercase">Detail Tiket</span>
-            {selectedTicket && <Tag color={getStatusColor(selectedTicket.status)} className="uppercase font-bold">{selectedTicket.status.replace('_', ' ')}</Tag>}
+            {selectedTicket && (
+              <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase ${getStatusColor(selectedTicket.status)}`}>
+                {selectedTicket.status.replace('_', ' ')}
+              </span>
+            )}
           </div>
         }
         open={detailModalOpen}
         onCancel={() => setDetailModalOpen(false)}
         footer={null}
-        width={700}
+        width="95vw"
+        style={{ maxWidth: 700 }}
       >
         {selectedTicket && (
-          <div className="space-y-6 pt-4">
-            <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+          <div className="space-y-6 pt-2">
+            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
               <div>
-                <p className="text-xs font-bold text-slate-500 uppercase">Nomor Tiket</p>
-                <p className="font-mono font-bold text-slate-900">{selectedTicket.ticketNumber}</p>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Nomor Tiket</p>
+                <p className="font-mono font-bold text-gray-900">{selectedTicket.ticketNumber}</p>
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-500 uppercase">Event</p>
-                <p className="font-medium text-slate-900">{selectedTicket.event?.name || '-'}</p>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Event</p>
+                <p className="font-medium text-gray-900">{selectedTicket.event?.name || '-'}</p>
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-500 uppercase">Nama Pelapor</p>
-                <p className="font-medium text-slate-900">{selectedTicket.name}</p>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Nama Pelapor</p>
+                <p className="font-medium text-gray-900">{selectedTicket.name}</p>
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-500 uppercase">Kontak</p>
-                <p className="text-sm text-slate-900">{selectedTicket.email}</p>
-                {selectedTicket.phoneNumber && <p className="text-sm text-slate-900">{selectedTicket.phoneNumber}</p>}
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Kontak</p>
+                <p className="text-sm text-gray-900">{selectedTicket.email}</p>
+                {selectedTicket.phoneNumber && <p className="text-sm text-gray-900">{selectedTicket.phoneNumber}</p>}
               </div>
             </div>
 
             <div className="flex gap-2">
               {selectedTicket.phoneNumber && (
-                <Button 
-                  type="primary" 
-                  className="bg-green-600 hover:bg-green-500" 
-                  icon={<MessageCircle className="w-4 h-4" />}
+                <button 
+                  className="flex items-center justify-center gap-2 flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg text-xs uppercase tracking-wider transition-colors"
                   onClick={() => handleWhatsApp(selectedTicket.phoneNumber)}
                 >
-                  Hubungi WhatsApp
-                </Button>
+                  <MessageCircle className="w-4 h-4" /> Hubungi WA
+                </button>
               )}
-              <Button 
-                icon={<Mail className="w-4 h-4" />}
+              <button 
+                className="flex items-center justify-center gap-2 flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white font-bold rounded-lg text-xs uppercase tracking-wider transition-colors"
                 onClick={() => handleEmail(selectedTicket.email)}
               >
-                Kirim Email
-              </Button>
+                <Mail className="w-4 h-4" /> Kirim Email
+              </button>
             </div>
 
             <div>
-              <h3 className="text-sm font-bold text-slate-800 mb-2">{selectedTicket.subject}</h3>
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-slate-700 whitespace-pre-wrap">
-                {selectedTicket.description}
+              <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Kendala ({selectedTicket.category.replace('_', ' ')})</h3>
+              <div className="bg-white p-4 rounded-xl border border-gray-200">
+                <h4 className="text-sm font-bold text-gray-800 mb-2">{selectedTicket.subject}</h4>
+                <div className="text-sm text-gray-600 whitespace-pre-wrap">
+                  {selectedTicket.description}
+                </div>
               </div>
             </div>
 
-            <div className="border-t border-slate-200 pt-6">
-              <h3 className="text-sm font-bold text-slate-800 mb-4">Aksi Penyelesaian</h3>
+            <div className="border-t border-gray-100 pt-6">
+              <h3 className="text-sm font-bold text-gray-800 mb-4">Aksi Penyelesaian</h3>
               
               <div className="space-y-4">
                 {selectedTicket.status !== 'in_progress' && selectedTicket.status !== 'resolved' && (
-                  <Button 
+                  <button 
+                    className="w-full px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold border border-blue-200 rounded-xl transition-colors disabled:opacity-50"
                     onClick={() => handleUpdateStatus('in_progress')} 
-                    loading={updating}
+                    disabled={updating}
                   >
                     Tandai Sedang Diproses (In Progress)
-                  </Button>
+                  </button>
                 )}
                 
                 {selectedTicket.status !== 'resolved' && (
                   <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                    <p className="text-sm font-medium text-blue-800 mb-2">Tutup Tiket (Resolved)</p>
+                    <p className="text-sm font-bold text-blue-800 mb-2">Tutup Tiket (Resolved)</p>
                     <Input.TextArea 
                       id="resolution-notes"
                       placeholder="Catatan penyelesaian (opsional, akan terlihat oleh pelapor)..."
                       rows={3}
-                      className="mb-3"
+                      className="mb-3 rounded-lg border-blue-200 focus:border-blue-500 focus:ring-blue-500"
                     />
-                    <Button 
-                      type="primary"
-                      loading={updating}
+                    <button 
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm transition-colors disabled:opacity-50"
+                      disabled={updating}
                       onClick={() => {
                         const notes = (document.getElementById('resolution-notes') as HTMLTextAreaElement)?.value;
                         handleUpdateStatus('resolved', notes);
                       }}
                     >
                       Selesaikan Tiket
-                    </Button>
+                    </button>
                   </div>
                 )}
 
@@ -303,18 +391,17 @@ export default function TicketsPage() {
                   <div className="bg-green-50 p-4 rounded-xl border border-green-200">
                     <p className="text-sm font-bold text-green-800">Tiket telah diselesaikan</p>
                     {selectedTicket.resolutionNotes && (
-                      <p className="mt-2 text-sm text-green-900 bg-white p-3 rounded-lg border border-green-100">
-                        <strong>Catatan:</strong> {selectedTicket.resolutionNotes}
+                      <p className="mt-2 text-sm text-green-900 bg-white p-3 rounded-lg border border-green-100 whitespace-pre-wrap">
+                        <strong>Catatan:</strong><br/>{selectedTicket.resolutionNotes}
                       </p>
                     )}
-                    <Button 
-                      className="mt-3" 
-                      size="small"
+                    <button 
+                      className="mt-4 px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-bold rounded text-xs transition-colors disabled:opacity-50"
                       onClick={() => handleUpdateStatus('open')}
-                      loading={updating}
+                      disabled={updating}
                     >
                       Buka Kembali (Reopen)
-                    </Button>
+                    </button>
                   </div>
                 )}
               </div>

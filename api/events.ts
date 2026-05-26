@@ -10,6 +10,10 @@ function formatEvent(event: any) {
       content = typeof event.content === 'string' ? JSON.parse(event.content) : event.content;
     } catch { content = null; }
   }
+  let categoryStartTimes = event.categoryStartTimes;
+  if (typeof categoryStartTimes === 'string') {
+    try { categoryStartTimes = JSON.parse(categoryStartTimes); } catch {}
+  }
   return {
     id: event.id,
     name: event.name,
@@ -34,6 +38,8 @@ function formatEvent(event: any) {
     participantCount: event.participantCount || 0,
     isDeleted: !!event.isDeleted,
     createdAt: event.createdAt instanceof Date ? event.createdAt.getTime() : event.createdAt,
+    cutoffMs: event.cutoffMs,
+    categoryStartTimes,
   };
 }
 

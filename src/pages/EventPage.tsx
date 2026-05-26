@@ -638,23 +638,26 @@ export default function EventPage() {
         const dqMap = loadDQMap(event.id);
         const catStartRaw = event.categoryStartTimes ?? {};
 
+        const normCat = (s: string) => String(s || "").trim().toLowerCase().replace(/-/g, " ").replace(/\s+/g, " ");
+
         const absOverrideMs: Record<string, number | null> = {};
         const timeOnlyStr: Record<string, string | null> = {};
 
         Object.entries(catStartRaw).forEach(([key, raw]) => {
+          const normKey = normCat(key);
           const s = String(raw || "").trim();
           if (!s) {
-            absOverrideMs[key] = null;
-            timeOnlyStr[key] = null;
+            absOverrideMs[normKey] = null;
+            timeOnlyStr[normKey] = null;
             return;
           }
           if (/\d{4}-\d{2}-\d{2}/.test(s)) {
             const parsed = parseTimeToMs(s);
-            absOverrideMs[key] = parsed.ms;
-            timeOnlyStr[key] = null;
+            absOverrideMs[normKey] = parsed.ms;
+            timeOnlyStr[normKey] = null;
           } else {
-            absOverrideMs[key] = null;
-            timeOnlyStr[key] = s;
+            absOverrideMs[normKey] = null;
+            timeOnlyStr[normKey] = s;
           }
         });
 
@@ -672,8 +675,7 @@ export default function EventPage() {
 
         const baseRows: LeaderRow[] = [];
 
-        if (master.all.length === 0) {
-          // Fallback to registered participants if timing list is not yet uploaded
+        if (!master?.all || master.all.length === 0) {
           registeredParticipants.filter(p => p.paymentStatus === 'settlement').forEach(p => {
             baseRows.push({
               rank: null,
@@ -689,7 +691,24 @@ export default function EventPage() {
             });
           });
         } else {
+          const adminCategories = event.categories || [];
+          
+          const resolveAdminCategory = (cat: string, gender: string) => {
+            const normCatStr = normCat(cat);
+            const exact = adminCategories.find(c => normCat(c) === normCatStr);
+            if (exact) return exact;
+            
+            const genderStr = normCat(gender);
+            const combined = normCat(`${cat} ${genderStr}`);
+            const combinedMatch = adminCategories.find(c => normCat(c) === combined);
+            if (combinedMatch) return combinedMatch;
+            
+            return cat;
+          };
+
           master.all.forEach((p) => {
+            const resolvedCategoryKey = resolveAdminCategory(p.sourceCategoryKey, p.gender);
+
             const isDQ = !!dqMap[p.epc];
             const finishEntry = finishMap.get(p.epc);
 
@@ -699,8 +718,8 @@ export default function EventPage() {
                 bib: p.bib,
                 name: p.name,
                 gender: p.gender,
-                category: p.category || p.sourceCategoryKey,
-                sourceCategoryKey: p.sourceCategoryKey,
+                category: p.category || resolvedCategoryKey,
+                sourceCategoryKey: resolvedCategoryKey,
                 finishTimeRaw: finishEntry ? extractTimeOfDay(finishEntry.raw) : '-',
                 totalTimeMs: 0,
                 totalTimeDisplay: isDQ ? "DSQ" : status,
@@ -713,7 +732,7 @@ export default function EventPage() {
               return;
             }
 
-            const catKey = p.sourceCategoryKey;
+            const catKey = normCat(resolvedCategoryKey);
             const absMs = absOverrideMs[catKey] ?? null;
             const timeOnly = timeOnlyStr[catKey] ?? null;
 
@@ -774,8 +793,8 @@ export default function EventPage() {
               bib: p.bib,
               name: p.name,
               gender: p.gender,
-              category: p.category || p.sourceCategoryKey,
-              sourceCategoryKey: p.sourceCategoryKey,
+              category: p.category || resolvedCategoryKey,
+              sourceCategoryKey: resolvedCategoryKey,
               finishTimeRaw: extractTimeOfDay(finishEntry.raw),
               totalTimeMs: total,
               totalTimeDisplay: isDQ ? "DSQ" : isDNF ? "DNF" : formatDuration(total),
@@ -802,7 +821,7 @@ export default function EventPage() {
 
         const categoryRankByEpc = new Map<string, number>();
         (event.categories || []).forEach((catKey: string) => {
-          const list = finisherSorted.filter((r) => r.sourceCategoryKey === catKey);
+          const list = finisherSorted.filter((r) => normCat(r.sourceCategoryKey) === normCat(catKey));
           list.forEach((r, i) => categoryRankByEpc.set(r.epc, i + 1));
         });
 
@@ -821,7 +840,7 @@ export default function EventPage() {
 
         const catMap: Record<string, LeaderRow[]> = {};
         (event.categories || []).forEach((catKey) => {
-          const list = overallFinal.filter((r) => r.sourceCategoryKey === catKey);
+          const list = overallFinal.filter((r) => normCat(r.sourceCategoryKey) === normCat(catKey));
           catMap[catKey] = list;
         });
 
@@ -1108,22 +1127,6 @@ export default function EventPage() {
             <div className="space-y-8">
               {overall.length > 0 ? (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                     <div className="bg-white border-l-4 border-stone-900 p-6 shadow-sm">
-                        <div className="text-[10px] uppercase tracking-widest font-bold text-stone-400 mb-2">Total Participants</div>
-                        <div className="text-5xl font-black tracking-tighter text-stone-900">{overall.length}</div>
-                     </div>
-                     <div className="bg-white border-l-4 border-stone-800 p-6 shadow-sm">
-                        <div className="text-[10px] uppercase tracking-widest font-bold text-stone-400 mb-2">Finishers Validated</div>
-                        <div className="text-5xl font-black tracking-tighter text-red-600">
-                           {overall.filter(r => r.totalTimeDisplay !== "DNF" && r.totalTimeDisplay !== "DSQ").length}
-                        </div>
-                     </div>
-                     <div className="bg-white border-l-4 border-stone-300 p-6 shadow-sm">
-                        <div className="text-[10px] uppercase tracking-widest font-bold text-stone-400 mb-2">Race Categories</div>
-                        <div className="text-5xl font-black tracking-tighter text-stone-900">{event.categories?.length || 0}</div>
-                     </div>
-                  </div>
                   <LeaderboardTable
                     title="Participant Roster"
                     rows={overall}
@@ -1141,7 +1144,9 @@ export default function EventPage() {
 
           {activeTab === "Results" && (
             <div className="space-y-8">
-              <RaceClock cutoffMs={event?.cutoffMs} categoryStartTimes={event?.categoryStartTimes} />
+              {!(overall.some((r) => r.rank != null && r.rank <= 3)) && (
+                 <RaceClock cutoffMs={event?.cutoffMs} categoryStartTimes={event?.categoryStartTimes} />
+              )}
               <LeaderboardTable
                 title="Overall Result Rankings"
                 rows={overall}
@@ -1279,7 +1284,9 @@ export default function EventPage() {
 
           {activeTab !== "Home" && activeTab !== "Participants" && activeTab !== "Registered" && activeTab !== "Results" && activeTab !== "Route" && (
             <div className="space-y-8">
-              <RaceClock cutoffMs={event?.cutoffMs} categoryStartTimes={event?.categoryStartTimes} />
+              {!((byCategory as any)[activeTab] || []).some((r: any) => r.rank != null && r.rank <= 3) && (
+                <RaceClock cutoffMs={event?.cutoffMs} categoryStartTimes={event?.categoryStartTimes} />
+              )}
               <CategorySection
                 categoryKey={activeTab}
                 rows={(byCategory as any)[activeTab] || []}
