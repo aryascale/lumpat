@@ -47,7 +47,8 @@ export default function ActivityLogsPage() {
           </button>
         </div>
 
-        <div className="flex-1 overflow-auto">
+        {/* Desktop Table - hidden on mobile */}
+        <div className="hidden md:block flex-1 overflow-auto">
           <table className="f1-table compact">
             <thead>
               <tr>
@@ -85,6 +86,35 @@ export default function ActivityLogsPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Cards - visible only on mobile */}
+        <div className="md:hidden flex-1 overflow-auto space-y-3 pb-4">
+          {logs.length === 0 ? (
+            <div className="py-10 text-center text-gray-400 font-medium text-sm">
+              {loading ? 'Memuat data log...' : 'Belum ada log aktivitas.'}
+            </div>
+          ) : (
+            logs.map((log) => (
+              <div key={log.id} className="bg-white border border-gray-100 p-3 rounded-lg shadow-sm">
+                <div className="flex justify-between items-start mb-2">
+                  <span className="font-bold text-sm text-gray-900">{log.actor}</span>
+                  <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-gray-100 text-gray-600 border border-gray-200">
+                    {log.action}
+                  </span>
+                </div>
+                <div className="text-xs text-gray-600 leading-relaxed mb-2 bg-gray-50 p-2 rounded">
+                  {log.detail}
+                </div>
+                <div className="text-[10px] text-gray-400 text-right">
+                  {new Date(log.createdAt).toLocaleDateString('id-ID', {
+                    day: 'numeric', month: 'short', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit', second: '2-digit'
+                  })}
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         {total > limit && (

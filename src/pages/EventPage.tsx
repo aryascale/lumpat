@@ -9,6 +9,7 @@ import LeaderboardTable, { LeaderRow } from "../components/LeaderboardTable";
 import ParticipantModal from "../components/ParticipantModal";
 import InteractiveRouteMap from "../components/InteractiveRouteMap";
 import Navbar from "../components/Navbar";
+import { SlideToConfirm } from "../components/ui/SlideToConfirm";
 import { message, Modal, Select, Button, Input } from "antd";
 import {
   loadMasterParticipants,
@@ -1460,7 +1461,7 @@ export default function EventPage() {
                       type="primary" 
                       danger 
                       size="large" 
-                      className="px-8 font-bold uppercase tracking-widest text-xs"
+                      className="w-full sm:w-auto px-8 font-bold uppercase tracking-widest text-xs h-14"
                       disabled={!regForm.categoryId || (!event?.content?.allowBulkNoOtp && !emailVerified) || (event?.content?.allowBulkNoOtp && (!regForm.email || !regForm.email.includes('@')))}
                       onClick={() => setCurrentStep(2)}
                     >
@@ -1616,33 +1617,32 @@ export default function EventPage() {
                     )}
                   </div>
 
-                  <div className="flex justify-between pt-4">
-                    <Button size="large" onClick={() => setCurrentStep(1)}>
+                  <div className="flex flex-col-reverse sm:flex-row justify-between pt-6 gap-4">
+                    <Button size="large" onClick={() => setCurrentStep(1)} className="w-full sm:w-auto h-14">
                       Kembali
                     </Button>
-                    <Button 
-                      type="primary" 
-                      danger 
-                      size="large" 
-                      className="px-8 font-bold uppercase tracking-widest text-xs"
-                      onClick={() => {
-                        for (let i = 0; i < bulkQty; i++) {
-                          const p = bulkParticipants[i] || {};
-                          const missing = customFields.filter(f => f.required && !p[f.id]);
-                          if (tshirtInventory.length > 0 && !p['tshirtSize']) {
-                            missing.push({ label: 'Ukuran Kaos / Jersey' } as any);
+                    <div className="w-full sm:w-[320px]">
+                      <SlideToConfirm
+                        text="Lanjut Pembayaran"
+                        successText="Memproses..."
+                        onConfirm={() => {
+                          for (let i = 0; i < bulkQty; i++) {
+                            const p = bulkParticipants[i] || {};
+                            const missing = customFields.filter(f => f.required && !p[f.id]);
+                            if (tshirtInventory.length > 0 && !p['tshirtSize']) {
+                              missing.push({ label: 'Ukuran Kaos / Jersey' } as any);
+                            }
+                            if (missing.length > 0) {
+                              setActiveTabIdx(i);
+                              message.error(`Pelanggan ${i+1}: Harap isi: ${missing.map(f => f.label).join(', ')}`);
+                              return Promise.reject(new Error("Missing fields"));
+                            }
                           }
-                          if (missing.length > 0) {
-                            setActiveTabIdx(i);
-                            message.error(`Pelanggan ${i+1}: Harap isi: ${missing.map(f => f.label).join(', ')}`);
-                            return;
-                          }
-                        }
-                        setCurrentStep(3);
-                      }}
-                    >
-                      Lanjut Pembayaran
-                    </Button>
+                          setCurrentStep(3);
+                          return Promise.resolve();
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               )}
@@ -1674,8 +1674,8 @@ export default function EventPage() {
                     </div>
                   </div>
 
-                  <div className="flex justify-between pt-4">
-                    <Button size="large" onClick={() => setCurrentStep(2)}>
+                  <div className="flex flex-col-reverse sm:flex-row justify-between pt-4 gap-4">
+                    <Button size="large" onClick={() => setCurrentStep(2)} className="w-full sm:w-auto h-14">
                       Kembali
                     </Button>
                     <Button 
@@ -1684,7 +1684,7 @@ export default function EventPage() {
                       size="large" 
                       loading={registering} 
                       onClick={handleCheckout} 
-                      className="px-8 font-bold uppercase tracking-widest text-xs"
+                      className="w-full sm:w-auto px-8 font-bold uppercase tracking-widest text-xs h-14"
                       disabled={totalPrice <= 0}
                     >
                       Bayar Sekarang

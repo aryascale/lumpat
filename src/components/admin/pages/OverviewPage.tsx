@@ -55,7 +55,7 @@ export default function OverviewPage({ eventId, onConfigChanged }: OverviewPageP
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
           <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
             <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total Revenue</div>
             <div className="text-2xl font-black text-gray-900">Rp {(dashboardData?.totalRevenue || 0).toLocaleString('id-ID')}</div>
@@ -80,7 +80,8 @@ export default function OverviewPage({ eventId, onConfigChanged }: OverviewPageP
           <div className="header-row mb-4">
             <h3 className="text-lg font-bold text-gray-900">Recent Registrations</h3>
           </div>
-          <div className="overflow-x-auto">
+          {/* Desktop Table - hidden on mobile */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-gray-100">
@@ -122,6 +123,38 @@ export default function OverviewPage({ eventId, onConfigChanged }: OverviewPageP
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Cards - visible only on mobile */}
+          <div className="md:hidden space-y-3">
+            {!dashboardData?.recentRegistrations?.length ? (
+              <div className="py-6 text-center text-gray-500 text-sm">Belum ada pendaftaran terbaru</div>
+            ) : (
+              (dashboardData?.recentRegistrations || []).map((reg: any) => (
+                <div key={reg.id} className="bg-white border border-gray-100 p-3 rounded-lg shadow-sm">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <div className="font-bold text-gray-900 text-sm">{reg.name}</div>
+                      <div className="text-xs text-gray-500">{reg.email}</div>
+                    </div>
+                    <span className={`px-2 py-1 text-[9px] font-bold uppercase rounded-full whitespace-nowrap ${
+                      reg.paymentStatus === 'settlement' ? 'bg-gray-900 text-white' :
+                      reg.paymentStatus === 'pending' ? 'bg-gray-200 text-gray-700' :
+                      'bg-gray-100 text-gray-400'
+                    }`}>
+                      {reg.paymentStatus}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-700 bg-gray-50 p-2 rounded mb-2">
+                    <div className="font-medium">{reg.eventName}</div>
+                    <div className="text-gray-500">{reg.categoryName}</div>
+                  </div>
+                  <div className="text-[10px] text-gray-400 text-right">
+                    {new Date(reg.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

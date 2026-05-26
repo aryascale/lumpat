@@ -265,13 +265,13 @@ export default function AdminLayout() {
           </Dropdown>
         </Header>
 
-        {/* Page Content */}
         <Content
           style={{
             margin: isMobile ? '12px 12px 0' : '24px 24px 0',
             padding: isMobile ? 12 : 24,
             minHeight: 280,
             background: '#f0f2f5',
+            overflowX: 'hidden',
           }}
         >
           <Outlet />
