@@ -90,11 +90,11 @@ export default function HeroCircularGallery() {
                     className="w-[48px] h-[48px] md:w-[72px] md:h-[72px] overflow-hidden rounded-lg shadow-md bg-stone-50 flex items-center justify-center"
                   >
                     {i === 0 ? (
-                      <div className="w-full h-full flex items-center justify-center bg-white border border-gray-100">
-                        <span className="font-black text-[12px] md:text-[16px] tracking-tighter text-slate-900">
-                          LUMPAT
-                        </span>
-                      </div>
+                      <img
+                        src="/Assets/landing2/result.png"
+                        alt="Platform Result"
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <img
                         src={src}

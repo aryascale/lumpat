@@ -26,7 +26,7 @@ export default function LandingNavbar() {
 
         {/* Center: Nav Links */}
         <div className="hidden md:flex items-center gap-10 text-[12px] font-medium text-slate-600 tracking-wide">
-          <a href="#events" className="hover:text-slate-900 transition-colors">
+          <a onClick={() => navigate("/event")} className="hover:text-slate-900 transition-colors cursor-pointer">
             Events
           </a>
           <a href="#izt-timing" className="hover:text-slate-900 transition-colors">
