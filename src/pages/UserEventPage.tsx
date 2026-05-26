@@ -119,33 +119,33 @@ export default function UserEventPage() {
                     
                     return (
                       <div key={event.id} onClick={() => handleView(event.slug)}
-                        className="group flex bg-white border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer overflow-hidden h-[120px] sm:h-[140px]"
+                        className="group flex bg-white border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer overflow-hidden h-[110px] sm:h-[140px]"
                         style={{ animation: `fadeUp 0.5s ease-out ${i * 0.05}s both` }}>
                         
                         {/* Left Side: Thumbnail/Logo */}
-                        <div className="w-[120px] sm:w-[140px] h-full shrink-0 flex items-center justify-center bg-[#fafafa] border-r border-gray-100 p-3 sm:p-4">
+                        <div className="w-[90px] sm:w-[140px] h-full shrink-0 flex items-center justify-center bg-[#fafafa] border-r border-gray-100 p-2 sm:p-4">
                           {hasBanner ? (
                             <div className="w-full h-full overflow-hidden relative border border-gray-200/50">
                               <img src={event.bannerUrl} alt={event.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                             </div>
                           ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-[#757F9A] to-[#D7DDE8] flex items-center justify-center p-2 text-center shadow-inner">
-                              <span className="text-[10px] font-black text-white uppercase tracking-widest break-words line-clamp-3">{event.name}</span>
+                            <div className="w-full h-full bg-gradient-to-br from-[#757F9A] to-[#D7DDE8] flex items-center justify-center p-1 sm:p-2 text-center shadow-inner">
+                              <span className="text-[9px] sm:text-[10px] font-black text-white uppercase tracking-widest break-words line-clamp-3 leading-tight">{event.name}</span>
                             </div>
                           )}
                         </div>
 
                         {/* Right Side: Details */}
-                        <div className="flex-1 py-3 px-4 sm:px-5 flex flex-col justify-center min-w-0">
+                        <div className="flex-1 py-2 px-3 sm:py-3 sm:px-5 flex flex-col justify-center min-w-0">
                           {/* Top Row: Date & Location */}
-                          <div className="flex items-center justify-between gap-2 mb-1.5">
-                            <span className="text-[11px] sm:text-xs font-bold text-blue-600 shrink-0 uppercase tracking-widest">
+                          <div className="flex items-center justify-between gap-1.5 sm:gap-2 mb-1 sm:mb-1.5">
+                            <span className="text-[10px] sm:text-xs font-bold text-blue-600 shrink-0 uppercase tracking-widest">
                               {dateStr}
                             </span>
                             {event.location && (
-                              <div className="flex items-center gap-1 text-[11px] sm:text-xs text-gray-500 truncate font-medium uppercase tracking-widest">
+                              <div className="flex items-center gap-0.5 sm:gap-1 text-[9px] sm:text-xs text-gray-500 truncate font-medium uppercase tracking-widest min-w-0">
                                 <span className="truncate">{event.location}</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500 shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 shrink-0">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
                                 </svg>
@@ -154,15 +154,15 @@ export default function UserEventPage() {
                           </div>
 
                           {/* Middle Row: Title */}
-                          <h3 className="font-bold text-gray-900 text-base sm:text-lg leading-tight mb-2 truncate group-hover:text-blue-600 transition-colors">
+                          <h3 className="font-bold text-gray-900 text-sm sm:text-lg leading-snug sm:leading-tight mb-1 sm:mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
                             {event.name}
                           </h3>
 
                           {/* Bottom Row: Category */}
                           <div className="flex flex-wrap items-center gap-2 mt-auto">
                             {!event.categories || event.categories.length === 0 ? (
-                              <div className="flex items-center text-[10px] sm:text-xs text-gray-600 font-bold bg-gray-50 px-2.5 py-1 uppercase tracking-wider border border-gray-200">
-                                <svg className="w-3.5 h-3.5 mr-1.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <div className="flex items-center text-[9px] sm:text-[10px] lg:text-xs text-gray-600 font-bold bg-gray-50 px-2 py-0.5 sm:px-2.5 sm:py-1 uppercase tracking-wider border border-gray-200">
+                                <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1 sm:mr-1.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                   <path d="M13 4a2 2 0 100-4 2 2 0 000 4z"/><path d="M4 17l5-5 4-2 3 3 2.5-1M12 10V4M10 21l3-5 3 2.5M7 12l2-4"/>
                                 </svg>
                                 Event
@@ -170,9 +170,9 @@ export default function UserEventPage() {
                             ) : (
                               <>
                                 {event.categories.slice(0, 3).map((cat, idx) => (
-                                  <div key={idx} className="flex items-center text-[10px] sm:text-xs text-gray-600 font-bold bg-gray-50 px-2.5 py-1 uppercase tracking-wider border border-gray-200">
+                                  <div key={idx} className="flex items-center text-[9px] sm:text-[10px] lg:text-xs text-gray-600 font-bold bg-gray-50 px-2 py-0.5 sm:px-2.5 sm:py-1 uppercase tracking-wider border border-gray-200">
                                     {idx === 0 && (
-                                      <svg className="w-3.5 h-3.5 mr-1.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1 sm:mr-1.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M13 4a2 2 0 100-4 2 2 0 000 4z"/><path d="M4 17l5-5 4-2 3 3 2.5-1M12 10V4M10 21l3-5 3 2.5M7 12l2-4"/>
                                       </svg>
                                     )}
@@ -180,7 +180,7 @@ export default function UserEventPage() {
                                   </div>
                                 ))}
                                 {event.categories.length > 3 && (
-                                  <div className="flex items-center text-[10px] sm:text-xs text-gray-500 font-bold bg-gray-100 px-2 py-1 uppercase tracking-wider border border-gray-200">
+                                  <div className="flex items-center text-[9px] sm:text-[10px] lg:text-xs text-gray-500 font-bold bg-gray-100 px-1.5 py-0.5 sm:px-2 sm:py-1 uppercase tracking-wider border border-gray-200">
                                     +{event.categories.length - 3}
                                   </div>
                                 )}
