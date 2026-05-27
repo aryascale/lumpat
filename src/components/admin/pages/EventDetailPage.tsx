@@ -2433,7 +2433,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                         about: homeContent.about || eventData.content?.about || '',
                         schedule: homeContent.schedule || eventData.content?.schedule || '',
                         rules: homeContent.rules || eventData.content?.rules || '',
-                        allowBulkNoOtp: eventData.content?.allowBulkNoOtp || false
+                        allowBulkNoOtp: eventData.content?.allowBulkNoOtp || false,
+                        rpcBgUrl: eventData.content?.rpcBgUrl || ''
                       }
                     }),
                   });
@@ -2510,6 +2511,25 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                     </span>
                   </div>
                 </label>
+              </div>
+            </div>
+
+            <div className="admin-cutoff border-t border-gray-100 pt-6">
+              <div className="label">RPC Background URL</div>
+              <div className="tools">
+                <input
+                  type="text"
+                  className="search w-full"
+                  placeholder="https://example.com/image.jpg"
+                  value={eventData?.content?.rpcBgUrl || ''}
+                  onChange={(e) => setEventData({ 
+                    ...eventData, 
+                    content: { ...(eventData?.content || {}), rpcBgUrl: e.target.value }
+                  })}
+                />
+                <div className="text-xs text-gray-500 mt-2">
+                  Masukkan URL gambar untuk digunakan sebagai background di halaman layar RPC.
+                </div>
               </div>
             </div>
 

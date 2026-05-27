@@ -107,133 +107,136 @@ export default function RpcPage() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-stone-900 text-stone-100 font-sans flex flex-col relative overflow-hidden">
-      {/* Decorative Background for Videotron */}
-      <div className="absolute inset-0 pointer-events-none z-0 opacity-20">
-         <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-red-600 rounded-full blur-[150px] -translate-y-1/2 translate-x-1/3"></div>
-         <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-yellow-500 rounded-full blur-[150px] translate-y-1/3 -translate-x-1/3"></div>
-      </div>
+  const rpcBgUrl = eventData?.content?.rpcBgUrl;
 
-      <div className="relative z-10 flex-1 flex flex-col p-8 lg:p-16 h-screen max-h-screen">
+  return (
+    <div 
+      className="min-h-screen bg-stone-950 text-stone-100 font-sans flex flex-col relative"
+      style={rpcBgUrl ? { backgroundImage: `url(${rpcBgUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+    >
+      {rpcBgUrl && <div className="absolute inset-0 bg-stone-950/80 z-0" />}
+      
+      <div className="flex-1 flex flex-col p-6 lg:p-12 h-screen max-h-screen max-w-7xl mx-auto w-full relative z-10">
         
         {/* Header */}
-        <div className="flex justify-between items-center border-b-4 border-stone-800 pb-8 mb-12">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b-2 border-stone-800 pb-6 mb-8 gap-6">
           <div>
-            <h1 className="text-5xl lg:text-7xl font-black tracking-tighter uppercase text-white mb-2">{eventData.name}</h1>
-            <h2 className="text-2xl lg:text-3xl text-red-500 font-bold tracking-widest">RACE PACK COLLECTION</h2>
+            <h1 className="text-4xl lg:text-5xl font-black uppercase text-white tracking-tight">{eventData.name}</h1>
+            <h2 className="text-xl text-red-500 font-bold uppercase tracking-wider mt-1">Race Pack Collection</h2>
           </div>
           
           {/* Search Tools (Top Right) */}
-          <div className="flex gap-4">
+          <div className="flex gap-3 w-full md:w-auto">
             <button 
               onClick={() => { setIsScanning(!isScanning); setScanError(""); }}
-              className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-bold text-2xl transition-all ${isScanning ? 'bg-red-600 text-white shadow-[0_0_30px_rgba(220,38,38,0.5)]' : 'bg-stone-800 text-stone-300 hover:bg-stone-700 hover:text-white'}`}
+              className={`flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-bold text-lg transition-all border-2 ${
+                isScanning 
+                  ? 'bg-red-500 border-red-600 border-b-4 text-white active:border-b-2 active:translate-y-[2px]' 
+                  : 'bg-stone-800 border-stone-700 border-b-4 text-stone-200 hover:bg-stone-700 active:border-b-2 active:translate-y-[2px]'
+              }`}
             >
-              <QrCode className="w-8 h-8" />
-              {isScanning ? 'Tutup Scanner' : 'Scan QR'}
+              <QrCode className="w-6 h-6" />
+              <span className="hidden sm:inline">{isScanning ? 'Tutup Scanner' : 'Scan QR'}</span>
             </button>
-            <form onSubmit={handleSearch} className="flex gap-2">
+            <form onSubmit={handleSearch} className="flex gap-2 flex-1 md:flex-initial">
               <input 
                 type="text" 
-                placeholder="Cari BIB / Nama..." 
+                placeholder="Cari BIB atau Nama..." 
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="bg-stone-800 border-2 border-stone-700 text-white px-8 py-4 rounded-2xl text-2xl font-bold focus:border-red-500 focus:outline-none placeholder-stone-500 w-96"
+                className="bg-stone-900 border-2 border-b-4 border-stone-800 text-white px-6 py-3 rounded-2xl text-lg font-bold focus:border-red-500 focus:outline-none placeholder-stone-600 w-full md:w-80 transition-colors"
               />
-              <button type="submit" className="bg-red-600 hover:bg-red-500 text-white px-8 py-4 rounded-2xl">
-                <Search className="w-8 h-8" />
+              <button 
+                type="submit" 
+                className="bg-red-500 hover:bg-red-400 border-2 border-b-4 border-red-700 active:border-b-2 active:translate-y-[2px] text-white px-6 py-3 rounded-2xl transition-all flex items-center justify-center"
+              >
+                <Search className="w-6 h-6" />
               </button>
             </form>
           </div>
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex items-center justify-center relative">
+        <div className="flex-1 flex flex-col relative bg-stone-900 border-2 border-b-8 border-stone-800 rounded-[2.5rem] overflow-hidden p-6 lg:p-12">
           
-          {/* Scanner Overlay */}
-          {isScanning && (
-            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-stone-900/90 backdrop-blur-md rounded-3xl border-4 border-stone-700 p-8">
-              <h3 className="text-3xl font-bold text-white mb-8 flex items-center gap-4">
-                <QrCode className="w-10 h-10 text-red-500" />
-                Arahkan QR Code Peserta ke Kamera
+          {/* Scanner Area */}
+          {isScanning && !foundParticipant && (
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-stone-950 p-6">
+              <h3 className="text-2xl lg:text-3xl font-black text-white mb-6 flex items-center gap-3">
+                <QrCode className="w-8 h-8 text-red-500" />
+                Arahkan QR ke Kamera
               </h3>
-              <div className="relative w-[500px] h-[500px] rounded-3xl overflow-hidden border-8 border-red-500 shadow-[0_0_50px_rgba(220,38,38,0.3)] bg-black">
+              <div className="w-full max-w-[400px] aspect-square rounded-3xl overflow-hidden border-4 border-b-8 border-stone-800 bg-black relative">
                 <div id="rpc-qr-reader" ref={qrReaderRef} className="w-full h-full" />
               </div>
               {scanError && (
-                <div className="mt-8 text-2xl text-red-400 bg-red-900/50 px-8 py-4 rounded-xl border border-red-800">
+                <div className="mt-6 text-lg font-bold text-red-500 bg-red-950/30 px-6 py-3 rounded-2xl border-2 border-red-900/50">
                   {scanError}
                 </div>
               )}
               <button 
                 onClick={() => setIsScanning(false)}
-                className="mt-8 bg-stone-800 text-white px-10 py-4 rounded-full text-xl font-bold hover:bg-stone-700 flex items-center gap-3"
+                className="mt-8 bg-stone-800 border-2 border-b-4 border-stone-700 text-white px-8 py-3 rounded-2xl text-lg font-bold hover:bg-stone-700 active:border-b-2 active:translate-y-[2px] transition-all flex items-center gap-2"
               >
-                <X className="w-6 h-6" /> Batalkan Scan
+                <X className="w-5 h-5" /> Batal
               </button>
             </div>
           )}
 
           {/* Participant Data Display */}
           {foundParticipant ? (
-            <div className="w-full max-w-7xl w-full mx-auto bg-gradient-to-br from-stone-800 to-stone-900 border-l-[16px] border-red-600 rounded-[3rem] p-16 lg:p-24 shadow-2xl animate-in slide-in-from-bottom-12 fade-in duration-700 relative overflow-hidden">
-              
-              <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-[100px] pointer-events-none"></div>
-
-              <div className="flex flex-col gap-12 relative z-10">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="text-stone-400 font-bold tracking-[0.3em] uppercase text-2xl mb-4">Participant Name</div>
-                    <h2 className="text-7xl lg:text-8xl font-black text-white leading-tight uppercase tracking-tighter">
-                      {foundParticipant.name}
-                    </h2>
-                  </div>
-                  <div className="bg-red-600 text-white px-12 py-6 rounded-3xl flex flex-col items-center justify-center shadow-xl transform rotate-3">
-                    <span className="text-xl font-bold uppercase tracking-widest opacity-80 mb-2">BIB Number</span>
-                    <span className="text-7xl font-black font-mono tracking-tighter">{foundParticipant.bib}</span>
-                  </div>
+            <div className="flex-1 flex flex-col justify-center max-w-4xl mx-auto w-full animate-in fade-in zoom-in-95 duration-300">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-10">
+                <div>
+                  <div className="text-stone-500 font-bold tracking-widest uppercase text-sm mb-2">Nama Peserta</div>
+                  <h2 className="text-5xl lg:text-6xl font-black text-white uppercase tracking-tight leading-tight">
+                    {foundParticipant.name}
+                  </h2>
                 </div>
-
-                <div className="grid grid-cols-3 gap-8 mt-8 pt-12 border-t-4 border-stone-700/50">
-                  <div className="bg-stone-950/50 p-8 rounded-3xl border border-stone-800">
-                    <div className="text-stone-500 font-bold uppercase tracking-widest text-lg mb-2">Kategori</div>
-                    <div className="text-4xl font-black text-white">{foundParticipant.category || foundParticipant.sourceCategoryKey}</div>
-                  </div>
-                  <div className="bg-stone-950/50 p-8 rounded-3xl border border-stone-800">
-                    <div className="text-stone-500 font-bold uppercase tracking-widest text-lg mb-2">Gender</div>
-                    <div className="text-4xl font-black text-white">{foundParticipant.gender || '-'}</div>
-                  </div>
-                  <div className="bg-stone-950/50 p-8 rounded-3xl border border-stone-800">
-                    <div className="text-stone-500 font-bold uppercase tracking-widest text-lg mb-2">Status</div>
-                    <div className="text-4xl font-black text-green-400 flex items-center gap-3">
-                      <CheckCircle className="w-10 h-10" /> Terverifikasi
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-center mt-8">
-                  <button 
-                    onClick={() => setFoundParticipant(null)}
-                    className="text-stone-400 hover:text-white text-xl font-medium border-b-2 border-stone-600 hover:border-white transition-all pb-1"
-                  >
-                    Tutup & Cari Baru
-                  </button>
+                <div className="bg-red-500 border-2 border-b-8 border-red-700 text-white px-10 py-6 rounded-3xl flex flex-col items-center justify-center shrink-0">
+                  <span className="text-sm font-bold uppercase tracking-widest text-red-200 mb-1">Nomor BIB</span>
+                  <span className="text-6xl font-black tracking-tighter">{foundParticipant.bib}</span>
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-stone-950 border-2 border-b-4 border-stone-800 p-6 rounded-2xl">
+                  <div className="text-stone-500 font-bold uppercase tracking-widest text-xs mb-2">Kategori</div>
+                  <div className="text-2xl font-black text-white">{foundParticipant.category || foundParticipant.sourceCategoryKey}</div>
+                </div>
+                <div className="bg-stone-950 border-2 border-b-4 border-stone-800 p-6 rounded-2xl">
+                  <div className="text-stone-500 font-bold uppercase tracking-widest text-xs mb-2">Gender</div>
+                  <div className="text-2xl font-black text-white">{foundParticipant.gender || '-'}</div>
+                </div>
+                <div className="bg-stone-950 border-2 border-b-4 border-green-900/50 p-6 rounded-2xl bg-gradient-to-b from-stone-950 to-green-950/20">
+                  <div className="text-stone-500 font-bold uppercase tracking-widest text-xs mb-2">Status</div>
+                  <div className="text-2xl font-black text-green-500 flex items-center gap-2">
+                    <CheckCircle className="w-6 h-6" /> Terverifikasi
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-12 flex justify-center">
+                <button 
+                  onClick={() => setFoundParticipant(null)}
+                  className="bg-stone-800 border-2 border-b-4 border-stone-700 hover:bg-stone-700 active:border-b-2 active:translate-y-[2px] text-white px-8 py-4 rounded-2xl text-xl font-bold transition-all w-full md:w-auto text-center"
+                >
+                  Selesai & Cari Peserta Lain
+                </button>
+              </div>
             </div>
           ) : (
             // Idle State
             !isScanning && (
-              <div className="text-center opacity-30 flex flex-col items-center">
-                <Search className="w-32 h-32 mb-8" />
-                <h3 className="text-5xl font-black uppercase tracking-widest">Silakan Cari Peserta</h3>
-                <p className="text-2xl mt-4">Ketik nama/BIB atau scan QR code peserta.</p>
+              <div className="flex-1 flex flex-col items-center justify-center text-center opacity-40">
+                <div className="bg-stone-800 p-8 rounded-full mb-6">
+                  <Search className="w-16 h-16 text-stone-400" />
+                </div>
+                <h3 className="text-3xl font-black uppercase tracking-wide text-white">Siap Melayani</h3>
+                <p className="text-lg mt-3 text-stone-400 font-medium">Ketik BIB / Nama atau scan QR code peserta untuk memulai.</p>
               </div>
             )
           )}
-
         </div>
       </div>
     </div>
