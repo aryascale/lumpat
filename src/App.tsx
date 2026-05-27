@@ -9,6 +9,7 @@ import CreateEventPage from "./pages/CreateEventPage";
 import EventPage from "./pages/EventPage";
 import SupportTicketPage from "./pages/SupportTicketPage";
 import CheckTicketPage from "./pages/CheckTicketPage";
+import RpcPage from "./pages/RpcPage";
 
 import AdminLayout from "./components/admin/AdminLayout";
 import {
@@ -49,6 +50,7 @@ export default function App() {
         <Route path="/admin/home" element={<HomePage />} />
         <Route path="/admin/create-event" element={<CreateEventPage />} />
         <Route path="/event/:slug" element={<EventPage />} />
+        <Route path="/rpc/:slug" element={<RpcPage />} />
 
         {/* New Admin Routes with Layout */}
         <Route path="/admin" element={<AdminLayout />}>

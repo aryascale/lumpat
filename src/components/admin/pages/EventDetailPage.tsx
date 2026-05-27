@@ -1047,6 +1047,15 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
               </div>
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
+              <a 
+                href={`/rpc/${eventSlug}`} 
+                target="_blank" 
+                rel="noreferrer"
+                className="btn text-white w-full sm:w-auto text-center flex items-center justify-center font-bold"
+                style={{ backgroundColor: '#dc2626', borderColor: '#b91c1c' }}
+              >
+                Buka Layar RPC
+              </a>
               <button className="btn secondary w-full sm:w-auto border border-stone-200" onClick={exportMasterTemplate}>
                 Export Master Template
               </button>
