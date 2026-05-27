@@ -1264,17 +1264,9 @@ export default function EventPage() {
                       <span className="text-[10px] font-black text-stone-400 uppercase">Kategori</span>
                       <span className="text-sm text-stone-700">{regDetailParticipant.category?.name}</span>
                     </div>
-                    <div className="flex justify-between items-start py-2 border-b border-stone-100">
-                      <span className="text-[10px] font-black text-stone-400 uppercase">Email</span>
-                      <span className="text-sm text-stone-700">{regDetailParticipant.email}</span>
-                    </div>
-                    <div className="flex justify-between items-start py-2 border-b border-stone-100">
+                    <div className="flex justify-between items-start py-2">
                       <span className="text-[10px] font-black text-stone-400 uppercase">No BIB</span>
                       <span className="text-sm font-mono font-bold text-stone-900">{bib}</span>
-                    </div>
-                    <div className="flex justify-between items-start py-2">
-                      <span className="text-[10px] font-black text-stone-400 uppercase">Tgl Bayar</span>
-                      <span className="text-sm text-stone-500">{regDetailParticipant.paidAt ? new Date(regDetailParticipant.paidAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}</span>
                     </div>
                   </div>
                 </div>

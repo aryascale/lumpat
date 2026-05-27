@@ -484,7 +484,7 @@ export default function LandingPage() {
             </div>
           </div>
           
-          <div className="border-t border-gray-200 pt-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="border-t border-gray-200 pt-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="flex flex-col gap-2">
               <p className="text-gray-400">Hak cipta © 2026 IJT — Indonesia Timing System. Seluruh hak cipta dilindungi undang-undang.</p>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-gray-500">
@@ -497,8 +497,13 @@ export default function LandingPage() {
                 <a href="#sitemap" className="hover:text-gray-900 hover:underline transition-colors">Peta Situs</a>
               </div>
             </div>
-            <div className="text-gray-900 hover:text-black transition-colors cursor-pointer font-medium whitespace-nowrap">
-              Indonesia
+            <div className="flex flex-col items-start md:items-end gap-3 mt-4 md:mt-0">
+              <span className="text-gray-400 text-[10px] uppercase tracking-widest font-extrabold">Owned by IZT Race Technology</span>
+              <div className="flex items-center gap-4">
+                <img src="/Assets/landing2/IJT LOGO.PNG" alt="IJT Logo" className="h-6 md:h-7 object-contain grayscale hover:grayscale-0 transition-all duration-500 opacity-60 hover:opacity-100" />
+                <div className="w-px h-4 bg-gray-200"></div>
+                <img src="/Assets/landing2/arraz.jpeg" alt="Arraz Logo" className="h-6 md:h-7 object-contain rounded-sm grayscale hover:grayscale-0 transition-all duration-500 opacity-60 hover:opacity-100" />
+              </div>
             </div>
           </div>
         </div>
