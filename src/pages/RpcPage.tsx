@@ -21,7 +21,7 @@ export default function RpcPage() {
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        const res = await fetch(`/api/events/slug/${slug}`);
+        const res = await fetch(`/api/events?eventId=${slug}`);
         if (!res.ok) throw new Error("Event not found");
         const data = await res.json();
         setEventData(data);
