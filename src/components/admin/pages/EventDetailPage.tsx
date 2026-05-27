@@ -781,6 +781,31 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
     }
   };
 
+  // Download CSV
+  const downloadCsv = async (kind: string) => {
+    try {
+      const res = await fetch(`/api/csv-read?eventId=${eventId}&kind=${kind}`);
+      if (!res.ok) throw new Error('Failed to fetch CSV');
+      const data = await res.json();
+      if (!data.text) {
+        alert('File not found or empty');
+        return;
+      }
+      
+      const blob = new Blob([data.text], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = data.filename || `${eventId}-${kind}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Error downloading CSV');
+    }
+  };
+
   // Save timing rules
   const saveTiming = async () => {
     setSavingTiming(true);
@@ -1067,9 +1092,14 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                       </td>
                       <td>
                         {meta && (
-                          <button className="btn ghost" onClick={() => clearCsv(kind)}>
-                            Clear
-                          </button>
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button className="btn ghost" onClick={() => downloadCsv(kind)}>
+                              Download
+                            </button>
+                            <button className="btn ghost" style={{ color: '#dc2626' }} onClick={() => clearCsv(kind)}>
+                              Clear
+                            </button>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -1136,9 +1166,14 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                       />
                     </label>
                     {meta && (
-                      <button className="btn ghost text-sm" onClick={() => clearCsv(kind)}>
-                        Clear
-                      </button>
+                      <>
+                        <button className="btn ghost text-sm" onClick={() => downloadCsv(kind)}>
+                          Download
+                        </button>
+                        <button className="btn ghost text-sm" style={{ color: '#dc2626' }} onClick={() => clearCsv(kind)}>
+                          Clear
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
