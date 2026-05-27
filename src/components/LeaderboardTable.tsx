@@ -320,6 +320,7 @@ export default function LeaderboardTable({
                    </div>
                  ))}
              </div>
+      )}
 
       {/* Main Table Tools */}
       <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end gap-4 border-b-2 border-stone-900 pb-4 mb-6">
