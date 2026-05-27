@@ -17,15 +17,18 @@ export type LeaderRow = {
 export default function LeaderboardTable({
   title,
   rows,
+  categories,
   showTop10Badge = false,
   onSelect,
 }: {
   title: string;
   rows: LeaderRow[];
+  categories?: string[];
   showTop10Badge?: boolean;
   onSelect?: (row: LeaderRow) => void;
 }) {
   const [q, setQ] = useState("");
+  const [genderFilter, setGenderFilter] = useState("All");
   const [isPodiumFullscreen, setIsPodiumFullscreen] = useState(false);
   const podiumRef = useRef<HTMLDivElement>(null);
 
@@ -47,19 +50,88 @@ export default function LeaderboardTable({
     }
   };
 
+  const normCat = (s: string) => String(s || "").trim().toLowerCase().replace(/-/g, " ").replace(/\s+/g, " ");
+
+  const rankedRows = useMemo(() => {
+    let currentRows = rows;
+    if (genderFilter !== "All") {
+      const gFilter = genderFilter.toLowerCase();
+      currentRows = rows.filter(r => {
+         const g = (r.gender || "").toLowerCase();
+         if (gFilter === 'laki-laki') return g === 'laki-laki' || g === 'm' || g === 'male' || g === 'pria';
+         if (gFilter === 'perempuan') return g === 'perempuan' || g === 'f' || g === 'female' || g === 'wanita';
+         return g === gFilter;
+      });
+    }
+
+    const finishers = currentRows.filter(
+      (r) => r.totalTimeDisplay !== "DNF" && r.totalTimeDisplay !== "DSQ" && r.totalTimeDisplay !== "ACTIVE"
+    );
+    const dnfs = currentRows.filter((r) => r.totalTimeDisplay === "DNF").sort((a, b) => a.totalTimeMs - b.totalTimeMs);
+    const dsqs = currentRows.filter((r) => r.totalTimeDisplay === "DSQ");
+    const actives = currentRows.filter((r) => r.totalTimeDisplay === "ACTIVE");
+
+    const rankedFinishers = [...finishers]
+      .sort((a, b) => a.totalTimeMs - b.totalTimeMs)
+      .map((r, i) => ({ ...r, rank: i + 1 }));
+
+    const rankedDnfs = dnfs.map((r, i) => ({
+      ...r,
+      rank: rankedFinishers.length + i + 1,
+    }));
+
+    return [
+      ...rankedFinishers,
+      ...rankedDnfs,
+      ...actives.map((r) => ({ ...r, rank: null })),
+      ...dsqs.map((r) => ({ ...r, rank: null })),
+    ];
+  }, [rows, genderFilter]);
+
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
-    if (!query) return rows;
-    return rows.filter((r) => 
+    if (!query) return rankedRows;
+    return rankedRows.filter((r) => 
       String(r.bib).toLowerCase().includes(query) || 
       (r.name && String(r.name).toLowerCase().includes(query))
     );
-  }, [q, rows]);
+  }, [q, rankedRows]);
 
-  const top3 = useMemo(() => {
+  const podiums = useMemo(() => {
     if (q) return []; // Only show champions when not searching
-    return [...rows].filter(r => r.rank != null && r.rank >= 1 && r.rank <= 3).sort((a,b) => a.rank! - b.rank!);
-  }, [q, rows]);
+
+    const buildTop3 = (list: LeaderRow[]) => {
+       const finishers = list.filter(r => r.totalTimeDisplay !== 'DNF' && r.totalTimeDisplay !== 'DSQ' && r.totalTimeDisplay !== 'ACTIVE');
+       const sorted = [...finishers].sort((a,b) => a.totalTimeMs - b.totalTimeMs).slice(0, 3);
+       return sorted.map((r, i) => ({ ...r, rank: i + 1 }));
+    };
+
+    let filteredForPodium = rows;
+    if (genderFilter !== "All") {
+      const gFilter = genderFilter.toLowerCase();
+      filteredForPodium = rows.filter(r => {
+         const g = (r.gender || "").toLowerCase();
+         if (gFilter === 'laki-laki') return g === 'laki-laki' || g === 'm' || g === 'male' || g === 'pria';
+         if (gFilter === 'perempuan') return g === 'perempuan' || g === 'f' || g === 'female' || g === 'wanita';
+         return g === gFilter;
+      });
+    }
+
+    if (categories && categories.length > 0) {
+       return categories.map(catKey => {
+          const cc = normCat(catKey);
+          const list = filteredForPodium.filter(r => {
+             const rc = normCat(r.sourceCategoryKey);
+             if (rc === cc) return true;
+             const regex = new RegExp(`(?:^|\\s)${cc}(?:\\s|$)`, 'i');
+             return regex.test(rc);
+          });
+          return { title: catKey, top3: buildTop3(list) };
+       }).filter(p => p.top3.length > 0);
+    } else {
+       return [{ title: "Champions", top3: buildTop3(filteredForPodium) }];
+    }
+  }, [q, rows, categories, genderFilter]);
 
   const handleExport = () => {
     exportLeaderboardCSV(
@@ -127,12 +199,12 @@ export default function LeaderboardTable({
 
   return (
     <div className="editorial-table-wrapper w-full">
-      {/* Champions Spotlight */}
-      {top3.length > 0 && (
+      {/* Champions Spotlights */}
+      {podiums.length > 0 && (
          <div 
            ref={podiumRef}
-           className={`bg-stone-50 relative overflow-hidden flex flex-col items-center shadow-sm ${
-              isPodiumFullscreen ? "w-screen h-screen justify-center p-4 sm:p-8" : "mb-12 mt-4 border-2 border-stone-200 border-b-[8px] rounded-3xl p-6 sm:p-12 w-full"
+           className={`bg-stone-50 relative overflow-x-hidden overflow-y-auto flex flex-col items-center shadow-sm ${
+              isPodiumFullscreen ? "w-screen h-screen justify-start p-4 sm:p-8" : "mb-12 mt-4 border-2 border-stone-200 border-b-[8px] rounded-3xl p-6 sm:p-12 w-full max-h-[80vh]"
            }`}
          >
              {/* Fullscreen Toggle Button */}
@@ -149,103 +221,105 @@ export default function LeaderboardTable({
                  </button>
 
                  {/* Decorative Background Elements */}
-                 <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-20">
+                 <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-20 z-0">
                    <div className="absolute -top-20 -left-20 w-64 h-64 bg-yellow-300 rounded-full blur-3xl"></div>
                    <div className="absolute top-40 -right-20 w-80 h-80 bg-red-300 rounded-full blur-3xl"></div>
                  </div>
 
-                 <div className="text-center mb-8 sm:mb-12 relative z-10">
-                   <h3 className="text-sm font-black tracking-[0.2em] text-red-600 uppercase mb-2">Podium</h3>
-                   <h2 className="text-3xl sm:text-5xl font-extrabold text-stone-900 tracking-tighter">Champions</h2>
-                 </div>
-                 
-                 <div className="flex flex-row justify-center items-end gap-2 sm:gap-6 w-full max-w-5xl mx-auto relative z-10">
-                   
-                   {/* 2nd Place */}
-                   {top3[1] && (
-                     <div className="flex flex-col items-center justify-end w-1/3 order-1 group">
-                        <div className="flex flex-col items-center mb-2 sm:mb-4 w-full px-1 sm:px-2 animate-in slide-in-from-bottom-4 fade-in duration-500 delay-150">
-                           <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-full border-4 border-white shadow-md flex items-center justify-center text-xl sm:text-3xl font-black bg-slate-100 text-slate-500 group-hover:-translate-y-2 transition-transform">
-                              {top3[1].name.charAt(0).toUpperCase()}
-                           </div>
-                           <div className="font-extrabold text-stone-800 text-[10px] sm:text-base text-center line-clamp-2 w-full mt-2 leading-tight">
-                              {top3[1].name}
-                           </div>
-                           <div className="font-mono font-bold text-stone-500 text-[9px] sm:text-xs mt-0.5 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm">
-                              BIB {top3[1].bib}
-                           </div>
-                           <div className="bg-slate-200 border-2 border-slate-300 border-b-4 text-stone-900 font-mono font-black text-[10px] sm:text-sm px-2 py-0.5 sm:px-4 sm:py-1.5 rounded-xl shadow-sm">
-                              {top3[1].totalTimeDisplay}
-                           </div>
-                        </div>
-                        
-                        <div 
-                          className="w-full h-32 sm:h-48 bg-slate-300 border-b-[8px] sm:border-b-[16px] border-slate-400 rounded-t-xl sm:rounded-t-3xl flex justify-center pt-4 sm:pt-8 cursor-pointer hover:brightness-105 transition-all shadow-inner"
-                          onClick={() => onSelect?.(top3[1])}
-                        >
-                           <span className="text-5xl sm:text-7xl font-black text-black/10 drop-shadow-sm">2</span>
-                        </div>
+                 {podiums.map((podium, pIdx) => (
+                   <div key={podium.title} className={`w-full relative z-10 flex flex-col items-center ${pIdx > 0 ? 'mt-16 sm:mt-24 pt-12 sm:pt-16 border-t-[3px] border-dashed border-stone-200' : ''}`}>
+                     <div className="text-center mb-8 sm:mb-12">
+                       <h3 className="text-sm font-black tracking-[0.2em] text-red-600 uppercase mb-2">Podium</h3>
+                       <h2 className="text-3xl sm:text-5xl font-extrabold text-stone-900 tracking-tighter">{podium.title}</h2>
                      </div>
-                   )}
+                     
+                     <div className="flex flex-row justify-center items-end gap-2 sm:gap-6 w-full max-w-5xl mx-auto">
+                       
+                       {/* 2nd Place */}
+                       {podium.top3[1] && (
+                         <div className="flex flex-col items-center justify-end w-1/3 order-1 group">
+                            <div className="flex flex-col items-center mb-2 sm:mb-4 w-full px-1 sm:px-2 animate-in slide-in-from-bottom-4 fade-in duration-500 delay-150">
+                               <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-full border-4 border-white shadow-md flex items-center justify-center text-xl sm:text-3xl font-black bg-slate-100 text-slate-500 group-hover:-translate-y-2 transition-transform">
+                                  {podium.top3[1].name.charAt(0).toUpperCase()}
+                               </div>
+                               <div className="font-extrabold text-stone-800 text-[10px] sm:text-base text-center line-clamp-2 w-full mt-2 leading-tight">
+                                  {podium.top3[1].name}
+                               </div>
+                               <div className="font-mono font-bold text-stone-500 text-[9px] sm:text-xs mt-0.5 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm">
+                                  BIB {podium.top3[1].bib}
+                               </div>
+                               <div className="bg-slate-200 border-2 border-slate-300 border-b-4 text-stone-900 font-mono font-black text-[10px] sm:text-sm px-2 py-0.5 sm:px-4 sm:py-1.5 rounded-xl shadow-sm">
+                                  {podium.top3[1].totalTimeDisplay}
+                               </div>
+                            </div>
+                            
+                            <div 
+                              className="w-full h-32 sm:h-48 bg-slate-300 border-b-[8px] sm:border-b-[16px] border-slate-400 rounded-t-xl sm:rounded-t-3xl flex justify-center pt-4 sm:pt-8 cursor-pointer hover:brightness-105 transition-all shadow-inner"
+                              onClick={() => onSelect?.(podium.top3[1])}
+                            >
+                               <span className="text-5xl sm:text-7xl font-black text-black/10 drop-shadow-sm">2</span>
+                            </div>
+                         </div>
+                       )}
 
-                   {/* 1st Place */}
-                   {top3[0] && (
-                     <div className="flex flex-col items-center justify-end w-1/3 order-2 z-10 group">
-                        <div className="flex flex-col items-center mb-2 sm:mb-4 w-full px-1 sm:px-2 animate-in slide-in-from-bottom-8 fade-in duration-500">
-                           <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-2xl sm:text-4xl font-black bg-yellow-100 text-yellow-600 group-hover:-translate-y-2 transition-transform">
-                              {top3[0].name.charAt(0).toUpperCase()}
-                           </div>
-                           <div className="font-extrabold text-stone-900 text-[11px] sm:text-lg text-center line-clamp-2 w-full mt-2 leading-tight">
-                              {top3[0].name}
-                           </div>
-                           <div className="font-mono font-bold text-stone-500 text-[10px] sm:text-sm mt-0.5 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm">
-                              BIB {top3[0].bib}
-                           </div>
-                           <div className="bg-yellow-200 border-2 border-yellow-400 border-b-4 text-stone-900 font-mono font-black text-[11px] sm:text-base px-3 py-1 sm:px-5 sm:py-1.5 rounded-xl shadow-sm">
-                              {top3[0].totalTimeDisplay}
-                           </div>
-                        </div>
-                        
-                        <div 
-                          className="w-full h-40 sm:h-64 bg-yellow-400 border-b-[8px] sm:border-b-[16px] border-yellow-600 rounded-t-xl sm:rounded-t-3xl flex justify-center pt-4 sm:pt-10 cursor-pointer hover:brightness-105 transition-all relative overflow-hidden shadow-inner"
-                          onClick={() => onSelect?.(top3[0])}
-                        >
-                           {/* Sparkle effect on 1st place */}
-                           <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/40 to-white/0 opacity-0 group-hover:opacity-100 group-hover:translate-x-full duration-700 transition-all -skew-x-12"></div>
-                           <span className="text-6xl sm:text-8xl font-black text-black/10 drop-shadow-sm">1</span>
-                        </div>
-                     </div>
-                   )}
+                       {/* 1st Place */}
+                       {podium.top3[0] && (
+                         <div className="flex flex-col items-center justify-end w-1/3 order-2 z-10 group">
+                            <div className="flex flex-col items-center mb-2 sm:mb-4 w-full px-1 sm:px-2 animate-in slide-in-from-bottom-8 fade-in duration-500">
+                               <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-2xl sm:text-4xl font-black bg-yellow-100 text-yellow-600 group-hover:-translate-y-2 transition-transform">
+                                  {podium.top3[0].name.charAt(0).toUpperCase()}
+                               </div>
+                               <div className="font-extrabold text-stone-900 text-[11px] sm:text-lg text-center line-clamp-2 w-full mt-2 leading-tight">
+                                  {podium.top3[0].name}
+                               </div>
+                               <div className="font-mono font-bold text-stone-500 text-[10px] sm:text-sm mt-0.5 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm">
+                                  BIB {podium.top3[0].bib}
+                               </div>
+                               <div className="bg-yellow-200 border-2 border-yellow-400 border-b-4 text-stone-900 font-mono font-black text-[11px] sm:text-base px-3 py-1 sm:px-5 sm:py-1.5 rounded-xl shadow-sm">
+                                  {podium.top3[0].totalTimeDisplay}
+                               </div>
+                            </div>
+                            
+                            <div 
+                              className="w-full h-40 sm:h-64 bg-yellow-400 border-b-[8px] sm:border-b-[16px] border-yellow-600 rounded-t-xl sm:rounded-t-3xl flex justify-center pt-4 sm:pt-10 cursor-pointer hover:brightness-105 transition-all relative overflow-hidden shadow-inner"
+                              onClick={() => onSelect?.(podium.top3[0])}
+                            >
+                               <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/40 to-white/0 opacity-0 group-hover:opacity-100 group-hover:translate-x-full duration-700 transition-all -skew-x-12"></div>
+                               <span className="text-6xl sm:text-8xl font-black text-black/10 drop-shadow-sm">1</span>
+                            </div>
+                         </div>
+                       )}
 
-                   {/* 3rd Place */}
-                   {top3[2] && (
-                     <div className="flex flex-col items-center justify-end w-1/3 order-3 group">
-                        <div className="flex flex-col items-center mb-2 sm:mb-4 w-full px-1 sm:px-2 animate-in slide-in-from-bottom-4 fade-in duration-500 delay-300">
-                           <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-full border-4 border-white shadow-md flex items-center justify-center text-xl sm:text-3xl font-black bg-orange-100 text-orange-600 group-hover:-translate-y-2 transition-transform">
-                              {top3[2].name.charAt(0).toUpperCase()}
-                           </div>
-                           <div className="font-extrabold text-stone-800 text-[10px] sm:text-base text-center line-clamp-2 w-full mt-2 leading-tight">
-                              {top3[2].name}
-                           </div>
-                           <div className="font-mono font-bold text-stone-500 text-[9px] sm:text-xs mt-0.5 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm">
-                              BIB {top3[2].bib}
-                           </div>
-                           <div className="bg-orange-200 border-2 border-orange-300 border-b-4 text-stone-900 font-mono font-black text-[10px] sm:text-sm px-2 py-0.5 sm:px-4 sm:py-1.5 rounded-xl shadow-sm">
-                              {top3[2].totalTimeDisplay}
-                           </div>
-                        </div>
-                        
-                        <div 
-                          className="w-full h-24 sm:h-40 bg-orange-400 border-b-[8px] sm:border-b-[16px] border-orange-600 rounded-t-xl sm:rounded-t-3xl flex justify-center pt-3 sm:pt-6 cursor-pointer hover:brightness-105 transition-all shadow-inner"
-                          onClick={() => onSelect?.(top3[2])}
-                        >
-                           <span className="text-5xl sm:text-7xl font-black text-black/10 drop-shadow-sm">3</span>
-                        </div>
+                       {/* 3rd Place */}
+                       {podium.top3[2] && (
+                         <div className="flex flex-col items-center justify-end w-1/3 order-3 group">
+                            <div className="flex flex-col items-center mb-2 sm:mb-4 w-full px-1 sm:px-2 animate-in slide-in-from-bottom-4 fade-in duration-500 delay-300">
+                               <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-full border-4 border-white shadow-md flex items-center justify-center text-xl sm:text-3xl font-black bg-orange-100 text-orange-600 group-hover:-translate-y-2 transition-transform">
+                                  {podium.top3[2].name.charAt(0).toUpperCase()}
+                               </div>
+                               <div className="font-extrabold text-stone-800 text-[10px] sm:text-base text-center line-clamp-2 w-full mt-2 leading-tight">
+                                  {podium.top3[2].name}
+                               </div>
+                               <div className="font-mono font-bold text-stone-500 text-[9px] sm:text-xs mt-0.5 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm">
+                                  BIB {podium.top3[2].bib}
+                               </div>
+                               <div className="bg-orange-200 border-2 border-orange-300 border-b-4 text-stone-900 font-mono font-black text-[10px] sm:text-sm px-2 py-0.5 sm:px-4 sm:py-1.5 rounded-xl shadow-sm">
+                                  {podium.top3[2].totalTimeDisplay}
+                               </div>
+                            </div>
+                            
+                            <div 
+                              className="w-full h-24 sm:h-40 bg-orange-400 border-b-[8px] sm:border-b-[16px] border-orange-600 rounded-t-xl sm:rounded-t-3xl flex justify-center pt-3 sm:pt-6 cursor-pointer hover:brightness-105 transition-all shadow-inner"
+                              onClick={() => onSelect?.(podium.top3[2])}
+                            >
+                               <span className="text-5xl sm:text-7xl font-black text-black/10 drop-shadow-sm">3</span>
+                            </div>
+                         </div>
+                       )}
                      </div>
-                   )}
-                 </div>
+                   </div>
+                 ))}
              </div>
-      )}
 
       {/* Main Table Tools */}
       <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end gap-4 border-b-2 border-stone-900 pb-4 mb-6">
@@ -269,7 +343,16 @@ export default function LeaderboardTable({
               onChange={(e) => setQ(e.target.value)}
             />
           </div>
-          <button className="px-5 py-2 font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors border border-transparent" onClick={() => setQ("")}>
+          <select 
+            className="w-full sm:w-auto px-4 py-2 border-2 border-stone-200 rounded-lg font-medium text-stone-800 focus:border-red-500 focus:ring-0 outline-none transition-colors bg-white cursor-pointer"
+            value={genderFilter}
+            onChange={(e) => setGenderFilter(e.target.value)}
+          >
+            <option value="All">Semua Gender</option>
+            <option value="Laki-laki">Laki-laki</option>
+            <option value="Perempuan">Perempuan</option>
+          </select>
+          <button className="px-5 py-2 font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors border border-transparent" onClick={() => { setQ(""); setGenderFilter("All"); }}>
             Reset
           </button>
           <button onClick={handleExport} className="px-5 py-2 font-bold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg shadow-md hover:shadow-lg transition-all border border-red-700">

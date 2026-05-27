@@ -703,6 +703,14 @@ export default function EventPage() {
             const combinedMatch = adminCategories.find(c => normCat(c) === combined);
             if (combinedMatch) return combinedMatch;
             
+            // Try word boundary match (e.g., "10k" matches "10k laki-laki" but not "110k")
+            const partial = adminCategories.find(c => {
+              const nc = normCat(c);
+              const regex = new RegExp(`(?:^|\\s)${nc}(?:\\s|$)`, 'i');
+              return regex.test(normCatStr);
+            });
+            if (partial) return partial;
+            
             return cat;
           };
 
@@ -1150,6 +1158,7 @@ export default function EventPage() {
               <LeaderboardTable
                 title="Overall Result Rankings"
                 rows={overall}
+                categories={event?.categories || []}
                 onSelect={onSelectParticipant}
                 showTop10Badge={true}
               />
