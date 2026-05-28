@@ -126,7 +126,7 @@ export default function RpcPage() {
           src={rpcBgUrl}
         />
       )}
-      {rpcBgUrl && <div className="absolute inset-0 bg-white/90 z-0 backdrop-blur-sm" />}
+      {rpcBgUrl && <div className="absolute inset-0 bg-white/60 z-0 backdrop-blur-[2px]" />}
       
       <div className="flex-1 flex flex-col p-6 lg:p-12 h-screen max-h-screen max-w-7xl mx-auto w-full relative z-10">
         
