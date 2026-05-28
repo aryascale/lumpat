@@ -1315,42 +1315,56 @@ export default function EventPage() {
               
               <div className="space-y-6">
                  {/* Details Box */}
-                 <div className="bg-white text-stone-900 p-8 border border-stone-200 rounded-3xl shadow-xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-stone-50 rounded-bl-full -z-0 opacity-50"></div>
+                 <div className="bg-white text-stone-900 p-6 border-2 border-stone-200 border-b-[6px] rounded-3xl relative overflow-hidden transition-transform hover:-translate-y-1">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-50 rounded-bl-full -z-0 opacity-50"></div>
                     <div className="relative z-10">
-                      <h3 className="text-stone-900 font-black text-2xl uppercase tracking-tighter mb-6 pb-4 border-b border-stone-100 flex items-center gap-3">
-                        <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                        </svg>
-                        Route Telemetry
+                      <h3 className="text-stone-900 font-extrabold text-xl tracking-tight mb-5 pb-4 border-b-2 border-dashed border-stone-100 flex items-center gap-3">
+                        <div className="p-2 bg-blue-100 text-blue-600 rounded-xl">
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                          </svg>
+                        </div>
+                        Info Jalur (GPS)
                       </h3>
                       
-                      <div className="space-y-6">
+                      <div className="space-y-5">
                         <div>
-                          <div className="text-[10px] text-stone-500 uppercase tracking-widest font-bold mb-1">Track Points</div>
-                          <div className="font-mono text-4xl text-red-600 font-black">{gpxTrackPoints.length > 0 ? gpxTrackPoints.length : 'N/A'}</div>
+                          <div className="text-xs text-stone-500 font-bold mb-1 uppercase tracking-wider">Titik Kordinat (Track Points)</div>
+                          <div className="font-extrabold text-3xl text-blue-600 tracking-tighter mb-1">{gpxTrackPoints.length > 0 ? gpxTrackPoints.length : '0'}</div>
+                          <p className="text-sm text-stone-500 font-medium leading-snug">
+                            Jumlah titik lokasi yang membentuk garis merah pada peta. Semakin banyak titiknya, jalur lari akan semakin akurat.
+                          </p>
                         </div>
                         
                         <div>
-                          <div className="text-[10px] text-stone-500 uppercase tracking-widest font-bold mb-2">Status</div>
-                          <div className={`inline-block px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase ${gpxTrackPoints.length > 0 ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-stone-100 text-stone-500 border border-stone-200'}`}>
-                            {gpxTrackPoints.length > 0 ? 'GPS ACTIVE' : 'AWAITING UPLOAD'}
-                          </div>
+                          <div className="text-xs text-stone-500 font-bold mb-2 uppercase tracking-wider">Status Data Peta</div>
+                          {gpxTrackPoints.length > 0 ? (
+                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 border-2 border-green-200 border-b-[4px] rounded-xl text-sm font-extrabold tracking-wide">
+                              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                              RUTE TERSEDIA
+                            </div>
+                          ) : (
+                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-stone-100 text-stone-500 border-2 border-stone-200 border-b-[4px] rounded-xl text-sm font-extrabold tracking-wide">
+                              BELUM ADA RUTE
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
                  </div>
 
                  {/* Extra decorative box to make it feel like a real racing dashboard */}
-                 <div className="bg-white p-6 border border-stone-200 rounded-3xl shadow-sm">
-                   <div className="text-[10px] uppercase font-bold text-stone-500 tracking-widest mb-3 flex items-center gap-2">
-                     <svg className="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                     </svg>
-                     Official E-Certificates
+                 <div className="bg-white p-6 border-2 border-stone-200 border-b-[6px] rounded-3xl transition-transform hover:-translate-y-1">
+                   <div className="font-extrabold text-stone-800 tracking-tight text-lg mb-3 flex items-center gap-3">
+                     <div className="p-2 bg-yellow-100 text-yellow-600 rounded-xl">
+                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                       </svg>
+                     </div>
+                     E-Sertifikat Resmi
                    </div>
                    <p className="text-sm text-stone-500 font-medium leading-relaxed">
-                     Finishers can download their official verified e-certificates directly from the results table by clicking on their BIB number. The generated file will include authenticated timing telemetries.
+                     Semua *finisher* bisa langsung *download* e-sertifikat resmi dari tabel Result! Cukup cari namamu dan klik nomor BIB. E-sertifikat ini valid dan mencantumkan waktu lari bersih kamu.
                    </p>
                  </div>
               </div>
