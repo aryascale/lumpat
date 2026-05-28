@@ -109,13 +109,24 @@ export default function RpcPage() {
   }
 
   const rpcBgUrl = eventData?.content?.rpcBgUrl;
+  const isVideoBg = rpcBgUrl && (rpcBgUrl.toLowerCase().endsWith('.mp4') || rpcBgUrl.toLowerCase().endsWith('.webm') || rpcBgUrl.toLowerCase().endsWith('.mov'));
 
   return (
     <div 
-      className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col relative"
-      style={rpcBgUrl ? { backgroundImage: `url(${rpcBgUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+      className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col relative overflow-hidden"
+      style={rpcBgUrl && !isVideoBg ? { backgroundImage: `url(${rpcBgUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
     >
-      {rpcBgUrl && <div className="absolute inset-0 bg-white/90 z-0" />}
+      {isVideoBg && (
+        <video 
+          autoPlay 
+          loop 
+          muted 
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover z-0"
+          src={rpcBgUrl}
+        />
+      )}
+      {rpcBgUrl && <div className="absolute inset-0 bg-white/90 z-0 backdrop-blur-sm" />}
       
       <div className="flex-1 flex flex-col p-6 lg:p-12 h-screen max-h-screen max-w-7xl mx-auto w-full relative z-10">
         

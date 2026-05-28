@@ -25,17 +25,31 @@ export default async function handler(event: any) {
     if (!eventId) return errorResponse('eventId is required', 400);
 
     const targetField = fields.field;
-    if (targetField !== 'logo' && targetField !== 'banner' && targetField !== 'home_image') {
-      return errorResponse('Invalid field type, must be "logo", "banner" or "home_image"', 400);
+    if (targetField !== 'logo' && targetField !== 'banner' && targetField !== 'home_image' && targetField !== 'rpc_bg') {
+      return errorResponse('Invalid field type, must be "logo", "banner", "home_image" or "rpc_bg"', 400);
     }
 
     const result = await uploadFile(eventId, file.data, file.name, 'images');
-    const updateColumn = targetField === 'logo' ? 'logoUrl' : targetField === 'banner' ? 'bannerUrl' : 'homeImageUrl';
-
-    await query(
-      `UPDATE Event SET ${updateColumn} = ?, updatedAt = NOW() WHERE id = ?`,
-      [result.url, eventId]
-    );
+    
+    if (targetField === 'rpc_bg') {
+      const existing: any = await query('SELECT content FROM Event WHERE id = ?', [eventId]);
+      const currentContentStr = existing[0]?.content;
+      let currentContent = {};
+      if (currentContentStr) {
+        currentContent = typeof currentContentStr === 'string' ? JSON.parse(currentContentStr) : currentContentStr;
+      }
+      (currentContent as any).rpcBgUrl = result.url;
+      await query(
+        `UPDATE Event SET content = ?, updatedAt = NOW() WHERE id = ?`,
+        [JSON.stringify(currentContent), eventId]
+      );
+    } else {
+      const updateColumn = targetField === 'logo' ? 'logoUrl' : targetField === 'banner' ? 'bannerUrl' : 'homeImageUrl';
+      await query(
+        `UPDATE Event SET ${updateColumn} = ?, updatedAt = NOW() WHERE id = ?`,
+        [result.url, eventId]
+      );
+    }
 
     const updatedEvent: any = await query('SELECT * FROM Event WHERE id = ? LIMIT 1', [eventId]);
 

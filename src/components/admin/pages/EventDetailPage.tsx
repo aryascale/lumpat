@@ -60,9 +60,11 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [coverBannerFile, setCoverBannerFile] = useState<File | null>(null);
   const [homeImageFile, setHomeImageFile] = useState<File | null>(null);
+  const [rpcBgFile, setRpcBgFile] = useState<File | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingHomeImage, setUploadingHomeImage] = useState(false);
+  const [uploadingRpcBg, setUploadingRpcBg] = useState(false);
 
   // Category state
   const [newCategory, setNewCategory] = useState('');
@@ -462,20 +464,23 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
     }
   };
 
-  const handleMediaUpload = async (type: 'logo' | 'banner' | 'home_image') => {
+  const handleMediaUpload = async (type: 'logo' | 'banner' | 'home_image' | 'rpc_bg') => {
     let file = null;
     if (type === 'logo') file = logoFile;
     else if (type === 'banner') file = coverBannerFile;
     else if (type === 'home_image') file = homeImageFile;
+    else if (type === 'rpc_bg') file = rpcBgFile;
 
     if (!file) {
-      alert('Please select an image file');
+      alert('Please select a file');
       return;
     }
 
     if (type === 'logo') setUploadingLogo(true);
     else if (type === 'banner') setUploadingCover(true);
     else if (type === 'home_image') setUploadingHomeImage(true);
+    else if (type === 'rpc_bg') setUploadingRpcBg(true);
+    
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -503,15 +508,20 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         setHomeImageFile(null);
         const fileInput = document.getElementById('home-image-upload') as HTMLInputElement;
         if (fileInput) fileInput.value = '';
+      } else if (type === 'rpc_bg') {
+        setRpcBgFile(null);
+        const fileInput = document.getElementById('rpc-bg-upload') as HTMLInputElement;
+        if (fileInput) fileInput.value = '';
       }
       
-      alert(`${type === 'logo' ? 'Logo' : type === 'banner' ? 'Cover Banner' : 'Homepage Image'} uploaded successfully!`);
+      alert(`${type === 'logo' ? 'Logo' : type === 'banner' ? 'Cover Banner' : type === 'rpc_bg' ? 'RPC Background' : 'Homepage Image'} uploaded successfully!`);
     } catch (error: any) {
       alert(error.message || `Failed to upload ${type}`);
     } finally {
       if (type === 'logo') setUploadingLogo(false);
       else if (type === 'banner') setUploadingCover(false);
       else if (type === 'home_image') setUploadingHomeImage(false);
+      else if (type === 'rpc_bg') setUploadingRpcBg(false);
     }
   };
 
@@ -2516,20 +2526,38 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
             </div>
 
             <div className="admin-cutoff border-t border-gray-100 pt-6">
-              <div className="label">RPC Background URL</div>
+              <div className="label">Background Image/Video RPC</div>
               <div className="tools">
                 <input
                   type="text"
-                  className="search w-full"
-                  placeholder="https://example.com/image.jpg"
+                  className="search w-full mb-3"
+                  placeholder="https://example.com/image.jpg atau Video MP4"
                   value={eventData?.content?.rpcBgUrl || ''}
                   onChange={(e) => setEventData({ 
                     ...eventData, 
                     content: { ...(eventData?.content || {}), rpcBgUrl: e.target.value }
                   })}
                 />
+                
+                <div className="flex gap-2">
+                  <input
+                    id="rpc-bg-upload"
+                    type="file"
+                    accept="image/*,video/mp4"
+                    onChange={(e) => setRpcBgFile(e.target.files?.[0] || null)}
+                    className="flex-1 text-sm block w-full text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300"
+                  />
+                  <button
+                    className="btn"
+                    onClick={() => handleMediaUpload('rpc_bg')}
+                    disabled={!rpcBgFile || uploadingRpcBg}
+                  >
+                    {uploadingRpcBg ? 'Uploading...' : 'Upload File'}
+                  </button>
+                </div>
+                
                 <div className="text-xs text-gray-500 mt-2">
-                  Masukkan URL gambar untuk digunakan sebagai background di halaman layar RPC.
+                  Paste URL atau Upload file (gambar / video mp4) untuk background halaman validasi RPC.
                 </div>
               </div>
             </div>
