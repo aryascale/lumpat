@@ -173,7 +173,7 @@ export default function RpcPage() {
           
           {/* Scanner Area */}
           {isScanning && !foundParticipant && (
-            <div className="fixed inset-0 bg-stone-950/95 backdrop-blur-3xl z-[100] flex flex-col items-center justify-center p-4">
+            <div className="absolute inset-0 bg-stone-950 z-[100] flex flex-col items-center justify-center p-4">
               <div className="absolute top-6 right-6 sm:top-8 sm:right-8 z-[110]">
                 <button 
                   className="bg-stone-800/50 hover:bg-stone-700/50 border border-stone-700 text-stone-300 hover:text-white rounded-full p-3 backdrop-blur-md transition-all duration-300"
