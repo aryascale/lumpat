@@ -1294,10 +1294,13 @@ export default function EventPage() {
           )}
 
           {activeTab === "Route" && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 bg-white border border-stone-200 shadow-xl overflow-hidden relative min-h-[400px] lg:min-h-[600px]">
-                <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-sm px-4 py-2 border border-stone-200 shadow-lg pointer-events-none">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-red-600 mb-1">Official Route Map</div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+              <div className="lg:col-span-2 bg-white border border-stone-200 rounded-3xl shadow-xl overflow-hidden relative min-h-[400px] lg:min-h-[600px]">
+                <div className="absolute top-4 left-4 md:top-6 md:left-6 z-10 bg-white/95 backdrop-blur-md px-5 py-3 rounded-2xl border border-stone-200 shadow-xl pointer-events-none">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-red-600 mb-1 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+                    Official Route Map
+                  </div>
                   <div className="text-xl font-black tracking-tighter text-stone-900">{event.name}</div>
                 </div>
                 {(gpxTrackPoints.length > 0 || (event?.latitude && event?.longitude)) ? (
@@ -1307,7 +1310,7 @@ export default function EventPage() {
                     fallbackLng={event?.longitude} 
                   />
                 ) : (
-                  <div className="w-full h-[600px] bg-stone-100 flex flex-col items-center justify-center">
+                  <div className="w-full h-[600px] bg-stone-50 flex flex-col items-center justify-center">
                     <span className="text-stone-300 font-black text-2xl tracking-widest uppercase mb-2">No GPS Data</span>
                     <span className="text-stone-500 text-sm font-medium">The race director has not uploaded a GPX file.</span>
                   </div>
@@ -1316,28 +1319,41 @@ export default function EventPage() {
               
               <div className="space-y-6">
                  {/* Details Box */}
-                 <div className="bg-stone-950 text-white p-8 border-t-4 border-stone-800 shadow-lg">
-                    <h3 className="text-white font-black text-2xl uppercase tracking-tighter mb-6 pb-4 border-b border-stone-800">Route Telemetry</h3>
-                    
-                    <div className="space-y-6">
-                       <div>
-                         <div className="text-[10px] text-stone-500 uppercase tracking-widest font-bold mb-1">Track Points</div>
-                         <div className="font-mono text-2xl text-red-500 font-black">{gpxTrackPoints.length > 0 ? gpxTrackPoints.length : 'N/A'}</div>
-                       </div>
-                       
-                       <div>
-                         <div className="text-[10px] text-stone-500 uppercase tracking-widest font-bold mb-1">Status</div>
-                         <div className="text-sm font-bold tracking-wide text-green-400">
-                           {gpxTrackPoints.length > 0 ? 'GPS ACTIVE' : 'AWAITING UPLOAD'}
-                         </div>
-                       </div>
+                 <div className="bg-white text-stone-900 p-8 border border-stone-200 rounded-3xl shadow-xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-stone-50 rounded-bl-full -z-0 opacity-50"></div>
+                    <div className="relative z-10">
+                      <h3 className="text-stone-900 font-black text-2xl uppercase tracking-tighter mb-6 pb-4 border-b border-stone-100 flex items-center gap-3">
+                        <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                        </svg>
+                        Route Telemetry
+                      </h3>
+                      
+                      <div className="space-y-6">
+                        <div>
+                          <div className="text-[10px] text-stone-500 uppercase tracking-widest font-bold mb-1">Track Points</div>
+                          <div className="font-mono text-4xl text-red-600 font-black">{gpxTrackPoints.length > 0 ? gpxTrackPoints.length : 'N/A'}</div>
+                        </div>
+                        
+                        <div>
+                          <div className="text-[10px] text-stone-500 uppercase tracking-widest font-bold mb-2">Status</div>
+                          <div className={`inline-block px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase ${gpxTrackPoints.length > 0 ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-stone-100 text-stone-500 border border-stone-200'}`}>
+                            {gpxTrackPoints.length > 0 ? 'GPS ACTIVE' : 'AWAITING UPLOAD'}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                  </div>
 
                  {/* Extra decorative box to make it feel like a real racing dashboard */}
-                 <div className="bg-stone-100 p-6 border border-stone-200">
-                   <div className="text-[10px] uppercase font-bold text-stone-500 tracking-widest mb-4">Official E-Certificates</div>
-                   <p className="text-sm text-stone-600 font-medium leading-relaxed">
+                 <div className="bg-white p-6 border border-stone-200 rounded-3xl shadow-sm">
+                   <div className="text-[10px] uppercase font-bold text-stone-500 tracking-widest mb-3 flex items-center gap-2">
+                     <svg className="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                     </svg>
+                     Official E-Certificates
+                   </div>
+                   <p className="text-sm text-stone-500 font-medium leading-relaxed">
                      Finishers can download their official verified e-certificates directly from the results table by clicking on their BIB number. The generated file will include authenticated timing telemetries.
                    </p>
                  </div>

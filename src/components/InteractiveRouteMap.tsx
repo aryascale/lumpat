@@ -48,9 +48,9 @@ export default function InteractiveRouteMap({ trackPoints, fallbackLat, fallback
         className="w-full h-full"
         scrollWheelZoom={false}
       >
-        {/* Dark Mode CartoDB Tile */}
+        {/* Light Mode CartoDB Tile */}
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
         />
         
