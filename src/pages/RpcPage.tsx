@@ -29,7 +29,8 @@ export default function RpcPage() {
         // Load master data
         if (data && data.id) {
           const loadedParticipants = await loadMasterParticipants(data.id);
-          setParticipants(loadedParticipants);
+          // BUG FIX: loadMasterParticipants returns an object {all, byCategoryKey, ...}
+          setParticipants(loadedParticipants.all as any);
         }
       } catch (err) {
         console.error("Error loading RPC data", err);
@@ -93,15 +94,15 @@ export default function RpcPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-stone-950 flex items-center justify-center">
-        <div className="animate-pulse text-3xl font-black tracking-widest text-white">LOADING...</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-pulse text-3xl font-black tracking-widest text-gray-900">LOADING...</div>
       </div>
     );
   }
 
   if (!eventData) {
     return (
-      <div className="min-h-screen bg-stone-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-3xl font-black text-red-500 uppercase tracking-widest">Event Not Found</div>
       </div>
     );
@@ -111,18 +112,18 @@ export default function RpcPage() {
 
   return (
     <div 
-      className="min-h-screen bg-stone-950 text-stone-100 font-sans flex flex-col relative"
+      className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col relative"
       style={rpcBgUrl ? { backgroundImage: `url(${rpcBgUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
     >
-      {rpcBgUrl && <div className="absolute inset-0 bg-stone-950/80 z-0" />}
+      {rpcBgUrl && <div className="absolute inset-0 bg-white/90 z-0" />}
       
       <div className="flex-1 flex flex-col p-6 lg:p-12 h-screen max-h-screen max-w-7xl mx-auto w-full relative z-10">
         
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b-2 border-stone-800 pb-6 mb-8 gap-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b-2 border-gray-200 pb-6 mb-8 gap-6">
           <div>
-            <h1 className="text-4xl lg:text-5xl font-black uppercase text-white tracking-tight">{eventData.name}</h1>
-            <h2 className="text-xl text-red-500 font-bold uppercase tracking-wider mt-1">Race Pack Collection</h2>
+            <h1 className="text-4xl lg:text-5xl font-black uppercase text-gray-900 tracking-tight">{eventData.name}</h1>
+            <h2 className="text-xl text-red-600 font-bold uppercase tracking-wider mt-1">Race Pack Collection</h2>
           </div>
           
           {/* Search Tools (Top Right) */}
@@ -131,8 +132,8 @@ export default function RpcPage() {
               onClick={() => { setIsScanning(!isScanning); setScanError(""); }}
               className={`flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-bold text-lg transition-all border-2 ${
                 isScanning 
-                  ? 'bg-red-500 border-red-600 border-b-4 text-white active:border-b-2 active:translate-y-[2px]' 
-                  : 'bg-stone-800 border-stone-700 border-b-4 text-stone-200 hover:bg-stone-700 active:border-b-2 active:translate-y-[2px]'
+                  ? 'bg-red-50 border-red-200 text-red-600' 
+                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}
             >
               <QrCode className="w-6 h-6" />
@@ -144,11 +145,11 @@ export default function RpcPage() {
                 placeholder="Cari BIB atau Nama..." 
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="bg-stone-900 border-2 border-b-4 border-stone-800 text-white px-6 py-3 rounded-2xl text-lg font-bold focus:border-red-500 focus:outline-none placeholder-stone-600 w-full md:w-80 transition-colors"
+                className="bg-white border-2 border-gray-200 text-gray-900 px-6 py-3 rounded-2xl text-lg font-bold focus:border-red-500 focus:outline-none placeholder-gray-400 w-full md:w-80 transition-colors"
               />
               <button 
                 type="submit" 
-                className="bg-red-500 hover:bg-red-400 border-2 border-b-4 border-red-700 active:border-b-2 active:translate-y-[2px] text-white px-6 py-3 rounded-2xl transition-all flex items-center justify-center"
+                className="bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-2xl transition-all flex items-center justify-center"
               >
                 <Search className="w-6 h-6" />
               </button>
@@ -157,29 +158,19 @@ export default function RpcPage() {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col relative bg-stone-900 border-2 border-b-8 border-stone-800 rounded-[2.5rem] overflow-hidden p-6 lg:p-12">
+        <div className="flex-1 flex flex-col relative bg-white border-2 border-dashed border-gray-300 rounded-[2.5rem] p-6 lg:p-12 overflow-hidden">
           
           {/* Scanner Area */}
           {isScanning && !foundParticipant && (
-            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-stone-950 p-6">
-              <h3 className="text-2xl lg:text-3xl font-black text-white mb-6 flex items-center gap-3">
-                <QrCode className="w-8 h-8 text-red-500" />
-                Arahkan QR ke Kamera
-              </h3>
-              <div className="w-full max-w-[400px] aspect-square rounded-3xl overflow-hidden border-4 border-b-8 border-stone-800 bg-black relative">
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/95 backdrop-blur-sm p-6">
+              <div className="w-full max-w-[400px] aspect-square rounded-3xl overflow-hidden border-2 border-dashed border-gray-300 relative bg-white shadow-lg">
                 <div id="rpc-qr-reader" ref={qrReaderRef} className="w-full h-full" />
               </div>
               {scanError && (
-                <div className="mt-6 text-lg font-bold text-red-500 bg-red-950/30 px-6 py-3 rounded-2xl border-2 border-red-900/50">
+                <div className="mt-6 text-lg font-bold text-red-600 bg-red-50 px-6 py-3 rounded-2xl border border-red-100">
                   {scanError}
                 </div>
               )}
-              <button 
-                onClick={() => setIsScanning(false)}
-                className="mt-8 bg-stone-800 border-2 border-b-4 border-stone-700 text-white px-8 py-3 rounded-2xl text-lg font-bold hover:bg-stone-700 active:border-b-2 active:translate-y-[2px] transition-all flex items-center gap-2"
-              >
-                <X className="w-5 h-5" /> Batal
-              </button>
             </div>
           )}
 
@@ -188,29 +179,29 @@ export default function RpcPage() {
             <div className="flex-1 flex flex-col justify-center max-w-4xl mx-auto w-full animate-in fade-in zoom-in-95 duration-300">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-10">
                 <div>
-                  <div className="text-stone-500 font-bold tracking-widest uppercase text-sm mb-2">Nama Peserta</div>
-                  <h2 className="text-5xl lg:text-6xl font-black text-white uppercase tracking-tight leading-tight">
+                  <div className="text-gray-400 font-bold tracking-widest uppercase text-sm mb-2">Nama Peserta</div>
+                  <h2 className="text-5xl lg:text-6xl font-black text-gray-900 uppercase tracking-tight leading-tight">
                     {foundParticipant.name}
                   </h2>
                 </div>
-                <div className="bg-red-500 border-2 border-b-8 border-red-700 text-white px-10 py-6 rounded-3xl flex flex-col items-center justify-center shrink-0">
-                  <span className="text-sm font-bold uppercase tracking-widest text-red-200 mb-1">Nomor BIB</span>
+                <div className="bg-white border-2 border-dashed border-red-500 text-red-600 px-10 py-6 rounded-3xl flex flex-col items-center justify-center shrink-0">
+                  <span className="text-sm font-bold uppercase tracking-widest text-red-400 mb-1">Nomor BIB</span>
                   <span className="text-6xl font-black tracking-tighter">{foundParticipant.bib}</span>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-stone-950 border-2 border-b-4 border-stone-800 p-6 rounded-2xl">
-                  <div className="text-stone-500 font-bold uppercase tracking-widest text-xs mb-2">Kategori</div>
-                  <div className="text-2xl font-black text-white">{foundParticipant.category || foundParticipant.sourceCategoryKey}</div>
+                <div className="bg-gray-50 border border-gray-200 p-6 rounded-2xl">
+                  <div className="text-gray-400 font-bold uppercase tracking-widest text-xs mb-2">Kategori</div>
+                  <div className="text-2xl font-black text-gray-900">{foundParticipant.category || foundParticipant.sourceCategoryKey}</div>
                 </div>
-                <div className="bg-stone-950 border-2 border-b-4 border-stone-800 p-6 rounded-2xl">
-                  <div className="text-stone-500 font-bold uppercase tracking-widest text-xs mb-2">Gender</div>
-                  <div className="text-2xl font-black text-white">{foundParticipant.gender || '-'}</div>
+                <div className="bg-gray-50 border border-gray-200 p-6 rounded-2xl">
+                  <div className="text-gray-400 font-bold uppercase tracking-widest text-xs mb-2">Gender</div>
+                  <div className="text-2xl font-black text-gray-900">{foundParticipant.gender || '-'}</div>
                 </div>
-                <div className="bg-stone-950 border-2 border-b-4 border-green-900/50 p-6 rounded-2xl bg-gradient-to-b from-stone-950 to-green-950/20">
-                  <div className="text-stone-500 font-bold uppercase tracking-widest text-xs mb-2">Status</div>
-                  <div className="text-2xl font-black text-green-500 flex items-center gap-2">
+                <div className="bg-green-50 border border-green-200 p-6 rounded-2xl">
+                  <div className="text-green-600 font-bold uppercase tracking-widest text-xs mb-2">Status</div>
+                  <div className="text-2xl font-black text-green-700 flex items-center gap-2">
                     <CheckCircle className="w-6 h-6" /> Terverifikasi
                   </div>
                 </div>
@@ -219,7 +210,7 @@ export default function RpcPage() {
               <div className="mt-12 flex justify-center">
                 <button 
                   onClick={() => setFoundParticipant(null)}
-                  className="bg-stone-800 border-2 border-b-4 border-stone-700 hover:bg-stone-700 active:border-b-2 active:translate-y-[2px] text-white px-8 py-4 rounded-2xl text-xl font-bold transition-all w-full md:w-auto text-center"
+                  className="bg-white border-2 border-gray-200 hover:bg-gray-50 text-gray-700 px-8 py-4 rounded-2xl text-xl font-bold transition-all w-full md:w-auto text-center"
                 >
                   Selesai & Cari Peserta Lain
                 </button>
@@ -229,11 +220,9 @@ export default function RpcPage() {
             // Idle State
             !isScanning && (
               <div className="flex-1 flex flex-col items-center justify-center text-center opacity-40">
-                <div className="bg-stone-800 p-8 rounded-full mb-6">
-                  <Search className="w-16 h-16 text-stone-400" />
+                <div className="bg-gray-100 p-8 rounded-full mb-6">
+                  <Search className="w-16 h-16 text-gray-400" />
                 </div>
-                <h3 className="text-3xl font-black uppercase tracking-wide text-white">Siap Melayani</h3>
-                <p className="text-lg mt-3 text-stone-400 font-medium">Ketik BIB / Nama atau scan QR code peserta untuk memulai.</p>
               </div>
             )
           )}
