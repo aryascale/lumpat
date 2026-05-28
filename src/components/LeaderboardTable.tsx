@@ -16,12 +16,14 @@ export type LeaderRow = {
 
 export default function LeaderboardTable({
   title,
+  eventName,
   rows,
   categories,
   showTop10Badge = false,
   onSelect,
 }: {
   title: string;
+  eventName?: string;
   rows: LeaderRow[];
   categories?: string[];
   showTop10Badge?: boolean;
@@ -199,12 +201,25 @@ export default function LeaderboardTable({
 
   return (
     <div className="editorial-table-wrapper w-full">
+      <style>{`
+        @keyframes custom-jump {
+          0%, 100% { transform: translateY(0) scale(1); }
+          50% { transform: translateY(-12px) scale(1.05); }
+        }
+        .animate-jump {
+          animation: custom-jump 2s ease-in-out infinite;
+        }
+        .anim-delay-1 { animation-delay: 0ms; }
+        .anim-delay-2 { animation-delay: 400ms; }
+        .anim-delay-3 { animation-delay: 800ms; }
+      `}</style>
+      
       {/* Champions Spotlights */}
       {podiums.length > 0 && (
          <div 
            ref={podiumRef}
            className={`bg-stone-50 relative overflow-x-hidden overflow-y-auto flex flex-col items-center shadow-sm ${
-              isPodiumFullscreen ? "w-screen h-screen justify-start p-4 sm:p-8" : "mb-12 mt-4 border-2 border-stone-200 border-b-[8px] rounded-3xl p-6 sm:p-12 w-full max-h-[80vh]"
+              isPodiumFullscreen ? "w-screen h-screen justify-center p-4 sm:p-8" : "mb-12 mt-4 border-2 border-stone-200 border-b-[8px] rounded-3xl p-6 sm:p-12 w-full max-h-[80vh]"
            }`}
          >
              {/* Fullscreen Toggle Button */}
@@ -226,38 +241,46 @@ export default function LeaderboardTable({
                    <div className="absolute top-40 -right-20 w-80 h-80 bg-red-300 rounded-full blur-3xl"></div>
                  </div>
 
+                 {isPodiumFullscreen && eventName && (
+                   <div className="absolute top-8 sm:top-12 left-1/2 -translate-x-1/2 text-center z-10 w-full px-4">
+                     <h1 className="text-3xl sm:text-5xl md:text-7xl font-black tracking-tighter text-stone-900 uppercase opacity-10">
+                       {eventName}
+                     </h1>
+                   </div>
+                 )}
+
                  {podiums.map((podium, pIdx) => (
                    <div key={podium.title} className={`w-full relative z-10 flex flex-col items-center ${pIdx > 0 ? 'mt-16 sm:mt-24 pt-12 sm:pt-16 border-t-[3px] border-dashed border-stone-200' : ''}`}>
                      <div className="text-center mb-8 sm:mb-12">
-                       <h3 className="text-sm font-black tracking-[0.2em] text-red-600 uppercase mb-2">Podium</h3>
-                       <h2 className="text-3xl sm:text-5xl font-extrabold text-stone-900 tracking-tighter">{podium.title}</h2>
+                       <h3 className={`font-black tracking-[0.2em] text-red-600 uppercase mb-2 ${isPodiumFullscreen ? 'text-lg md:text-2xl' : 'text-sm'}`}>Podium</h3>
+                       <h2 className={`font-extrabold text-stone-900 tracking-tighter ${isPodiumFullscreen ? 'text-5xl md:text-7xl mb-8' : 'text-3xl sm:text-5xl'}`}>{podium.title}</h2>
                      </div>
                      
-                     <div className="flex flex-row justify-center items-end gap-2 sm:gap-6 w-full max-w-5xl mx-auto">
+                     <div className={`flex flex-row justify-center items-end gap-2 sm:gap-6 w-full mx-auto ${isPodiumFullscreen ? 'max-w-7xl' : 'max-w-5xl'}`}>
                        
                        {/* 2nd Place */}
                        {podium.top3[1] && (
                          <div className="flex flex-col items-center justify-end w-1/3 order-1 group">
                             <div className="flex flex-col items-center mb-2 sm:mb-4 w-full px-1 sm:px-2 animate-in slide-in-from-bottom-4 fade-in duration-500 delay-150">
-                               <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-full border-4 border-white shadow-md flex items-center justify-center text-xl sm:text-3xl font-black bg-slate-100 text-slate-500 group-hover:-translate-y-2 transition-transform">
+                               <div className="w-12 h-12 sm:w-20 sm:h-20 md:w-28 md:h-28 rounded-full border-4 md:border-8 border-white shadow-md flex items-center justify-center text-xl sm:text-3xl md:text-5xl font-black bg-slate-100 text-slate-500 group-hover:-translate-y-2 transition-transform animate-jump anim-delay-2">
                                   {podium.top3[1].name.charAt(0).toUpperCase()}
                                </div>
-                               <div className="font-extrabold text-stone-800 text-[10px] sm:text-base text-center line-clamp-2 w-full mt-2 leading-tight">
+                               <div className={`font-extrabold text-stone-800 text-center line-clamp-2 w-full mt-2 leading-tight ${isPodiumFullscreen ? 'text-lg md:text-2xl mt-4' : 'text-[10px] sm:text-base'}`}>
                                   {podium.top3[1].name}
                                </div>
-                               <div className="font-mono font-bold text-stone-500 text-[9px] sm:text-xs mt-0.5 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm">
+                               <div className={`font-mono font-bold text-stone-500 mt-0.5 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm ${isPodiumFullscreen ? 'text-sm md:text-lg mt-2' : 'text-[9px] sm:text-xs'}`}>
                                   BIB {podium.top3[1].bib}
                                </div>
-                               <div className="bg-slate-200 border-2 border-slate-300 border-b-4 text-stone-900 font-mono font-black text-[10px] sm:text-sm px-2 py-0.5 sm:px-4 sm:py-1.5 rounded-xl shadow-sm">
+                               <div className={`bg-slate-200 border-2 border-slate-300 border-b-4 text-stone-900 font-mono font-black rounded-xl shadow-sm ${isPodiumFullscreen ? 'text-base md:text-xl px-4 py-2 mt-2' : 'text-[10px] sm:text-sm px-2 py-0.5 sm:px-4 sm:py-1.5'}`}>
                                   {podium.top3[1].totalTimeDisplay}
                                </div>
                             </div>
                             
                             <div 
-                              className="w-full h-32 sm:h-48 bg-slate-300 border-b-[8px] sm:border-b-[16px] border-slate-400 rounded-t-xl sm:rounded-t-3xl flex justify-center pt-4 sm:pt-8 cursor-pointer hover:brightness-105 transition-all shadow-inner"
+                              className={`w-full bg-slate-300 border-slate-400 rounded-t-xl sm:rounded-t-3xl flex justify-center pt-4 sm:pt-8 cursor-pointer hover:brightness-105 transition-all shadow-inner ${isPodiumFullscreen ? 'h-48 md:h-64 border-b-[16px] md:border-b-[24px]' : 'h-32 sm:h-48 border-b-[8px] sm:border-b-[16px]'}`}
                               onClick={() => onSelect?.(podium.top3[1])}
                             >
-                               <span className="text-5xl sm:text-7xl font-black text-black/10 drop-shadow-sm">2</span>
+                               <span className={`font-black text-black/10 drop-shadow-sm ${isPodiumFullscreen ? 'text-8xl md:text-9xl' : 'text-5xl sm:text-7xl'}`}>2</span>
                             </div>
                          </div>
                        )}
@@ -266,26 +289,26 @@ export default function LeaderboardTable({
                        {podium.top3[0] && (
                          <div className="flex flex-col items-center justify-end w-1/3 order-2 z-10 group">
                             <div className="flex flex-col items-center mb-2 sm:mb-4 w-full px-1 sm:px-2 animate-in slide-in-from-bottom-8 fade-in duration-500">
-                               <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-2xl sm:text-4xl font-black bg-yellow-100 text-yellow-600 group-hover:-translate-y-2 transition-transform">
+                               <div className="w-16 h-16 sm:w-24 sm:h-24 md:w-36 md:h-36 rounded-full border-4 md:border-8 border-white shadow-lg flex items-center justify-center text-2xl sm:text-4xl md:text-6xl font-black bg-yellow-100 text-yellow-600 group-hover:-translate-y-2 transition-transform animate-jump anim-delay-1">
                                   {podium.top3[0].name.charAt(0).toUpperCase()}
                                </div>
-                               <div className="font-extrabold text-stone-900 text-[11px] sm:text-lg text-center line-clamp-2 w-full mt-2 leading-tight">
+                               <div className={`font-extrabold text-stone-900 text-center line-clamp-2 w-full mt-2 leading-tight ${isPodiumFullscreen ? 'text-xl md:text-3xl mt-4' : 'text-[11px] sm:text-lg'}`}>
                                   {podium.top3[0].name}
                                </div>
-                               <div className="font-mono font-bold text-stone-500 text-[10px] sm:text-sm mt-0.5 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm">
+                               <div className={`font-mono font-bold text-stone-500 mt-0.5 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm ${isPodiumFullscreen ? 'text-base md:text-xl mt-2' : 'text-[10px] sm:text-sm'}`}>
                                   BIB {podium.top3[0].bib}
                                </div>
-                               <div className="bg-yellow-200 border-2 border-yellow-400 border-b-4 text-stone-900 font-mono font-black text-[11px] sm:text-base px-3 py-1 sm:px-5 sm:py-1.5 rounded-xl shadow-sm">
+                               <div className={`bg-yellow-200 border-2 border-yellow-400 border-b-4 text-stone-900 font-mono font-black rounded-xl shadow-sm ${isPodiumFullscreen ? 'text-lg md:text-3xl px-6 py-2 mt-2' : 'text-[11px] sm:text-base px-3 py-1 sm:px-5 sm:py-1.5'}`}>
                                   {podium.top3[0].totalTimeDisplay}
                                </div>
                             </div>
                             
                             <div 
-                              className="w-full h-40 sm:h-64 bg-yellow-400 border-b-[8px] sm:border-b-[16px] border-yellow-600 rounded-t-xl sm:rounded-t-3xl flex justify-center pt-4 sm:pt-10 cursor-pointer hover:brightness-105 transition-all relative overflow-hidden shadow-inner"
+                              className={`w-full bg-yellow-400 border-yellow-600 rounded-t-xl sm:rounded-t-3xl flex justify-center pt-4 sm:pt-10 cursor-pointer hover:brightness-105 transition-all relative overflow-hidden shadow-inner ${isPodiumFullscreen ? 'h-64 md:h-96 border-b-[16px] md:border-b-[24px]' : 'h-40 sm:h-64 border-b-[8px] sm:border-b-[16px]'}`}
                               onClick={() => onSelect?.(podium.top3[0])}
                             >
                                <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/40 to-white/0 opacity-0 group-hover:opacity-100 group-hover:translate-x-full duration-700 transition-all -skew-x-12"></div>
-                               <span className="text-6xl sm:text-8xl font-black text-black/10 drop-shadow-sm">1</span>
+                               <span className={`font-black text-black/10 drop-shadow-sm ${isPodiumFullscreen ? 'text-9xl md:text-[12rem] leading-none' : 'text-6xl sm:text-8xl'}`}>1</span>
                             </div>
                          </div>
                        )}
@@ -294,25 +317,25 @@ export default function LeaderboardTable({
                        {podium.top3[2] && (
                          <div className="flex flex-col items-center justify-end w-1/3 order-3 group">
                             <div className="flex flex-col items-center mb-2 sm:mb-4 w-full px-1 sm:px-2 animate-in slide-in-from-bottom-4 fade-in duration-500 delay-300">
-                               <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-full border-4 border-white shadow-md flex items-center justify-center text-xl sm:text-3xl font-black bg-orange-100 text-orange-600 group-hover:-translate-y-2 transition-transform">
+                               <div className="w-12 h-12 sm:w-20 sm:h-20 md:w-28 md:h-28 rounded-full border-4 md:border-8 border-white shadow-md flex items-center justify-center text-xl sm:text-3xl md:text-5xl font-black bg-orange-100 text-orange-600 group-hover:-translate-y-2 transition-transform animate-jump anim-delay-3">
                                   {podium.top3[2].name.charAt(0).toUpperCase()}
                                </div>
-                               <div className="font-extrabold text-stone-800 text-[10px] sm:text-base text-center line-clamp-2 w-full mt-2 leading-tight">
+                               <div className={`font-extrabold text-stone-800 text-center line-clamp-2 w-full mt-2 leading-tight ${isPodiumFullscreen ? 'text-lg md:text-2xl mt-4' : 'text-[10px] sm:text-base'}`}>
                                   {podium.top3[2].name}
                                </div>
-                               <div className="font-mono font-bold text-stone-500 text-[9px] sm:text-xs mt-0.5 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm">
+                               <div className={`font-mono font-bold text-stone-500 mt-0.5 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm ${isPodiumFullscreen ? 'text-sm md:text-lg mt-2' : 'text-[9px] sm:text-xs'}`}>
                                   BIB {podium.top3[2].bib}
                                </div>
-                               <div className="bg-orange-200 border-2 border-orange-300 border-b-4 text-stone-900 font-mono font-black text-[10px] sm:text-sm px-2 py-0.5 sm:px-4 sm:py-1.5 rounded-xl shadow-sm">
+                               <div className={`bg-orange-200 border-2 border-orange-300 border-b-4 text-stone-900 font-mono font-black rounded-xl shadow-sm ${isPodiumFullscreen ? 'text-base md:text-xl px-4 py-2 mt-2' : 'text-[10px] sm:text-sm px-2 py-0.5 sm:px-4 sm:py-1.5'}`}>
                                   {podium.top3[2].totalTimeDisplay}
                                </div>
                             </div>
                             
                             <div 
-                              className="w-full h-24 sm:h-40 bg-orange-400 border-b-[8px] sm:border-b-[16px] border-orange-600 rounded-t-xl sm:rounded-t-3xl flex justify-center pt-3 sm:pt-6 cursor-pointer hover:brightness-105 transition-all shadow-inner"
+                              className={`w-full bg-orange-400 border-orange-600 rounded-t-xl sm:rounded-t-3xl flex justify-center pt-3 sm:pt-6 cursor-pointer hover:brightness-105 transition-all shadow-inner ${isPodiumFullscreen ? 'h-36 md:h-56 border-b-[16px] md:border-b-[24px]' : 'h-24 sm:h-40 border-b-[8px] sm:border-b-[16px]'}`}
                               onClick={() => onSelect?.(podium.top3[2])}
                             >
-                               <span className="text-5xl sm:text-7xl font-black text-black/10 drop-shadow-sm">3</span>
+                               <span className={`font-black text-black/10 drop-shadow-sm ${isPodiumFullscreen ? 'text-7xl md:text-8xl' : 'text-5xl sm:text-7xl'}`}>3</span>
                             </div>
                          </div>
                        )}

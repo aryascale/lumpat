@@ -1132,6 +1132,7 @@ export default function EventPage() {
                 <>
                   <LeaderboardTable
                     title="Participant Roster"
+                    eventName={event?.name}
                     rows={overall}
                     onSelect={onSelectParticipant}
                   />
@@ -1152,6 +1153,7 @@ export default function EventPage() {
               )}
               <LeaderboardTable
                 title="Overall Result Rankings"
+                eventName={event?.name}
                 rows={overall}
                 categories={event?.categories || []}
                 onSelect={onSelectParticipant}
