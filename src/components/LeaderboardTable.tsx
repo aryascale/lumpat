@@ -349,8 +349,22 @@ export default function LeaderboardTable({
                               className={`w-full bg-yellow-400 border-yellow-600 rounded-t-xl sm:rounded-t-3xl flex justify-center pt-4 sm:pt-10 cursor-pointer hover:brightness-105 transition-all relative overflow-hidden shadow-inner ${isPodiumFullscreen ? 'h-64 md:h-96 border-b-[16px] md:border-b-[24px]' : 'h-40 sm:h-64 border-b-[8px] sm:border-b-[16px]'}`}
                               onClick={() => onSelect?.(podium.top3[0])}
                             >
-                               <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/40 to-white/0 opacity-0 group-hover:opacity-100 group-hover:translate-x-full duration-700 transition-all -skew-x-12"></div>
-                               <span className={`font-black text-black/10 drop-shadow-sm ${isPodiumFullscreen ? 'text-9xl md:text-[12rem] leading-none' : 'text-6xl sm:text-8xl'}`}>1</span>
+                               {/* Auto-looping shimmer sweep */}
+                               <div 
+                                 className="absolute inset-0 -skew-x-12 pointer-events-none"
+                                 style={{
+                                   background: 'linear-gradient(90deg, transparent 0%, transparent 30%, rgba(255,255,255,0.45) 50%, transparent 70%, transparent 100%)',
+                                   backgroundSize: '200% 100%',
+                                   animation: 'shimmer-sweep 3s ease-in-out infinite',
+                                 }}
+                               />
+                               <style>{`
+                                 @keyframes shimmer-sweep {
+                                   0% { background-position: 200% 0; }
+                                   100% { background-position: -200% 0; }
+                                 }
+                               `}</style>
+                               <span className={`font-black text-black/10 drop-shadow-sm relative z-10 ${isPodiumFullscreen ? 'text-9xl md:text-[12rem] leading-none' : 'text-6xl sm:text-8xl'}`}>1</span>
                             </div>
                          </motion.div>
                        )}
