@@ -162,12 +162,40 @@ export default function RpcPage() {
           
           {/* Scanner Area */}
           {isScanning && !foundParticipant && (
-            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/95 backdrop-blur-sm p-6">
-              <div className="w-full max-w-[400px] aspect-square rounded-3xl overflow-hidden border-2 border-dashed border-gray-300 relative bg-white shadow-lg">
-                <div id="rpc-qr-reader" ref={qrReaderRef} className="w-full h-full" />
+            <div className="fixed inset-0 bg-stone-950/95 backdrop-blur-3xl z-[100] flex flex-col items-center justify-center p-4">
+              <div className="absolute top-6 right-6 sm:top-8 sm:right-8 z-[110]">
+                <button 
+                  className="bg-stone-800/50 hover:bg-stone-700/50 border border-stone-700 text-stone-300 hover:text-white rounded-full p-3 backdrop-blur-md transition-all duration-300"
+                  onClick={() => {
+                    setIsScanning(false);
+                    setScanError("");
+                  }}
+                >
+                  <X className="w-6 h-6" />
+                </button>
               </div>
+
+              <div className="text-center text-white mb-8 z-[105]">
+                <h2 className="text-3xl sm:text-4xl font-black mb-3 tracking-tighter">Validasi Peserta</h2>
+                <p className="text-stone-400 font-medium max-w-xs mx-auto text-sm">Arahkan kamera ke QR Code / Barcode tiket peserta.</p>
+              </div>
+
+              <div className="relative w-full max-w-sm aspect-square bg-stone-900 rounded-[2.5rem] overflow-hidden border-8 border-stone-800/50 shadow-2xl z-[105]">
+                {/* Target reticle overlay */}
+                <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center p-12">
+                  <div className="w-full h-full border-2 border-white/20 rounded-[2rem] relative">
+                    {/* Corners */}
+                    <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-white rounded-tl-[2rem]" />
+                    <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-white rounded-tr-[2rem]" />
+                    <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-white rounded-bl-[2rem]" />
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-white rounded-br-[2rem]" />
+                  </div>
+                </div>
+                <div id="rpc-qr-reader" ref={qrReaderRef} className="w-full h-full object-cover relative z-0 [&_video]:object-cover [&_video]:w-full [&_video]:h-full" />
+              </div>
+
               {scanError && (
-                <div className="mt-6 text-lg font-bold text-red-600 bg-red-50 px-6 py-3 rounded-2xl border border-red-100">
+                <div className="mt-6 text-sm font-bold text-red-500 bg-stone-900/80 px-6 py-3 rounded-full border border-red-900/50 backdrop-blur-md z-[105]">
                   {scanError}
                 </div>
               )}

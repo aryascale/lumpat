@@ -1186,15 +1186,17 @@ export default function EventPage() {
                     onChange={e => setRegSearchTerm(e.target.value)}
                   />
                 </div>
-                <button 
-                  onClick={() => setScannerOpen(true)}
-                  className="btn primary px-4 py-2 flex items-center gap-2 rounded-xl"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h4v4H3v-4zM3 3h4v4H3V3zM10 3h4v4h-4V3zM3 17h4v4H3v-4zM10 17h4v4h-4v-4zM17 17h4v4h-4v-4zM17 10h4v4h-4v-4zM17 3h4v4h-4V3z" />
-                  </svg>
-                  Scan Peserta
-                </button>
+                {event?.content?.enableRegisteredScan !== false && (
+                  <button 
+                    onClick={() => setScannerOpen(true)}
+                    className="btn primary px-4 py-2 flex items-center gap-2 rounded-xl"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h4v4H3v-4zM3 3h4v4H3V3zM10 3h4v4h-4V3zM3 17h4v4H3v-4zM10 17h4v4h-4v-4zM17 17h4v4h-4v-4zM17 10h4v4h-4v-4zM17 3h4v4h-4V3z" />
+                    </svg>
+                    Scan Peserta
+                  </button>
+                )}
               </div>
               {(() => {
                 const settled = registeredParticipants.filter(p => p.paymentStatus === 'settlement');

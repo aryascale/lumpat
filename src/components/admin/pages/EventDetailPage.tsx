@@ -2434,6 +2434,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                         schedule: homeContent.schedule || eventData.content?.schedule || '',
                         rules: homeContent.rules || eventData.content?.rules || '',
                         allowBulkNoOtp: eventData.content?.allowBulkNoOtp || false,
+                        enableRegisteredScan: eventData.content?.enableRegisteredScan !== false,
                         rpcBgUrl: eventData.content?.rpcBgUrl || ''
                       }
                     }),
@@ -2530,6 +2531,28 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                 <div className="text-xs text-gray-500 mt-2">
                   Masukkan URL gambar untuk digunakan sebagai background di halaman layar RPC.
                 </div>
+              </div>
+            </div>
+
+            <div className="admin-cutoff border-t border-gray-100 pt-6">
+              <div className="label">Fitur Scan Validasi Peserta</div>
+              <div className="tools">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <div className="relative">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only" 
+                      checked={eventData?.content?.enableRegisteredScan !== false}
+                      onChange={(e) => setEventData({ 
+                        ...eventData, 
+                        content: { ...(eventData?.content || {}), enableRegisteredScan: e.target.checked }
+                      })}
+                    />
+                    <div className={`block w-14 h-8 rounded-full transition-colors ${eventData?.content?.enableRegisteredScan !== false ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                    <div className={`absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${eventData?.content?.enableRegisteredScan !== false ? 'transform translate-x-6' : ''}`}></div>
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">Tampilkan tombol Scan Peserta di tab Registered</span>
+                </label>
               </div>
             </div>
 
