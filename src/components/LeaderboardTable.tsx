@@ -1,4 +1,5 @@
 import { useMemo, useState, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
 import { exportLeaderboardCSV } from "../lib/csv";
 
 export type LeaderRow = {
@@ -201,19 +202,6 @@ export default function LeaderboardTable({
 
   return (
     <div className="editorial-table-wrapper w-full">
-      <style>{`
-        @keyframes custom-jump {
-          0%, 100% { transform: translateY(0) scale(1); }
-          50% { transform: translateY(-12px) scale(1.05); }
-        }
-        .animate-jump {
-          animation: custom-jump 2s ease-in-out infinite;
-        }
-        .anim-delay-1 { animation-delay: 0ms; }
-        .anim-delay-2 { animation-delay: 400ms; }
-        .anim-delay-3 { animation-delay: 800ms; }
-      `}</style>
-      
       {/* Champions Spotlights */}
       {podiums.length > 0 && (
          <div 
@@ -251,20 +239,52 @@ export default function LeaderboardTable({
 
                  {podiums.map((podium, pIdx) => (
                    <div key={podium.title} className={`w-full relative z-10 flex flex-col items-center ${pIdx > 0 ? 'mt-16 sm:mt-24 pt-12 sm:pt-16 border-t-[3px] border-dashed border-stone-200' : ''}`}>
-                     <div className="text-center mb-8 sm:mb-12">
+                     <motion.div 
+                       initial={{ opacity: 0, y: -20 }}
+                       whileInView={{ opacity: 1, y: 0 }}
+                       viewport={{ once: true }}
+                       transition={{ duration: 0.5 }}
+                       className="text-center mb-8 sm:mb-12"
+                     >
                        <h3 className={`font-black tracking-[0.2em] text-red-600 uppercase mb-2 ${isPodiumFullscreen ? 'text-lg md:text-2xl' : 'text-sm'}`}>Podium</h3>
                        <h2 className={`font-extrabold text-stone-900 tracking-tighter ${isPodiumFullscreen ? 'text-5xl md:text-7xl mb-8' : 'text-3xl sm:text-5xl'}`}>{podium.title}</h2>
-                     </div>
+                     </motion.div>
                      
-                     <div className={`flex flex-row justify-center items-end gap-2 sm:gap-6 w-full mx-auto ${isPodiumFullscreen ? 'max-w-7xl' : 'max-w-5xl'}`}>
+                     <motion.div 
+                       initial="hidden"
+                       whileInView="visible"
+                       viewport={{ once: true, margin: "-100px" }}
+                       variants={{
+                         hidden: { opacity: 0 },
+                         visible: {
+                           opacity: 1,
+                           transition: { staggerChildren: 0.2, delayChildren: 0.2 }
+                         }
+                       }}
+                       className={`flex flex-row justify-center items-end gap-2 sm:gap-6 w-full mx-auto ${isPodiumFullscreen ? 'max-w-7xl' : 'max-w-5xl'}`}
+                     >
                        
                        {/* 2nd Place */}
                        {podium.top3[1] && (
-                         <div className="flex flex-col items-center justify-end w-1/3 order-1 group">
-                            <div className="flex flex-col items-center mb-2 sm:mb-4 w-full px-1 sm:px-2 animate-in slide-in-from-bottom-4 fade-in duration-500 delay-150">
-                               <div className="w-12 h-12 sm:w-20 sm:h-20 md:w-28 md:h-28 rounded-full border-4 md:border-8 border-white shadow-md flex items-center justify-center text-xl sm:text-3xl md:text-5xl font-black bg-slate-100 text-slate-500 group-hover:-translate-y-2 transition-transform animate-jump anim-delay-2">
+                         <motion.div 
+                           variants={{
+                             hidden: { opacity: 0, y: 100 },
+                             visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 60, damping: 12 } }
+                           }}
+                           className="flex flex-col items-center justify-end w-1/3 order-1 group"
+                         >
+                            <div className="flex flex-col items-center mb-2 sm:mb-4 w-full px-1 sm:px-2">
+                               <motion.div 
+                                 variants={{
+                                   hidden: { scale: 0 },
+                                   visible: { scale: 1, transition: { type: "spring", stiffness: 100, delay: 0.6 } }
+                                 }}
+                                 animate={{ y: [0, -6, 0] }}
+                                 transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                                 className="w-12 h-12 sm:w-20 sm:h-20 md:w-28 md:h-28 rounded-full border-4 md:border-8 border-white shadow-md flex items-center justify-center text-xl sm:text-3xl md:text-5xl font-black bg-slate-100 text-slate-500 group-hover:-translate-y-2 transition-transform"
+                               >
                                   {podium.top3[1].name.charAt(0).toUpperCase()}
-                               </div>
+                               </motion.div>
                                <div className={`font-extrabold text-stone-800 text-center line-clamp-2 w-full mt-2 leading-tight ${isPodiumFullscreen ? 'text-lg md:text-2xl mt-4' : 'text-[10px] sm:text-base'}`}>
                                   {podium.top3[1].name}
                                </div>
@@ -282,16 +302,38 @@ export default function LeaderboardTable({
                             >
                                <span className={`font-black text-black/10 drop-shadow-sm ${isPodiumFullscreen ? 'text-8xl md:text-9xl' : 'text-5xl sm:text-7xl'}`}>2</span>
                             </div>
-                         </div>
+                         </motion.div>
                        )}
 
                        {/* 1st Place */}
                        {podium.top3[0] && (
-                         <div className="flex flex-col items-center justify-end w-1/3 order-2 z-10 group">
-                            <div className="flex flex-col items-center mb-2 sm:mb-4 w-full px-1 sm:px-2 animate-in slide-in-from-bottom-8 fade-in duration-500">
-                               <div className="w-16 h-16 sm:w-24 sm:h-24 md:w-36 md:h-36 rounded-full border-4 md:border-8 border-white shadow-lg flex items-center justify-center text-2xl sm:text-4xl md:text-6xl font-black bg-yellow-100 text-yellow-600 group-hover:-translate-y-2 transition-transform animate-jump anim-delay-1">
+                         <motion.div 
+                           variants={{
+                             hidden: { opacity: 0, y: 150 },
+                             visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 70, damping: 10, delay: 0.2 } }
+                           }}
+                           className="flex flex-col items-center justify-end w-1/3 order-2 z-10 group"
+                         >
+                            <div className="flex flex-col items-center mb-2 sm:mb-4 w-full px-1 sm:px-2 relative">
+                               {/* Subtle glow for 1st place */}
+                               <motion.div 
+                                 initial={{ opacity: 0 }}
+                                 whileInView={{ opacity: 1 }}
+                                 transition={{ duration: 1, delay: 1 }}
+                                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 md:w-48 md:h-48 bg-yellow-400 blur-3xl opacity-20 -z-10 rounded-full"
+                               />
+                               
+                               <motion.div 
+                                 variants={{
+                                   hidden: { scale: 0 },
+                                   visible: { scale: 1, transition: { type: "spring", stiffness: 100, delay: 0.8 } }
+                                 }}
+                                 animate={{ y: [0, -8, 0] }}
+                                 transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1.2 }}
+                                 className="w-16 h-16 sm:w-24 sm:h-24 md:w-36 md:h-36 rounded-full border-4 md:border-8 border-white shadow-lg flex items-center justify-center text-2xl sm:text-4xl md:text-6xl font-black bg-yellow-100 text-yellow-600 group-hover:-translate-y-2 transition-transform"
+                               >
                                   {podium.top3[0].name.charAt(0).toUpperCase()}
-                               </div>
+                               </motion.div>
                                <div className={`font-extrabold text-stone-900 text-center line-clamp-2 w-full mt-2 leading-tight ${isPodiumFullscreen ? 'text-xl md:text-3xl mt-4' : 'text-[11px] sm:text-lg'}`}>
                                   {podium.top3[0].name}
                                </div>
@@ -310,16 +352,30 @@ export default function LeaderboardTable({
                                <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/40 to-white/0 opacity-0 group-hover:opacity-100 group-hover:translate-x-full duration-700 transition-all -skew-x-12"></div>
                                <span className={`font-black text-black/10 drop-shadow-sm ${isPodiumFullscreen ? 'text-9xl md:text-[12rem] leading-none' : 'text-6xl sm:text-8xl'}`}>1</span>
                             </div>
-                         </div>
+                         </motion.div>
                        )}
 
                        {/* 3rd Place */}
                        {podium.top3[2] && (
-                         <div className="flex flex-col items-center justify-end w-1/3 order-3 group">
-                            <div className="flex flex-col items-center mb-2 sm:mb-4 w-full px-1 sm:px-2 animate-in slide-in-from-bottom-4 fade-in duration-500 delay-300">
-                               <div className="w-12 h-12 sm:w-20 sm:h-20 md:w-28 md:h-28 rounded-full border-4 md:border-8 border-white shadow-md flex items-center justify-center text-xl sm:text-3xl md:text-5xl font-black bg-orange-100 text-orange-600 group-hover:-translate-y-2 transition-transform animate-jump anim-delay-3">
+                         <motion.div 
+                           variants={{
+                             hidden: { opacity: 0, y: 80 },
+                             visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 50, damping: 14 } }
+                           }}
+                           className="flex flex-col items-center justify-end w-1/3 order-3 group"
+                         >
+                            <div className="flex flex-col items-center mb-2 sm:mb-4 w-full px-1 sm:px-2">
+                               <motion.div 
+                                 variants={{
+                                   hidden: { scale: 0 },
+                                   visible: { scale: 1, transition: { type: "spring", stiffness: 100, delay: 0.4 } }
+                                 }}
+                                 animate={{ y: [0, -5, 0] }}
+                                 transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut", delay: 1.4 }}
+                                 className="w-12 h-12 sm:w-20 sm:h-20 md:w-28 md:h-28 rounded-full border-4 md:border-8 border-white shadow-md flex items-center justify-center text-xl sm:text-3xl md:text-5xl font-black bg-orange-100 text-orange-600 group-hover:-translate-y-2 transition-transform"
+                               >
                                   {podium.top3[2].name.charAt(0).toUpperCase()}
-                               </div>
+                               </motion.div>
                                <div className={`font-extrabold text-stone-800 text-center line-clamp-2 w-full mt-2 leading-tight ${isPodiumFullscreen ? 'text-lg md:text-2xl mt-4' : 'text-[10px] sm:text-base'}`}>
                                   {podium.top3[2].name}
                                </div>
@@ -337,9 +393,9 @@ export default function LeaderboardTable({
                             >
                                <span className={`font-black text-black/10 drop-shadow-sm ${isPodiumFullscreen ? 'text-7xl md:text-8xl' : 'text-5xl sm:text-7xl'}`}>3</span>
                             </div>
-                         </div>
+                         </motion.div>
                        )}
-                     </div>
+                     </motion.div>
                    </div>
                  ))}
              </div>
