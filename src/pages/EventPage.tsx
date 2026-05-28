@@ -1186,7 +1186,7 @@ export default function EventPage() {
                     onChange={e => setRegSearchTerm(e.target.value)}
                   />
                 </div>
-                {event?.content?.enableRegisteredScan !== false && (
+                {String(event?.content?.enableRegisteredScan) !== 'false' && (
                   <button 
                     onClick={() => setScannerOpen(true)}
                     className="btn primary px-4 py-2 flex items-center gap-2 rounded-xl"

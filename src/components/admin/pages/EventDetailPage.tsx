@@ -1057,15 +1057,6 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
               </div>
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
-              <a 
-                href={`/rpc/${eventSlug}`} 
-                target="_blank" 
-                rel="noreferrer"
-                className="btn text-white w-full sm:w-auto text-center flex items-center justify-center font-bold"
-                style={{ backgroundColor: '#dc2626', borderColor: '#b91c1c' }}
-              >
-                Buka Layar RPC
-              </a>
               <button className="btn secondary w-full sm:w-auto border border-stone-200" onClick={exportMasterTemplate}>
                 Export Master Template
               </button>
@@ -2428,8 +2419,18 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
               <h2 className="section-title">Event Status & Schedule</h2>
               <div className="subtle">Kelola status publikasi dan jadwal rilis event.</div>
             </div>
-            <button 
-              className="btn" 
+            <div className="flex gap-2 flex-col sm:flex-row">
+              <a 
+                href={`/rpc/${eventSlug}`} 
+                target="_blank" 
+                rel="noreferrer"
+                className="btn text-white w-full sm:w-auto text-center flex items-center justify-center font-bold px-4"
+                style={{ backgroundColor: '#dc2626', borderColor: '#b91c1c' }}
+              >
+                Buka Layar RPC
+              </a>
+              <button 
+                className="btn" 
               onClick={async () => {
                 try {
                   const res = await fetch(`/api/events?eventId=${eventId}`, {
@@ -2460,6 +2461,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
             >
               Save Settings
             </button>
+            </div>
           </div>
 
           <div className="space-y-6">
