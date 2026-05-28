@@ -1294,7 +1294,10 @@ export default function EventPage() {
               <div className="lg:col-span-2 bg-white border border-stone-200 rounded-3xl shadow-xl overflow-hidden relative min-h-[400px] lg:min-h-[600px]">
                 <div className="absolute top-4 left-4 md:top-6 md:left-6 z-10 bg-white/95 backdrop-blur-md px-5 py-3 rounded-2xl border border-stone-200 shadow-xl pointer-events-none">
                   <div className="text-[10px] font-black uppercase tracking-widest text-red-600 mb-1 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+                    </span>
                     Official Route Map
                   </div>
                   <div className="text-xl font-black tracking-tighter text-stone-900">{event.name}</div>
@@ -1319,8 +1322,8 @@ export default function EventPage() {
                     <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-50 rounded-bl-full -z-0 opacity-50"></div>
                     <div className="relative z-10">
                       <h3 className="text-stone-900 font-extrabold text-xl tracking-tight mb-5 pb-4 border-b-2 border-dashed border-stone-100 flex items-center gap-3">
-                        <div className="p-2 bg-blue-100 text-blue-600 rounded-xl">
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <div className="text-blue-600">
+                          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                           </svg>
                         </div>
@@ -1339,12 +1342,15 @@ export default function EventPage() {
                         <div>
                           <div className="text-xs text-stone-500 font-bold mb-2 uppercase tracking-wider">Status Data Peta</div>
                           {gpxTrackPoints.length > 0 ? (
-                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 border-2 border-green-200 border-b-[4px] rounded-xl text-sm font-extrabold tracking-wide">
-                              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white text-green-600 border-2 border-stone-200 border-b-[4px] shadow-sm rounded-xl text-sm font-extrabold tracking-wide">
+                              <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                              </span>
                               RUTE TERSEDIA
                             </div>
                           ) : (
-                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-stone-100 text-stone-500 border-2 border-stone-200 border-b-[4px] rounded-xl text-sm font-extrabold tracking-wide">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white text-stone-500 border-2 border-stone-200 border-b-[4px] shadow-sm rounded-xl text-sm font-extrabold tracking-wide">
                               BELUM ADA RUTE
                             </div>
                           )}
@@ -1356,8 +1362,8 @@ export default function EventPage() {
                  {/* Extra decorative box to make it feel like a real racing dashboard */}
                  <div className="bg-white p-6 border-2 border-stone-200 border-b-[6px] rounded-3xl transition-transform hover:-translate-y-1">
                    <div className="font-extrabold text-stone-800 tracking-tight text-lg mb-3 flex items-center gap-3">
-                     <div className="p-2 bg-yellow-100 text-yellow-600 rounded-xl">
-                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <div className="text-yellow-500">
+                       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                        </svg>
                      </div>
