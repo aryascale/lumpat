@@ -745,6 +745,7 @@ export default function EventPage() {
             const timeOnly = timeOnlyStr[catKey] ?? null;
 
             let total: number | null = null;
+            let displayTotal = "";
 
             if (absMs != null && Number.isFinite(absMs)) {
               const delta = finishEntry.ms - absMs;
@@ -752,11 +753,9 @@ export default function EventPage() {
                 total = delta;
               } else {
                 const startEntry = startMap.get(p.epc);
-                if (!startEntry?.ms) {
-                  pushIncompleteRow("ACTIVE");
-                  return;
+                if (startEntry?.ms) {
+                  total = finishEntry.ms - startEntry.ms;
                 }
-                total = finishEntry.ms - startEntry.ms;
               }
             } else if (timeOnly) {
               const builtOverride = buildOverrideFromFinishDate(finishEntry.ms, timeOnly);
@@ -766,35 +765,31 @@ export default function EventPage() {
                   total = delta;
                 } else {
                   const startEntry = startMap.get(p.epc);
-                  if (!startEntry?.ms) {
-                    pushIncompleteRow("ACTIVE");
-                    return;
+                  if (startEntry?.ms) {
+                    total = finishEntry.ms - startEntry.ms;
                   }
-                  total = finishEntry.ms - startEntry.ms;
                 }
               } else {
                 const startEntry = startMap.get(p.epc);
-                if (!startEntry?.ms) {
-                  pushIncompleteRow("ACTIVE");
-                  return;
+                if (startEntry?.ms) {
+                  total = finishEntry.ms - startEntry.ms;
                 }
-                total = finishEntry.ms - startEntry.ms;
               }
             } else {
               const startEntry = startMap.get(p.epc);
-              if (!startEntry?.ms) {
-                pushIncompleteRow("ACTIVE");
-                return;
+              if (startEntry?.ms) {
+                total = finishEntry.ms - startEntry.ms;
               }
-              total = finishEntry.ms - startEntry.ms;
             }
 
             if (!Number.isFinite(total) || total == null || total < 0) {
-              pushIncompleteRow("ACTIVE");
-              return;
+              // No start data, but they finished!
+              // Use their absolute finish time for sorting, but mark display as "-"
+              total = finishEntry.ms;
+              displayTotal = "-";
             }
 
-            const isDNF = cutoffMs != null && total > cutoffMs;
+            const isDNF = cutoffMs != null && displayTotal !== "-" && total > cutoffMs;
 
             baseRows.push({
               rank: null,
@@ -805,7 +800,7 @@ export default function EventPage() {
               sourceCategoryKey: resolvedCategoryKey,
               finishTimeRaw: extractTimeOfDay(finishEntry.raw),
               totalTimeMs: total,
-              totalTimeDisplay: isDQ ? "DSQ" : isDNF ? "DNF" : formatDuration(total),
+              totalTimeDisplay: isDQ ? "DSQ" : isDNF ? "DNF" : (displayTotal || formatDuration(total)),
               epc: p.epc,
             });
           });
