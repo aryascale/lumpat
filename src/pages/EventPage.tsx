@@ -745,7 +745,6 @@ export default function EventPage() {
             const timeOnly = timeOnlyStr[catKey] ?? null;
 
             let total: number | null = null;
-            let displayTotal = "";
 
             if (absMs != null && Number.isFinite(absMs)) {
               const delta = finishEntry.ms - absMs;
@@ -782,14 +781,9 @@ export default function EventPage() {
               }
             }
 
-            if (!Number.isFinite(total) || total == null || total < 0) {
-              // No start data, but they finished!
-              // Use their absolute finish time for sorting, but mark display as "-"
-              total = finishEntry.ms;
-              displayTotal = "-";
-            }
+            if (!Number.isFinite(total) || total == null || total < 0) return;
 
-            const isDNF = cutoffMs != null && displayTotal !== "-" && total > cutoffMs;
+            const isDNF = cutoffMs != null && total > cutoffMs;
 
             baseRows.push({
               rank: null,
@@ -800,7 +794,7 @@ export default function EventPage() {
               sourceCategoryKey: resolvedCategoryKey,
               finishTimeRaw: extractTimeOfDay(finishEntry.raw),
               totalTimeMs: total,
-              totalTimeDisplay: isDQ ? "DSQ" : isDNF ? "DNF" : (displayTotal || formatDuration(total)),
+              totalTimeDisplay: isDQ ? "DSQ" : isDNF ? "DNF" : formatDuration(total),
               epc: p.epc,
             });
           });
