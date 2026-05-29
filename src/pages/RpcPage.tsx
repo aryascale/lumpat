@@ -135,8 +135,7 @@ export default function RpcPage() {
   const desktopBg = eventData?.content?.rpcBgUrl || eventData?.bannerUrl || eventData?.homeImageUrl;
   const mobileBg = eventData?.content?.rpcBgUrlMobile || desktopBg;
   const bgImage = isMobile ? mobileBg : desktopBg;
-  
-  const isVideoBg = bgImage && (bgImage.toLowerCase().endsWith('.mp4') || bgImage.toLowerCase().endsWith('.webm') || bgImage.toLowerCase().endsWith('.mov'));
+  const isVideoBg = typeof bgImage === 'string' && (bgImage.toLowerCase().endsWith('.mp4') || bgImage.toLowerCase().endsWith('.webm') || bgImage.toLowerCase().endsWith('.mov'));
 
   return (
     <div 

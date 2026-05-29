@@ -100,14 +100,6 @@ export default function ParticipantModal({ open, onClose, eventId, eventName, da
               if (info.offset.y > 100 || info.velocity.y > 500) onClose();
             }}
           >
-            {/* Insta Story Style Progress Bar Timer (5 seconds auto close) */}
-            <motion.div 
-              className="absolute top-0 left-0 h-1.5 bg-red-600 z-50 rounded-r-full"
-              initial={{ width: "0%" }}
-              animate={{ width: "100%" }}
-              transition={{ duration: 7, ease: "linear" }}
-              onAnimationComplete={onClose}
-            />
 
             {/* Drag Handle Indicator */}
             <div className="w-full flex justify-center pt-1 pb-3">
