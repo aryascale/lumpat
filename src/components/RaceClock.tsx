@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { CATEGORY_KEYS } from "../lib/config";
 import parseTimeToMs from "../lib/time";
-
 const LS_EVENT_DATE = "imr_event_date"; // optional: "2025-11-23"
 
 interface RaceClockProps {
@@ -120,7 +118,7 @@ export default function RaceClock({ cutoffMs: propCutoffMs, categoryStartTimes: 
   const baseDateYMD = useMemo(() => deriveBaseDate(catStartRaw), [catStartRaw]);
 
   const catEntries = useMemo(() => {
-    return CATEGORY_KEYS
+    return Object.keys(catStartRaw)
       .map((key) => {
         const raw = catStartRaw[key];
         const startMs = raw ? toAbsStartMs(raw, baseDateYMD) : null;
@@ -137,12 +135,7 @@ export default function RaceClock({ cutoffMs: propCutoffMs, categoryStartTimes: 
   if (!cutoffMs) return null;
 
   if (catEntries.length === 0) {
-    return (
-      <div className="card" style={wrapStyle}>
-        <div style={labelStyle}>Cut Off Clock</div>
-        <div style={hintStyle}>Set start time per kategori di Admin.</div>
-      </div>
-    );
+    return null;
   }
 
   const active = catEntries[slot % catEntries.length];

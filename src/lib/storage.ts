@@ -167,8 +167,14 @@ export async function uploadBannerViaApi(
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error.error || 'Failed to upload banner');
+    let errorMsg = 'Failed to upload banner';
+    if (response.status === 413) {
+      errorMsg = 'File is too large. Maximum allowed size is 4.5MB.';
+    } else {
+      const error = await response.json().catch(() => ({}));
+      errorMsg = error.error || errorMsg;
+    }
+    throw new Error(errorMsg);
   }
 
   return await response.json();

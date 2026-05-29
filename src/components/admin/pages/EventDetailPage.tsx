@@ -493,8 +493,18 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to upload media');
+        let errorMsg = 'Failed to upload media';
+        if (res.status === 413) {
+          errorMsg = 'File is too large. Maximum allowed size is 4.5MB.';
+        } else {
+          try {
+            const err = await res.json();
+            errorMsg = err.error || errorMsg;
+          } catch (e) {
+            errorMsg = `Server error (${res.status}): The file might be too large.`;
+          }
+        }
+        throw new Error(errorMsg);
       }
 
       const result = await res.json();
@@ -750,8 +760,18 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to upload GPX');
+        let errorMsg = 'Failed to upload GPX';
+        if (response.status === 413) {
+          errorMsg = 'File is too large. Maximum allowed size is 4.5MB.';
+        } else {
+          try {
+            const err = await response.json();
+            errorMsg = err.error || errorMsg;
+          } catch (e) {
+            errorMsg = `Server error (${response.status}): The file might be too large.`;
+          }
+        }
+        throw new Error(errorMsg);
       }
 
       const result = await response.json();
@@ -833,8 +853,14 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to save");
+        let errorMsg = "Failed to save";
+        try {
+          const err = await res.json();
+          errorMsg = err.error || errorMsg;
+        } catch (e) {
+          errorMsg = `Server error (${res.status}).`;
+        }
+        throw new Error(errorMsg);
       }
 
       bumpDataVersion();
@@ -897,8 +923,18 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to upload certificate');
+        let errorMsg = 'Failed to upload certificate';
+        if (res.status === 413) {
+          errorMsg = 'File is too large. Maximum allowed size is 4.5MB.';
+        } else {
+          try {
+            const err = await res.json();
+            errorMsg = err.error || errorMsg;
+          } catch (e) {
+            errorMsg = `Server error (${res.status}): The file might be too large.`;
+          }
+        }
+        throw new Error(errorMsg);
       }
 
       setCertFile(null);
