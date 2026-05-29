@@ -54,7 +54,7 @@ export type CertData = {
       const bg = await loadImage(bgUrl);
       ctx.drawImage(bg, 0, 0, W, H);
     } catch (err: any) {
-      console.error("Failed to load certificate template:", err);
+      console.error("Browser anda error");
       // Propagate the error so the UI can show a notification
       throw new Error(err.message === "Belum ada template" ? err.message : "Gagal memuat template sertifikat");
     }

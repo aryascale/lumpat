@@ -61,10 +61,11 @@ export default function ParticipantModal({ open, onClose, eventId, data }: Props
       });
       downloadDataUrl(png, `IMR2025_${data.bib || "BIB"}_certificate.png`);
     } catch (err: any) {
+      console.error("Browser anda error");
       if (err.message === "Belum ada template") {
-        alert("Sertifikat belum tersedia. Admin belum meng-upload template sertifikat untuk event ini.");
+        alert("Browser anda error");
       } else {
-        alert("Gagal mendownload sertifikat: " + err.message);
+        alert("Browser anda error");
       }
     } finally {
       setDownloading(false);

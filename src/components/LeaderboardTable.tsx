@@ -258,16 +258,19 @@ export default function LeaderboardTable({
 
                  {podiums.map((podium, pIdx) => (
                    <div key={podium.title} className={`w-full relative z-10 flex flex-col items-center ${pIdx > 0 ? 'mt-16 sm:mt-24 pt-12 sm:pt-16 border-t-[3px] border-dashed border-stone-200' : ''}`}>
-                     <motion.div 
-                       initial={{ opacity: 0, y: -20 }}
-                       whileInView={{ opacity: 1, y: 0 }}
-                       viewport={{ once: true }}
-                       transition={{ duration: 0.5 }}
-                       className="text-center mb-8 sm:mb-12"
-                     >
-                       <h3 className={`font-black tracking-[0.2em] text-red-600 uppercase mb-2 ${isPodiumFullscreen ? 'text-lg md:text-2xl' : 'text-sm'}`}>Podium</h3>
-                       <h2 className={`font-extrabold text-stone-900 tracking-tighter ${isPodiumFullscreen ? 'text-5xl md:text-7xl mb-8' : 'text-3xl sm:text-5xl'}`}>{podium.title}</h2>
-                     </motion.div>
+                      <motion.div 
+                        initial={{ opacity: 0, y: -20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5 }}
+                        className="text-center mb-8 sm:mb-12"
+                      >
+                        <h3 className={`font-black tracking-[0.2em] text-red-600 uppercase mb-2 ${isPodiumFullscreen ? 'text-lg md:text-2xl' : 'text-sm'}`}>Podium</h3>
+                        <h2 className={`font-extrabold text-stone-900 tracking-tighter ${isPodiumFullscreen ? 'text-5xl md:text-7xl' : 'text-3xl sm:text-5xl'}`}>{podium.title}</h2>
+                        <div className={`font-bold text-stone-500 tracking-wide mt-3 ${isPodiumFullscreen ? 'text-2xl md:text-3xl mb-8' : 'text-base sm:text-xl'}`}>
+                          {ageCategoryFilter === "All" ? "Semua Umur" : ageCategoryFilter} {title.toLowerCase().includes("overall") ? "Overall" : title.replace("Full Standings — ", "").trim()} & {genderFilter === "All" ? "Semua Gender" : genderFilter}
+                        </div>
+                      </motion.div>
                      
                      <motion.div 
                        initial="hidden"

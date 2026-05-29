@@ -9,7 +9,7 @@ const headerAliases: Record<string, string[]> = {
   name: ["nama lengkap", "full name", "name", "nama", "participant name"],
   gender: ["jenis kelamin", "gender", "sex", "jk", "kelamin"],
   category: ["kategori", "category", "kelas", "class"],
-  ageCategory: ["kategori usia", "age category", "kategori umur", "age group"],
+  ageCategory: ["kategori usia", "age category", "kategori umur", "age group", "usia", "umur", "kategori_usia", "age"],
   times: [
     "times",
     "time",
@@ -33,10 +33,18 @@ function norm(s: string) {
 function findColIndex(headers: string[], key: keyof typeof headerAliases): number {
   const aliases = headerAliases[key].map(norm);
   const hs = headers.map(norm);
+  
+  // Pass 1: exact match
+  for (let i = 0; i < hs.length; i++) {
+    if (aliases.includes(hs[i])) return i;
+  }
+  
+  // Pass 2: includes (fallback)
   for (let i = 0; i < hs.length; i++) {
     const h = hs[i];
-    if (aliases.some((a) => h === a || h.includes(a))) return i;
+    if (aliases.some((a) => h.includes(a))) return i;
   }
+  
   return -1;
 }
 
