@@ -210,10 +210,10 @@ export default function RpcPage() {
                     placeholder="Search BIB or Name..." 
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    className="w-full bg-gray-100 border-2 border-gray-200 border-b-[4px] sm:border-b-[6px] text-gray-900 px-5 sm:px-6 py-3 sm:py-4 md:py-5 rounded-[1.5rem] sm:rounded-[2rem] text-base sm:text-lg md:text-xl font-bold focus:border-blue-400 focus:border-b-[4px] sm:focus:border-b-[6px] focus:translate-y-0 focus:outline-none placeholder-gray-400 transition-all pr-14 sm:pr-20"
+                    className="w-full bg-gray-100 border-2 border-gray-200 border-b-[4px] sm:border-b-[6px] text-gray-900 px-5 sm:px-6 py-3 sm:py-4 md:py-5 rounded-[1.5rem] sm:rounded-[2rem] text-base sm:text-lg md:text-xl font-bold focus:border-blue-400 focus:border-b-[4px] sm:focus:border-b-[6px] focus:translate-y-0 focus:outline-none placeholder-gray-400 transition-all pr-16 sm:pr-20"
                   />
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                    <button type="submit" className="bg-blue-500 hover:bg-blue-400 active:border-b-0 active:translate-y-[calc(-50%+2px)] sm:active:translate-y-[calc(-50%+3px)] border-blue-700 border-b-[3px] sm:border-b-[4px] text-white p-2 sm:p-3 rounded-xl sm:rounded-2xl transition-all -translate-y-[calc(50%+2px)] sm:-translate-y-[calc(50%+3px)]" style={{ marginTop: '50%' }}>
+                  <div className="absolute right-2 top-0 bottom-[4px] sm:bottom-[6px] flex items-center">
+                    <button type="submit" className="bg-blue-500 hover:bg-blue-400 active:border-b-0 active:translate-y-[2px] sm:active:translate-y-[3px] border-blue-700 border-b-[3px] sm:border-b-[4px] text-white p-2 sm:p-3 rounded-xl sm:rounded-2xl transition-all mr-1">
                       <Search className="w-5 h-5 sm:w-6 sm:h-6 stroke-[3]" />
                     </button>
                   </div>
