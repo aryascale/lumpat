@@ -80,6 +80,23 @@ export default function RpcPage() {
     };
   }, [isScanning, participants]);
 
+  // Auto-hide participant after 5 seconds
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    if (foundParticipant) {
+      // Hide the digital keyboard if it was open
+      setShowKeyboard(false);
+      // Auto clear after 5 seconds
+      timeout = setTimeout(() => {
+        setFoundParticipant(null);
+        setQuery("");
+      }, 5000);
+    }
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [foundParticipant]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const q = query.trim().toLowerCase();
@@ -119,6 +136,28 @@ export default function RpcPage() {
       className="min-h-screen bg-gray-900 text-gray-900 font-sans flex flex-col relative overflow-hidden"
       style={bgImage && !isVideoBg ? { backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
     >
+      <style>{`
+        .rpc-keyboard-theme .hg-button {
+          height: 45px !important;
+          font-size: 18px !important;
+          font-weight: 600 !important;
+          border-radius: 8px !important;
+          border-bottom: 3px solid #ccc !important;
+          background: white !important;
+          color: #333 !important;
+        }
+        .rpc-keyboard-theme .hg-button:active {
+          border-bottom: 0px !important;
+          transform: translateY(3px) !important;
+        }
+        @media (min-width: 640px) {
+          .rpc-keyboard-theme .hg-button {
+            height: 55px !important;
+            font-size: 20px !important;
+          }
+        }
+      `}</style>
+
       {isVideoBg && (
         <video 
           autoPlay 
@@ -148,9 +187,9 @@ export default function RpcPage() {
         )}
 
         {/* Floating Bottom Action Bar (Duolingo Style) */}
-        {!isScanning && (
+        {!isScanning && !foundParticipant && (
           <div className="absolute bottom-4 sm:bottom-10 lg:bottom-16 left-1/2 -translate-x-1/2 w-[95%] sm:w-[90%] max-w-3xl z-[150] animate-in slide-in-from-bottom-10 fade-in duration-500 flex flex-col justify-end pointer-events-none max-h-[90vh]">
-            <div className="bg-white/90 backdrop-blur-xl p-3 md:p-4 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-b-[8px] border-gray-300 flex flex-col sm:flex-row gap-3 md:gap-4 shrink-0 pointer-events-auto">
+            <div className="bg-white/90 backdrop-blur-xl p-2 sm:p-3 md:p-4 rounded-[2rem] sm:rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-b-[6px] sm:border-b-[8px] border-gray-300 flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 shrink-0 pointer-events-auto">
                
                <form onSubmit={handleSearch} className="flex-1 relative shrink-0">
                   <input 
@@ -158,11 +197,11 @@ export default function RpcPage() {
                     placeholder="Search BIB or Name..." 
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    className="w-full bg-gray-100 border-2 border-gray-200 border-b-[6px] text-gray-900 px-6 py-4 md:py-5 rounded-[2rem] text-lg md:text-xl font-bold focus:border-blue-400 focus:border-b-[6px] focus:translate-y-0 focus:outline-none placeholder-gray-400 transition-all pr-24"
+                    className="w-full bg-gray-100 border-2 border-gray-200 border-b-[4px] sm:border-b-[6px] text-gray-900 px-5 sm:px-6 py-3 sm:py-4 md:py-5 rounded-[1.5rem] sm:rounded-[2rem] text-base sm:text-lg md:text-xl font-bold focus:border-blue-400 focus:border-b-[4px] sm:focus:border-b-[6px] focus:translate-y-0 focus:outline-none placeholder-gray-400 transition-all pr-14 sm:pr-20"
                   />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                    <button type="submit" className="bg-blue-500 hover:bg-blue-400 active:border-b-0 active:translate-y-[calc(-50%+3px)] border-blue-700 border-b-[4px] text-white p-3 rounded-2xl transition-all -translate-y-[calc(50%+3px)]" style={{ marginTop: '50%' }}>
-                      <Search className="w-6 h-6 stroke-[3]" />
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                    <button type="submit" className="bg-blue-500 hover:bg-blue-400 active:border-b-0 active:translate-y-[calc(-50%+2px)] sm:active:translate-y-[calc(-50%+3px)] border-blue-700 border-b-[3px] sm:border-b-[4px] text-white p-2 sm:p-3 rounded-xl sm:rounded-2xl transition-all -translate-y-[calc(50%+2px)] sm:-translate-y-[calc(50%+3px)]" style={{ marginTop: '50%' }}>
+                      <Search className="w-5 h-5 sm:w-6 sm:h-6 stroke-[3]" />
                     </button>
                   </div>
                </form>
@@ -171,24 +210,24 @@ export default function RpcPage() {
                  <button 
                    type="button" 
                    onClick={() => setShowKeyboard(!showKeyboard)}
-                   className={`px-4 py-4 md:py-5 rounded-[2rem] flex flex-col items-center justify-center transition-all border-b-[6px] active:border-b-0 active:translate-y-[6px] font-bold text-sm ${showKeyboard ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300'}`}
+                   className={`flex-1 sm:flex-none px-3 sm:px-4 py-3 sm:py-4 md:py-5 rounded-[1.5rem] sm:rounded-[2rem] flex flex-row sm:flex-col items-center justify-center gap-2 sm:gap-0 transition-all border-b-[4px] sm:border-b-[6px] active:border-b-0 active:translate-y-[4px] sm:active:translate-y-[6px] font-bold text-sm ${showKeyboard ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300'}`}
                  >
-                   <KeyboardIcon className="w-6 h-6 md:w-8 md:h-8 mb-1" />
+                   <KeyboardIcon className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 sm:mb-1" />
                    Keyboard
                  </button>
                  <button 
                    type="button"
-                   onClick={() => { setIsScanning(true); setScanError(""); }}
-                   className="bg-green-500 hover:bg-green-400 border-green-700 border-b-[6px] active:border-b-0 active:translate-y-[6px] text-white px-6 md:px-8 py-4 md:py-5 rounded-[2rem] flex flex-col items-center justify-center transition-all font-bold text-sm"
+                   onClick={() => { setIsScanning(true); setScanError(""); setShowKeyboard(false); }}
+                   className="flex-1 sm:flex-none bg-green-500 hover:bg-green-400 border-green-700 border-b-[4px] sm:border-b-[6px] active:border-b-0 active:translate-y-[4px] sm:active:translate-y-[6px] text-white px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-5 rounded-[1.5rem] sm:rounded-[2rem] flex flex-row sm:flex-col items-center justify-center gap-2 sm:gap-0 transition-all font-bold text-sm"
                  >
-                    <QrCode className="w-6 h-6 md:w-8 md:h-8 mb-1 stroke-[2.5]" />
+                    <QrCode className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 sm:mb-1 stroke-[2.5]" />
                     Scanner
                  </button>
                </div>
             </div>
             
             {showKeyboard && (
-              <div className="mt-2 sm:mt-4 bg-white/95 backdrop-blur-xl p-1 sm:p-2 rounded-2xl shadow-xl border border-gray-200 animate-in fade-in slide-in-from-bottom-4 overflow-y-auto no-scrollbar pointer-events-auto max-h-[40vh] sm:max-h-none shrink">
+              <div className="mt-2 sm:mt-3 bg-gray-200/90 backdrop-blur-xl p-1 sm:p-2 rounded-2xl shadow-xl border border-gray-300 animate-in fade-in slide-in-from-bottom-4 overflow-y-auto no-scrollbar pointer-events-auto shrink w-full">
                 <Keyboard
                   onChange={(input) => setQuery(input)}
                   onKeyPress={(button) => {
