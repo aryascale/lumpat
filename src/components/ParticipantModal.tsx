@@ -168,7 +168,9 @@ export default function ParticipantModal({ open, onClose, eventId, eventName, da
 
               <div className="modal-item">
                 <div className="label">Age Rank</div>
-                <div className="value">{data.ageRank ?? "-"}</div>
+                <div className="value">
+                  {data.ageRank ? `${data.ageCategory?.trim() || "Open"} - ${data.ageRank}` : "-"}
+                </div>
               </div>
             </div>
 
