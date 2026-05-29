@@ -32,6 +32,12 @@ export default function LeaderboardTable({
   onSelect?: (row: LeaderRow) => void;
 }) {
   const [q, setQ] = useState("");
+
+  // DEBUG: Check what rows we receive
+  if (rows.length > 0) {
+    const withAge = rows.filter(r => r.ageCategory && r.ageCategory.trim());
+    console.log('[DEBUG TABLE] Received rows:', rows.length, 'with ageCategory:', withAge.length, 'first ageCategory:', JSON.stringify(rows[0]?.ageCategory));
+  }
   const [genderFilter, setGenderFilter] = useState("All");
   const [ageCategoryFilter, setAgeCategoryFilter] = useState("All");
   const [isPodiumFullscreen, setIsPodiumFullscreen] = useState(false);
