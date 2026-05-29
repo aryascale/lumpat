@@ -835,6 +835,15 @@ export default function EventPage() {
           list.forEach((r, i) => categoryRankByEpc.set(r.epc, i + 1));
         });
 
+        const ageRankByEpc = new Map<string, number>();
+        const ageCategories = Array.from(
+          new Set(finisherSorted.map((r) => (r.ageCategory || "").trim()))
+        );
+        ageCategories.forEach((cat) => {
+          const list = finisherSorted.filter((r) => (r.ageCategory || "").trim() === cat);
+          list.forEach((r, i) => ageRankByEpc.set(r.epc, i + 1));
+        });
+
         const dnfs = baseRows
           .filter((r) => r.totalTimeDisplay === "DNF")
           .sort((a, b) => a.totalTimeMs - b.totalTimeMs);
@@ -861,6 +870,7 @@ export default function EventPage() {
           finisherRankByEpc,
           genderRankByEpc,
           categoryRankByEpc,
+          ageRankByEpc,
         };
 
         setState({ status: "ready" });
@@ -910,17 +920,21 @@ export default function EventPage() {
     const genderRank = maps?.genderRankByEpc?.get(selected.epc) ?? null;
     const categoryRank = maps?.categoryRankByEpc?.get(selected.epc) ?? null;
 
+    const ageRank = maps?.ageRankByEpc?.get(selected.epc) ?? null;
+
     return {
       name: selected.name,
       bib: selected.bib,
       gender: selected.gender,
       category: selected.category,
+      ageCategory: selected.ageCategory,
       finishTimeRaw: selected.finishTimeRaw,
       totalTimeDisplay: selected.totalTimeDisplay,
       checkpointTimes: checkpointMap.get(selected.epc) || [],
       overallRank,
       genderRank,
       categoryRank,
+      ageRank,
     };
   }, [selected, checkpointMap]);
 

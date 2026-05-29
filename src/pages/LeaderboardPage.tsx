@@ -382,6 +382,7 @@ export default function LeaderboardPage() {
       bib: selected.bib,
       gender: selected.gender,
       category: selected.category,
+      ageCategory: selected.ageCategory,
       finishTimeRaw: selected.finishTimeRaw,
       totalTimeDisplay: selected.totalTimeDisplay,
       checkpointTimes: checkpointMap.get(selected.epc) || [],
