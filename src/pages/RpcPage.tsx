@@ -145,8 +145,8 @@ export default function RpcPage() {
         )}
 
         {/* Floating Bottom Action Bar (Duolingo Style) */}
-        {!foundParticipant && !isScanning && (
-          <div className="absolute bottom-8 lg:bottom-12 left-1/2 -translate-x-1/2 w-[90%] max-w-2xl z-50 animate-in slide-in-from-bottom-10 fade-in duration-500">
+        {!isScanning && (
+          <div className="absolute bottom-8 lg:bottom-12 left-1/2 -translate-x-1/2 w-[90%] max-w-2xl z-[150] animate-in slide-in-from-bottom-10 fade-in duration-500">
             <div className="bg-white/80 backdrop-blur-xl p-3 md:p-4 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-b-[8px] border-gray-300 flex flex-col sm:flex-row gap-3 md:gap-4">
                
                <form onSubmit={handleSearch} className="flex-1 relative">
@@ -211,56 +211,53 @@ export default function RpcPage() {
 
         {/* Participant Data Display */}
         {foundParticipant && (
-          <div className="absolute inset-0 z-[120] flex items-center justify-center p-4 animate-in fade-in duration-300">
-            <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-10 w-full max-w-4xl border-[3px] border-dashed border-gray-300/50 shadow-[0_20px_50px_rgba(0,0,0,0.1)] flex flex-col animate-in zoom-in-95 duration-300">
+          <div 
+            className="absolute inset-0 z-[120] flex items-center justify-center p-4 animate-in fade-in duration-300 pb-32"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setFoundParticipant(null);
+                setQuery("");
+              }
+            }}
+          >
+            <div className="w-full max-w-4xl flex flex-col animate-in zoom-in-95 duration-300 pointer-events-none">
               
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 w-full">
-                <div className="flex flex-col items-start text-left flex-1">
-                  <span className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">Nama Peserta</span>
-                  <h2 className="text-4xl md:text-6xl font-black text-gray-900 uppercase tracking-tight leading-none">
+                <div className="flex flex-col items-start text-left flex-1 pointer-events-auto">
+                  <span className="text-sm font-bold text-gray-800 drop-shadow-md uppercase tracking-widest mb-1">Nama Peserta</span>
+                  <h2 className="text-4xl md:text-6xl font-black text-gray-900 drop-shadow-md uppercase tracking-tight leading-none">
                     {foundParticipant.name}
                   </h2>
                 </div>
 
-                <div className="border-[3px] border-dashed border-red-500 rounded-3xl px-8 py-4 flex flex-col items-center justify-center shrink-0 bg-white/50">
-                  <span className="text-red-500 font-bold uppercase tracking-widest text-xs mb-1">Nomor BIB</span>
+                <div className="border-[3px] border-dashed border-red-500 rounded-3xl px-8 py-4 flex flex-col items-center justify-center shrink-0 bg-white/80 backdrop-blur-md shadow-lg pointer-events-auto">
+                  <span className="text-red-600 font-bold uppercase tracking-widest text-xs mb-1">Nomor BIB</span>
                   <span className="text-6xl md:text-7xl font-black text-red-600 tracking-tighter leading-none">
                     {foundParticipant.bib}
                   </span>
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-4 mb-10 w-full">
-                <div className="flex-1 min-w-[140px] bg-white/70 border border-gray-200/50 rounded-2xl p-5 flex flex-col">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Kategori</span>
-                  <span className="text-xl md:text-2xl font-black text-gray-800">{foundParticipant.category || foundParticipant.sourceCategoryKey}</span>
+              <div className="flex flex-wrap gap-4 w-full pointer-events-auto">
+                <div className="flex-1 min-w-[140px] bg-white/90 backdrop-blur-md border border-white/50 shadow-lg rounded-2xl p-5 flex flex-col">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Kategori</span>
+                  <span className="text-xl md:text-2xl font-black text-gray-900">{foundParticipant.category || foundParticipant.sourceCategoryKey}</span>
                 </div>
                 
-                <div className="flex-1 min-w-[140px] bg-white/70 border border-gray-200/50 rounded-2xl p-5 flex flex-col">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Gender</span>
-                  <span className="text-xl md:text-2xl font-black text-gray-800">{foundParticipant.gender || '-'}</span>
+                <div className="flex-1 min-w-[140px] bg-white/90 backdrop-blur-md border border-white/50 shadow-lg rounded-2xl p-5 flex flex-col">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Gender</span>
+                  <span className="text-xl md:text-2xl font-black text-gray-900">{foundParticipant.gender || '-'}</span>
                 </div>
 
-                <div className="flex-1 min-w-[140px] bg-green-50/80 border border-green-200/50 rounded-2xl p-5 flex flex-col">
-                  <span className="text-xs font-bold text-green-600 uppercase tracking-widest mb-1">Status</span>
-                  <span className="text-xl md:text-2xl font-black text-green-600 flex items-center gap-2">
+                <div className="flex-1 min-w-[140px] bg-green-50/90 backdrop-blur-md border border-green-200/50 shadow-lg rounded-2xl p-5 flex flex-col">
+                  <span className="text-xs font-bold text-green-700 uppercase tracking-widest mb-1">Status</span>
+                  <span className="text-xl md:text-2xl font-black text-green-700 flex items-center gap-2">
                     <CheckCircle className="w-6 h-6 stroke-[3]" />
                     Terverifikasi
                   </span>
                 </div>
               </div>
 
-              <div className="flex justify-center w-full">
-                <button 
-                  onClick={() => {
-                    setFoundParticipant(null);
-                    setQuery("");
-                  }}
-                  className="bg-white/90 hover:bg-white text-gray-800 border-2 border-gray-200 rounded-2xl px-8 py-4 text-lg font-bold flex items-center justify-center transition-all shadow-sm"
-                >
-                  Selesai & Cari Peserta Lain
-                </button>
-              </div>
             </div>
           </div>
         )}
