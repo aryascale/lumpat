@@ -107,6 +107,15 @@ export async function loadMasterParticipants(
   const categoryIdx = findColIndex(headers, "category");
   const ageCategoryIdx = findColIndex(headers, "ageCategory");
 
+  console.log("[DEBUG Master CSV] Raw headers:", headers);
+  console.log("[DEBUG Master CSV] Normalized:", headers.map(norm));
+  console.log("[DEBUG Master CSV] Column indices:", { epcIdx, bibIdx, nameIdx, genderIdx, categoryIdx, ageCategoryIdx });
+  console.log("[DEBUG Master CSV] Total columns:", headers.length);
+  if (grid.length > 1) {
+    console.log("[DEBUG Master CSV] First data row:", grid[1]);
+    console.log("[DEBUG Master CSV] First row ageCategory value:", ageCategoryIdx >= 0 ? grid[1][ageCategoryIdx] : "INDEX_NOT_FOUND");
+  }
+
   if (epcIdx < 0) {
     throw new Error("Kolom EPC tidak ditemukan di Master CSV.");
   }

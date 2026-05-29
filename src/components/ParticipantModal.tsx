@@ -5,6 +5,7 @@ type Props = {
   open: boolean;
   onClose: () => void;
   eventId?: string;
+  eventName?: string;
   data: {
     name: string;
     bib: string;
@@ -33,7 +34,7 @@ function onlyTime(raw: string) {
   return t;
 }
 
-export default function ParticipantModal({ open, onClose, eventId, data }: Props) {
+export default function ParticipantModal({ open, onClose, eventId, eventName, data }: Props) {
   const [downloading, setDownloading] = useState(false);
 
   if (!open || !data) return null;
@@ -59,7 +60,8 @@ export default function ParticipantModal({ open, onClose, eventId, data }: Props
         categoryRank: data.categoryRank,
         ageRank: data.ageRank,
       });
-      downloadDataUrl(png, `IMR2025_${data.bib || "BIB"}_certificate.png`);
+      const slug = (eventName || "event").replace(/\s+/g, "-").toLowerCase();
+      downloadDataUrl(png, `${slug}-certif-lumpat.png`);
     } catch (err: any) {
       console.error("Browser anda error");
       if (err.message === "Belum ada template") {

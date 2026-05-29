@@ -603,6 +603,7 @@ export default function LeaderboardPage() {
               open={modalOpen}
               onClose={() => setModalOpen(false)}
               eventId={eventId}
+              eventName={eventTitle}
               data={modalData}
             />
           </div>
