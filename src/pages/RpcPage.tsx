@@ -203,13 +203,13 @@ export default function RpcPage() {
           <div className="absolute bottom-4 sm:bottom-10 lg:bottom-16 left-1/2 -translate-x-1/2 w-[95%] sm:w-[90%] max-w-3xl z-[150] animate-in slide-in-from-bottom-10 fade-in duration-500 flex flex-col justify-end pointer-events-none max-h-[90vh]">
             <div className="bg-white/90 backdrop-blur-xl p-2 sm:p-3 md:p-4 rounded-[2rem] sm:rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-b-[6px] sm:border-b-[8px] border-gray-300 flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 shrink-0 pointer-events-auto">
                
-               <form onSubmit={handleSearch} className="flex-1 relative shrink-0">
+               <form onSubmit={handleSearch} className="flex-1 relative shrink-0 flex flex-col">
                   <input 
                     type="text" 
                     placeholder="Search BIB or Name..." 
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    className="w-full bg-gray-100 border-2 border-gray-200 border-b-[4px] sm:border-b-[6px] text-gray-900 px-5 sm:px-6 py-3 sm:py-4 md:py-5 rounded-[1.5rem] sm:rounded-[2rem] text-base sm:text-lg md:text-xl font-bold focus:border-blue-400 focus:border-b-[4px] sm:focus:border-b-[6px] focus:translate-y-0 focus:outline-none placeholder-gray-400 transition-all pr-16 sm:pr-20"
+                    className="w-full flex-1 h-full bg-gray-100 border-2 border-gray-200 border-b-[4px] sm:border-b-[6px] text-gray-900 px-5 sm:px-6 py-3 sm:py-4 md:py-5 rounded-[1.5rem] sm:rounded-[2rem] text-base sm:text-lg md:text-xl font-bold focus:border-blue-400 focus:border-b-[4px] sm:focus:border-b-[6px] focus:translate-y-0 focus:outline-none placeholder-gray-400 transition-all pr-16 sm:pr-20"
                   />
                   <div className="absolute right-2 top-0 bottom-[4px] sm:bottom-[6px] flex items-center">
                     <button type="submit" className="bg-blue-500 hover:bg-blue-400 active:border-b-0 active:translate-y-[2px] sm:active:translate-y-[3px] border-blue-700 border-b-[3px] sm:border-b-[4px] text-white p-2 sm:p-3 rounded-xl sm:rounded-2xl transition-all mr-1">
