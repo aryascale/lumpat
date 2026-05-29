@@ -232,6 +232,7 @@ export default function LeaderboardPage() {
             gender: p.gender,
             category: p.category || p.sourceCategoryKey,
             sourceCategoryKey: p.sourceCategoryKey,
+            ageCategory: p.ageCategory,
             finishTimeRaw: extractTimeOfDay(finishEntry.raw),
             totalTimeMs: total,
             totalTimeDisplay: isDQ

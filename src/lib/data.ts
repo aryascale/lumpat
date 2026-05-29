@@ -9,6 +9,7 @@ const headerAliases: Record<string, string[]> = {
   name: ["nama lengkap", "full name", "name", "nama", "participant name"],
   gender: ["jenis kelamin", "gender", "sex", "jk", "kelamin"],
   category: ["kategori", "category", "kelas", "class"],
+  ageCategory: ["kategori usia", "age category", "kategori umur", "age group"],
   times: [
     "times",
     "time",
@@ -55,6 +56,7 @@ export type MasterParticipant = {
   gender: string;
   category: string;
   sourceCategoryKey: CategoryKey;
+  ageCategory?: string;
 };
 
 async function requireCsvText(kind: "master" | "finish", eventId: string = 'default'): Promise<string> {
@@ -95,6 +97,7 @@ export async function loadMasterParticipants(
   const nameIdx = findColIndex(headers, "name");
   const genderIdx = findColIndex(headers, "gender");
   const categoryIdx = findColIndex(headers, "category");
+  const ageCategoryIdx = findColIndex(headers, "ageCategory");
 
   if (epcIdx < 0) {
     throw new Error("Kolom EPC tidak ditemukan di Master CSV.");
@@ -112,6 +115,7 @@ export async function loadMasterParticipants(
 
     const rawGender = genderIdx >= 0 ? String(r[genderIdx] ?? "").trim() : "";
     const rawCategory = categoryIdx >= 0 ? String(r[categoryIdx] ?? "").trim() : "";
+    const rawAgeCategory = ageCategoryIdx >= 0 ? String(r[ageCategoryIdx] ?? "").trim() : "";
 
     // Use original category from CSV, not normalized
     const category = rawCategory || "Uncategorized";
@@ -130,6 +134,7 @@ export async function loadMasterParticipants(
       gender,
       category: category,
       sourceCategoryKey: category as CategoryKey,
+      ageCategory: rawAgeCategory,
     };
 
     byEpc.set(epc, p);

@@ -9,6 +9,7 @@ export type LeaderRow = {
   gender: string;
   category: string;
   sourceCategoryKey: string;
+  ageCategory?: string;
   finishTimeRaw: string;
   totalTimeMs: number;
   totalTimeDisplay: string;
@@ -32,6 +33,7 @@ export default function LeaderboardTable({
 }) {
   const [q, setQ] = useState("");
   const [genderFilter, setGenderFilter] = useState("All");
+  const [ageCategoryFilter, setAgeCategoryFilter] = useState("All");
   const [isPodiumFullscreen, setIsPodiumFullscreen] = useState(false);
   const podiumRef = useRef<HTMLDivElement>(null);
 
@@ -55,16 +57,29 @@ export default function LeaderboardTable({
 
   const normCat = (s: string) => String(s || "").trim().toLowerCase().replace(/-/g, " ").replace(/\s+/g, " ");
 
+  const uniqueAgeCategories = useMemo(() => {
+    const set = new Set<string>();
+    rows.forEach(r => {
+      if (r.ageCategory && r.ageCategory.trim()) {
+        set.add(r.ageCategory.trim());
+      }
+    });
+    return Array.from(set).sort();
+  }, [rows]);
+
   const rankedRows = useMemo(() => {
     let currentRows = rows;
     if (genderFilter !== "All") {
       const gFilter = genderFilter.toLowerCase();
-      currentRows = rows.filter(r => {
+      currentRows = currentRows.filter(r => {
          const g = (r.gender || "").toLowerCase();
          if (gFilter === 'laki-laki') return g === 'laki-laki' || g === 'm' || g === 'male' || g === 'pria';
          if (gFilter === 'perempuan') return g === 'perempuan' || g === 'f' || g === 'female' || g === 'wanita';
          return g === gFilter;
       });
+    }
+    if (ageCategoryFilter !== "All") {
+      currentRows = currentRows.filter(r => r.ageCategory?.trim() === ageCategoryFilter);
     }
 
     const finishers = currentRows.filter(
@@ -89,7 +104,7 @@ export default function LeaderboardTable({
       ...actives.map((r) => ({ ...r, rank: null })),
       ...dsqs.map((r) => ({ ...r, rank: null })),
     ];
-  }, [rows, genderFilter]);
+  }, [rows, genderFilter, ageCategoryFilter]);
 
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
@@ -112,12 +127,15 @@ export default function LeaderboardTable({
     let filteredForPodium = rows;
     if (genderFilter !== "All") {
       const gFilter = genderFilter.toLowerCase();
-      filteredForPodium = rows.filter(r => {
+      filteredForPodium = filteredForPodium.filter(r => {
          const g = (r.gender || "").toLowerCase();
          if (gFilter === 'laki-laki') return g === 'laki-laki' || g === 'm' || g === 'male' || g === 'pria';
          if (gFilter === 'perempuan') return g === 'perempuan' || g === 'f' || g === 'female' || g === 'wanita';
          return g === gFilter;
       });
+    }
+    if (ageCategoryFilter !== "All") {
+      filteredForPodium = filteredForPodium.filter(r => r.ageCategory?.trim() === ageCategoryFilter);
     }
 
     if (categories && categories.length > 0) {
@@ -134,7 +152,7 @@ export default function LeaderboardTable({
     } else {
        return [{ title: "Champions", top3: buildTop3(filteredForPodium) }];
     }
-  }, [q, rows, categories, genderFilter]);
+  }, [q, rows, categories, genderFilter, ageCategoryFilter]);
 
   const handleExport = () => {
     exportLeaderboardCSV(
@@ -185,9 +203,10 @@ export default function LeaderboardTable({
           </div>
         </div>
         <div className="flex justify-between items-end pt-3 border-t-2 border-dashed border-stone-100">
-           <div className="flex gap-2 text-xs font-bold text-stone-400">
+           <div className="flex gap-2 text-xs font-bold text-stone-400 flex-wrap">
              <div className="bg-stone-100 border-2 border-stone-200 border-b-[3px] px-2 py-1 rounded-lg">{r.gender || "-"}</div>
              <div className="bg-stone-100 border-2 border-stone-200 border-b-[3px] px-2 py-1 rounded-lg">{r.category || "-"}</div>
+             {r.ageCategory && <div className="bg-stone-100 border-2 border-stone-200 border-b-[3px] px-2 py-1 rounded-lg">{r.ageCategory}</div>}
            </div>
            <div className="text-right">
               <div className="text-[10px] uppercase font-black text-stone-400 tracking-widest mb-1">Total Time</div>
@@ -289,7 +308,7 @@ export default function LeaderboardTable({
                                   {podium.top3[1].name}
                                </div>
                                <div className={`font-mono font-bold text-stone-500 mt-0.5 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm ${isPodiumFullscreen ? 'text-sm md:text-lg mt-2' : 'text-[9px] sm:text-xs'}`}>
-                                  BIB {podium.top3[1].bib}
+                                  BIB {podium.top3[1].bib}{podium.top3[1].ageCategory ? ` • ${podium.top3[1].ageCategory}` : ''}
                                </div>
                                <div className={`bg-slate-200 border-2 border-slate-300 border-b-4 text-stone-900 font-mono font-black rounded-xl shadow-sm ${isPodiumFullscreen ? 'text-base md:text-xl px-4 py-2 mt-2' : 'text-[10px] sm:text-sm px-2 py-0.5 sm:px-4 sm:py-1.5'}`}>
                                   {podium.top3[1].totalTimeDisplay}
@@ -338,7 +357,7 @@ export default function LeaderboardTable({
                                   {podium.top3[0].name}
                                </div>
                                <div className={`font-mono font-bold text-stone-500 mt-0.5 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm ${isPodiumFullscreen ? 'text-base md:text-xl mt-2' : 'text-[10px] sm:text-sm'}`}>
-                                  BIB {podium.top3[0].bib}
+                                  BIB {podium.top3[0].bib}{podium.top3[0].ageCategory ? ` • ${podium.top3[0].ageCategory}` : ''}
                                </div>
                                <div className={`bg-yellow-200 border-2 border-yellow-400 border-b-4 text-stone-900 font-mono font-black rounded-xl shadow-sm ${isPodiumFullscreen ? 'text-lg md:text-3xl px-6 py-2 mt-2' : 'text-[11px] sm:text-base px-3 py-1 sm:px-5 sm:py-1.5'}`}>
                                   {podium.top3[0].totalTimeDisplay}
@@ -394,7 +413,7 @@ export default function LeaderboardTable({
                                   {podium.top3[2].name}
                                </div>
                                <div className={`font-mono font-bold text-stone-500 mt-0.5 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm ${isPodiumFullscreen ? 'text-sm md:text-lg mt-2' : 'text-[9px] sm:text-xs'}`}>
-                                  BIB {podium.top3[2].bib}
+                                  BIB {podium.top3[2].bib}{podium.top3[2].ageCategory ? ` • ${podium.top3[2].ageCategory}` : ''}
                                </div>
                                <div className={`bg-orange-200 border-2 border-orange-300 border-b-4 text-stone-900 font-mono font-black rounded-xl shadow-sm ${isPodiumFullscreen ? 'text-base md:text-xl px-4 py-2 mt-2' : 'text-[10px] sm:text-sm px-2 py-0.5 sm:px-4 sm:py-1.5'}`}>
                                   {podium.top3[2].totalTimeDisplay}
@@ -446,7 +465,19 @@ export default function LeaderboardTable({
             <option value="Laki-laki">Laki-laki</option>
             <option value="Perempuan">Perempuan</option>
           </select>
-          <button className="px-5 py-2 font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors border border-transparent" onClick={() => { setQ(""); setGenderFilter("All"); }}>
+          {uniqueAgeCategories.length > 0 && (
+            <select 
+              className="w-full sm:w-auto px-4 py-2 border-2 border-stone-200 rounded-lg font-medium text-stone-800 focus:border-red-500 focus:ring-0 outline-none transition-colors bg-white cursor-pointer"
+              value={ageCategoryFilter}
+              onChange={(e) => setAgeCategoryFilter(e.target.value)}
+            >
+              <option value="All">Semua Umur</option>
+              {uniqueAgeCategories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          )}
+          <button className="px-5 py-2 font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors border border-transparent" onClick={() => { setQ(""); setGenderFilter("All"); setAgeCategoryFilter("All"); }}>
             Reset
           </button>
           <button onClick={handleExport} className="px-5 py-2 font-bold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg shadow-md hover:shadow-lg transition-all border border-red-700">
@@ -475,12 +506,13 @@ export default function LeaderboardTable({
       {/* Desktop Table View (Duolingo Style) */}
       <div className="hidden md:flex flex-col gap-3">
         {/* Header */}
-        <div className="grid grid-cols-[80px_120px_minmax(200px,1fr)_120px_140px_120px_140px] gap-4 px-6 py-2 text-[11px] font-black tracking-widest text-stone-400 uppercase">
+        <div className="grid grid-cols-[80px_120px_minmax(200px,1fr)_120px_140px_140px_120px_140px] gap-4 px-6 py-2 text-[11px] font-black tracking-widest text-stone-400 uppercase">
              <div className="text-center">Pos</div>
              <div>BIB</div>
              <div>Athlete Name</div>
              <div>Gender</div>
              <div>Category</div>
+             <div>Age Category</div>
              <div>Time of Day</div>
              <div className="text-right">Race Time</div>
         </div>
@@ -492,7 +524,7 @@ export default function LeaderboardTable({
              const isSpecial = r.totalTimeDisplay === "DNF" || r.totalTimeDisplay === "DSQ";
              
              return (
-                 <div key={r.epc} onClick={() => onSelect?.(r)} className={`grid grid-cols-[80px_120px_minmax(200px,1fr)_120px_140px_120px_140px] gap-4 items-center px-6 py-4 bg-white rounded-2xl border-2 border-stone-200 border-b-[6px] cursor-pointer hover:-translate-y-1 hover:border-stone-300 transition-all ${isTop10 && showTop10Badge ? 'border-yellow-200 bg-yellow-50/50' : ''} ${isSpecial ? 'border-red-200 bg-red-50/50' : ''}`}>
+                 <div key={r.epc} onClick={() => onSelect?.(r)} className={`grid grid-cols-[80px_120px_minmax(200px,1fr)_120px_140px_140px_120px_140px] gap-4 items-center px-6 py-4 bg-white rounded-2xl border-2 border-stone-200 border-b-[6px] cursor-pointer hover:-translate-y-1 hover:border-stone-300 transition-all ${isTop10 && showTop10Badge ? 'border-yellow-200 bg-yellow-50/50' : ''} ${isSpecial ? 'border-red-200 bg-red-50/50' : ''}`}>
                     <div className="text-center">
                        <span className={`inline-flex items-center justify-center w-12 h-12 rounded-xl text-lg ${getPosStyle(r.rank)}`}>
                           {pos}
@@ -511,6 +543,9 @@ export default function LeaderboardTable({
                     </div>
                     <div>
                        <span className="text-sm font-bold text-stone-500 bg-stone-100 border-2 border-stone-200 border-b-[3px] px-3 py-1.5 rounded-xl inline-block">{r.category || "-"}</span>
+                    </div>
+                    <div>
+                       <span className="text-sm font-bold text-stone-500 bg-stone-100 border-2 border-stone-200 border-b-[3px] px-3 py-1.5 rounded-xl inline-block">{r.ageCategory || "-"}</span>
                     </div>
                     <div className="text-sm font-mono font-bold text-stone-400">{r.finishTimeRaw || "-"}</div>
                     <div className="text-right">
