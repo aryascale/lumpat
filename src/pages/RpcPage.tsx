@@ -146,7 +146,7 @@ export default function RpcPage() {
 
         {/* Floating Bottom Action Bar (Duolingo Style) */}
         {!isScanning && (
-          <div className="absolute bottom-8 lg:bottom-12 left-1/2 -translate-x-1/2 w-[90%] max-w-2xl z-[150] animate-in slide-in-from-bottom-10 fade-in duration-500">
+          <div className="absolute bottom-16 md:bottom-20 lg:bottom-24 left-1/2 -translate-x-1/2 w-[90%] max-w-2xl z-[150] animate-in slide-in-from-bottom-10 fade-in duration-500">
             <div className="bg-white/80 backdrop-blur-xl p-3 md:p-4 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-b-[8px] border-gray-300 flex flex-col sm:flex-row gap-3 md:gap-4">
                
                <form onSubmit={handleSearch} className="flex-1 relative">
