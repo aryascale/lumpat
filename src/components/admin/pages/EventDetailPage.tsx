@@ -739,15 +739,12 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   };
 
   // GPX Upload handler
-  const handleGpxUpload = async () => {
-    if (!gpxFile) {
-      alert('Please select a GPX file');
-      return;
-    }
+  const handleGpxUpload = async (categoryName: string, file: File | null) => {
+    if (!file) return;
 
     setUploadingGpx(true);
     try {
-      const content = await gpxFile.text();
+      const content = await file.text();
       
       const response = await fetch('/api/gpx-upload', {
         method: 'POST',
@@ -755,7 +752,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         body: JSON.stringify({
           eventId,
           content,
-          filename: gpxFile.name,
+          filename: file.name,
+          categoryName
         }),
       });
 
@@ -774,13 +772,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         throw new Error(errorMsg);
       }
 
-      const result = await response.json();
-      setCurrentGpxPath(result.url);
-      setGpxFile(null);
-      
-      const fileInput = document.getElementById('gpx-upload') as HTMLInputElement;
-      if (fileInput) fileInput.value = '';
-      
+      await loadAllData();
       alert('GPX file uploaded successfully!');
     } catch (error: any) {
       alert(error.message || 'Failed to upload GPX file');
@@ -789,25 +781,29 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
     }
   };
 
-  const clearGpxFile = async () => {
-    if (!confirm('Remove GPX route file?')) return;
+  const clearGpxFile = async (categoryName: string) => {
+    if (!confirm(`Remove GPX route file for category ${categoryName}?`)) return;
     
     try {
-      // Update event to remove GPX path
+      const updatedContent = { ...(eventData?.content || {}) };
+      if (updatedContent.routeGpxFiles) {
+        delete updatedContent.routeGpxFiles[categoryName];
+      }
+
       const response = await fetch(`/api/events/${eventId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gpxFile: null }),
+        body: JSON.stringify({ content: updatedContent }),
       });
 
       if (response.ok) {
-        setCurrentGpxPath(null);
-        alert('GPX file removed');
+        await loadAllData();
+        alert('GPX file removed successfully!');
       } else {
         alert('Failed to remove GPX file');
       }
-    } catch (error) {
-      alert('Failed to remove GPX file');
+    } catch (error: any) {
+      alert(error.message || 'Failed to remove GPX file');
     }
   };
 
@@ -1582,66 +1578,48 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
             </div>
           </div>
 
-          {/* GPX Upload */}
-          <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-            <div className="subtle mb-2 font-medium text-sm">Upload GPX File</div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input
-                id="gpx-upload"
-                type="file"
-                accept=".gpx,application/gpx+xml"
-                onChange={(e) => setGpxFile(e.target.files?.[0] || null)}
-                className="flex-1 text-sm"
-              />
-              <button
-                className="btn w-full sm:w-auto"
-                onClick={handleGpxUpload}
-                disabled={!gpxFile || uploadingGpx}
-              >
-                {uploadingGpx ? 'Uploading...' : 'Upload'}
-              </button>
-            </div>
-            <div className="mt-2 text-xs text-gray-500">
-              Format yang didukung: .gpx (GPS Exchange Format)
-            </div>
-          </div>
-
-          {/* Current GPX */}
-          {currentGpxPath ? (
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
-                  <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full font-bold">
-                    Uploaded
-                  </span>
-                  <p className="mono text-xs text-gray-600 mt-2 break-all">{currentGpxPath}</p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    className="btn ghost flex-1 sm:flex-none"
-                    onClick={() => window.open(currentGpxPath, '_blank')}
-                  >
-                    View
-                  </button>
-                  <button 
-                    className="btn ghost flex-1 sm:flex-none" 
-                    style={{ color: '#dc2626' }}
-                    onClick={clearGpxFile}
-                  >
-                    Remove
-                  </button>
-                </div>
+          {/* GPX Routes per Category */}
+          <div className="flex flex-col gap-4">
+            {categories.length === 0 && (
+              <div className="text-center text-gray-500 py-8 border border-dashed border-gray-300 rounded-lg">
+                Belum ada kategori lomba. Tambahkan kategori terlebih dahulu.
               </div>
-            </div>
-          ) : (
-            <div className="text-center text-gray-500 py-8 border border-dashed border-gray-300 rounded-lg">
-              No GPX file uploaded yet
-            </div>
-          )}
+            )}
+            {categories.map(cat => {
+              const routeUrl = eventData?.content?.routeGpxFiles?.[cat.name];
+              return (
+                <div key={cat.name} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-bold text-gray-700">Kategori: {cat.name}</h3>
+                    {routeUrl && <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full font-bold">Uploaded</span>}
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2 items-center">
+                    {routeUrl ? (
+                      <>
+                        <p className="mono text-xs text-gray-600 truncate flex-1">{routeUrl}</p>
+                        <button className="btn ghost text-xs flex-1 sm:flex-none" onClick={() => window.open(routeUrl, '_blank')}>View</button>
+                        <button className="btn ghost text-xs flex-1 sm:flex-none" style={{ color: '#dc2626' }} onClick={() => clearGpxFile(cat.name)}>Remove</button>
+                      </>
+                    ) : (
+                      <>
+                        <input
+                          type="file"
+                          accept=".gpx,application/gpx+xml"
+                          onChange={(e) => handleGpxUpload(cat.name, e.target.files?.[0] || null)}
+                          className="flex-1 text-sm bg-white p-2 border border-gray-300 rounded"
+                          disabled={uploadingGpx}
+                        />
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
           {/* Info box */}
           <div className="mt-4 p-3 bg-blue-50 border border-blue-400 rounded text-blue-900 text-sm">
-            <strong>Info:</strong> File GPX akan ditampilkan sebagai rute di halaman event publik.
+            <strong>Info:</strong> File GPX akan ditampilkan sebagai rute di halaman event publik sesuai kategorinya.
           </div>
         </div>
       )}

@@ -17,24 +17,40 @@ export default async function handler(event: any) {
     if (!event.body) return errorResponse('Missing request body', 400);
 
     const body = parseBody(event);
-    const { eventId, content, filename } = body;
+    const { eventId, content, filename, categoryName } = body;
     if (!eventId || !content) return errorResponse('eventId and content are required', 400);
 
     const gpxDir = path.join(getUploadDir(), 'events', eventId, 'gpx');
     ensureDir(gpxDir);
 
-    const gpxFilePath = path.join(gpxDir, 'route.gpx');
+    const fileBase = categoryName ? `route-${categoryName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.gpx` : 'route.gpx';
+    const gpxFilePath = path.join(gpxDir, fileBase);
     fs.writeFileSync(gpxFilePath, content, 'utf-8');
+    const url = `/uploads/events/${eventId}/gpx/${fileBase}`;
 
-    await query('UPDATE Event SET gpxFile = ?, updatedAt = NOW() WHERE id = ?', [
-      `/uploads/events/${eventId}/gpx/route.gpx`, eventId
-    ]);
+    const eventRows = await query('SELECT content FROM Event WHERE id = ?', [eventId]) as any[];
+    let contentObj: any = {};
+    if (eventRows.length > 0 && eventRows[0].content) {
+      contentObj = typeof eventRows[0].content === 'string' ? JSON.parse(eventRows[0].content) : eventRows[0].content;
+    }
+
+    if (categoryName) {
+      contentObj.routeGpxFiles = contentObj.routeGpxFiles || {};
+      contentObj.routeGpxFiles[categoryName] = url;
+      await query('UPDATE Event SET content = ?, updatedAt = NOW() WHERE id = ?', [
+        JSON.stringify(contentObj), eventId
+      ]);
+    } else {
+      await query('UPDATE Event SET gpxFile = ?, updatedAt = NOW() WHERE id = ?', [
+        url, eventId
+      ]);
+    }
 
     return successResponse({
       success: true,
-      filename: filename || 'route.gpx',
+      filename: filename || fileBase,
       path: gpxFilePath,
-      url: `/uploads/events/${eventId}/gpx/route.gpx`,
+      url,
     });
   } catch (error: any) {
     console.error('[GPX-UPLOAD] Error:', error);

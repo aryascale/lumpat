@@ -56,7 +56,7 @@ export default function RpcPage() {
           const p = participants.find(p => p.epc === decodedText || String(p.bib) === decodedText);
           if (p) {
             setFoundParticipant(p);
-            setIsScanning(false); // Auto stop scanning on success
+            // Do not auto stop scanning to allow rapid scanning
           } else {
             setScanError("QR Code tidak cocok dengan data peserta.");
           }
@@ -174,31 +174,35 @@ export default function RpcPage() {
         )}
 
         {/* Scanner Area */}
-        {isScanning && !foundParticipant && (
-          <div className="absolute inset-0 bg-stone-900/95 z-[100] flex flex-col items-center justify-center p-4 backdrop-blur-xl">
-            <div className="absolute top-6 right-6 sm:top-8 sm:right-8 z-[110]">
+        {isScanning && (
+          <div className="absolute bottom-32 lg:bottom-40 left-1/2 -translate-x-1/2 w-[90%] max-w-sm bg-stone-950 rounded-[3rem] p-4 shadow-[0_30px_60px_rgba(0,0,0,0.6)] z-[100] border-[8px] border-stone-800 border-b-[16px] animate-in slide-in-from-bottom-10">
+            <div className="flex justify-between items-center px-4 pb-4 pt-2">
+              <span className="text-stone-400 font-black tracking-widest text-sm uppercase">Scanner Tiket</span>
               <button 
-                className="bg-stone-700 hover:bg-stone-600 border-stone-900 border-b-[6px] active:border-b-0 active:translate-y-[6px] text-white rounded-[2rem] p-4 transition-all"
+                className="bg-stone-800 hover:bg-red-500 hover:text-white border-stone-900 border-b-4 active:border-b-0 active:translate-y-[4px] text-stone-400 rounded-full p-2 transition-all"
                 onClick={() => {
                   setIsScanning(false);
                   setScanError("");
                 }}
               >
-                <X className="w-8 h-8 stroke-[3]" />
+                <X className="w-5 h-5 stroke-[3]" />
               </button>
             </div>
 
-            <div className="text-center text-white mb-8 z-[105]">
-              <h2 className="text-4xl sm:text-5xl font-black mb-4 tracking-tighter drop-shadow-lg text-green-400">SCAN TIKET</h2>
-              <p className="text-stone-300 font-bold bg-stone-800/80 px-6 py-3 rounded-2xl border-b-4 border-stone-900">Arahkan kamera ke QR Code peserta</p>
-            </div>
-
-            <div className="relative w-full max-w-md aspect-square bg-stone-950 rounded-[3rem] overflow-hidden border-[8px] border-stone-800 border-b-[16px] shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-[105]">
+            <div className="relative w-full aspect-square bg-black rounded-[2rem] overflow-hidden">
+              <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center p-8">
+                <div className="w-full h-full border-4 border-white/20 rounded-[1.5rem] relative">
+                  <div className="absolute -top-1 -left-1 w-8 h-8 border-t-8 border-l-8 border-green-500 rounded-tl-[1.5rem]" />
+                  <div className="absolute -top-1 -right-1 w-8 h-8 border-t-8 border-r-8 border-green-500 rounded-tr-[1.5rem]" />
+                  <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-8 border-l-8 border-green-500 rounded-bl-[1.5rem]" />
+                  <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-8 border-r-8 border-green-500 rounded-br-[1.5rem]" />
+                </div>
+              </div>
               <div id="rpc-qr-reader" ref={qrReaderRef} className="w-full h-full object-cover relative z-0 [&_video]:object-cover [&_video]:w-full [&_video]:h-full" />
             </div>
 
             {scanError && (
-              <div className="mt-8 text-lg font-bold text-white bg-red-500 border-red-700 border-b-[6px] px-8 py-4 rounded-[2rem] z-[105] animate-in slide-in-from-bottom-5">
+              <div className="mt-4 text-sm font-bold text-white bg-red-500 border-red-700 border-b-[4px] px-4 py-2 rounded-xl text-center animate-in slide-in-from-bottom-2">
                 {scanError}
               </div>
             )}

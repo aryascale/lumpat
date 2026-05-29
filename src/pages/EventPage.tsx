@@ -133,6 +133,7 @@ export default function EventPage() {
   const [overall, setOverall] = useState<LeaderRow[]>([]);
   const [byCategory, setByCategory] = useState<Record<string, LeaderRow[]>>({});
   const [activeTab, setActiveTab] = useState<string>("Home");
+  const [activeRouteCategory, setActiveRouteCategory] = useState<string>("");
   const [checkpointMap, setCheckpointMap] = useState<Map<string, string[]>>(new Map());
   const [selected, setSelected] = useState<LeaderRow | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -566,12 +567,21 @@ export default function EventPage() {
 
   // Load GPX data
   useEffect(() => {
-    if (!event?.gpxFile) {
+    const routeGpxFiles = event?.content?.routeGpxFiles || {};
+    const routeCategories = Object.keys(routeGpxFiles);
+    
+    // Auto-select first category if none selected but available
+    if (!activeRouteCategory && routeCategories.length > 0) {
+      setActiveRouteCategory(routeCategories[0]);
+      return; // effect will re-run
+    }
+
+    const gpxUrl = activeRouteCategory ? routeGpxFiles[activeRouteCategory] : event?.gpxFile;
+
+    if (!gpxUrl) {
       setGpxTrackPoints([]);
       return;
     }
-
-    const gpxUrl = event.gpxFile;
 
     (async () => {
       try {
@@ -614,7 +624,7 @@ export default function EventPage() {
         console.error('Error parsing GPX:', error);
       }
     })();
-  }, [event?.gpxFile]);
+  }, [event?.gpxFile, event?.content?.routeGpxFiles, activeRouteCategory]);
 
   // Load race data (participants, results)
   useEffect(() => {
@@ -874,14 +884,16 @@ export default function EventPage() {
   const tabs = useMemo(() => {
     const baseTabs = ["Home", "Participants", "Registered"];
     // Add Route tab if GPX file exists, next to Participants
-    if (event?.gpxFile || (event?.latitude && event?.longitude)) {
+    const routeGpxFiles = event?.content?.routeGpxFiles || {};
+    const hasRoute = event?.gpxFile || Object.keys(routeGpxFiles).length > 0 || (event?.latitude && event?.longitude);
+    if (hasRoute) {
       baseTabs.push("Route");
     }
     baseTabs.push("Results");
     
     // Append categories
     return [...baseTabs, ...(event?.categories || [])];
-  }, [event?.categories, event?.gpxFile, event?.latitude, event?.longitude]);
+  }, [event?.categories, event?.gpxFile, event?.content?.routeGpxFiles, event?.latitude, event?.longitude]);
 
   const onSelectParticipant = (row: LeaderRow) => {
     setSelected(row);
@@ -1302,6 +1314,25 @@ export default function EventPage() {
                   </div>
                   <div className="text-xl font-black tracking-tighter text-stone-900">{event.name}</div>
                 </div>
+
+                {/* GPX Category Selector */}
+                {event?.content?.routeGpxFiles && Object.keys(event.content.routeGpxFiles).length > 1 && (
+                  <div className="absolute top-4 right-4 md:top-6 md:right-6 z-10 flex gap-2 flex-wrap justify-end max-w-[50%]">
+                    {Object.keys(event.content.routeGpxFiles).map(cat => (
+                      <button
+                        key={cat}
+                        onClick={() => setActiveRouteCategory(cat)}
+                        className={`px-4 py-2 rounded-full font-bold text-xs uppercase tracking-wider shadow-lg transition-all ${
+                          activeRouteCategory === cat 
+                            ? 'bg-blue-600 text-white scale-105' 
+                            : 'bg-white text-stone-600 hover:bg-stone-100'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {(gpxTrackPoints.length > 0 || (event?.latitude && event?.longitude)) ? (
                   <InteractiveRouteMap 
                     trackPoints={gpxTrackPoints} 
