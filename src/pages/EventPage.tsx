@@ -134,6 +134,7 @@ export default function EventPage() {
   const [byCategory, setByCategory] = useState<Record<string, LeaderRow[]>>({});
   const [activeTab, setActiveTab] = useState<string>("Home");
   const [activeRouteCategory, setActiveRouteCategory] = useState<string>("");
+  const [isRouteDropdownOpen, setIsRouteDropdownOpen] = useState(false);
   const [checkpointMap, setCheckpointMap] = useState<Map<string, string[]>>(new Map());
   const [selected, setSelected] = useState<LeaderRow | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -1315,22 +1316,41 @@ export default function EventPage() {
                   <div className="text-xl font-black tracking-tighter text-stone-900">{event.name}</div>
                 </div>
 
-                {/* GPX Category Selector */}
+                {/* GPX Category Selector (Dropdown) */}
                 {event?.content?.routeGpxFiles && Object.keys(event.content.routeGpxFiles).length > 1 && (
-                  <div className="absolute top-4 right-4 md:top-6 md:right-6 z-10 flex gap-2 flex-wrap justify-end max-w-[50%]">
-                    {Object.keys(event.content.routeGpxFiles).map(cat => (
-                      <button
-                        key={cat}
-                        onClick={() => setActiveRouteCategory(cat)}
-                        className={`px-4 py-2 rounded-full font-bold text-xs uppercase tracking-wider shadow-lg transition-all ${
-                          activeRouteCategory === cat 
-                            ? 'bg-blue-600 text-white scale-105' 
-                            : 'bg-white text-stone-600 hover:bg-stone-100'
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
+                  <div className="absolute top-4 right-4 md:top-6 md:right-6 z-[1000] flex flex-col items-end">
+                    <button
+                      onClick={() => setIsRouteDropdownOpen(!isRouteDropdownOpen)}
+                      className="bg-stone-900 text-white px-4 py-3 md:px-6 md:py-3.5 rounded-full font-black text-xs md:text-sm uppercase tracking-widest shadow-[0_10px_30px_rgba(0,0,0,0.4)] flex items-center gap-2 md:gap-3 hover:bg-stone-800 transition-all border-b-[4px] md:border-b-[6px] border-stone-950 active:border-b-0 active:translate-y-[4px] md:active:translate-y-[6px]"
+                    >
+                      <span className="text-stone-400 hidden sm:inline">Rute:</span> 
+                      <span className="text-yellow-400">{activeRouteCategory || 'PILIH'}</span>
+                      <svg className={`w-4 h-4 md:w-5 md:h-5 transition-transform duration-300 ${isRouteDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    
+                    {/* Dropdown Menu */}
+                    {isRouteDropdownOpen && (
+                      <div className="absolute top-[110%] right-0 mt-2 bg-white rounded-2xl md:rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-[4px] md:border-[6px] border-stone-900 w-48 md:w-56 overflow-hidden animate-in fade-in slide-in-from-top-4">
+                        {Object.keys(event.content.routeGpxFiles).map(cat => (
+                          <button
+                            key={cat}
+                            onClick={() => {
+                              setActiveRouteCategory(cat);
+                              setIsRouteDropdownOpen(false);
+                            }}
+                            className={`w-full text-left px-5 py-4 md:py-5 font-black text-sm md:text-base tracking-widest uppercase transition-all ${
+                              activeRouteCategory === cat 
+                                ? 'bg-blue-600 text-white' 
+                                : 'text-stone-700 hover:bg-stone-100'
+                            } border-b-2 border-stone-200 last:border-b-0`}
+                          >
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
                 {(gpxTrackPoints.length > 0 || (event?.latitude && event?.longitude)) ? (
