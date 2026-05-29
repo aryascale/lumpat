@@ -25,20 +25,24 @@ export default async function handler(event: any) {
     if (!eventId) return errorResponse('eventId is required', 400);
 
     const targetField = fields.field;
-    if (targetField !== 'logo' && targetField !== 'banner' && targetField !== 'home_image' && targetField !== 'rpc_bg') {
-      return errorResponse('Invalid field type, must be "logo", "banner", "home_image" or "rpc_bg"', 400);
+    if (targetField !== 'logo' && targetField !== 'banner' && targetField !== 'home_image' && targetField !== 'rpc_bg' && targetField !== 'rpc_bg_mobile') {
+      return errorResponse('Invalid field type, must be "logo", "banner", "home_image", "rpc_bg", or "rpc_bg_mobile"', 400);
     }
 
     const result = await uploadFile(eventId, file.data, file.name, 'images');
     
-    if (targetField === 'rpc_bg') {
+    if (targetField === 'rpc_bg' || targetField === 'rpc_bg_mobile') {
       const existing: any = await query('SELECT content FROM Event WHERE id = ?', [eventId]);
       const currentContentStr = existing[0]?.content;
       let currentContent = {};
       if (currentContentStr) {
         currentContent = typeof currentContentStr === 'string' ? JSON.parse(currentContentStr) : currentContentStr;
       }
-      (currentContent as any).rpcBgUrl = result.url;
+      if (targetField === 'rpc_bg') {
+        (currentContent as any).rpcBgUrl = result.url;
+      } else {
+        (currentContent as any).rpcBgUrlMobile = result.url;
+      }
       await query(
         `UPDATE Event SET content = ?, updatedAt = NOW() WHERE id = ?`,
         [JSON.stringify(currentContent), eventId]

@@ -6,6 +6,7 @@ import { Search, QrCode, X, CheckCircle, Keyboard as KeyboardIcon } from "lucide
 import type { LeaderRow } from "../components/LeaderboardTable";
 import Keyboard from "react-simple-keyboard";
 import "react-simple-keyboard/build/css/index.css";
+import { useMediaQuery } from 'react-responsive';
 
 export default function RpcPage() {
   const { slug } = useParams();
@@ -128,13 +129,25 @@ export default function RpcPage() {
     );
   }
 
-  const bgImage = eventData?.content?.rpcBgUrl || eventData?.bannerUrl || eventData?.homeImageUrl;
+  const isMobile = useMediaQuery({ maxWidth: 768 });
+  
+  // Choose background based on screen size
+  const desktopBg = eventData?.content?.rpcBgUrl || eventData?.bannerUrl || eventData?.homeImageUrl;
+  const mobileBg = eventData?.content?.rpcBgUrlMobile || desktopBg;
+  const bgImage = isMobile ? mobileBg : desktopBg;
+  
   const isVideoBg = bgImage && (bgImage.toLowerCase().endsWith('.mp4') || bgImage.toLowerCase().endsWith('.webm') || bgImage.toLowerCase().endsWith('.mov'));
 
   return (
     <div 
       className="min-h-screen bg-gray-900 text-gray-900 font-sans flex flex-col relative overflow-hidden"
-      style={bgImage && !isVideoBg ? { backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+      style={bgImage && !isVideoBg ? { 
+        backgroundImage: `url(${bgImage})`, 
+        backgroundSize: 'contain', 
+        backgroundPosition: 'center top', 
+        backgroundRepeat: 'no-repeat',
+        backgroundColor: '#111827' // bg-gray-900
+      } : {}}
     >
       <style>{`
         .rpc-keyboard-theme .hg-button {

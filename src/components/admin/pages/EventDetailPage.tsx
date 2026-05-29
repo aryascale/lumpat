@@ -61,10 +61,12 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   const [coverBannerFile, setCoverBannerFile] = useState<File | null>(null);
   const [homeImageFile, setHomeImageFile] = useState<File | null>(null);
   const [rpcBgFile, setRpcBgFile] = useState<File | null>(null);
+  const [rpcBgMobileFile, setRpcBgMobileFile] = useState<File | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingHomeImage, setUploadingHomeImage] = useState(false);
   const [uploadingRpcBg, setUploadingRpcBg] = useState(false);
+  const [uploadingRpcBgMobile, setUploadingRpcBgMobile] = useState(false);
 
   // Category state
   const [newCategory, setNewCategory] = useState('');
@@ -464,12 +466,13 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
     }
   };
 
-  const handleMediaUpload = async (type: 'logo' | 'banner' | 'home_image' | 'rpc_bg') => {
+  const handleMediaUpload = async (type: 'logo' | 'banner' | 'home_image' | 'rpc_bg' | 'rpc_bg_mobile') => {
     let file = null;
     if (type === 'logo') file = logoFile;
     else if (type === 'banner') file = coverBannerFile;
     else if (type === 'home_image') file = homeImageFile;
     else if (type === 'rpc_bg') file = rpcBgFile;
+    else if (type === 'rpc_bg_mobile') file = rpcBgMobileFile;
 
     if (!file) {
       alert('Please select a file');
@@ -480,6 +483,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
     else if (type === 'banner') setUploadingCover(true);
     else if (type === 'home_image') setUploadingHomeImage(true);
     else if (type === 'rpc_bg') setUploadingRpcBg(true);
+    else if (type === 'rpc_bg_mobile') setUploadingRpcBgMobile(true);
     
     try {
       const formData = new FormData();
@@ -522,16 +526,21 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         setRpcBgFile(null);
         const fileInput = document.getElementById('rpc-bg-upload') as HTMLInputElement;
         if (fileInput) fileInput.value = '';
+      } else if (type === 'rpc_bg_mobile') {
+        setRpcBgMobileFile(null);
+        const fileInput = document.getElementById('rpc-bg-mobile-upload') as HTMLInputElement;
+        if (fileInput) fileInput.value = '';
       }
       
-      alert(`${type === 'logo' ? 'Logo' : type === 'banner' ? 'Cover Banner' : type === 'rpc_bg' ? 'RPC Background' : 'Homepage Image'} uploaded successfully!`);
+      alert('Media uploaded successfully!');
     } catch (error: any) {
-      alert(error.message || `Failed to upload ${type}`);
+      alert(error.message || 'Failed to upload media');
     } finally {
       if (type === 'logo') setUploadingLogo(false);
       else if (type === 'banner') setUploadingCover(false);
       else if (type === 'home_image') setUploadingHomeImage(false);
       else if (type === 'rpc_bg') setUploadingRpcBg(false);
+      else if (type === 'rpc_bg_mobile') setUploadingRpcBgMobile(false);
     }
   };
 
@@ -2460,7 +2469,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                         rules: homeContent.rules || eventData.content?.rules || '',
                         allowBulkNoOtp: eventData.content?.allowBulkNoOtp || false,
                         enableRegisteredScan: eventData.content?.enableRegisteredScan !== false,
-                        rpcBgUrl: eventData.content?.rpcBgUrl || ''
+                        rpcBgUrl: eventData.content?.rpcBgUrl || '',
+                        rpcBgUrlMobile: eventData.content?.rpcBgUrlMobile || ''
                       }
                     }),
                   });
@@ -2544,36 +2554,68 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
             <div className="admin-cutoff border-t border-gray-100 pt-6">
               <div className="label">Background Image/Video RPC</div>
               <div className="tools">
-                <input
-                  type="text"
-                  className="search w-full mb-3"
-                  placeholder="https://example.com/image.jpg atau Video MP4"
-                  value={eventData?.content?.rpcBgUrl || ''}
-                  onChange={(e) => setEventData({ 
-                    ...eventData, 
-                    content: { ...(eventData?.content || {}), rpcBgUrl: e.target.value }
-                  })}
-                />
-                
-                <div className="flex gap-2">
+                <div className="mb-4">
+                  <div className="text-sm font-bold text-gray-700 mb-1">Background Landscape (Desktop/Tablet)</div>
                   <input
-                    id="rpc-bg-upload"
-                    type="file"
-                    accept="image/*,video/mp4"
-                    onChange={(e) => setRpcBgFile(e.target.files?.[0] || null)}
-                    className="flex-1 text-sm block w-full text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300"
+                    type="text"
+                    className="search w-full mb-2"
+                    placeholder="https://example.com/image-landscape.jpg atau MP4"
+                    value={eventData?.content?.rpcBgUrl || ''}
+                    onChange={(e) => setEventData({ 
+                      ...eventData, 
+                      content: { ...(eventData?.content || {}), rpcBgUrl: e.target.value }
+                    })}
                   />
-                  <button
-                    className="btn"
-                    onClick={() => handleMediaUpload('rpc_bg')}
-                    disabled={!rpcBgFile || uploadingRpcBg}
-                  >
-                    {uploadingRpcBg ? 'Uploading...' : 'Upload File'}
-                  </button>
+                  <div className="flex gap-2">
+                    <input
+                      id="rpc-bg-upload"
+                      type="file"
+                      accept="image/*,video/mp4"
+                      onChange={(e) => setRpcBgFile(e.target.files?.[0] || null)}
+                      className="flex-1 text-sm block w-full text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300"
+                    />
+                    <button
+                      className="btn"
+                      onClick={() => handleMediaUpload('rpc_bg')}
+                      disabled={!rpcBgFile || uploadingRpcBg}
+                    >
+                      {uploadingRpcBg ? 'Uploading...' : 'Upload Landscape'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mb-2">
+                  <div className="text-sm font-bold text-gray-700 mb-1">Background Portrait (Mobile HP)</div>
+                  <input
+                    type="text"
+                    className="search w-full mb-2"
+                    placeholder="https://example.com/image-portrait.jpg atau MP4"
+                    value={eventData?.content?.rpcBgUrlMobile || ''}
+                    onChange={(e) => setEventData({ 
+                      ...eventData, 
+                      content: { ...(eventData?.content || {}), rpcBgUrlMobile: e.target.value }
+                    })}
+                  />
+                  <div className="flex gap-2">
+                    <input
+                      id="rpc-bg-mobile-upload"
+                      type="file"
+                      accept="image/*,video/mp4"
+                      onChange={(e) => setRpcBgMobileFile(e.target.files?.[0] || null)}
+                      className="flex-1 text-sm block w-full text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300"
+                    />
+                    <button
+                      className="btn"
+                      onClick={() => handleMediaUpload('rpc_bg_mobile')}
+                      disabled={!rpcBgMobileFile || uploadingRpcBgMobile}
+                    >
+                      {uploadingRpcBgMobile ? 'Uploading...' : 'Upload Portrait'}
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="text-xs text-gray-500 mt-2">
-                  Paste URL atau Upload file (gambar / video mp4) untuk background halaman validasi RPC.
+                  Paste URL atau Upload file untuk background halaman validasi RPC. Sangat disarankan mengupload 2 gambar (landscape & portrait) agar tidak kepotong di HP.
                 </div>
               </div>
             </div>
