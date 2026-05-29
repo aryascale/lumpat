@@ -126,8 +126,8 @@ export default function RpcPage() {
           src={bgImage}
         />
       )}
-      {/* Dark overlay so the text/UI is still readable but background is clearly visible */}
-      {bgImage && <div className="absolute inset-0 bg-black/20 z-0" />}
+      {/* Removed dark overlay so the background image is 100% clear */}
+      {bgImage && <div className="absolute inset-0 bg-transparent z-0" />}
       
       {/* Main Container */}
       <div className="flex flex-col h-screen max-h-screen w-full relative z-10 overflow-hidden">
