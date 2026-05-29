@@ -39,9 +39,18 @@ function findColIndex(headers: string[], key: keyof typeof headerAliases): numbe
     if (aliases.includes(hs[i])) return i;
   }
   
-  // Pass 2: includes (fallback)
+  // Pass 2: includes (fallback) but ensure we don't accidentally match another valid header alias
+  // e.g. "category" (aliases: "kategori") should not match "kategori usia" if "kategori usia" is an alias for "ageCategory"
   for (let i = 0; i < hs.length; i++) {
     const h = hs[i];
+    // Check if this header matches ANY other known exact alias exactly (if it does, skip it to avoid stealing)
+    const belongsToOther = Object.entries(headerAliases).some(([k, als]) => {
+      if (k === key) return false;
+      return als.map(norm).includes(h);
+    });
+    
+    if (belongsToOther) continue;
+
     if (aliases.some((a) => h.includes(a))) return i;
   }
   

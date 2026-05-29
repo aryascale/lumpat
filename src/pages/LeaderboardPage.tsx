@@ -131,19 +131,20 @@ export default function LeaderboardPage() {
         const timeOnlyStr: Record<string, string | null> = {};
 
         Object.entries(catStartRaw).forEach(([key, raw]) => {
+          const normKey = normCat(key);
           const s = String(raw || "").trim();
           if (!s) {
-            absOverrideMs[key] = null;
-            timeOnlyStr[key] = null;
+            absOverrideMs[normKey] = null;
+            timeOnlyStr[normKey] = null;
             return;
           }
           if (/\d{4}-\d{2}-\d{2}/.test(s)) {
             const parsed = parseTimeToMs(s);
-            absOverrideMs[key] = parsed.ms;
-            timeOnlyStr[key] = null;
+            absOverrideMs[normKey] = parsed.ms;
+            timeOnlyStr[normKey] = null;
           } else {
-            absOverrideMs[key] = null;
-            timeOnlyStr[key] = s;
+            absOverrideMs[normKey] = null;
+            timeOnlyStr[normKey] = s;
           }
         });
 
