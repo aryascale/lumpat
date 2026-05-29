@@ -213,9 +213,6 @@ export default function RpcPage() {
         {foundParticipant && (
           <div className="absolute inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
             <div className="bg-white rounded-[3rem] p-8 md:p-12 w-full max-w-2xl border-b-[12px] border-gray-200 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col items-center text-center animate-in zoom-in-95 duration-300">
-              <div className="bg-green-100 text-green-500 p-4 rounded-[2rem] mb-6 border-b-[6px] border-green-200">
-                 <CheckCircle className="w-12 h-12 stroke-[3]" />
-              </div>
               <h2 className="text-4xl md:text-5xl font-black text-gray-900 uppercase tracking-tight mb-2 leading-tight">
                 {foundParticipant.name}
               </h2>
