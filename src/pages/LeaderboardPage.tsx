@@ -306,14 +306,6 @@ export default function LeaderboardPage() {
           catMap[catKey] = list;
         });
 
-        // DEBUG: Check if ageCategory is in the final data
-        const withAge = overallFinal.filter(r => r.ageCategory && r.ageCategory.trim());
-        console.log('[DEBUG FLOW] overallFinal rows:', overallFinal.length, 'rows with ageCategory:', withAge.length);
-        if (overallFinal.length > 0) {
-          console.log('[DEBUG FLOW] First row ageCategory:', JSON.stringify(overallFinal[0].ageCategory));
-          console.log('[DEBUG FLOW] First row full keys:', Object.keys(overallFinal[0]));
-        }
-
         setOverall(overallFinal);
         setByCategory(catMap);
 
