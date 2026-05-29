@@ -126,7 +126,7 @@ export default function EventPage() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [state, setState] = useState<LoadState>({
     status: "loading",
-    msg: "Memuat data event...",
+    msg: "Loading event data...",
   });
 
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -634,7 +634,7 @@ export default function EventPage() {
     (async () => {
       try {
         if (!hasLoadedOnce) {
-          setState({ status: "loading", msg: "Load data peserta..." });
+          setState({ status: "loading", msg: "Loading participant data..." });
         }
 
         const master = await loadMasterParticipants(event.id);
@@ -739,6 +739,7 @@ export default function EventPage() {
                 gender: p.gender,
                 category: p.category || resolvedCategoryKey,
                 sourceCategoryKey: resolvedCategoryKey,
+                ageCategory: p.ageCategory,
                 finishTimeRaw: finishEntry ? extractTimeOfDay(finishEntry.raw) : '-',
                 totalTimeMs: 0,
                 totalTimeDisplay: isDQ ? "DSQ" : status,
@@ -803,6 +804,7 @@ export default function EventPage() {
               gender: p.gender,
               category: p.category || resolvedCategoryKey,
               sourceCategoryKey: resolvedCategoryKey,
+              ageCategory: p.ageCategory,
               finishTimeRaw: extractTimeOfDay(finishEntry.raw),
               totalTimeMs: total,
               totalTimeDisplay: isDQ ? "DSQ" : isDNF ? "DNF" : formatDuration(total),

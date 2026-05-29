@@ -55,6 +55,8 @@
     "react-leaflet": "^4.2.1",
     "react-quill": "^2.0.0",
     "react-router-dom": "^7.11.0",
+    "react-simple-keyboard": "^3.8.219",
+    "simple-keyboard": "^3.8.150",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.1.18",
     "ts-node": "^10.9.2",

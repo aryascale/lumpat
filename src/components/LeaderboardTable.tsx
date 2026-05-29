@@ -274,7 +274,7 @@ export default function LeaderboardTable({
                         <h3 className={`font-black tracking-[0.2em] text-red-600 uppercase mb-2 ${isPodiumFullscreen ? 'text-lg md:text-2xl' : 'text-sm'}`}>Podium</h3>
                         <h2 className={`font-extrabold text-stone-900 tracking-tighter ${isPodiumFullscreen ? 'text-5xl md:text-7xl' : 'text-3xl sm:text-5xl'}`}>{podium.title}</h2>
                         <div className={`font-bold text-stone-500 tracking-wide mt-3 ${isPodiumFullscreen ? 'text-2xl md:text-3xl mb-8' : 'text-base sm:text-xl'}`}>
-                          {ageCategoryFilter === "All" ? "Semua Umur" : ageCategoryFilter} {title.toLowerCase().includes("overall") ? "Overall" : title.replace("Full Standings — ", "").trim()} & {genderFilter === "All" ? "Semua Gender" : genderFilter}
+                          {ageCategoryFilter === "All" ? "All Ages" : ageCategoryFilter} {title.toLowerCase().includes("overall") ? "Overall" : title.replace("Full Standings — ", "").trim()} & {genderFilter === "All" ? "All Genders" : genderFilter}
                         </div>
                       </motion.div>
                      
@@ -470,16 +470,16 @@ export default function LeaderboardTable({
             value={genderFilter}
             onChange={(e) => setGenderFilter(e.target.value)}
           >
-            <option value="All">Semua Gender</option>
-            <option value="Laki-laki">Laki-laki</option>
-            <option value="Perempuan">Perempuan</option>
+            <option value="All">All Genders</option>
+            <option value="Laki-laki">Male</option>
+            <option value="Perempuan">Female</option>
           </select>
           <select 
             className="w-full sm:w-auto px-4 py-2 border-2 border-stone-200 rounded-lg font-medium text-stone-800 focus:border-red-500 focus:ring-0 outline-none transition-colors bg-white cursor-pointer"
             value={ageCategoryFilter}
             onChange={(e) => setAgeCategoryFilter(e.target.value)}
           >
-            <option value="All">Semua Umur</option>
+            <option value="All">All Ages</option>
             {uniqueAgeCategories.map(cat => (
               <option key={cat} value={cat}>{cat}</option>
             ))}

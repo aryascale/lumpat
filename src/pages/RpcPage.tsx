@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { loadMasterParticipants } from "../lib/data";
 import { Html5Qrcode } from "html5-qrcode";
-import { Search, QrCode, X, CheckCircle, Keyboard } from "lucide-react";
+import { Search, QrCode, X, CheckCircle, Keyboard as KeyboardIcon } from "lucide-react";
 import type { LeaderRow } from "../components/LeaderboardTable";
+import Keyboard from "react-simple-keyboard";
+import "react-simple-keyboard/build/css/index.css";
 
 export default function RpcPage() {
   const { slug } = useParams();
@@ -13,6 +15,7 @@ export default function RpcPage() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [foundParticipant, setFoundParticipant] = useState<LeaderRow | null>(null);
+  const [showKeyboard, setShowKeyboard] = useState(false);
   
   const [isScanning, setIsScanning] = useState(false);
   const [scanError, setScanError] = useState("");
@@ -152,24 +155,66 @@ export default function RpcPage() {
                <form onSubmit={handleSearch} className="flex-1 relative">
                   <input 
                     type="text" 
-                    placeholder="Cari Nomor BIB atau Nama..." 
+                    placeholder="Search BIB or Name..." 
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    className="w-full bg-gray-100 border-2 border-gray-200 border-b-[6px] text-gray-900 px-6 py-4 md:py-5 rounded-[2rem] text-lg md:text-xl font-bold focus:border-blue-400 focus:border-b-[6px] focus:translate-y-0 focus:outline-none placeholder-gray-400 transition-all"
+                    className="w-full bg-gray-100 border-2 border-gray-200 border-b-[6px] text-gray-900 px-6 py-4 md:py-5 rounded-[2rem] text-lg md:text-xl font-bold focus:border-blue-400 focus:border-b-[6px] focus:translate-y-0 focus:outline-none placeholder-gray-400 transition-all pr-24"
                   />
-                  <button type="submit" className="absolute right-3 top-1/2 -translate-y-[calc(50%+3px)] bg-blue-500 hover:bg-blue-400 active:border-b-0 active:translate-y-[calc(-50%+3px)] border-blue-700 border-b-[4px] text-white p-3 rounded-2xl transition-all">
-                     <Search className="w-6 h-6 stroke-[3]" />
-                  </button>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                    <button type="submit" className="bg-blue-500 hover:bg-blue-400 active:border-b-0 active:translate-y-[calc(-50%+3px)] border-blue-700 border-b-[4px] text-white p-3 rounded-2xl transition-all -translate-y-[calc(50%+3px)]" style={{ marginTop: '50%' }}>
+                      <Search className="w-6 h-6 stroke-[3]" />
+                    </button>
+                  </div>
                </form>
 
-               <button 
-                 type="button"
-                 onClick={() => { setIsScanning(true); setScanError(""); }}
-                 className="bg-green-500 hover:bg-green-400 border-green-700 border-b-[6px] active:border-b-0 active:translate-y-[6px] text-white px-8 py-4 md:py-5 rounded-[2rem] flex items-center justify-center transition-all shrink-0"
-               >
-                  <QrCode className="w-8 h-8 md:w-10 md:h-10 stroke-[2.5]" />
-               </button>
+               <div className="flex gap-2 shrink-0">
+                 <button 
+                   type="button" 
+                   onClick={() => setShowKeyboard(!showKeyboard)}
+                   className={`px-4 py-4 md:py-5 rounded-[2rem] flex flex-col items-center justify-center transition-all border-b-[6px] active:border-b-0 active:translate-y-[6px] font-bold text-sm ${showKeyboard ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300'}`}
+                 >
+                   <KeyboardIcon className="w-6 h-6 md:w-8 md:h-8 mb-1" />
+                   Keyboard
+                 </button>
+                 <button 
+                   type="button"
+                   onClick={() => { setIsScanning(true); setScanError(""); }}
+                   className="bg-green-500 hover:bg-green-400 border-green-700 border-b-[6px] active:border-b-0 active:translate-y-[6px] text-white px-6 md:px-8 py-4 md:py-5 rounded-[2rem] flex flex-col items-center justify-center transition-all font-bold text-sm"
+                 >
+                    <QrCode className="w-6 h-6 md:w-8 md:h-8 mb-1 stroke-[2.5]" />
+                    Scanner
+                 </button>
+               </div>
             </div>
+            
+            {showKeyboard && (
+              <div className="mt-4 bg-white/95 backdrop-blur-xl p-2 rounded-2xl shadow-xl border border-gray-200 animate-in fade-in slide-in-from-bottom-4">
+                <Keyboard
+                  onChange={(input) => setQuery(input)}
+                  onKeyPress={(button) => {
+                    if (button === "{enter}") {
+                      handleSearch({ preventDefault: () => {} } as React.FormEvent);
+                      setShowKeyboard(false);
+                    }
+                  }}
+                  layout={{
+                    default: [
+                      "1 2 3 4 5 6 7 8 9 0 {bksp}",
+                      "q w e r t y u i o p",
+                      "a s d f g h j k l",
+                      "z x c v b n m {enter}",
+                      "{space}"
+                    ]
+                  }}
+                  display={{
+                    "{bksp}": "⌫",
+                    "{enter}": "🔍 Search",
+                    "{space}": "Space"
+                  }}
+                  theme={"hg-theme-default hg-layout-default rpc-keyboard-theme"}
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -253,7 +298,7 @@ export default function RpcPage() {
                   <span className="text-xs font-bold text-green-700 uppercase tracking-widest mb-1">Status</span>
                   <span className="text-xl md:text-2xl font-black text-green-700 flex items-center gap-2">
                     <CheckCircle className="w-6 h-6 stroke-[3]" />
-                    Terverifikasi
+                    Verified
                   </span>
                 </div>
               </div>

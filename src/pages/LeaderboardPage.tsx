@@ -50,7 +50,7 @@ export default function LeaderboardPage() {
 
   const [state, setState] = useState<LoadState>({
     status: "loading",
-    msg: "Memuat data CSV…",
+    msg: "Loading CSV data…",
   });
 
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -99,7 +99,7 @@ export default function LeaderboardPage() {
         if (!hasLoadedOnce) {
           setState({
             status: "loading",
-            msg: "Load master peserta (CSV)…",
+            msg: "Loading participant master (CSV)…",
           });
         }
 
@@ -328,10 +328,10 @@ export default function LeaderboardPage() {
         setHasLoadedOnce(true);
       } catch (e: any) {
         const errorMsg = e?.message || "";
-        if (errorMsg.includes("belum diupload")) {
+        if (errorMsg.includes("not uploaded")) {
           setState({
             status: "error",
-            msg: "CSV files belum diupload untuk event ini. Silakan buka tab Admin untuk upload Master dan Finish CSV.",
+            msg: "CSV files have not been uploaded for this event. Please open the Admin tab to upload Master and Finish CSV.",
           });
         } else {
           setState({
@@ -421,7 +421,7 @@ export default function LeaderboardPage() {
           }`}>
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <h3 className="font-bold text-gray-900 text-lg">Pilih Event</h3>
+                <h3 className="font-bold text-gray-900 text-lg">Select Event</h3>
                 <button 
                   onClick={() => setMobileEventSelectorOpen(false)}
                   className="p-2 hover:bg-gray-100 rounded-full"
@@ -533,7 +533,7 @@ export default function LeaderboardPage() {
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
                 </svg>
-                <span>Ganti Event</span>
+                <span>Change Event</span>
               </button>
             </div>
           </div>
@@ -557,15 +557,14 @@ export default function LeaderboardPage() {
           <div className="lb-content">
             {needsFirstUpload && (
               <div className="lb-content-card">
-                <div className="error-title">Data belum siap</div>
-                <div style={{ marginTop: 6 }}>
-                  CSV files belum diupload untuk event ini. Silakan buka tab Admin untuk upload Master dan Finish CSV.
+                <div className="error-title">Data not ready</div>
+                <div className="error-desc">
+                  CSV files have not been uploaded for this event. Please open the Admin tab to upload Master and Finish CSV.
                 </div>
-                <div style={{ marginTop: 10 }}>
-                  <Link to="/admin/overview" className="lb-cta-btn">
-                    Buka Admin Panel untuk Upload CSV
-                  </Link>
-                </div>
+                <Link to="/admin/overview" className="btn primary">
+                  <span className="icon">📁</span>
+                  Open Admin Panel to Upload CSV
+                </Link>
               </div>
             )}
 
@@ -582,7 +581,7 @@ export default function LeaderboardPage() {
                   </div>
                 ) : (
                   <div className="lb-content-card">
-                    <p>Silakan login tab <b>Admin</b> untuk upload CSV (Master &amp; Finish wajib; Start optional jika memakai start global per kategori).</p>
+                    <p>Please login to the <b>Admin</b> tab to upload CSV (Master &amp; Finish required; Start optional if using global start per category).</p>
                   </div>
                 )}
               </>
@@ -601,7 +600,7 @@ export default function LeaderboardPage() {
                   </div>
                 ) : (
                   <div className="lb-content-card">
-                    Data belum tersedia. Buka <Link to="/admin/overview" className="text-red-600 font-semibold hover:underline">Admin Panel</Link> untuk upload CSV.
+                    Data not available. Open <Link to="/admin/overview" className="text-red-600 font-semibold hover:underline">Admin Panel</Link> to upload CSV.
                   </div>
                 )}
               </>

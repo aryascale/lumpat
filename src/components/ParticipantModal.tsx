@@ -86,7 +86,7 @@ export default function ParticipantModal({ open, onClose, eventId, eventName, da
 
         <div className="modal-grid">
           <div className="modal-item">
-            <div className="label">Nama</div>
+            <div className="label">Name</div>
             <div className="value">{data.name || "-"}</div>
           </div>
 
@@ -101,7 +101,7 @@ export default function ParticipantModal({ open, onClose, eventId, eventName, da
           </div>
 
           <div className="modal-item">
-            <div className="label">Kategori Lari</div>
+            <div className="label">Race Category</div>
             <div className="value">{data.category || "-"}</div>
           </div>
 
