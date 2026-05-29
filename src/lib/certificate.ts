@@ -9,6 +9,7 @@ export type CertData = {
     overallRank?: number | null;
     genderRank?: number | null;
     categoryRank?: number | null;
+    ageRank?: number | null;
   };
 
   export async function renderCertificatePNG(data: CertData): Promise<string> {
@@ -90,7 +91,8 @@ export type CertData = {
       ["Total Time", data.totalTimeDisplay || "-"],
       ["Overall Rank", String(data.overallRank ?? "-")],
       ["Gender Rank", String(data.genderRank ?? "-")],
-      ["Category Rank", String(data.categoryRank ?? "-")]
+      ["Category Rank", String(data.categoryRank ?? "-")],
+      ["Age Rank", String(data.ageRank ?? "-")]
     ];
 
     const tableY = 740;

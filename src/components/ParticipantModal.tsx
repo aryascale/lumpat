@@ -16,6 +16,7 @@ type Props = {
     overallRank: number | null;
     genderRank: number | null;
     categoryRank: number | null;
+    ageRank: number | null;
   } | null;
 };
 
@@ -56,6 +57,7 @@ export default function ParticipantModal({ open, onClose, eventId, data }: Props
         overallRank: data.overallRank,
         genderRank: data.genderRank,
         categoryRank: data.categoryRank,
+        ageRank: data.ageRank,
       });
       downloadDataUrl(png, `IMR2025_${data.bib || "BIB"}_certificate.png`);
     } catch (err: any) {
@@ -131,6 +133,11 @@ export default function ParticipantModal({ open, onClose, eventId, data }: Props
             <div className="label">Category Rank</div>
             <div className="value">{data.categoryRank ?? "-"}</div>
           </div>
+
+          <div className="modal-item">
+            <div className="label">Age Rank</div>
+            <div className="value">{data.ageRank ?? "-"}</div>
+          </div>
         </div>
 
         <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
@@ -139,11 +146,8 @@ export default function ParticipantModal({ open, onClose, eventId, data }: Props
             onClick={onDownloadCert}
             disabled={downloading}
           >
-            {downloading ? "Rendering…" : "Download E-Certificate (9:16)"}
+            {downloading ? "Rendering…" : "Download E-Certificate"}
           </button>
-          <div className="subtle" style={{ alignSelf: "center" }}>
-            PNG siap IG Stories
-          </div>
         </div>
       </div>
     </div>

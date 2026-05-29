@@ -465,18 +465,16 @@ export default function LeaderboardTable({
             <option value="Laki-laki">Laki-laki</option>
             <option value="Perempuan">Perempuan</option>
           </select>
-          {uniqueAgeCategories.length > 0 && (
-            <select 
-              className="w-full sm:w-auto px-4 py-2 border-2 border-stone-200 rounded-lg font-medium text-stone-800 focus:border-red-500 focus:ring-0 outline-none transition-colors bg-white cursor-pointer"
-              value={ageCategoryFilter}
-              onChange={(e) => setAgeCategoryFilter(e.target.value)}
-            >
-              <option value="All">Semua Umur</option>
-              {uniqueAgeCategories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-          )}
+          <select 
+            className="w-full sm:w-auto px-4 py-2 border-2 border-stone-200 rounded-lg font-medium text-stone-800 focus:border-red-500 focus:ring-0 outline-none transition-colors bg-white cursor-pointer"
+            value={ageCategoryFilter}
+            onChange={(e) => setAgeCategoryFilter(e.target.value)}
+          >
+            <option value="All">Semua Umur</option>
+            {uniqueAgeCategories.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
           <button className="px-5 py-2 font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors border border-transparent" onClick={() => { setQ(""); setGenderFilter("All"); setAgeCategoryFilter("All"); }}>
             Reset
           </button>
