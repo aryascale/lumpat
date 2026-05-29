@@ -282,7 +282,7 @@ export default function LeaderboardPage() {
 
         const ageRankByEpc = new Map<string, number>();
         const ageCategories = Array.from(
-          new Set(finisherSorted.map((r) => (r.ageCategory || "").trim()).filter(Boolean))
+          new Set(finisherSorted.map((r) => (r.ageCategory || "").trim()))
         );
         ageCategories.forEach((cat) => {
           const list = finisherSorted.filter((r) => (r.ageCategory || "").trim() === cat);
