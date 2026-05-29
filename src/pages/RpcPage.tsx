@@ -113,6 +113,8 @@ export default function RpcPage() {
     }
   };
 
+  const isMobile = useMediaQuery({ maxWidth: 768 });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -129,8 +131,6 @@ export default function RpcPage() {
     );
   }
 
-  const isMobile = useMediaQuery({ maxWidth: 768 });
-  
   // Choose background based on screen size
   const desktopBg = eventData?.content?.rpcBgUrl || eventData?.bannerUrl || eventData?.homeImageUrl;
   const mobileBg = eventData?.content?.rpcBgUrlMobile || desktopBg;
