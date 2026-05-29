@@ -149,10 +149,10 @@ export default function RpcPage() {
 
         {/* Floating Bottom Action Bar (Duolingo Style) */}
         {!isScanning && (
-          <div className="absolute bottom-16 md:bottom-20 lg:bottom-24 left-1/2 -translate-x-1/2 w-[90%] max-w-2xl z-[150] animate-in slide-in-from-bottom-10 fade-in duration-500">
-            <div className="bg-white/80 backdrop-blur-xl p-3 md:p-4 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-b-[8px] border-gray-300 flex flex-col sm:flex-row gap-3 md:gap-4">
+          <div className="absolute bottom-4 sm:bottom-10 lg:bottom-16 left-1/2 -translate-x-1/2 w-[95%] sm:w-[90%] max-w-3xl z-[150] animate-in slide-in-from-bottom-10 fade-in duration-500 flex flex-col justify-end pointer-events-none max-h-[90vh]">
+            <div className="bg-white/90 backdrop-blur-xl p-3 md:p-4 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-b-[8px] border-gray-300 flex flex-col sm:flex-row gap-3 md:gap-4 shrink-0 pointer-events-auto">
                
-               <form onSubmit={handleSearch} className="flex-1 relative">
+               <form onSubmit={handleSearch} className="flex-1 relative shrink-0">
                   <input 
                     type="text" 
                     placeholder="Search BIB or Name..." 
@@ -188,7 +188,7 @@ export default function RpcPage() {
             </div>
             
             {showKeyboard && (
-              <div className="mt-4 bg-white/95 backdrop-blur-xl p-2 rounded-2xl shadow-xl border border-gray-200 animate-in fade-in slide-in-from-bottom-4">
+              <div className="mt-2 sm:mt-4 bg-white/95 backdrop-blur-xl p-1 sm:p-2 rounded-2xl shadow-xl border border-gray-200 animate-in fade-in slide-in-from-bottom-4 overflow-y-auto no-scrollbar pointer-events-auto max-h-[40vh] sm:max-h-none shrink">
                 <Keyboard
                   onChange={(input) => setQuery(input)}
                   onKeyPress={(button) => {
