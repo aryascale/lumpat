@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { loadMasterParticipants } from "../lib/data";
 import { Html5Qrcode } from "html5-qrcode";
-import { Search, QrCode, X, CheckCircle, Keyboard as KeyboardIcon } from "lucide-react";
+import { Search, X, CheckCircle } from "lucide-react";
 import type { LeaderRow } from "../components/LeaderboardTable";
 import Keyboard from "react-simple-keyboard";
 import "react-simple-keyboard/build/css/index.css";
@@ -87,11 +87,11 @@ export default function RpcPage() {
     if (foundParticipant) {
       // Hide the digital keyboard if it was open
       setShowKeyboard(false);
-      // Auto clear after 5 seconds
+      // Auto clear after 50 seconds
       timeout = setTimeout(() => {
         setFoundParticipant(null);
         setQuery("");
-      }, 5000);
+      }, 50000);
     }
     return () => {
       if (timeout) clearTimeout(timeout);
@@ -209,7 +209,9 @@ export default function RpcPage() {
                     placeholder="Search BIB or Name..." 
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    className="w-full flex-1 h-full bg-gray-100 border-2 border-gray-200 border-b-[4px] sm:border-b-[6px] text-gray-900 px-5 sm:px-6 py-3 sm:py-4 md:py-5 rounded-[1.5rem] sm:rounded-[2rem] text-base sm:text-lg md:text-xl font-bold focus:border-blue-400 focus:border-b-[4px] sm:focus:border-b-[6px] focus:translate-y-0 focus:outline-none placeholder-gray-400 transition-all pr-16 sm:pr-20"
+                    onFocus={() => setShowKeyboard(true)}
+                    readOnly
+                    className="w-full flex-1 h-full bg-gray-100 border-2 border-gray-200 border-b-[4px] sm:border-b-[6px] text-gray-900 px-5 sm:px-6 py-3 sm:py-4 md:py-5 rounded-[1.5rem] sm:rounded-[2rem] text-base sm:text-lg md:text-xl font-bold focus:border-blue-400 focus:border-b-[4px] sm:focus:border-b-[6px] focus:translate-y-0 focus:outline-none placeholder-gray-400 transition-all pr-16 sm:pr-20 cursor-pointer"
                   />
                   <div className="absolute right-2 top-0 bottom-[4px] sm:bottom-[6px] flex items-center">
                     <button type="submit" className="bg-blue-500 hover:bg-blue-400 active:border-b-0 active:translate-y-[2px] sm:active:translate-y-[3px] border-blue-700 border-b-[3px] sm:border-b-[4px] text-white p-2 sm:p-3 rounded-xl sm:rounded-2xl transition-all mr-1">
@@ -217,25 +219,6 @@ export default function RpcPage() {
                     </button>
                   </div>
                </form>
-
-               <div className="flex gap-2 shrink-0">
-                 <button 
-                   type="button" 
-                   onClick={() => setShowKeyboard(!showKeyboard)}
-                   className={`flex-1 sm:flex-none px-3 sm:px-4 py-3 sm:py-4 md:py-5 rounded-[1.5rem] sm:rounded-[2rem] flex flex-row sm:flex-col items-center justify-center gap-2 sm:gap-0 transition-all border-b-[4px] sm:border-b-[6px] active:border-b-0 active:translate-y-[4px] sm:active:translate-y-[6px] font-bold text-sm ${showKeyboard ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300'}`}
-                 >
-                   <KeyboardIcon className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 sm:mb-1" />
-                   Keyboard
-                 </button>
-                 <button 
-                   type="button"
-                   onClick={() => { setIsScanning(true); setScanError(""); setShowKeyboard(false); }}
-                   className="flex-1 sm:flex-none bg-green-500 hover:bg-green-400 border-green-700 border-b-[4px] sm:border-b-[6px] active:border-b-0 active:translate-y-[4px] sm:active:translate-y-[6px] text-white px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-5 rounded-[1.5rem] sm:rounded-[2rem] flex flex-row sm:flex-col items-center justify-center gap-2 sm:gap-0 transition-all font-bold text-sm"
-                 >
-                    <QrCode className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 sm:mb-1 stroke-[2.5]" />
-                    Scanner
-                 </button>
-               </div>
             </div>
             
             {showKeyboard && (
