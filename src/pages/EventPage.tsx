@@ -1199,6 +1199,7 @@ export default function EventPage() {
                 categories={event?.categories || []}
                 onSelect={onSelectParticipant}
                 showTop10Badge={true}
+                hidePodium={true}
               />
             </div>
           )}
