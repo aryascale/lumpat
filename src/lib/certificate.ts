@@ -4,6 +4,7 @@ export type CertData = {
     bib: string;
     gender: string;
     category: string;
+    ageCategory?: string;
     finishTime: string;
     totalTimeDisplay: string;
     overallRank?: number | null;
@@ -87,12 +88,9 @@ export type CertData = {
     const rows: Array<[string, string]> = [
       ["Gender", data.gender || "-"],
       ["Category", data.category || "-"],
+      ["Age Category", data.ageCategory?.trim() || "-"],
       ["Finish Time", data.finishTime || "-"],
       ["Total Time", data.totalTimeDisplay || "-"],
-      ["Overall Rank", String(data.overallRank ?? "-")],
-      ["Gender Rank", String(data.genderRank ?? "-")],
-      ["Category Rank", String(data.categoryRank ?? "-")],
-      ["Age Rank", String(data.ageRank ?? "-")]
     ];
 
     const tableY = 740;

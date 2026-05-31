@@ -23,6 +23,7 @@ export default function LeaderboardTable({
   rows,
   categories,
   showTop10Badge = false,
+  hideTable = false,
   onSelect,
 }: {
   title: string;
@@ -30,6 +31,7 @@ export default function LeaderboardTable({
   rows: LeaderRow[];
   categories?: string[];
   showTop10Badge?: boolean;
+  hideTable?: boolean;
   onSelect?: (row: LeaderRow) => void;
 }) {
   const [q, setQ] = useState("");
@@ -439,137 +441,141 @@ export default function LeaderboardTable({
       )}
 
       {/* Main Table Tools */}
-      <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end gap-4 border-b-2 border-stone-900 pb-4 mb-6">
-        <div>
-          {title && <h2 className="text-2xl font-black tracking-tighter text-stone-900 uppercase">{title}</h2>}
-          <div className="text-sm font-medium text-stone-500 tracking-wide mt-1">
-            Displaying <span className="font-bold text-red-600">{showingCount}</span> verified entries
-          </div>
-        </div>
+      {!hideTable && (
+        <>
+          <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end gap-4 border-b-2 border-stone-900 pb-4 mb-6">
+            <div>
+              {title && <h2 className="text-2xl font-black tracking-tighter text-stone-900 uppercase">{title}</h2>}
+              <div className="text-sm font-medium text-stone-500 tracking-wide mt-1">
+                Displaying <span className="font-bold text-red-600">{showingCount}</span> verified entries
+              </div>
+            </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-          <div className="relative flex-1 sm:flex-none">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              className="w-full sm:w-64 pl-9 pr-4 py-2 border-2 border-stone-200 rounded-lg font-medium text-stone-800 placeholder-stone-400 focus:border-red-500 focus:ring-0 outline-none transition-colors"
-              type="text"
-              placeholder="Search BIB or Name..."
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
-          </div>
-          <select 
-            className="w-full sm:w-auto px-4 py-2 border-2 border-stone-200 rounded-lg font-medium text-stone-800 focus:border-red-500 focus:ring-0 outline-none transition-colors bg-white cursor-pointer"
-            value={genderFilter}
-            onChange={(e) => setGenderFilter(e.target.value)}
-          >
-            <option value="All">All Genders</option>
-            <option value="Laki-laki">Male</option>
-            <option value="Perempuan">Female</option>
-          </select>
-          <select 
-            className="w-full sm:w-auto px-4 py-2 border-2 border-stone-200 rounded-lg font-medium text-stone-800 focus:border-red-500 focus:ring-0 outline-none transition-colors bg-white cursor-pointer"
-            value={ageCategoryFilter}
-            onChange={(e) => setAgeCategoryFilter(e.target.value)}
-          >
-            <option value="All">All Ages</option>
-            {uniqueAgeCategories.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-          <button className="px-5 py-2 font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors border border-transparent" onClick={() => { setQ(""); setGenderFilter("All"); setAgeCategoryFilter("All"); }}>
-            Reset
-          </button>
-          <button onClick={handleExport} className="px-5 py-2 font-bold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg shadow-md hover:shadow-lg transition-all border border-red-700">
-            Export CSV
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Feed View */}
-      <div className="md:hidden space-y-4">
-        {filtered.map((r) => (
-          <MobileCard key={r.epc} r={r} />
-        ))}
-        {filtered.length === 0 && (
-          <div className="text-center py-16 bg-stone-50 rounded-xl border-2 border-dashed border-stone-200 px-4">
-            <div className="font-black text-xl text-stone-300 mb-2">NO RECORDS FOUND</div>
-            <div className="text-sm font-medium text-stone-400">
-              {rows.length === 0
-                ? "Starting block is empty. Awaiting timing data."
-                : "No matching BIBs or Names found."}
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+              <div className="relative flex-1 sm:flex-none">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  className="w-full sm:w-64 pl-9 pr-4 py-2 border-2 border-stone-200 rounded-lg font-medium text-stone-800 placeholder-stone-400 focus:border-red-500 focus:ring-0 outline-none transition-colors"
+                  type="text"
+                  placeholder="Search BIB or Name..."
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                />
+              </div>
+              <select 
+                className="w-full sm:w-auto px-4 py-2 border-2 border-stone-200 rounded-lg font-medium text-stone-800 focus:border-red-500 focus:ring-0 outline-none transition-colors bg-white cursor-pointer"
+                value={genderFilter}
+                onChange={(e) => setGenderFilter(e.target.value)}
+              >
+                <option value="All">All Genders</option>
+                <option value="Laki-laki">Male</option>
+                <option value="Perempuan">Female</option>
+              </select>
+              <select 
+                className="w-full sm:w-auto px-4 py-2 border-2 border-stone-200 rounded-lg font-medium text-stone-800 focus:border-red-500 focus:ring-0 outline-none transition-colors bg-white cursor-pointer"
+                value={ageCategoryFilter}
+                onChange={(e) => setAgeCategoryFilter(e.target.value)}
+              >
+                <option value="All">All Ages</option>
+                {uniqueAgeCategories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+              <button className="px-5 py-2 font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors border border-transparent" onClick={() => { setQ(""); setGenderFilter("All"); setAgeCategoryFilter("All"); }}>
+                Reset
+              </button>
+              <button onClick={handleExport} className="px-5 py-2 font-bold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg shadow-md hover:shadow-lg transition-all border border-red-700">
+                Export CSV
+              </button>
             </div>
           </div>
-        )}
-      </div>
 
-      {/* Desktop Table View (Duolingo Style) */}
-      <div className="hidden md:flex flex-col gap-3">
-        {/* Header */}
-        <div className="grid grid-cols-[80px_120px_minmax(200px,1fr)_120px_140px_140px_120px_140px] gap-4 px-6 py-2 text-[11px] font-black tracking-widest text-stone-400 uppercase">
-             <div className="text-center">Pos</div>
-             <div>BIB</div>
-             <div>Athlete Name</div>
-             <div>Gender</div>
-             <div>Category</div>
-             <div>Age Category</div>
-             <div>Time of Day</div>
-             <div className="text-right">Race Time</div>
-        </div>
-
-        {/* Rows */}
-        {filtered.map((r) => {
-             const pos = r.rank ?? "-";
-             const isTop10 = r.rank != null && r.rank <= 10;
-             const isSpecial = r.totalTimeDisplay === "DNF" || r.totalTimeDisplay === "DSQ";
-             
-             return (
-                 <div key={r.epc} onClick={() => onSelect?.(r)} className={`grid grid-cols-[80px_120px_minmax(200px,1fr)_120px_140px_140px_120px_140px] gap-4 items-center px-6 py-4 bg-white rounded-2xl border-2 border-stone-200 border-b-[6px] cursor-pointer hover:-translate-y-1 hover:border-stone-300 transition-all ${isTop10 && showTop10Badge ? 'border-yellow-200 bg-yellow-50/50' : ''} ${isSpecial ? 'border-red-200 bg-red-50/50' : ''}`}>
-                    <div className="text-center">
-                       <span className={`inline-flex items-center justify-center w-12 h-12 rounded-xl text-lg ${getPosStyle(r.rank)}`}>
-                          {pos}
-                       </span>
-                    </div>
-                    <div>
-                       <span className="font-mono font-bold text-red-600 bg-red-50 border-2 border-red-100 border-b-[4px] px-3 py-1.5 rounded-xl inline-block">
-                          {r.bib || "-"}
-                       </span>
-                    </div>
-                    <div>
-                       <div className="font-extrabold text-stone-900 tracking-tight text-xl">{r.name || "-"}</div>
-                    </div>
-                    <div>
-                       <span className="text-sm font-bold text-stone-500 bg-stone-100 border-2 border-stone-200 border-b-[3px] px-3 py-1.5 rounded-xl inline-block">{r.gender || "-"}</span>
-                    </div>
-                    <div>
-                       <span className="text-sm font-bold text-stone-500 bg-stone-100 border-2 border-stone-200 border-b-[3px] px-3 py-1.5 rounded-xl inline-block">{r.category || "-"}</span>
-                    </div>
-                    <div>
-                       <span className="text-sm font-bold text-stone-500 bg-stone-100 border-2 border-stone-200 border-b-[3px] px-3 py-1.5 rounded-xl inline-block">{r.ageCategory || "-"}</span>
-                    </div>
-                    <div className="text-sm font-mono font-bold text-stone-400">{r.finishTimeRaw || "-"}</div>
-                    <div className="text-right">
-                       <span className={`font-mono font-black text-xl tracking-tighter bg-stone-100 border-2 border-stone-200 border-b-[4px] px-4 py-2 rounded-xl inline-block ${isSpecial ? "text-orange-600" : "text-stone-900"}`}>
-                          {r.totalTimeDisplay}
-                       </span>
-                    </div>
-                 </div>
-             )
-        })}
-
-        {filtered.length === 0 && (
-          <div className="px-6 py-16 text-center bg-stone-50 border-2 border-stone-200 border-b-[6px] rounded-2xl">
-              <div className="font-black text-2xl text-stone-300 mb-2 tracking-tighter uppercase">No Tracking Data</div>
-              <div className="text-sm font-medium text-stone-500">
-                {rows.length === 0
-                  ? "The leaderboards are currently empty."
-                  : `No results found for "${q}".`}
+          {/* Mobile Feed View */}
+          <div className="md:hidden space-y-4">
+            {filtered.map((r) => (
+              <MobileCard key={r.epc} r={r} />
+            ))}
+            {filtered.length === 0 && (
+              <div className="text-center py-16 bg-stone-50 rounded-xl border-2 border-dashed border-stone-200 px-4">
+                <div className="font-black text-xl text-stone-300 mb-2">NO RECORDS FOUND</div>
+                <div className="text-sm font-medium text-stone-400">
+                  {rows.length === 0
+                    ? "Starting block is empty. Awaiting timing data."
+                    : "No matching BIBs or Names found."}
+                </div>
               </div>
+            )}
           </div>
-        )}
-      </div>
+
+          {/* Desktop Table View (Duolingo Style) */}
+          <div className="hidden md:flex flex-col gap-3">
+            {/* Header */}
+            <div className="grid grid-cols-[80px_120px_minmax(200px,1fr)_120px_140px_140px_120px_140px] gap-4 px-6 py-2 text-[11px] font-black tracking-widest text-stone-400 uppercase">
+                <div className="text-center">Pos</div>
+                <div>BIB</div>
+                <div>Athlete Name</div>
+                <div>Gender</div>
+                <div>Category</div>
+                <div>Age Category</div>
+                <div>Time of Day</div>
+                <div className="text-right">Race Time</div>
+            </div>
+
+            {/* Rows */}
+            {filtered.map((r) => {
+                const pos = r.rank ?? "-";
+                const isTop10 = r.rank != null && r.rank <= 10;
+                const isSpecial = r.totalTimeDisplay === "DNF" || r.totalTimeDisplay === "DSQ";
+                
+                return (
+                    <div key={r.epc} onClick={() => onSelect?.(r)} className={`grid grid-cols-[80px_120px_minmax(200px,1fr)_120px_140px_140px_120px_140px] gap-4 items-center px-6 py-4 bg-white rounded-2xl border-2 border-stone-200 border-b-[6px] cursor-pointer hover:-translate-y-1 hover:border-stone-300 transition-all ${isTop10 && showTop10Badge ? 'border-yellow-200 bg-yellow-50/50' : ''} ${isSpecial ? 'border-red-200 bg-red-50/50' : ''}`}>
+                        <div className="text-center">
+                          <span className={`inline-flex items-center justify-center w-12 h-12 rounded-xl text-lg ${getPosStyle(r.rank)}`}>
+                              {pos}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="font-mono font-bold text-red-600 bg-red-50 border-2 border-red-100 border-b-[4px] px-3 py-1.5 rounded-xl inline-block">
+                              {r.bib || "-"}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="font-extrabold text-stone-900 tracking-tight text-xl">{r.name || "-"}</div>
+                        </div>
+                        <div>
+                          <span className="text-sm font-bold text-stone-500 bg-stone-100 border-2 border-stone-200 border-b-[3px] px-3 py-1.5 rounded-xl inline-block">{r.gender || "-"}</span>
+                        </div>
+                        <div>
+                          <span className="text-sm font-bold text-stone-500 bg-stone-100 border-2 border-stone-200 border-b-[3px] px-3 py-1.5 rounded-xl inline-block">{r.category || "-"}</span>
+                        </div>
+                        <div>
+                          <span className="text-sm font-bold text-stone-500 bg-stone-100 border-2 border-stone-200 border-b-[3px] px-3 py-1.5 rounded-xl inline-block">{r.ageCategory || "-"}</span>
+                        </div>
+                        <div className="text-sm font-mono font-bold text-stone-400">{r.finishTimeRaw || "-"}</div>
+                        <div className="text-right">
+                          <span className={`font-mono font-black text-xl tracking-tighter bg-stone-100 border-2 border-stone-200 border-b-[4px] px-4 py-2 rounded-xl inline-block ${isSpecial ? "text-orange-600" : "text-stone-900"}`}>
+                              {r.totalTimeDisplay}
+                          </span>
+                        </div>
+                    </div>
+                )
+            })}
+
+            {filtered.length === 0 && (
+              <div className="px-6 py-16 text-center bg-stone-50 border-2 border-stone-200 border-b-[6px] rounded-2xl">
+                  <div className="font-black text-2xl text-stone-300 mb-2 tracking-tighter uppercase">No Tracking Data</div>
+                  <div className="text-sm font-medium text-stone-500">
+                    {rows.length === 0
+                      ? "The leaderboards are currently empty."
+                      : `No results found for "${q}".`}
+                  </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

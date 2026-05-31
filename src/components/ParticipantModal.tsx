@@ -55,12 +55,9 @@ export default function ParticipantModal({ open, onClose, eventId, eventName, da
         bib: data.bib,
         gender: data.gender,
         category: data.category,
+        ageCategory: data.ageCategory,
         finishTime: data.finishTimeRaw,
         totalTimeDisplay: data.totalTimeDisplay,
-        overallRank: data.overallRank,
-        genderRank: data.genderRank,
-        categoryRank: data.categoryRank,
-        ageRank: data.ageRank,
       });
       const slug = (eventName || "event").replace(/\s+/g, "-").toLowerCase();
       downloadDataUrl(png, `${slug}-certif-lumpat.png`);
@@ -175,24 +172,9 @@ export default function ParticipantModal({ open, onClose, eventId, eventName, da
               </div>
 
               <div className="modal-item">
-                <div className="label">Overall Rank</div>
-                <div className="value">{data.overallRank ?? "-"}</div>
-              </div>
-
-              <div className="modal-item">
-                <div className="label">Gender Rank</div>
-                <div className="value">{data.genderRank ?? "-"}</div>
-              </div>
-
-              <div className="modal-item">
-                <div className="label">Category Rank</div>
-                <div className="value">{data.categoryRank ?? "-"}</div>
-              </div>
-
-              <div className="modal-item">
-                <div className="label">Age Rank</div>
+                <div className="label">Age Category</div>
                 <div className="value">
-                  {data.ageRank ? `${data.ageCategory?.trim() || "Open"} (${data.ageRank})` : "-"}
+                  {data.ageCategory?.trim() || "-"}
                 </div>
               </div>
             </div>
