@@ -130,7 +130,7 @@ export default function LeaderboardPage() {
           if (penRes.ok) {
             const penData = await penRes.json();
             if (Array.isArray(penData)) {
-              penData.forEach((p: any) => penaltyMap.set(p.epc, p.penaltyMs || 0));
+              penData.forEach((p: any) => penaltyMap.set(p.bib, p.penaltyMs || 0));
             }
           }
         } catch {}
@@ -236,7 +236,7 @@ export default function LeaderboardPage() {
           if (!Number.isFinite(total) || total == null || total < 0) return;
 
           // Add penalty time
-          const penMs = penaltyMap.get(p.epc) || 0;
+          const penMs = penaltyMap.get(p.bib) || 0;
           total += penMs;
 
           const isDQ = !!dqMap[p.epc];

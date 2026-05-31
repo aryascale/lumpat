@@ -40,7 +40,7 @@ export default function PenaltyPage({ allRows, onDataVersionBump, eventId }: Pen
   const [masterRows, setMasterRows] = useState<MasterRow[]>([]);
 
   // Penalty input state
-  const [selectedEpc, setSelectedEpc] = useState<string | null>(null);
+  const [selectedBib, setSelectedBib] = useState<string | null>(null);
   const [penHours, setPenHours] = useState("0");
   const [penMinutes, setPenMinutes] = useState("0");
   const [penSeconds, setPenSeconds] = useState("0");
@@ -50,9 +50,9 @@ export default function PenaltyPage({ allRows, onDataVersionBump, eventId }: Pen
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
-  const penaltyByEpc = useMemo(() => {
+  const penaltyByBib = useMemo(() => {
     const map = new Map<string, PenaltyRecord>();
-    penalties.forEach(p => map.set(p.epc, p));
+    penalties.forEach(p => map.set(p.bib, p));
     return map;
   }, [penalties]);
 
@@ -159,7 +159,7 @@ export default function PenaltyPage({ allRows, onDataVersionBump, eventId }: Pen
 
       await loadPenalties();
       onDataVersionBump();
-      setSelectedEpc(null);
+      setSelectedBib(null);
       setPenHours("0");
       setPenMinutes("0");
       setPenSeconds("0");
@@ -239,8 +239,8 @@ export default function PenaltyPage({ allRows, onDataVersionBump, eventId }: Pen
                   </tr>
                 ) : (
                   currentRows.map((r) => {
-                    const pen = penaltyByEpc.get(r.epc);
-                    const isEditing = selectedEpc === r.epc;
+                    const pen = penaltyByBib.get(r.bib);
+                    const isEditing = selectedBib === r.bib;
 
                     return (
                       <tr key={r.epc} className="row-hover">
@@ -303,7 +303,7 @@ export default function PenaltyPage({ allRows, onDataVersionBump, eventId }: Pen
                               </button>
                               <button
                                 className="btn ghost sm"
-                                onClick={() => setSelectedEpc(null)}
+                                onClick={() => setSelectedBib(null)}
                               >
                                 ✕
                               </button>
@@ -315,7 +315,7 @@ export default function PenaltyPage({ allRows, onDataVersionBump, eventId }: Pen
                                   <button
                                     className="btn ghost sm"
                                     onClick={() => {
-                                      setSelectedEpc(r.epc);
+                                      setSelectedBib(r.bib);
                                       setPenHours(String(pen.hours));
                                       setPenMinutes(String(pen.minutes));
                                       setPenSeconds(String(pen.seconds));
@@ -335,7 +335,7 @@ export default function PenaltyPage({ allRows, onDataVersionBump, eventId }: Pen
                                 <button
                                   className="btn ghost sm"
                                   onClick={() => {
-                                    setSelectedEpc(r.epc);
+                                    setSelectedBib(r.bib);
                                     setPenHours("0");
                                     setPenMinutes("0");
                                     setPenSeconds("0");
@@ -365,8 +365,8 @@ export default function PenaltyPage({ allRows, onDataVersionBump, eventId }: Pen
               </div>
             ) : (
               currentRows.map((r) => {
-                const pen = penaltyByEpc.get(r.epc);
-                const isEditing = selectedEpc === r.epc;
+                const pen = penaltyByBib.get(r.bib);
+                const isEditing = selectedBib === r.bib;
 
                 return (
                   <div key={r.epc} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
@@ -435,7 +435,7 @@ export default function PenaltyPage({ allRows, onDataVersionBump, eventId }: Pen
                           </button>
                           <button
                             className="btn ghost flex-1 text-xs"
-                            onClick={() => setSelectedEpc(null)}
+                            onClick={() => setSelectedBib(null)}
                           >
                             Cancel
                           </button>
@@ -448,7 +448,7 @@ export default function PenaltyPage({ allRows, onDataVersionBump, eventId }: Pen
                             <button
                               className="btn ghost flex-1 text-xs font-bold uppercase"
                               onClick={() => {
-                                setSelectedEpc(r.epc);
+                                setSelectedBib(r.bib);
                                 setPenHours(String(pen.hours));
                                 setPenMinutes(String(pen.minutes));
                                 setPenSeconds(String(pen.seconds));
@@ -468,7 +468,7 @@ export default function PenaltyPage({ allRows, onDataVersionBump, eventId }: Pen
                           <button
                             className="btn ghost w-full text-xs font-bold uppercase"
                             onClick={() => {
-                              setSelectedEpc(r.epc);
+                              setSelectedBib(r.bib);
                               setPenHours("0");
                               setPenMinutes("0");
                               setPenSeconds("0");

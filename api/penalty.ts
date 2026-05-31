@@ -33,14 +33,14 @@ export default async function handler(event: any) {
 
       // Upsert: insert or update if exists
       const existing: any = await query(
-        'SELECT id FROM Penalty WHERE eventId = ? AND epc = ? LIMIT 1',
-        [eventId, epc]
+        'SELECT id FROM Penalty WHERE eventId = ? AND bib = ? LIMIT 1',
+        [eventId, bib]
       );
 
       if (existing.length > 0) {
         await query(
-          'UPDATE Penalty SET bib = ?, hours = ?, minutes = ?, seconds = ?, penaltyMs = ?, updatedAt = NOW() WHERE eventId = ? AND epc = ?',
-          [bib, h, m, s, penaltyMs, eventId, epc]
+          'UPDATE Penalty SET epc = ?, hours = ?, minutes = ?, seconds = ?, penaltyMs = ?, updatedAt = NOW() WHERE eventId = ? AND bib = ?',
+          [epc, h, m, s, penaltyMs, eventId, bib]
         );
       } else {
         const id = crypto.randomUUID();
@@ -51,8 +51,8 @@ export default async function handler(event: any) {
       }
 
       const updated: any = await query(
-        'SELECT id, eventId, bib, epc, hours, minutes, seconds, penaltyMs, createdAt FROM Penalty WHERE eventId = ? AND epc = ? LIMIT 1',
-        [eventId, epc]
+        'SELECT id, eventId, bib, epc, hours, minutes, seconds, penaltyMs, createdAt FROM Penalty WHERE eventId = ? AND bib = ? LIMIT 1',
+        [eventId, bib]
       );
 
       return successResponse(updated[0]);
