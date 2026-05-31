@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useEvent } from "../../../contexts/EventContext";
 import { CATEGORY_KEYS } from "../../../lib/config";
 import EventDetailPage from "./EventDetailPage";
@@ -37,6 +38,7 @@ function getStatusTextColor(status?: string): string {
 
 export default function EventsPage({ events, onEventsChange }: EventsPageProps) {
   const { refreshEvents } = useEvent();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [showEventForm, setShowEventForm] = useState(false);
   const [newEventName, setNewEventName] = useState('');
   const [newEventDate, setNewEventDate] = useState('');
@@ -49,9 +51,39 @@ export default function EventsPage({ events, onEventsChange }: EventsPageProps) 
   const [newEventIsDraft, setNewEventIsDraft] = useState(false);
   const [newEventPublishAt, setNewEventPublishAt] = useState('');
 
-  // Selected event for detail view
+  // Selected event for detail view - restore from URL params
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
+  const [loadingEvent, setLoadingEvent] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+
+  // Restore selectedEvent from URL params on mount
+  useEffect(() => {
+    const eventId = searchParams.get('eventId');
+    if (eventId && !selectedEvent) {
+      // Try to find in loaded events first
+      const found = events.find((e: any) => e.id === eventId);
+      if (found) {
+        setSelectedEvent(found);
+      } else if (events.length > 0) {
+        // Events loaded but not found - clear param
+        setSearchParams({}, { replace: true });
+      } else {
+        // Events not loaded yet, fetch the specific event
+        setLoadingEvent(true);
+        fetch(`/api/events?eventId=${eventId}`)
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (data) {
+              setSelectedEvent(data);
+            } else {
+              setSearchParams({}, { replace: true });
+            }
+          })
+          .catch(() => setSearchParams({}, { replace: true }))
+          .finally(() => setLoadingEvent(false));
+      }
+    }
+  }, [events, searchParams]);
 
   const handleCreateEvent = async () => {
     if (!newEventName.trim()) {
@@ -182,8 +214,18 @@ export default function EventsPage({ events, onEventsChange }: EventsPageProps) 
     setNewEventPublishAt('');
   };
 
+  // Helper to select an event (sets state + URL param)
+  const selectEvent = (evt: any | null) => {
+    setSelectedEvent(evt);
+    if (evt) {
+      setSearchParams({ eventId: evt.id }, { replace: true });
+    } else {
+      setSearchParams({}, { replace: true });
+    }
+  };
+
   const handleBackFromDetail = async () => {
-    setSelectedEvent(null);
+    selectEvent(null);
     // Refresh events list
     const eventsRes = await fetch('/api/events?showDrafts=true');
     const eventsData = await eventsRes.json();
@@ -195,6 +237,11 @@ export default function EventsPage({ events, onEventsChange }: EventsPageProps) 
   const itemsPerPage = 10;
   const totalPages = Math.ceil(events.length / itemsPerPage);
   const currentEvents = events.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  // Show loading state while restoring event from URL
+  if (loadingEvent) {
+    return <div className="text-center py-8">Loading event...</div>;
+  }
 
   // Show event detail page if an event is selected
   if (selectedEvent) {
@@ -407,7 +454,7 @@ export default function EventsPage({ events, onEventsChange }: EventsPageProps) 
                         <div style={{ display: 'flex', gap: '0.4rem' }}>
                           <button
                             className="btn sm"
-                            onClick={() => setSelectedEvent(evt)}
+                            onClick={() => selectEvent(evt)}
                           >
                             Manage
                           </button>
@@ -479,7 +526,7 @@ export default function EventsPage({ events, onEventsChange }: EventsPageProps) 
                     <div className="flex gap-2">
                       <button
                         className="btn flex-1 sm"
-                        onClick={() => setSelectedEvent(evt)}
+                        onClick={() => selectEvent(evt)}
                       >
                         Manage
                       </button>

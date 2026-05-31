@@ -649,6 +649,18 @@ export default function EventPage() {
         const dqMap = loadDQMap(event.id);
         const catStartRaw = event.categoryStartTimes ?? {};
 
+        // Load penalty map from API
+        const penaltyMap = new Map<string, number>();
+        try {
+          const penRes = await fetch(`/api/penalty?eventId=${event.id}`);
+          if (penRes.ok) {
+            const penData = await penRes.json();
+            if (Array.isArray(penData)) {
+              penData.forEach((p: any) => penaltyMap.set(p.epc, p.penaltyMs || 0));
+            }
+          }
+        } catch {}
+
         const normCat = (s: string) => String(s || "").trim().toLowerCase().replace(/-/g, " ").replace(/\s+/g, " ");
 
         const absOverrideMs: Record<string, number | null> = {};
@@ -795,6 +807,10 @@ export default function EventPage() {
 
             if (!Number.isFinite(total) || total == null || total < 0) return;
 
+            // Add penalty time
+            const penMs = penaltyMap.get(p.epc) || 0;
+            total += penMs;
+
             const isDNF = cutoffMs != null && total > cutoffMs;
 
             baseRows.push({
@@ -808,6 +824,7 @@ export default function EventPage() {
               finishTimeRaw: extractTimeOfDay(finishEntry.raw),
               totalTimeMs: total,
               totalTimeDisplay: isDQ ? "DSQ" : isDNF ? "DNF" : formatDuration(total),
+              penaltyMs: penMs,
               epc: p.epc,
             });
           });
@@ -931,6 +948,7 @@ export default function EventPage() {
       finishTimeRaw: selected.finishTimeRaw,
       totalTimeDisplay: selected.totalTimeDisplay,
       checkpointTimes: checkpointMap.get(selected.epc) || [],
+      penaltyMs: selected.penaltyMs || 0,
       overallRank,
       genderRank,
       categoryRank,

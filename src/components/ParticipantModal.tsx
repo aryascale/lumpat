@@ -12,9 +12,11 @@ type Props = {
     bib: string;
     gender: string;
     category: string;
+    ageCategory?: string;
     finishTimeRaw: string;
     totalTimeDisplay: string;
     checkpointTimes: string[];
+    penaltyMs?: number;
     overallRank: number | null;
     genderRank: number | null;
     categoryRank: number | null;
@@ -145,6 +147,27 @@ export default function ParticipantModal({ open, onClose, eventId, eventName, da
                   {data.totalTimeDisplay || "-"}
                 </div>
               </div>
+
+              {(data.penaltyMs && data.penaltyMs > 0) ? (
+                <div className="modal-item">
+                  <div className="label">Penalty</div>
+                  <div className="value">
+                    <span style={{
+                      display: 'inline-block',
+                      padding: '2px 8px',
+                      borderRadius: 4,
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                      background: '#fff7ed',
+                      color: '#c2410c',
+                      border: '1px solid #fed7aa',
+                      fontFamily: 'monospace',
+                    }}>
+                      +{String(Math.floor(data.penaltyMs / 3600000)).padStart(2, '0')}:{String(Math.floor((data.penaltyMs % 3600000) / 60000)).padStart(2, '0')}:{String(Math.floor((data.penaltyMs % 60000) / 1000)).padStart(2, '0')}
+                    </span>
+                  </div>
+                </div>
+              ) : null}
 
               <div className="modal-item modal-wide">
                 <div className="label">Checkpoint Time</div>

@@ -42,6 +42,18 @@ export default function OverviewPageWrapper() {
         const dqMap = loadDQMap(eventId);
         const catStartRaw: Record<string, string> = (currentEvent?.categoryStartTimes as Record<string, string>) ?? {};
 
+        // Load penalty map from API
+        const penaltyMap = new Map<string, number>();
+        try {
+          const penRes = await fetch(`/api/penalty?eventId=${eventId}`);
+          if (penRes.ok) {
+            const penData = await penRes.json();
+            if (Array.isArray(penData)) {
+              penData.forEach((p: any) => penaltyMap.set(p.epc, p.penaltyMs || 0));
+            }
+          }
+        } catch {}
+
         const absOverrideMs: Record<string, number | null> = {};
         const timeOnlyStr: Record<string, string | null> = {};
 
@@ -121,6 +133,10 @@ export default function OverviewPageWrapper() {
 
           if (!Number.isFinite(total) || total == null || total < 0) return;
 
+          // Add penalty time
+          const penMs = penaltyMap.get(p.epc) || 0;
+          total += penMs;
+
           const isDQ = !!dqMap[p.epc];
           const isDNF = cutoffMs != null && total > cutoffMs;
 
@@ -134,6 +150,7 @@ export default function OverviewPageWrapper() {
             finishTimeRaw: extractTimeOfDay(finishEntry.raw),
             totalTimeMs: total,
             totalTimeDisplay: isDQ ? "DSQ" : isDNF ? "DNF" : formatDuration(total),
+            penaltyMs: penMs,
             epc: p.epc,
           });
         });

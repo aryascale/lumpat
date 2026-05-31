@@ -193,3 +193,20 @@ model SupportTicket {
   @@index([status])
   @@index([ticketNumber])
 }
+
+model Penalty {
+  id        String   @id @default(uuid())
+  eventId   String
+  bib       String
+  epc       String
+  hours     Int      @default(0)
+  minutes   Int      @default(0)
+  seconds   Int      @default(0)
+  penaltyMs Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([eventId, epc])
+  @@index([eventId])
+  @@index([epc])
+}

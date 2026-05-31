@@ -13,6 +13,7 @@ export type LeaderRow = {
   finishTimeRaw: string;
   totalTimeMs: number;
   totalTimeDisplay: string;
+  penaltyMs?: number;
   epc: string;
 };
 

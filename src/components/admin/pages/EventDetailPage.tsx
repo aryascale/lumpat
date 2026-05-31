@@ -10,6 +10,7 @@ import { LS_DATA_VERSION } from "../../../lib/config";
 import { loadMasterParticipants, loadTimesMap } from "../../../lib/data";
 import parseTimeToMs, { extractTimeOfDay, formatDuration } from "../../../lib/time";
 import type { LeaderRow } from "../../LeaderboardTable";
+import PenaltyPage from "./PenaltyPage";
 
 interface EventDetailPageProps {
   eventId: string;
@@ -41,7 +42,7 @@ function formatNowAsTimestamp(): string {
 }
 
 export default function EventDetailPage({ eventId, eventSlug, eventName, onBack }: EventDetailPageProps) {
-  const [activeTab, setActiveTab] = useState<'homepage' | 'data' | 'banners' | 'categories' | 'route' | 'timing' | 'dq' | 'certified' | 'settings' | 'registration' | 'inventory'>(() => {
+  const [activeTab, setActiveTab] = useState<'homepage' | 'data' | 'banners' | 'categories' | 'route' | 'timing' | 'dq' | 'penalty' | 'certified' | 'settings' | 'registration' | 'inventory'>(() => {
     return (localStorage.getItem(`admin_tab_${eventId}`) as any) || 'homepage';
   });
 
@@ -118,7 +119,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
 
   // Load DQ data when switching to DQ tab
   useEffect(() => {
-    if (activeTab === 'dq') {
+    if (activeTab === 'dq' || activeTab === 'penalty') {
       loadDQData();
     }
     if (activeTab === 'certified') {
@@ -1073,6 +1074,12 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           DQ / DNF
         </button>
         <button
+          className={`detail-tab whitespace-nowrap ${activeTab === 'penalty' ? 'active' : ''}`}
+          onClick={() => setActiveTab('penalty')}
+        >
+          Penalty
+        </button>
+        <button
           className={`detail-tab whitespace-nowrap ${activeTab === 'certified' ? 'active' : ''}`}
           onClick={() => setActiveTab('certified')}
         >
@@ -1911,6 +1918,15 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
             <strong>Info:</strong> Total {Object.values(dqMap).filter(Boolean).length} peserta di-DSQ.
           </div>
         </div>
+      )}
+
+      {/* Penalty Tab */}
+      {activeTab === 'penalty' && (
+        <PenaltyPage
+          allRows={allRows}
+          onDataVersionBump={bumpDataVersion}
+          eventId={eventId}
+        />
       )}
 
       {/* Certified Tab */}

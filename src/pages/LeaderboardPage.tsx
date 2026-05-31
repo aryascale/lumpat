@@ -123,6 +123,18 @@ export default function LeaderboardPage() {
         const dqMap = loadDQMap(eventId);
         const catStartRaw: Record<string, string> = (currentEvent?.categoryStartTimes as Record<string, string>) ?? {};
 
+        // Load penalty map from API
+        const penaltyMap = new Map<string, number>();
+        try {
+          const penRes = await fetch(`/api/penalty?eventId=${eventId}`);
+          if (penRes.ok) {
+            const penData = await penRes.json();
+            if (Array.isArray(penData)) {
+              penData.forEach((p: any) => penaltyMap.set(p.epc, p.penaltyMs || 0));
+            }
+          }
+        } catch {}
+
         // Calculate Leaderboard Data
         // This function is getting big, ideally we move the calculation logic to a helper
         // But for now, let's keep it here to match previous behavior 
@@ -223,6 +235,10 @@ export default function LeaderboardPage() {
 
           if (!Number.isFinite(total) || total == null || total < 0) return;
 
+          // Add penalty time
+          const penMs = penaltyMap.get(p.epc) || 0;
+          total += penMs;
+
           const isDQ = !!dqMap[p.epc];
           const isDNF = cutoffMs != null && total > cutoffMs;
 
@@ -241,6 +257,7 @@ export default function LeaderboardPage() {
               : isDNF
               ? "DNF"
               : formatDuration(total),
+            penaltyMs: penMs,
             epc: p.epc,
           });
         });
@@ -386,6 +403,7 @@ export default function LeaderboardPage() {
       finishTimeRaw: selected.finishTimeRaw,
       totalTimeDisplay: selected.totalTimeDisplay,
       checkpointTimes: checkpointMap.get(selected.epc) || [],
+      penaltyMs: selected.penaltyMs || 0,
       overallRank,
       genderRank,
       categoryRank,
