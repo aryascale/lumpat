@@ -589,6 +589,7 @@ export default function LeaderboardPage() {
                       title="Overall Result (All Categories)"
                       rows={overall}
                       onSelect={onSelectParticipant}
+                      hidePodium={true}
                     />
                   </div>
                 ) : (

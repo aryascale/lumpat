@@ -24,6 +24,7 @@ export default function LeaderboardTable({
   categories,
   showTop10Badge = false,
   hideTable = false,
+  hidePodium = false,
   onSelect,
 }: {
   title: string;
@@ -32,6 +33,7 @@ export default function LeaderboardTable({
   categories?: string[];
   showTop10Badge?: boolean;
   hideTable?: boolean;
+  hidePodium?: boolean;
   onSelect?: (row: LeaderRow) => void;
 }) {
   const [q, setQ] = useState("");
@@ -225,7 +227,7 @@ export default function LeaderboardTable({
   return (
     <div className="editorial-table-wrapper w-full">
       {/* Champions Spotlights */}
-      {podiums.length > 0 && (
+      {!hidePodium && podiums.length > 0 && (
          <div 
            ref={podiumRef}
            className={`bg-stone-50 relative overflow-x-hidden overflow-y-auto flex flex-col items-center shadow-sm ${
