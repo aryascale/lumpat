@@ -166,10 +166,12 @@ export default function ParticipantModal({ open, onClose, eventId, eventName, da
                 </div>
               ) : null}
 
+              {/* Temporarily hidden
               <div className="modal-item modal-wide">
                 <div className="label">Checkpoint Time</div>
                 <div className="value mono">{cp}</div>
               </div>
+              */}
 
               <div className="modal-item">
                 <div className="label">Age Category</div>
