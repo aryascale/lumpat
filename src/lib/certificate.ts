@@ -121,6 +121,7 @@ export type CertData = {
       ["Distance", data.category || "-"],
       ["Gender", data.gender || "-"],
       ["Age Category", data.ageCategory?.trim() || "-"],
+      ["Finish Time", data.finishTime || "-"],
       ["Total Time", data.totalTimeDisplay || "-"],
     ];
 
