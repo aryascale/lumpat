@@ -1,5 +1,6 @@
 export type CertData = {
     eventId?: string;
+    eventName?: string;
     name: string;
     bib: string;
     gender: string;
@@ -66,54 +67,90 @@ export type CertData = {
       text: string,
       y: number,
       size = 56,
-      color = "#0f172a"
+      color = "#0f172a",
+      weight = "700"
     ) => {
-      ctx.font = `700 ${size}px Roboto, sans-serif`;
+      ctx.font = `${weight} ${size}px Roboto, sans-serif`;
       ctx.fillStyle = color;
       ctx.textAlign = "center";
       ctx.textBaseline = "alphabetic";
       ctx.fillText(text, centerX, y);
     };
 
-    drawCenter("E-Certificate Finisher", 280, 56, "#1e293b");
+    // Header
+    drawCenter("E-CERTIFICATE FINISHER", 280, 42, "#475569", "800");
 
-    drawCenter(data.name || "-", 500, 80, "#0f172a");
+    // Participant Name
+    drawCenter(data.name || "-", 400, 72, "#0f172a", "900");
 
-    ctx.font = `700 42px Roboto, sans-serif`;
-    ctx.fillStyle = "#334155";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "alphabetic";
-    ctx.fillText(`BIB: ${data.bib || "-"}`, centerX, 590);
+    // Elegant separator line below name
+    ctx.beginPath();
+    ctx.moveTo(centerX - 350, 440);
+    ctx.lineTo(centerX + 350, 440);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#e2e8f0";
+    ctx.stroke();
 
+    // Subtitles
+    drawCenter("Have joined and successfully finished", 510, 32, "#64748b", "500");
+    drawCenter(`${data.eventName || 'The Event'} with official result as follow:`, 560, 32, "#64748b", "500");
+
+    // Data rows
     const rows: Array<[string, string]> = [
+      ["BIB Number", data.bib || "-"],
+      ["Distance", data.category || "-"],
       ["Gender", data.gender || "-"],
-      ["Category", data.category || "-"],
       ["Age Category", data.ageCategory?.trim() || "-"],
-      ["Finish Time", data.finishTime || "-"],
       ["Total Time", data.totalTimeDisplay || "-"],
     ];
 
-    const tableY = 740;
-    const tableRowH = 80;
+    if (data.overallRank != null) rows.push(["Overall Rank", `${data.overallRank}`]);
+    if (data.categoryRank != null) rows.push(["Distance Rank", `${data.categoryRank}`]);
+    if (data.genderRank != null) rows.push(["Gender Rank", `${data.genderRank}`]);
+    if (data.ageRank != null) rows.push(["Age Category Rank", `${data.ageRank}`]);
 
-    const tableBottomY = drawCenteredTable(ctx, {
-      y: tableY,
-      w: 820,
-      rowH: tableRowH,
-      rows
-    });
+    const startY = 700;
+    const rowH = 56;
 
-    const footerY = Math.min(tableBottomY + 80, H - 120);
+    for (let i = 0; i < rows.length; i++) {
+      const [label, value] = rows[i];
+      const y = startY + i * rowH;
+      
+      // Label
+      ctx.font = `600 34px Roboto, sans-serif`;
+      ctx.fillStyle = "#64748b";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      ctx.fillText(label, centerX - 30, y);
+      
+      // Colon
+      ctx.font = `600 34px Roboto, sans-serif`;
+      ctx.fillStyle = "#cbd5e1";
+      ctx.textAlign = "center";
+      ctx.fillText(":", centerX, y - 2);
+      
+      // Value
+      ctx.font = `800 36px Roboto, sans-serif`;
+      ctx.fillStyle = "#1e293b";
+      ctx.textAlign = "left";
+      ctx.fillText(value, centerX + 30, y);
+    }
+
+    const tableBottomY = startY + rows.length * rowH;
+    const footerY = Math.min(tableBottomY + 120, H - 140);
+    
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
-    ctx.font = `700 32px Roboto, sans-serif`;
-    ctx.fillStyle = "#64748b";
+    ctx.font = `700 28px Roboto, sans-serif`;
+    ctx.fillStyle = "#94a3b8";
     ctx.fillText("Timing by IZT Race Technology", centerX, footerY);
 
     return canvas.toDataURL("image/png");
   }
 
-  function drawCenteredTable(
+  // Kept for backward compatibility if needed elsewhere, 
+  // though we no longer use it in renderCertificatePNG
+  export function drawCenteredTable(
     ctx: CanvasRenderingContext2D,
     opts: { y: number; w: number; rowH: number; rows: Array<[string, string]> }
   ): number {

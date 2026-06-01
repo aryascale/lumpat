@@ -51,6 +51,7 @@ export default function ParticipantModal({ open, onClose, eventId, eventName, da
       setDownloading(true);
       const png = await renderCertificatePNG({
         eventId,
+        eventName,
         name: data.name,
         bib: data.bib,
         gender: data.gender,
@@ -58,6 +59,10 @@ export default function ParticipantModal({ open, onClose, eventId, eventName, da
         ageCategory: data.ageCategory,
         finishTime: data.finishTimeRaw,
         totalTimeDisplay: data.totalTimeDisplay,
+        overallRank: data.overallRank,
+        genderRank: data.genderRank,
+        categoryRank: data.categoryRank,
+        ageRank: data.ageRank,
       });
       const slug = (eventName || "event").replace(/\s+/g, "-").toLowerCase();
       downloadDataUrl(png, `${slug}-certif-lumpat.png`);
