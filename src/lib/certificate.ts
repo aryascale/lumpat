@@ -134,7 +134,7 @@ export type CertData = {
       rankRows.push([`Rank in ${data.ageCategory.trim()}`, data.ageRank != null ? `${data.ageRank}` : "-"]);
     }
 
-    const startY = 960;
+    const startY = 1020;
     const rowH = 48;
     
     const drawRow = (cx: number, y: number, label: string, value: string) => {
