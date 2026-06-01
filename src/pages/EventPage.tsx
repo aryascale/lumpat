@@ -760,7 +760,6 @@ export default function EventPage() {
             };
 
             if (!finishEntry?.ms) {
-              pushIncompleteRow("ACTIVE");
               return;
             }
 
