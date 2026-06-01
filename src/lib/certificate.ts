@@ -54,7 +54,27 @@ export type CertData = {
 
       console.log("Loading Image from:", bgUrl);
       const bg = await loadImage(bgUrl);
-      ctx.drawImage(bg, 0, 0, W, H);
+      
+      // Implement object-fit: cover logic to prevent stretching
+      const canvasRatio = W / H;
+      const bgRatio = bg.width / bg.height;
+      let drawW, drawH, drawX, drawY;
+
+      if (bgRatio > canvasRatio) {
+        // Background is wider than canvas -> match height, crop width
+        drawH = H;
+        drawW = bg.width * (H / bg.height);
+        drawX = (W - drawW) / 2;
+        drawY = 0;
+      } else {
+        // Background is taller than canvas -> match width, crop height
+        drawW = W;
+        drawH = bg.height * (W / bg.width);
+        drawX = 0;
+        drawY = (H - drawH) / 2;
+      }
+
+      ctx.drawImage(bg, drawX, drawY, drawW, drawH);
     } catch (err: any) {
       console.error("Browser anda error");
       // Propagate the error so the UI can show a notification
@@ -78,22 +98,22 @@ export type CertData = {
     };
 
     // Header
-    drawCenter("E-CERTIFICATE FINISHER", 280, 42, "#475569", "800");
+    drawCenter("E-CERTIFICATE FINISHER", 640, 42, "#475569", "800");
 
     // Participant Name
-    drawCenter(data.name || "-", 400, 72, "#0f172a", "900");
+    drawCenter(data.name || "-", 760, 72, "#0f172a", "900");
 
     // Elegant separator line below name
     ctx.beginPath();
-    ctx.moveTo(centerX - 350, 440);
-    ctx.lineTo(centerX + 350, 440);
+    ctx.moveTo(centerX - 380, 810);
+    ctx.lineTo(centerX + 380, 810);
     ctx.lineWidth = 3;
     ctx.strokeStyle = "#e2e8f0";
     ctx.stroke();
 
     // Subtitles
-    drawCenter("Have joined and successfully finished", 510, 32, "#64748b", "500");
-    drawCenter(`${data.eventName || 'The Event'} with official result as follow:`, 560, 32, "#64748b", "500");
+    drawCenter("Have joined and successfully finished", 880, 32, "#64748b", "500");
+    drawCenter(`${data.eventName || 'The Event'} with official result as follow:`, 930, 32, "#64748b", "500");
 
     // Data rows
     const rows: Array<[string, string]> = [
@@ -102,15 +122,17 @@ export type CertData = {
       ["Gender", data.gender || "-"],
       ["Age Category", data.ageCategory?.trim() || "-"],
       ["Total Time", data.totalTimeDisplay || "-"],
+      ["Overall Rank", data.overallRank != null ? `${data.overallRank}` : "-"],
+      [`Rank in ${data.category || 'Distance'}`, data.categoryRank != null ? `${data.categoryRank}` : "-"],
+      [`Rank in ${data.gender || 'Gender'}`, data.genderRank != null ? `${data.genderRank}` : "-"],
     ];
 
-    if (data.overallRank != null) rows.push(["Overall Rank", `${data.overallRank}`]);
-    if (data.categoryRank != null) rows.push(["Distance Rank", `${data.categoryRank}`]);
-    if (data.genderRank != null) rows.push(["Gender Rank", `${data.genderRank}`]);
-    if (data.ageRank != null) rows.push(["Age Category Rank", `${data.ageRank}`]);
+    if (data.ageCategory && data.ageCategory.trim().length > 0 && data.ageCategory.trim() !== "-") {
+      rows.push([`Rank in ${data.ageCategory.trim()}`, data.ageRank != null ? `${data.ageRank}` : "-"]);
+    }
 
-    const startY = 700;
-    const rowH = 56;
+    const startY = 1050;
+    const rowH = 64;
 
     for (let i = 0; i < rows.length; i++) {
       const [label, value] = rows[i];
