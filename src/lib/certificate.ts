@@ -131,35 +131,47 @@ export type CertData = {
       rows.push([`Rank in ${data.ageCategory.trim()}`, data.ageRank != null ? `${data.ageRank}` : "-"]);
     }
 
-    const startY = 1050;
-    const rowH = 64;
+    const startY = 980;
+    const rowH = 54;
+    
+    // Draw borderless semi-transparent section background
+    const sectionW = 860;
+    const sectionX = (W - sectionW) / 2;
+    const sectionY = startY - 40;
+    const sectionH = rows.length * rowH + 80;
+    
+    ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+    roundRect(ctx, sectionX, sectionY, sectionW, sectionH, 24);
+    ctx.fill();
 
     for (let i = 0; i < rows.length; i++) {
       const [label, value] = rows[i];
-      const y = startY + i * rowH;
+      const y = startY + i * rowH + (rowH / 2); // vertically center in row
       
       // Label
-      ctx.font = `600 34px Roboto, sans-serif`;
-      ctx.fillStyle = "#64748b";
+      ctx.font = `600 32px Roboto, sans-serif`;
+      ctx.fillStyle = "#475569";
       ctx.textAlign = "right";
       ctx.textBaseline = "middle";
       ctx.fillText(label, centerX - 30, y);
       
       // Colon
-      ctx.font = `600 34px Roboto, sans-serif`;
+      ctx.font = `600 32px Roboto, sans-serif`;
       ctx.fillStyle = "#cbd5e1";
       ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
       ctx.fillText(":", centerX, y - 2);
       
       // Value
-      ctx.font = `800 36px Roboto, sans-serif`;
-      ctx.fillStyle = "#1e293b";
+      ctx.font = `800 34px Roboto, sans-serif`;
+      ctx.fillStyle = "#0f172a";
       ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
       ctx.fillText(value, centerX + 30, y);
     }
 
-    const tableBottomY = startY + rows.length * rowH;
-    const footerY = Math.min(tableBottomY + 120, H - 140);
+    const tableBottomY = sectionY + sectionH;
+    const footerY = Math.min(tableBottomY + 80, H - 100);
     
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
