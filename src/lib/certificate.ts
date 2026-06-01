@@ -131,7 +131,7 @@ export type CertData = {
     ];
 
     if (data.ageCategory && data.ageCategory.trim().length > 0 && data.ageCategory.trim() !== "-") {
-      rankRows.push(["Age Category Rank", data.ageRank != null ? `${data.ageRank}` : "-"]);
+      rankRows.push(["Age Rank", data.ageRank != null ? `${data.ageRank}` : "-"]);
     }
 
     const startY = 1020;
