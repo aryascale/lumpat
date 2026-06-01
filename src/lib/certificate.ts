@@ -130,10 +130,6 @@ export type CertData = {
       ["Gender Rank", data.genderRank != null ? `${data.genderRank}` : "-"],
     ];
 
-    if (data.ageCategory && data.ageCategory.trim().length > 0 && data.ageCategory.trim() !== "-") {
-      rankRows.push(["Age Category Rank", data.ageRank != null ? `${data.ageRank}` : "-"]);
-    }
-
     const startY = 1020;
     const rowH = 48;
     
