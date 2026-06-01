@@ -126,12 +126,12 @@ export type CertData = {
 
     const rankRows: Array<[string, string]> = [
       ["Overall Rank", data.overallRank != null ? `${data.overallRank}` : "-"],
-      [`Rank in ${data.category || 'Distance'}`, data.categoryRank != null ? `${data.categoryRank}` : "-"],
-      [`Rank in ${data.gender || 'Gender'}`, data.genderRank != null ? `${data.genderRank}` : "-"],
+      ["Category Rank", data.categoryRank != null ? `${data.categoryRank}` : "-"],
+      ["Gender Rank", data.genderRank != null ? `${data.genderRank}` : "-"],
     ];
 
     if (data.ageCategory && data.ageCategory.trim().length > 0 && data.ageCategory.trim() !== "-") {
-      rankRows.push([`Rank in ${data.ageCategory.trim()}`, data.ageRank != null ? `${data.ageRank}` : "-"]);
+      rankRows.push(["Age Category Rank", data.ageRank != null ? `${data.ageRank}` : "-"]);
     }
 
     const startY = 1020;
