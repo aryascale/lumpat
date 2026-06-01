@@ -98,10 +98,10 @@ export type CertData = {
     };
 
     // Header
-    drawCenter("E-CERTIFICATE FINISHER", 640, 42, "#475569", "800");
+    drawCenter("E-CERTIFICATE FINISHER", 640, 60, "#475569", "800");
 
     // Participant Name
-    drawCenter(data.name || "-", 760, 72, "#0f172a", "900");
+    drawCenter(data.name || "-", 760, 80, "#0f172a", "900");
 
     // Elegant separator line below name
     ctx.beginPath();
