@@ -116,61 +116,67 @@ export type CertData = {
     drawCenter(`${data.eventName || 'The Event'} with official result as follow:`, 930, 32, "#64748b", "500");
 
     // Data rows
-    const rows: Array<[string, string]> = [
+    const infoRows: Array<[string, string]> = [
       ["BIB Number", data.bib || "-"],
       ["Distance", data.category || "-"],
       ["Gender", data.gender || "-"],
       ["Age Category", data.ageCategory?.trim() || "-"],
       ["Total Time", data.totalTimeDisplay || "-"],
+    ];
+
+    const rankRows: Array<[string, string]> = [
       ["Overall Rank", data.overallRank != null ? `${data.overallRank}` : "-"],
       [`Rank in ${data.category || 'Distance'}`, data.categoryRank != null ? `${data.categoryRank}` : "-"],
       [`Rank in ${data.gender || 'Gender'}`, data.genderRank != null ? `${data.genderRank}` : "-"],
     ];
 
     if (data.ageCategory && data.ageCategory.trim().length > 0 && data.ageCategory.trim() !== "-") {
-      rows.push([`Rank in ${data.ageCategory.trim()}`, data.ageRank != null ? `${data.ageRank}` : "-"]);
+      rankRows.push([`Rank in ${data.ageCategory.trim()}`, data.ageRank != null ? `${data.ageRank}` : "-"]);
     }
 
-    const startY = 980;
-    const rowH = 54;
+    const startY = 960;
+    const rowH = 48;
     
-    // Draw borderless semi-transparent section background
-    const sectionW = 860;
-    const sectionX = (W - sectionW) / 2;
-    const sectionY = startY - 40;
-    const sectionH = rows.length * rowH + 80;
-    
-    ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
-    roundRect(ctx, sectionX, sectionY, sectionW, sectionH, 24);
-    ctx.fill();
-
-    for (let i = 0; i < rows.length; i++) {
-      const [label, value] = rows[i];
-      const y = startY + i * rowH + (rowH / 2); // vertically center in row
-      
+    const drawRow = (cx: number, y: number, label: string, value: string) => {
       // Label
-      ctx.font = `600 32px Roboto, sans-serif`;
+      ctx.font = `600 28px Roboto, sans-serif`;
       ctx.fillStyle = "#475569";
       ctx.textAlign = "right";
       ctx.textBaseline = "middle";
-      ctx.fillText(label, centerX - 30, y);
+      ctx.fillText(label, cx - 20, y);
       
       // Colon
-      ctx.font = `600 32px Roboto, sans-serif`;
-      ctx.fillStyle = "#cbd5e1";
+      ctx.font = `600 28px Roboto, sans-serif`;
+      ctx.fillStyle = "#94a3b8"; // Darkened slightly for better visibility without bg
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(":", centerX, y - 2);
+      ctx.fillText(":", cx, y - 2);
       
       // Value
-      ctx.font = `800 34px Roboto, sans-serif`;
+      ctx.font = `800 30px Roboto, sans-serif`;
       ctx.fillStyle = "#0f172a";
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
-      ctx.fillText(value, centerX + 30, y);
+      ctx.fillText(value, cx + 20, y);
+    };
+
+    const leftCX = 340;  // Center X for Left Column (Ranks)
+    const rightCX = 740; // Center X for Right Column (Info)
+
+    // Draw Left Column (Ranks)
+    for (let i = 0; i < rankRows.length; i++) {
+      const [label, value] = rankRows[i];
+      drawRow(leftCX, startY + i * rowH, label, value);
     }
 
-    const tableBottomY = sectionY + sectionH;
+    // Draw Right Column (Info)
+    for (let i = 0; i < infoRows.length; i++) {
+      const [label, value] = infoRows[i];
+      drawRow(rightCX, startY + i * rowH, label, value);
+    }
+
+    const maxRows = Math.max(rankRows.length, infoRows.length);
+    const tableBottomY = startY + maxRows * rowH;
     const footerY = Math.min(tableBottomY + 80, H - 100);
     
     ctx.textAlign = "center";
