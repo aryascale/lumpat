@@ -130,45 +130,49 @@ export type CertData = {
       ["Gender Rank", data.genderRank != null ? `${data.genderRank}` : "-"],
     ];
 
+    if (data.ageCategory && data.ageCategory.trim().length > 0 && data.ageCategory.trim() !== "-") {
+      rankRows.push(["Age Category Rank", data.ageRank != null ? `${data.ageRank}` : "-"]);
+    }
+
     const startY = 1020;
     const rowH = 48;
     
-    const drawRow = (cx: number, y: number, label: string, value: string) => {
+    const drawRow = (startX: number, y: number, label: string, value: string) => {
       // Label
       ctx.font = `600 26px Roboto, sans-serif`;
       ctx.fillStyle = "#475569";
-      ctx.textAlign = "right";
+      ctx.textAlign = "left";
       ctx.textBaseline = "middle";
-      ctx.fillText(label, cx - 16, y);
+      ctx.fillText(label, startX, y);
       
       // Colon
       ctx.font = `600 26px Roboto, sans-serif`;
-      ctx.fillStyle = "#94a3b8"; // Darkened slightly for better visibility without bg
-      ctx.textAlign = "center";
+      ctx.fillStyle = "#94a3b8"; 
+      ctx.textAlign = "left";
       ctx.textBaseline = "middle";
-      ctx.fillText(":", cx, y - 2);
+      ctx.fillText(":", startX + 185, y - 2);
       
       // Value
       ctx.font = `800 28px Roboto, sans-serif`;
       ctx.fillStyle = "#0f172a";
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
-      ctx.fillText(value, cx + 16, y);
+      ctx.fillText(value, startX + 205, y);
     };
 
-    const leftCX = 280;  // Center X for Left Column
-    const rightCX = 800; // Center X for Right Column
+    const leftStartX = 140;  // Start X for Left Column
+    const rightStartX = 620; // Start X for Right Column
 
     // Draw Left Column (Info)
     for (let i = 0; i < infoRows.length; i++) {
       const [label, value] = infoRows[i];
-      drawRow(leftCX, startY + i * rowH, label, value);
+      drawRow(leftStartX, startY + i * rowH, label, value);
     }
 
     // Draw Right Column (Ranks)
     for (let i = 0; i < rankRows.length; i++) {
       const [label, value] = rankRows[i];
-      drawRow(rightCX, startY + i * rowH, label, value);
+      drawRow(rightStartX, startY + i * rowH, label, value);
     }
 
     const maxRows = Math.max(rankRows.length, infoRows.length);
