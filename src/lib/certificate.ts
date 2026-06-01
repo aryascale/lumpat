@@ -160,18 +160,18 @@ export type CertData = {
       ctx.fillText(value, cx + 20, y);
     };
 
-    const leftCX = 340;  // Center X for Left Column (Ranks)
-    const rightCX = 740; // Center X for Right Column (Info)
+    const leftCX = 340;  // Center X for Left Column
+    const rightCX = 740; // Center X for Right Column
 
-    // Draw Left Column (Ranks)
-    for (let i = 0; i < rankRows.length; i++) {
-      const [label, value] = rankRows[i];
+    // Draw Left Column (Info)
+    for (let i = 0; i < infoRows.length; i++) {
+      const [label, value] = infoRows[i];
       drawRow(leftCX, startY + i * rowH, label, value);
     }
 
-    // Draw Right Column (Info)
-    for (let i = 0; i < infoRows.length; i++) {
-      const [label, value] = infoRows[i];
+    // Draw Right Column (Ranks)
+    for (let i = 0; i < rankRows.length; i++) {
+      const [label, value] = rankRows[i];
       drawRow(rightCX, startY + i * rowH, label, value);
     }
 
