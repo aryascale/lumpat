@@ -139,29 +139,29 @@ export type CertData = {
     
     const drawRow = (cx: number, y: number, label: string, value: string) => {
       // Label
-      ctx.font = `600 28px Roboto, sans-serif`;
+      ctx.font = `600 26px Roboto, sans-serif`;
       ctx.fillStyle = "#475569";
       ctx.textAlign = "right";
       ctx.textBaseline = "middle";
-      ctx.fillText(label, cx - 20, y);
+      ctx.fillText(label, cx - 16, y);
       
       // Colon
-      ctx.font = `600 28px Roboto, sans-serif`;
+      ctx.font = `600 26px Roboto, sans-serif`;
       ctx.fillStyle = "#94a3b8"; // Darkened slightly for better visibility without bg
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(":", cx, y - 2);
       
       // Value
-      ctx.font = `800 30px Roboto, sans-serif`;
+      ctx.font = `800 28px Roboto, sans-serif`;
       ctx.fillStyle = "#0f172a";
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
-      ctx.fillText(value, cx + 20, y);
+      ctx.fillText(value, cx + 16, y);
     };
 
-    const leftCX = 340;  // Center X for Left Column
-    const rightCX = 740; // Center X for Right Column
+    const leftCX = 280;  // Center X for Left Column
+    const rightCX = 800; // Center X for Right Column
 
     // Draw Left Column (Info)
     for (let i = 0; i < infoRows.length; i++) {
