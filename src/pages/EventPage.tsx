@@ -838,26 +838,32 @@ export default function EventPage() {
           .map((r, i) => ({ ...r, rank: i + 1 }));
 
         const finisherRankByEpc = new Map(finisherSorted.map((r) => [r.epc, r.rank!]));
-        const genderRankByEpc = new Map<string, number>();
-        const genders = Array.from(new Set(finisherSorted.map((r) => (r.gender || "").toLowerCase())));
-        genders.forEach((g) => {
-          const list = finisherSorted.filter((r) => (r.gender || "").toLowerCase() === g);
-          list.forEach((r, i) => genderRankByEpc.set(r.epc, i + 1));
-        });
-
         const categoryRankByEpc = new Map<string, number>();
-        (event.categories || []).forEach((catKey: string) => {
-          const list = finisherSorted.filter((r) => normCat(r.sourceCategoryKey) === normCat(catKey));
-          list.forEach((r, i) => categoryRankByEpc.set(r.epc, i + 1));
-        });
-
+        const genderRankByEpc = new Map<string, number>();
         const ageRankByEpc = new Map<string, number>();
-        const ageCategories = Array.from(
-          new Set(finisherSorted.map((r) => (r.ageCategory || "").trim()))
-        );
-        ageCategories.forEach((cat) => {
-          const list = finisherSorted.filter((r) => (r.ageCategory || "").trim() === cat);
-          list.forEach((r, i) => ageRankByEpc.set(r.epc, i + 1));
+
+        const eventCategories = event.categories || [];
+        const eventCategoriesToLoop = eventCategories.length > 0 ? eventCategories : Array.from(new Set(finisherSorted.map(r => r.sourceCategoryKey)));
+
+        eventCategoriesToLoop.forEach((catKey: string) => {
+          // Category Rank: Scoped by Distance (Category)
+          const catList = finisherSorted.filter((r) => r.sourceCategoryKey === catKey);
+          catList.forEach((r, i) => categoryRankByEpc.set(r.epc, i + 1));
+
+          // Gender Rank: Scoped by Distance + Gender
+          const genders = Array.from(new Set(catList.map((r) => (r.gender || "").toLowerCase())));
+          genders.forEach((g) => {
+            const genderList = catList.filter((r) => (r.gender || "").toLowerCase() === g);
+            genderList.forEach((r, i) => genderRankByEpc.set(r.epc, i + 1));
+
+            // Age Rank: Scoped by Distance + Gender + Age Category
+            const ageCategories = Array.from(new Set(genderList.map((r) => (r.ageCategory || "").trim())));
+            ageCategories.forEach((age) => {
+              if (!age || age === "-") return;
+              const ageList = genderList.filter((r) => (r.ageCategory || "").trim() === age);
+              ageList.forEach((r, i) => ageRankByEpc.set(r.epc, i + 1));
+            });
+          });
         });
 
         const dnfs = baseRows
