@@ -110,17 +110,16 @@ export default function LandingPage() {
       <HeroCircularGallery />
 
       {/* ===================== TICKER LOGO ===================== */}
-      <div className="w-full bg-white border-b border-gray-100 overflow-hidden py-5 sm:py-7 flex items-center relative shadow-[inset_0_-10px_20px_rgba(0,0,0,0.02)]">
+      <div className="w-full bg-gray-100 border-b border-gray-200 overflow-hidden py-6 sm:py-10 flex items-center relative shadow-[inset_0_-10px_20px_rgba(0,0,0,0.02)]">
         {/* Gradients for smooth edges */}
-        <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+        <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-r from-gray-100 to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-l from-gray-100 to-transparent z-10 pointer-events-none" />
         
         <div className="flex animate-marquee w-max">
           {/* We repeat the items 16 times so it's wide enough. -50% translateX will loop exactly halfway. */}
           {[...Array(16)].map((_, i) => (
-            <div key={i} className="flex items-center justify-center gap-3 sm:gap-4 px-8 sm:px-16 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300 cursor-default">
-              <span className="text-[10px] sm:text-xs font-bold tracking-[0.15em] text-gray-500 uppercase">Powered by</span>
-              <img src="/Assets/logo2.gif" alt="Logo" className="h-5 sm:h-7 object-contain" />
+            <div key={i} className="flex items-center justify-center px-10 sm:px-20 opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300 cursor-default">
+              <img src="/Assets/logo2.gif" alt="Logo" className="h-10 sm:h-16 object-contain" />
             </div>
           ))}
         </div>
@@ -144,7 +143,7 @@ export default function LandingPage() {
         </div>
 
         {/* === 3D STAGE === */}
-        <div className={`relative w-full max-w-7xl mx-auto flex items-center justify-center transition-all duration-500 ${isMobile ? 'h-[320px]' : 'h-[600px]'}`}>
+        <div className={`relative w-full max-w-7xl mx-auto flex items-center justify-center transition-all duration-500 ${isMobile ? 'h-[360px]' : 'h-[800px]'}`}>
           {/* Atmospheric glows */}
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(220,38,38,0.07) 0%, transparent 70%)', filter: 'blur(60px)' }} />
           
@@ -162,9 +161,9 @@ export default function LandingPage() {
               "/Assets/landing2/portfolio.png"
             ]}
             duration={45}
-            cardWidth={isMobile ? "16rem" : "36rem"}
-            cardAspectRatio={isMobile ? "12/10" : "15/10"}
-            perspective={isMobile ? "45rem" : "60rem"}
+            cardWidth={isMobile ? "18rem" : "50rem"}
+            cardAspectRatio={isMobile ? "12/10" : "16/10"}
+            perspective={isMobile ? "45rem" : "80rem"}
             withMask={true}
             containerClassName="w-full h-full"
             imageClassName="border border-stone-200/20 shadow-[0_20px_50px_rgba(0,0,0,0.15)] select-none pointer-events-none brightness-[1.02] saturate-[1.05]"

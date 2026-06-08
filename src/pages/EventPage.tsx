@@ -1056,12 +1056,21 @@ export default function EventPage() {
                   <p className="hidden md:block text-stone-300 text-base max-w-2xl font-medium tracking-wide mt-4 border-l-2 border-white/50 pl-4">{event.description}</p>
                 )}
                 
-                <button 
-                  onClick={() => setRegisterModalOpen(true)}
-                  className="mt-3 md:mt-6 bg-white text-black font-bold py-2 md:py-3 px-6 md:px-10 rounded-full uppercase tracking-widest text-[10px] md:text-xs transition-all hover:bg-stone-100 hover:scale-105 cursor-pointer mx-auto md:mx-0 block md:inline-block"
-                >
-                  Daftar Sekarang →
-                </button>
+                {event.eventDate && new Date(event.eventDate).setHours(0,0,0,0) < new Date().setHours(0,0,0,0) ? (
+                  <button 
+                    disabled
+                    className="mt-3 md:mt-6 bg-stone-500 text-stone-300 font-bold py-2 md:py-3 px-6 md:px-10 rounded-full uppercase tracking-widest text-[10px] md:text-xs mx-auto md:mx-0 block md:inline-block cursor-not-allowed opacity-80"
+                  >
+                    Event Selesai
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => setRegisterModalOpen(true)}
+                    className="mt-3 md:mt-6 bg-white text-black font-bold py-2 md:py-3 px-6 md:px-10 rounded-full uppercase tracking-widest text-[10px] md:text-xs transition-all hover:bg-stone-100 hover:scale-105 cursor-pointer mx-auto md:mx-0 block md:inline-block shadow-[0_0_15px_rgba(255,255,255,0.3)]"
+                  >
+                    Daftar Sekarang →
+                  </button>
+                )}
               </div>
             </div>
           </div>
