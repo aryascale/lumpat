@@ -2478,6 +2478,9 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                     body: JSON.stringify({ 
                       isDraft: eventData.isDraft, 
                       publishAt: eventData.publishAt,
+                      name: eventData.name,
+                      eventDate: eventData.eventDate,
+                      location: eventData.location,
                       content: {
                         ...(eventData.content || {}),
                         about: homeContent.about || eventData.content?.about || '',
@@ -2506,6 +2509,39 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
 
           <div className="space-y-6">
             <div className="admin-cutoff">
+              <div className="label">Event Details</div>
+              <div className="tools space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Event Name</label>
+                  <input
+                    type="text"
+                    className="search w-full"
+                    value={eventData?.name || ''}
+                    onChange={(e) => setEventData({ ...eventData, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Event Date</label>
+                  <input
+                    type="date"
+                    className="search w-full"
+                    value={eventData?.eventDate ? new Date(eventData.eventDate).toISOString().split('T')[0] : ''}
+                    onChange={(e) => setEventData({ ...eventData, eventDate: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Location</label>
+                  <input
+                    type="text"
+                    className="search w-full"
+                    value={eventData?.location || ''}
+                    onChange={(e) => setEventData({ ...eventData, location: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="admin-cutoff border-t border-gray-100 pt-6">
               <div className="label">Publication Status</div>
               <div className="tools">
                 <label className="flex items-center gap-3 cursor-pointer">
