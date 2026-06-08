@@ -58,6 +58,8 @@ function saveCatStartMap(map: Record<string, string>) {
 
 type AdminSection = 'overview' | 'csv' | 'banners' | 'categories' | 'timing' | 'dsq' | 'events';
 
+import { useSearchParams } from "react-router-dom";
+
 export default function AdminPage({
   allRows,
   onConfigChanged,
@@ -68,16 +70,29 @@ export default function AdminPage({
   eventId?: string;
 }) {
   const { refreshEvents } = useEvent();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [authed, setAuthed] = useState(loadAuth());
   const [user, setUser] = useState("");
   const [pass, setPass] = useState("");
-  const [activeSection, setActiveSection] = useState<AdminSection>(() => {
-    return (localStorage.getItem('admin_main_section') as AdminSection) || 'overview';
-  });
+  
+  const activeSectionFromUrl = searchParams.get('section') as AdminSection;
+  const initialSection = activeSectionFromUrl || (localStorage.getItem('admin_main_section') as AdminSection) || 'overview';
+  
+  const [activeSection, setActiveSectionState] = useState<AdminSection>(initialSection);
+
+  const setActiveSection = (section: AdminSection) => {
+    setActiveSectionState(section);
+    setSearchParams(prev => { prev.set('section', section); return prev; }, { replace: true });
+  };
 
   useEffect(() => {
     localStorage.setItem('admin_main_section', activeSection);
-  }, [activeSection]);
+    // ensure URL has it too
+    if (searchParams.get('section') !== activeSection) {
+      setSearchParams(prev => { prev.set('section', activeSection); return prev; }, { replace: true });
+    }
+  }, [activeSection, searchParams, setSearchParams]);
+  
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [cutoffHours, setCutoffHours] = useState(() => {

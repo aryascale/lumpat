@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import { Html5Qrcode } from "html5-qrcode";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import RaceClock from "../components/RaceClock";
 import CategorySection from "../components/CategorySection";
 import LeaderboardTable, { LeaderRow } from "../components/LeaderboardTable";
@@ -132,7 +132,14 @@ export default function EventPage() {
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [overall, setOverall] = useState<LeaderRow[]>([]);
   const [byCategory, setByCategory] = useState<Record<string, LeaderRow[]>>({});
-  const [activeTab, setActiveTab] = useState<string>("Home");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTabState, setActiveTabState] = useState<string>(searchParams.get('tab') || "Home");
+
+  const activeTab = searchParams.get('tab') || activeTabState;
+  const setActiveTab = (tab: string) => {
+    setActiveTabState(tab);
+    setSearchParams(prev => { prev.set('tab', tab); return prev; }, { replace: true });
+  };
   const [activeRouteCategory, setActiveRouteCategory] = useState<string>("");
   const [isRouteDropdownOpen, setIsRouteDropdownOpen] = useState(false);
   const [checkpointMap, setCheckpointMap] = useState<Map<string, string[]>>(new Map());

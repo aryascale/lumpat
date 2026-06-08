@@ -89,8 +89,7 @@ export default function UserEventPage() {
                       <span className="text-2xl font-black text-slate-800">{filtered.length}</span>
                     </div>
                     <div className="flex flex-col leading-tight">
-                      <span className="text-[13px] font-bold text-slate-500 tracking-wider">EVENT</span>
-                      <span className="text-[15px] font-bold text-slate-500 tracking-wider">DITEMUKAN</span>
+                      <span className="text-[14px] font-bold text-slate-500 tracking-wider">EVENT</span>
                     </div>
                   </div>
 

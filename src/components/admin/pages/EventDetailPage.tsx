@@ -2511,7 +2511,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           <div className="space-y-6">
             <div className="admin-cutoff">
               <div className="label">Event Details</div>
-              <div className="tools space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">Event Name</label>
                   <input

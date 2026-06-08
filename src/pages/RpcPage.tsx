@@ -21,6 +21,9 @@ export default function RpcPage() {
   const [isScanning, setIsScanning] = useState(false);
   const [scanError, setScanError] = useState("");
   const qrReaderRef = useRef<HTMLDivElement>(null);
+  
+  const [countdown, setCountdown] = useState(50);
+  const [searchErrorMsg, setSearchErrorMsg] = useState("");
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -81,22 +84,40 @@ export default function RpcPage() {
     };
   }, [isScanning, participants]);
 
-  // Auto-hide participant after 5 seconds
+  // Auto-hide participant after 50 seconds with countdown
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (foundParticipant) {
+      setShowKeyboard(false);
+      setCountdown(50);
+      interval = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            setFoundParticipant(null);
+            setQuery("");
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [foundParticipant]);
+
+  // Auto-hide search error
   useEffect(() => {
     let timeout: NodeJS.Timeout;
-    if (foundParticipant) {
-      // Hide the digital keyboard if it was open
-      setShowKeyboard(false);
-      // Auto clear after 50 seconds
+    if (searchErrorMsg) {
       timeout = setTimeout(() => {
-        setFoundParticipant(null);
-        setQuery("");
-      }, 50000);
+        setSearchErrorMsg("");
+      }, 3000);
     }
     return () => {
       if (timeout) clearTimeout(timeout);
     };
-  }, [foundParticipant]);
+  }, [searchErrorMsg]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,7 +130,7 @@ export default function RpcPage() {
       setQuery("");
     } else {
       setFoundParticipant(null);
-      alert("Peserta tidak ditemukan.");
+      setSearchErrorMsg("Peserta tidak ditemukan.");
     }
   };
 
@@ -139,13 +160,13 @@ export default function RpcPage() {
 
   return (
     <div 
-      className="min-h-screen bg-gray-900 text-gray-900 font-sans flex flex-col relative overflow-hidden"
+      className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col relative overflow-hidden"
       style={bgImage && !isVideoBg ? { 
         backgroundImage: `url(${bgImage})`, 
-        backgroundSize: 'contain', 
-        backgroundPosition: 'center top', 
+        backgroundSize: 'cover', 
+        backgroundPosition: 'center', 
         backgroundRepeat: 'no-repeat',
-        backgroundColor: '#111827' // bg-gray-900
+        backgroundColor: '#f8fafc'
       } : {}}
     >
       <style>{`
@@ -291,7 +312,7 @@ export default function RpcPage() {
         {/* Participant Data Display */}
         {foundParticipant && (
           <div 
-            className="absolute inset-0 z-[120] flex items-center justify-center p-4 animate-in fade-in duration-300 pb-32"
+            className="absolute inset-0 z-[120] flex items-center justify-center p-4 animate-in fade-in duration-300 pb-20"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setFoundParticipant(null);
@@ -299,44 +320,63 @@ export default function RpcPage() {
               }
             }}
           >
-            <div className="w-full max-w-4xl flex flex-col animate-in zoom-in-95 duration-300 pointer-events-none">
+            <div className="w-full max-w-2xl flex flex-col items-center animate-in zoom-in-95 duration-300 pointer-events-none mt-32">
               
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 w-full">
-                <div className="flex flex-col items-start text-left flex-1 pointer-events-auto">
-                  <span className="text-sm font-bold text-gray-800 drop-shadow-md uppercase tracking-widest mb-1">Nama Peserta</span>
-                  <h2 className="text-4xl md:text-6xl font-black text-gray-900 drop-shadow-md uppercase tracking-tight leading-none">
+              <div className="flex flex-col items-center text-center gap-6 mb-8 w-full">
+                <div className="flex flex-col items-center flex-1 pointer-events-auto">
+                  <span className="text-sm font-bold text-slate-800 drop-shadow-md uppercase tracking-widest mb-1">Nama Peserta</span>
+                  <h2 className="text-5xl md:text-7xl font-black text-slate-900 drop-shadow-lg uppercase tracking-tight leading-none text-center">
                     {foundParticipant.name}
                   </h2>
                 </div>
 
-                <div className="border-[3px] border-dashed border-red-500 rounded-3xl px-8 py-4 flex flex-col items-center justify-center shrink-0 bg-white/80 backdrop-blur-md shadow-lg pointer-events-auto">
-                  <span className="text-red-600 font-bold uppercase tracking-widest text-xs mb-1">Nomor BIB</span>
-                  <span className="text-6xl md:text-7xl font-black text-red-600 tracking-tighter leading-none">
+                <div className="border-[3px] border-dashed border-red-500 rounded-3xl px-12 py-6 flex flex-col items-center justify-center shrink-0 bg-white/90 backdrop-blur-md shadow-2xl pointer-events-auto mt-4">
+                  <span className="text-red-600 font-bold uppercase tracking-widest text-sm mb-2">Nomor BIB</span>
+                  <span className="text-7xl md:text-8xl font-black text-red-600 tracking-tighter leading-none">
                     {foundParticipant.bib}
                   </span>
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-4 w-full pointer-events-auto">
-                <div className="flex-1 min-w-[140px] bg-white/90 backdrop-blur-md border border-white/50 shadow-lg rounded-2xl p-5 flex flex-col">
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Kategori</span>
-                  <span className="text-xl md:text-2xl font-black text-gray-900">{foundParticipant.category || foundParticipant.sourceCategoryKey}</span>
+              <div className="flex flex-wrap justify-center gap-4 w-full pointer-events-auto max-w-xl">
+                <div className="flex-1 min-w-[130px] bg-white/95 backdrop-blur-md border border-slate-200 shadow-xl rounded-2xl p-4 flex flex-col items-center text-center">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Kategori</span>
+                  <span className="text-xl md:text-2xl font-black text-slate-900">{foundParticipant.category || foundParticipant.sourceCategoryKey}</span>
                 </div>
                 
-                <div className="flex-1 min-w-[140px] bg-white/90 backdrop-blur-md border border-white/50 shadow-lg rounded-2xl p-5 flex flex-col">
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Gender</span>
-                  <span className="text-xl md:text-2xl font-black text-gray-900">{foundParticipant.gender || '-'}</span>
+                <div className="flex-1 min-w-[130px] bg-white/95 backdrop-blur-md border border-slate-200 shadow-xl rounded-2xl p-4 flex flex-col items-center text-center">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Gender</span>
+                  <span className="text-xl md:text-2xl font-black text-slate-900">{foundParticipant.gender || '-'}</span>
                 </div>
 
-                <div className="flex-1 min-w-[140px] bg-green-50/90 backdrop-blur-md border border-green-200/50 shadow-lg rounded-2xl p-5 flex flex-col">
-                  <span className="text-xs font-bold text-green-700 uppercase tracking-widest mb-1">Status</span>
-                  <span className="text-xl md:text-2xl font-black text-green-700 flex items-center gap-2">
+                <div className="flex-1 min-w-[130px] bg-emerald-50/95 backdrop-blur-md border border-emerald-200 shadow-xl rounded-2xl p-4 flex flex-col items-center text-center">
+                  <span className="text-xs font-bold text-emerald-700 uppercase tracking-widest mb-1">Status</span>
+                  <span className="text-xl md:text-2xl font-black text-emerald-700 flex items-center gap-2">
                     <CheckCircle className="w-6 h-6 stroke-[3]" />
                     Verified
                   </span>
                 </div>
               </div>
 
+              {/* Digital Countdown Timer */}
+              <div className="mt-8 pointer-events-auto">
+                <div className="bg-slate-900/80 backdrop-blur-sm text-white px-6 py-2 rounded-full font-bold flex items-center gap-2 shadow-lg">
+                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  Menutup dalam {countdown}s
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* Custom Search Error Popup */}
+        {searchErrorMsg && (
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[150] animate-in slide-in-from-top-10 fade-in">
+            <div className="bg-white/95 backdrop-blur-xl border-2 border-red-500 shadow-2xl rounded-2xl px-8 py-6 flex flex-col items-center text-center">
+              <AlertCircle className="w-12 h-12 text-red-500 mb-3" />
+              <h3 className="text-xl font-black text-slate-900 mb-1">Data Tidak Ditemukan</h3>
+              <p className="text-sm font-medium text-slate-500">{searchErrorMsg}</p>
             </div>
           </div>
         )}
