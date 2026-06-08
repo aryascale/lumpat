@@ -11,6 +11,9 @@ import SupportTicketPage from "./pages/SupportTicketPage";
 import CheckTicketPage from "./pages/CheckTicketPage";
 import RpcPage from "./pages/RpcPage";
 
+import CheckpointLayout from "./components/checkpoint/CheckpointLayout";
+import CheckpointDashboard from "./pages/checkpoint/CheckpointDashboard";
+
 import AdminLayout from "./components/admin/AdminLayout";
 import {
   OverviewPageWrapper,
@@ -61,6 +64,11 @@ export default function App() {
           <Route path="payments" element={<PaymentsPage />} />
           <Route path="tickets" element={<TicketsPage />} />
           <Route path="activity-logs" element={<ActivityLogsPage />} />
+        </Route>
+
+        {/* Checkpoint Routes */}
+        <Route path="/checkpoint" element={<CheckpointLayout />}>
+          <Route index element={<CheckpointDashboard />} />
         </Route>
       </Routes>
     </EventProvider>
