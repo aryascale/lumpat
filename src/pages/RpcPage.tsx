@@ -372,12 +372,9 @@ export default function RpcPage() {
         {/* Custom Search Error Popup */}
         {searchErrorMsg && (
           <div className="absolute inset-0 z-[200] flex items-center justify-center p-4 animate-in fade-in duration-300">
-            <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95">
-              <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-4">
-                <AlertTriangle className="w-8 h-8" />
-              </div>
+            <div className="bg-white/80 backdrop-blur-xl border border-white/50 rounded-3xl p-8 max-w-sm w-full shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95">
               <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">BIP Tidak Ditemukan</h3>
-              <p className="text-slate-500 font-medium">{searchErrorMsg}</p>
+              <p className="text-slate-700 font-medium">{searchErrorMsg}</p>
             </div>
           </div>
         )}

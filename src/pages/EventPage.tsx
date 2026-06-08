@@ -931,10 +931,6 @@ export default function EventPage() {
     if (hasRoute) {
       baseTabs.push("Route");
     }
-    const hasGallery = event?.content?.galleryUrls && event.content.galleryUrls.length > 0;
-    if (hasGallery) {
-      baseTabs.push("GALERI");
-    }
     baseTabs.push("Results");
     
     // Append categories
@@ -1355,6 +1351,30 @@ export default function EventPage() {
 
           {activeTab !== "Home" && activeTab !== "Participants" && activeTab !== "Registered" && activeTab !== "Results" && activeTab !== "Route" && (
             <div className="space-y-8">
+              {/* Category-Level Gallery Parallax Grid */}
+              {event?.content?.galleryUrls && event.content.galleryUrls.length > 0 && (
+                <div className="mb-12">
+                  <div className="flex items-center gap-4 mb-6">
+                    <h3 className="text-xl md:text-2xl font-black text-stone-900 uppercase tracking-tighter">Event Gallery</h3>
+                    <div className="h-[2px] flex-grow bg-stone-200"></div>
+                  </div>
+                  {/* Modern Parallax Masonry-ish tight grid */}
+                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1 md:gap-2 pb-6">
+                    {event.content.galleryUrls.slice(0, 20).map((url: string, idx: number) => (
+                      <div key={idx} className="relative aspect-[3/4] overflow-hidden group bg-stone-100">
+                        <img 
+                          src={url} 
+                          alt={`Gallery ${idx}`} 
+                          loading="lazy" 
+                          className="w-full h-full object-cover transition-transform duration-[1.5s] ease-out group-hover:scale-110" 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {!((byCategory as any)[activeTab] || []).some((r: any) => r.rank != null && r.rank <= 3) && (
                 <RaceClock cutoffMs={event?.cutoffMs} categoryStartTimes={event?.categoryStartTimes} />
               )}
@@ -1494,25 +1514,16 @@ export default function EventPage() {
         </div>
 
         {/* Floating CTA Button */}
-        <div className="fixed bottom-6 right-6 z-50" style={{ display: registerModalOpen ? 'none' : 'block' }}>
-          <button
-            onClick={() => setRegisterModalOpen(true)}
-            className="bg-black/80 backdrop-blur-md text-white font-bold py-3 px-6 rounded-full shadow-lg uppercase tracking-widest text-[10px] transition-all hover:bg-black hover:scale-105 cursor-pointer border border-white/10"
-          >
-            Daftar →
-          </button>
-        </div>
-
-          {activeTab === "GALERI" && event?.content?.galleryUrls && (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 pb-12 animate-in fade-in zoom-in-95 duration-500">
-              {event.content.galleryUrls.slice(0, 20).map((url: string, idx: number) => (
-                <div key={idx} className="relative aspect-square overflow-hidden rounded-[20px] md:rounded-[2rem] group border border-stone-200/60 shadow-sm bg-stone-50 cursor-pointer">
-                  <img src={url} alt={`Gallery ${idx}`} loading="lazy" className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-[1px]"></div>
-                </div>
-              ))}
-            </div>
-          )}
+        {!(event?.eventDate && new Date(event.eventDate).setHours(0,0,0,0) < new Date().setHours(0,0,0,0)) && (
+          <div className="fixed bottom-6 right-6 z-50" style={{ display: registerModalOpen ? 'none' : 'block' }}>
+            <button
+              onClick={() => setRegisterModalOpen(true)}
+              className="bg-black/80 backdrop-blur-md text-white font-bold py-3 px-6 rounded-full shadow-lg uppercase tracking-widest text-[10px] transition-all hover:bg-black hover:scale-105 cursor-pointer border border-white/10"
+            >
+              Daftar →
+            </button>
+          </div>
+        )}
 
           <Modal
             title={null}
