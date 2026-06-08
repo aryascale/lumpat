@@ -1501,9 +1501,7 @@ export default function EventPage() {
           >
             Daftar →
           </button>
-              </div>
-            </div>
-          )}
+        </div>
 
           {activeTab === "GALERI" && event?.content?.galleryUrls && (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 pb-12 animate-in fade-in zoom-in-95 duration-500">
