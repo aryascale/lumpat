@@ -11,6 +11,7 @@ interface Event {
   location?: string;
   isActive: boolean;
   categories: any[];
+  content?: any;
   createdAt: number;
 }
 
@@ -217,12 +218,17 @@ export default function HomePage() {
                       <div className="flex items-center gap-2 text-gray-700">
                         <span className="text-xl">📅</span>
                         <span className="text-sm font-medium">
-                          {new Date(event.eventDate).toLocaleDateString('en-US', {
-                            weekday: 'short',
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
+                          {event.content?.isDateTBA
+                            ? new Date(event.eventDate).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long'
+                              })
+                            : new Date(event.eventDate).toLocaleDateString('en-US', {
+                                weekday: 'short',
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
                         </span>
                       </div>
 

@@ -1029,7 +1029,11 @@ export default function EventPage() {
                     {event.eventDate ? new Date(event.eventDate).getFullYear() : 'RACE'}
                   </span>
                   <span className="text-stone-300 text-[10px] md:text-sm font-semibold tracking-wider uppercase">
-                    {event.eventDate ? new Date(event.eventDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : ''}
+                    {event.eventDate ? (
+                      event.content?.isDateTBA
+                        ? new Date(event.eventDate).toLocaleDateString('en-US', { month: 'long' })
+                        : new Date(event.eventDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+                    ) : ''}
                   </span>
                   {event.location && (
                     <span className="hidden md:inline text-stone-400 text-sm font-medium tracking-wide">• {event.location}</span>

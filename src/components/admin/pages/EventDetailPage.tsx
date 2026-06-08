@@ -2489,7 +2489,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                         allowBulkNoOtp: eventData.content?.allowBulkNoOtp || false,
                         enableRegisteredScan: eventData.content?.enableRegisteredScan !== false,
                         rpcBgUrl: eventData.content?.rpcBgUrl || '',
-                        rpcBgUrlMobile: eventData.content?.rpcBgUrlMobile || ''
+                        rpcBgUrlMobile: eventData.content?.rpcBgUrlMobile || '',
+                        isDateTBA: eventData.content?.isDateTBA || false
                       }
                     }),
                   });
@@ -2528,6 +2529,18 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                     value={eventData?.eventDate ? new Date(eventData.eventDate).toISOString().split('T')[0] : ''}
                     onChange={(e) => setEventData({ ...eventData, eventDate: e.target.value })}
                   />
+                  <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={eventData?.content?.isDateTBA || false}
+                      onChange={(e) => setEventData({ 
+                        ...eventData, 
+                        content: { ...(eventData?.content || {}), isDateTBA: e.target.checked }
+                      })}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Tanggal Belum Fix (Tampilkan Bulan & Tahun Saja)</span>
+                  </label>
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">Location</label>
