@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { loadMasterParticipants } from "../lib/data";
 import { Html5Qrcode } from "html5-qrcode";
-import { Search, X, CheckCircle } from "lucide-react";
+import { Search, X, CheckCircle, AlertTriangle } from "lucide-react";
 import type { LeaderRow } from "../components/LeaderboardTable";
 import Keyboard from "react-simple-keyboard";
 import "react-simple-keyboard/build/css/index.css";
@@ -330,9 +330,9 @@ export default function RpcPage() {
                   </h2>
                 </div>
 
-                <div className="border-[3px] border-dashed border-red-500 rounded-3xl px-12 py-6 flex flex-col items-center justify-center shrink-0 bg-white/90 backdrop-blur-md shadow-2xl pointer-events-auto mt-4">
-                  <span className="text-red-600 font-bold uppercase tracking-widest text-sm mb-2">Nomor BIB</span>
-                  <span className="text-7xl md:text-8xl font-black text-red-600 tracking-tighter leading-none">
+                <div className="border-[3px] border-dashed border-red-500 rounded-3xl px-12 py-6 flex flex-col items-center justify-center shrink-0 bg-transparent pointer-events-auto mt-4">
+                  <span className="text-red-600 font-bold uppercase tracking-widest text-sm mb-2 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">Nomor BIB</span>
+                  <span className="text-7xl md:text-8xl font-black text-red-600 tracking-tighter leading-none drop-shadow-[0_2px_2px_rgba(255,255,255,0.8)]">
                     {foundParticipant.bib}
                   </span>
                 </div>
@@ -359,11 +359,10 @@ export default function RpcPage() {
               </div>
 
               {/* Digital Countdown Timer */}
-              <div className="mt-8 pointer-events-auto">
-                <div className="bg-slate-900/80 backdrop-blur-sm text-white px-6 py-2 rounded-full font-bold flex items-center gap-2 shadow-lg">
-                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                  Menutup dalam {countdown}s
-                </div>
+              <div className="absolute top-6 right-6 pointer-events-auto">
+                <span className="text-4xl md:text-6xl font-black text-slate-800 drop-shadow-[0_2px_4px_rgba(255,255,255,1)]">
+                  {countdown}
+                </span>
               </div>
 
             </div>
@@ -372,11 +371,13 @@ export default function RpcPage() {
 
         {/* Custom Search Error Popup */}
         {searchErrorMsg && (
-          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[150] animate-in slide-in-from-top-10 fade-in">
-            <div className="bg-white/95 backdrop-blur-xl border-2 border-red-500 shadow-2xl rounded-2xl px-8 py-6 flex flex-col items-center text-center">
-              <AlertCircle className="w-12 h-12 text-red-500 mb-3" />
-              <h3 className="text-xl font-black text-slate-900 mb-1">Data Tidak Ditemukan</h3>
-              <p className="text-sm font-medium text-slate-500">{searchErrorMsg}</p>
+          <div className="absolute inset-0 z-[200] flex items-center justify-center p-4 animate-in fade-in duration-300">
+            <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95">
+              <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-4">
+                <AlertTriangle className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">BIP Tidak Ditemukan</h3>
+              <p className="text-slate-500 font-medium">{searchErrorMsg}</p>
             </div>
           </div>
         )}

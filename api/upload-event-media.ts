@@ -25,20 +25,25 @@ export default async function handler(event: any) {
     if (!eventId) return errorResponse('eventId is required', 400);
 
     const targetField = fields.field;
-    if (targetField !== 'logo' && targetField !== 'banner' && targetField !== 'home_image' && targetField !== 'rpc_bg' && targetField !== 'rpc_bg_mobile') {
-      return errorResponse('Invalid field type, must be "logo", "banner", "home_image", "rpc_bg", or "rpc_bg_mobile"', 400);
+    if (targetField !== 'logo' && targetField !== 'banner' && targetField !== 'home_image' && targetField !== 'rpc_bg' && targetField !== 'rpc_bg_mobile' && targetField !== 'gallery') {
+      return errorResponse('Invalid field type', 400);
     }
 
     const result = await uploadFile(eventId, file.data, file.name, 'images');
     
-    if (targetField === 'rpc_bg' || targetField === 'rpc_bg_mobile') {
+    if (targetField === 'rpc_bg' || targetField === 'rpc_bg_mobile' || targetField === 'gallery') {
       const existing: any = await query('SELECT content FROM Event WHERE id = ?', [eventId]);
       const currentContentStr = existing[0]?.content;
       let currentContent = {};
       if (currentContentStr) {
         currentContent = typeof currentContentStr === 'string' ? JSON.parse(currentContentStr) : currentContentStr;
       }
-      if (targetField === 'rpc_bg') {
+      
+      if (targetField === 'gallery') {
+        const galleryUrls = Array.isArray((currentContent as any).galleryUrls) ? (currentContent as any).galleryUrls : [];
+        galleryUrls.push(result.url);
+        (currentContent as any).galleryUrls = galleryUrls;
+      } else if (targetField === 'rpc_bg') {
         (currentContent as any).rpcBgUrl = result.url;
       } else {
         (currentContent as any).rpcBgUrlMobile = result.url;

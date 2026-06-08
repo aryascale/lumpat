@@ -931,11 +931,15 @@ export default function EventPage() {
     if (hasRoute) {
       baseTabs.push("Route");
     }
+    const hasGallery = event?.content?.galleryUrls && event.content.galleryUrls.length > 0;
+    if (hasGallery) {
+      baseTabs.push("GALERI");
+    }
     baseTabs.push("Results");
     
     // Append categories
     return [...baseTabs, ...(event?.categories || [])];
-  }, [event?.categories, event?.gpxFile, event?.content?.routeGpxFiles, event?.latitude, event?.longitude]);
+  }, [event?.categories, event?.gpxFile, event?.content?.routeGpxFiles, event?.latitude, event?.longitude, event?.content?.galleryUrls]);
 
   const onSelectParticipant = (row: LeaderRow) => {
     setSelected(row);
@@ -1497,7 +1501,20 @@ export default function EventPage() {
           >
             Daftar →
           </button>
-        </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "GALERI" && event?.content?.galleryUrls && (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 pb-12 animate-in fade-in zoom-in-95 duration-500">
+              {event.content.galleryUrls.slice(0, 20).map((url: string, idx: number) => (
+                <div key={idx} className="relative aspect-square overflow-hidden rounded-[20px] md:rounded-[2rem] group border border-stone-200/60 shadow-sm bg-stone-50 cursor-pointer">
+                  <img src={url} alt={`Gallery ${idx}`} loading="lazy" className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
+                  <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-[1px]"></div>
+                </div>
+              ))}
+            </div>
+          )}
 
           <Modal
             title={null}

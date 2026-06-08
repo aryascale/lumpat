@@ -42,7 +42,7 @@ function formatNowAsTimestamp(): string {
 }
 
 export default function EventDetailPage({ eventId, eventSlug, eventName, onBack }: EventDetailPageProps) {
-  const [activeTab, setActiveTab] = useState<'homepage' | 'data' | 'banners' | 'categories' | 'route' | 'timing' | 'dq' | 'penalty' | 'certified' | 'settings' | 'registration' | 'inventory'>(() => {
+  const [activeTab, setActiveTab] = useState<'homepage' | 'data' | 'banners' | 'gallery' | 'categories' | 'route' | 'timing' | 'dq' | 'penalty' | 'certified' | 'settings' | 'registration' | 'inventory'>(() => {
     return (localStorage.getItem(`admin_tab_${eventId}`) as any) || 'homepage';
   });
 
@@ -68,6 +68,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   const [uploadingHomeImage, setUploadingHomeImage] = useState(false);
   const [uploadingRpcBg, setUploadingRpcBg] = useState(false);
   const [uploadingRpcBgMobile, setUploadingRpcBgMobile] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
 
   // Category state
   const [newCategory, setNewCategory] = useState('');
@@ -586,6 +587,51 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   };
 
   // Category handlers
+  const handleGalleryUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploadingGallery(true);
+    let uploadedCount = 0;
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('eventId', eventId);
+        formData.append('field', 'gallery');
+
+        const res = await fetch('/api/upload-event-media', {
+          method: 'POST',
+          body: formData,
+        });
+        if (res.ok) {
+          const result = await res.json();
+          setEventData(result.event);
+          uploadedCount++;
+        }
+      }
+      alert(`Successfully uploaded ${uploadedCount} photos to the gallery!`);
+    } catch (error: any) {
+      alert(error.message || 'Failed to upload some gallery photos');
+    } finally {
+      setUploadingGallery(false);
+      const fileInput = document.getElementById('gallery-upload') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
+    }
+  };
+
+  const deleteGalleryImage = async (imageUrl: string) => {
+    if (!confirm('Delete this photo from the gallery?')) return;
+    try {
+      const res = await fetch(`/api/delete-gallery-image?eventId=${eventId}&imageUrl=${encodeURIComponent(imageUrl)}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to delete');
+      const result = await res.json();
+      setEventData((prev: any) => ({ ...prev, content: result.content }));
+    } catch (error) {
+      alert('Failed to delete gallery image');
+    }
+  };
   const addCategory = async () => {
     const trimmed = newCategory.trim();
     if (!trimmed) return;
@@ -1041,7 +1087,13 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           className={`detail-tab whitespace-nowrap ${activeTab === 'banners' ? 'active' : ''}`}
           onClick={() => setActiveTab('banners')}
         >
-          Media & Banners
+          Banners & Media
+        </button>
+        <button
+          className={`detail-tab whitespace-nowrap ${activeTab === 'gallery' ? 'active' : ''}`}
+          onClick={() => setActiveTab('gallery')}
+        >
+          Gallery
         </button>
         <button
           className={`detail-tab whitespace-nowrap ${activeTab === 'categories' ? 'active' : ''}`}
@@ -1435,6 +1487,55 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       )}
 
       {/* Categories Tab */}
+      {activeTab === 'gallery' && (
+        <div className="tab-pane active fade-in">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div>
+              <h2 className="text-xl font-bold">Event Gallery</h2>
+              <p className="text-stone-500 text-sm mt-1">Upload max 20 photos. These will be displayed on the public event page.</p>
+            </div>
+            <div className="flex gap-2">
+              <input type="file" id="gallery-upload" multiple accept="image/*" className="hidden" onChange={(e) => handleGalleryUpload(e.target.files)} />
+              <button 
+                onClick={() => document.getElementById('gallery-upload')?.click()}
+                disabled={uploadingGallery}
+                className="bg-stone-900 hover:bg-black text-white font-bold py-2 px-6 rounded-xl flex items-center gap-2 transition-all shadow-md active:scale-95"
+              >
+                {uploadingGallery ? 'Uploading...' : 'Upload Photos'}
+              </button>
+            </div>
+          </div>
+          
+          {eventData?.content?.galleryUrls && eventData.content.galleryUrls.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {eventData.content.galleryUrls.map((url: string, idx: number) => (
+                <div key={idx} className="relative group rounded-2xl overflow-hidden shadow-sm border border-stone-200 aspect-square bg-stone-100">
+                  <img src={url} alt={`Gallery ${idx}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
+                    <button 
+                      onClick={() => deleteGalleryImage(url)}
+                      className="bg-red-500 hover:bg-red-600 text-white font-bold py-1.5 px-4 rounded-full text-xs shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300"
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-20 bg-stone-50 rounded-3xl border-2 border-dashed border-stone-200 flex flex-col items-center justify-center">
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
+                <svg className="w-8 h-8 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <p className="text-stone-500 font-medium text-lg">Belum ada foto di galeri.</p>
+              <p className="text-stone-400 text-sm mt-1">Klik tombol Upload Photos di atas untuk menambahkan.</p>
+            </div>
+          )}
+        </div>
+      )}
+
       {activeTab === 'categories' && (
         <div className="card">
           <div className="header-row mb-4">
