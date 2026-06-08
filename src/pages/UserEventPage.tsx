@@ -13,6 +13,7 @@ interface Event {
   status?: 'upcoming' | 'ongoing' | 'completed';
   isActive?: boolean;
   bannerUrl?: string;
+  content?: any;
 }
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
@@ -30,9 +31,12 @@ function getDaysInMonth(year: number, month: number) {
 function getFirstDayOfMonth(year: number, month: number) {
   return new Date(year, month, 1).getDay();
 }
-function formatDate(dateStr?: string) {
+function formatDate(dateStr?: string, isTBA?: boolean) {
   if (!dateStr) return 'TBD';
   const d = new Date(dateStr);
+  if (isTBA) {
+    return d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+  }
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
@@ -132,7 +136,7 @@ export default function UserEventPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   {filtered.map((event, i) => {
                     const hasBanner = !!event.bannerUrl;
-                    const dateStr = formatDate(event.eventDate);
+                    const dateStr = formatDate(event.eventDate, event.content?.isDateTBA);
                     
                     return (
                       <div key={event.id} onClick={() => handleView(event.slug)}
