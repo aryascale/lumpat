@@ -67,7 +67,7 @@ export default function App() {
         </Route>
 
         {/* Checkpoint Routes */}
-        <Route path="/checkpoint" element={<CheckpointLayout />}>
+        <Route path="/manualtiming" element={<CheckpointLayout />}>
           <Route index element={<CheckpointDashboard />} />
         </Route>
       </Routes>

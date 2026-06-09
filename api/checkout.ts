@@ -162,6 +162,17 @@ export default async function handler(event: any) {
         );
     }
 
+    if (totalGrossAmount === 0) {
+      for (const regId of regIds) {
+        await query(
+          "UPDATE EventRegistration SET paymentStatus = 'settlement', updatedAt = NOW() WHERE id = ?",
+          [regId]
+        );
+      }
+      await logActivity('registration.created', `${primaryParticipant.name} (+${qty-1} others) mendaftar ke event (Gratis)`, email, eventId, { orderId, totalGrossAmount, category: categories[0].name });
+      return successResponse({ orderId, grossAmount: totalGrossAmount, registration: { id: regIds[0] }, message: 'Registrasi gratis berhasil', isFree: true });
+    }
+
     if (!MIDTRANS_SERVER_KEY) {
       await logActivity('registration.created', `${primaryParticipant.name} (+${qty-1} others) mendaftar ke event (Midtrans not configured)`, email, eventId, { orderId, totalGrossAmount, category: categories[0].name });
       return successResponse({ orderId, grossAmount: totalGrossAmount, registration: { id: regIds[0] }, message: 'Midtrans not configured. Registration saved as pending.' });

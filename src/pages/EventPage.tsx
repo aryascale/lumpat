@@ -391,6 +391,12 @@ export default function EventPage() {
         message.error(data.error || 'Gagal checkout');
         return;
       }
+      if (data.isFree) {
+        message.success('Registrasi berhasil! (Gratis)');
+        setRegisterModalOpen(false);
+        if (event?.id) fetchRegisteredParticipants(event.id);
+        return;
+      }
 
       if (data.snapToken && (window as any).snap) {
         (window as any).snap.pay(data.snapToken, {
