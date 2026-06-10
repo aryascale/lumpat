@@ -106,20 +106,27 @@ export type CertData = {
 
     const getLines = (text: string, size: number, maxWidth: number) => {
       ctx.font = `900 ${size}px Roboto, sans-serif`;
-      const words = text.split(' ');
+      const words = text.replace(/[\r\n\t\xA0]/g, ' ').split(/\s+/).filter(Boolean);
+      if (words.length === 0) return ["-"];
+
       let linesArray: string[] = [];
-      let currentLine = words[0] || '';
+      let currentLine = words[0];
       for (let i = 1; i < words.length; i++) {
         const word = words[i];
-        const width = ctx.measureText(currentLine + " " + word).width;
-        if (width < maxWidth) {
-          currentLine += " " + word;
+        const testLine = currentLine + " " + word;
+        const width = ctx.measureText(testLine).width;
+        // Fallback estimation in case Canvas API fails to measure properly before font loads
+        const estimatedWidth = testLine.length * (size * 0.55); 
+        const effectiveWidth = Math.max(width, estimatedWidth);
+
+        if (effectiveWidth < maxWidth) {
+          currentLine = testLine;
         } else {
           linesArray.push(currentLine);
           currentLine = word;
         }
       }
-      if (currentLine) linesArray.push(currentLine);
+      linesArray.push(currentLine);
       return linesArray;
     };
 
