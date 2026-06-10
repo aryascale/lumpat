@@ -101,7 +101,63 @@ export type CertData = {
     drawCenter("E-CERTIFICATE FINISHER", 640, 60, "#475569", "800");
 
     // Participant Name
-    drawCenter(data.name || "-", 760, 80, "#0f172a", "900");
+    const nameStr = data.name || "-";
+    const maxNameWidth = 960; 
+
+    const getLines = (text: string, size: number, maxWidth: number) => {
+      ctx.font = `900 ${size}px Roboto, sans-serif`;
+      const words = text.split(' ');
+      let linesArray: string[] = [];
+      let currentLine = words[0] || '';
+      for (let i = 1; i < words.length; i++) {
+        const word = words[i];
+        const width = ctx.measureText(currentLine + " " + word).width;
+        if (width < maxWidth) {
+          currentLine += " " + word;
+        } else {
+          linesArray.push(currentLine);
+          currentLine = word;
+        }
+      }
+      if (currentLine) linesArray.push(currentLine);
+      return linesArray;
+    };
+
+    let nameLines = getLines(nameStr, 80, maxNameWidth);
+    let nameFontSize = 80;
+    let nameStartY = 760;
+    let nameLineHeight = 0;
+    
+    if (nameLines.length > 1) {
+      nameLines = getLines(nameStr, 60, maxNameWidth);
+      if (nameLines.length === 1) {
+        nameFontSize = 60;
+        nameStartY = 750;
+      } else if (nameLines.length === 2) {
+        nameFontSize = 55;
+        nameStartY = 720;
+        nameLineHeight = 65;
+      } else {
+        nameLines = getLines(nameStr, 40, maxNameWidth);
+        if (nameLines.length <= 2) {
+          nameFontSize = 40;
+          nameStartY = 730;
+          nameLineHeight = 55;
+        } else {
+          nameFontSize = 38;
+          nameLines = getLines(nameStr, nameFontSize, maxNameWidth);
+          nameStartY = 700;
+          nameLineHeight = 48;
+          if (nameLines.length > 3) {
+             nameLines = nameLines.slice(0, 3);
+          }
+        }
+      }
+    }
+
+    nameLines.forEach((line, index) => {
+      drawCenter(line, nameStartY + (index * nameLineHeight), nameFontSize, "#0f172a", "900");
+    });
 
     // Elegant separator line below name
     ctx.beginPath();
