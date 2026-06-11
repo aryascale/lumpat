@@ -374,10 +374,19 @@ export default function EventPage() {
 
     setRegistering(true);
     try {
-      const participantsToSend = bulkParticipants.slice(0, bulkQty).map(p => ({
-        ...regForm,
-        customData: Object.keys(p).length > 0 ? p : undefined
-      }));
+      const participantsToSend = bulkParticipants.slice(0, bulkQty).map(p => {
+        const mappedCustomData: Record<string, string> = {};
+        Object.keys(p).forEach(fieldId => {
+          const field = customFields.find(f => f.id === fieldId);
+          if (field) {
+            mappedCustomData[field.label] = p[fieldId];
+          }
+        });
+        return {
+          ...regForm,
+          customData: Object.keys(mappedCustomData).length > 0 ? mappedCustomData : undefined
+        };
+      });
 
       const res = await fetch('/api/checkout', {
         method: 'POST',
@@ -450,7 +459,14 @@ export default function EventPage() {
             const fieldsRes = await fetch(`/api/registration-fields?eventId=${eventData.id}`);
             if (fieldsRes.ok) {
               const fieldsData = await fieldsRes.json();
-              setCustomFields(fieldsData.fields || []);
+              const fetchedFields = fieldsData.fields || [];
+              const transformedFields = fetchedFields.map((f: any) => {
+                if (f.label.includes('National ID Number') || f.label.includes('Nationality')) {
+                  return { ...f, label: 'Nationality', type: 'nationality' };
+                }
+                return f;
+              });
+              setCustomFields(transformedFields);
             }
           } catch {}
 

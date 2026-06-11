@@ -160,7 +160,6 @@ export default async function handler(req: any) {
         { label: 'Emergency Contact Phone Number', type: 'tel', required: true, options: null },
         { label: 'Current Physical Address', type: 'textarea', required: true, options: null },
         { label: 'Instagram Profile URL', type: 'text', required: true, options: null },
-        { label: 'National ID Number (Foreign participants, please enter 0)', type: 'number', required: true, options: null },
         { label: 'Nationality', type: 'nationality', required: true, options: null },
       ];
       
