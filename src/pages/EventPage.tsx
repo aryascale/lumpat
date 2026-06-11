@@ -1294,6 +1294,10 @@ export default function EventPage() {
                         {filtered.map((p: any, idx: number) => {
                           const leader = matchRegisteredToMaster(p, masterParticipants);
                           const bib = leader && leader.bib !== 'RDY' ? leader.bib : '-';
+                          const nationalityStr = p.customData?.['Nationality'] || p.customData?.['Kewarganegaraan'] || p.customData?.['nationality'] || '';
+                          const flagMatch = nationalityStr.match(/^[\uD83C][\uDDE6-\uDDFF][\uD83C][\uDDE6-\uDDFF]/) || nationalityStr.match(/[\uD83C][\uDDE6-\uDDFF][\uD83C][\uDDE6-\uDDFF]/);
+                          const flag = flagMatch ? flagMatch[0] : '';
+                          
                           return (
                             <tr 
                               key={p.id} 
@@ -1301,7 +1305,10 @@ export default function EventPage() {
                               onClick={() => { setRegDetailParticipant(p); setRegDetailOpen(true); }}
                             >
                               <td className="py-3 px-2 font-mono text-stone-400">{idx + 1}</td>
-                              <td className="py-3 px-2 font-bold text-stone-900">{p.name}</td>
+                              <td className="py-3 px-2 font-bold text-stone-900">
+                                {flag && <span className="mr-2" title={nationalityStr}>{flag}</span>}
+                                {p.name}
+                              </td>
                               <td className="py-3 px-2 text-stone-600">{p.category?.name}</td>
                               <td className="py-3 px-2 font-mono font-bold text-stone-900">{bib}</td>
                             </tr>
