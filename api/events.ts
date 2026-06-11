@@ -151,6 +151,26 @@ export default async function handler(req: any) {
         );
       }
 
+      const defaultFields = [
+        { label: 'First Name', type: 'text', required: true, options: null },
+        { label: 'Last Name', type: 'text', required: true, options: null },
+        { label: 'Gender', type: 'dropdown', required: true, options: 'Male, Female' },
+        { label: 'Blood Type', type: 'dropdown', required: true, options: 'A, B, AB, O' },
+        { label: 'Emergency Contact Name', type: 'text', required: true, options: null },
+        { label: 'Emergency Contact Phone Number', type: 'tel', required: true, options: null },
+        { label: 'Current Physical Address', type: 'textarea', required: true, options: null },
+        { label: 'Instagram Profile URL', type: 'text', required: true, options: null },
+        { label: 'National ID Number (Foreign participants, please enter 0)', type: 'number', required: true, options: null },
+        { label: 'Nationality', type: 'nationality', required: true, options: null },
+      ];
+      
+      for (let i = 0; i < defaultFields.length; i++) {
+        await query(
+          'INSERT INTO RegistrationField (id, eventId, label, type, required, options, `order`, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
+          [crypto.randomUUID(), eventIdNew, defaultFields[i].label, defaultFields[i].type, defaultFields[i].required, defaultFields[i].options, i]
+        );
+      }
+
       const created: any = await query('SELECT * FROM Event WHERE id = ? LIMIT 1', [eventIdNew]);
       const cats: any = await query('SELECT * FROM Category WHERE eventId = ? ORDER BY `order` ASC', [eventIdNew]);
       created[0]._categories = cats.map((c: any) => c.name);

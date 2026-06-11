@@ -22,9 +22,24 @@ function saveDQMap(map: Record<string, boolean>, eventId: string) {
   localStorage.setItem(key, JSON.stringify(map));
 }
 
+function loadHiddenMap(eventId: string): Record<string, boolean> {
+  try {
+    const key = `imr_hidden_map_${eventId}`;
+    return JSON.parse(localStorage.getItem(key) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveHiddenMap(map: Record<string, boolean>, eventId: string) {
+  const key = `imr_hidden_map_${eventId}`;
+  localStorage.setItem(key, JSON.stringify(map));
+}
+
 export default function DQPage({ allRows, onConfigChanged, onDataVersionBump, eventId }: DQPageProps) {
   const [q, setQ] = useState("");
   const [dqMap, setDqMap] = useState<Record<string, boolean>>(loadDQMap(eventId));
+  const [hiddenMap, setHiddenMap] = useState<Record<string, boolean>>(loadHiddenMap(eventId));
 
   const filtered = useMemo(() => {
     const qq = q.trim().toLowerCase();
@@ -56,15 +71,25 @@ export default function DQPage({ allRows, onConfigChanged, onDataVersionBump, ev
     onConfigChanged();
   };
 
+  const toggleHide = async (epc: string) => {
+    const next = { ...hiddenMap, [epc]: !hiddenMap[epc] };
+    if (!next[epc]) delete next[epc];
+    setHiddenMap(next);
+    saveHiddenMap(next, eventId);
+    onDataVersionBump();
+    onConfigChanged();
+  };
+
   return (
     <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 100px)' }}>
       {/* DSQ Management */}
       <div className="card flex-1 flex flex-col mb-4">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
           <div>
-            <h2 className="section-title">Disqualification (Manual)</h2>
+            <h2 className="section-title">Disqualification & Hidden (Manual)</h2>
             <div className="subtle text-sm">
-              Toggle DSQ per runner (by EPC). DSQ tetap tampil di tabel tapi tanpa rank.
+              Toggle DSQ per runner (by EPC). DSQ tetap tampil di tabel tapi tanpa rank. <br/>
+              Toggle Hide untuk menyembunyikan runner dari result (Soft Delete).
             </div>
           </div>
           <input
@@ -88,7 +113,7 @@ export default function DQPage({ allRows, onConfigChanged, onDataVersionBump, ev
                   <th className="col-gender">GENDER</th>
                   <th className="col-cat">CATEGORY</th>
                   <th style={{ width: 100 }}>STATUS</th>
-                  <th style={{ width: 120 }}>ACTION</th>
+                  <th style={{ width: 200 }}>ACTION</th>
                 </tr>
               </thead>
               <tbody>
@@ -111,14 +136,28 @@ export default function DQPage({ allRows, onConfigChanged, onDataVersionBump, ev
                           <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase ${isDQ ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
                             {isDQ ? "DSQ" : "OK"}
                           </span>
+                          {hiddenMap[r.epc] && (
+                            <span className="inline-block ml-1 px-2 py-0.5 rounded text-[10px] font-black uppercase bg-stone-200 text-stone-600">
+                              HIDDEN
+                            </span>
+                          )}
                         </td>
                         <td>
-                          <button
-                            className="btn ghost sm"
-                            onClick={() => toggleDQ(r.epc)}
-                          >
-                            {isDQ ? "Undo DSQ" : "Disqualify"}
-                          </button>
+                          <div className="flex gap-1">
+                            <button
+                              className="btn ghost sm"
+                              onClick={() => toggleDQ(r.epc)}
+                            >
+                              {isDQ ? "Undo DSQ" : "Disqualify"}
+                            </button>
+                            <button
+                              className="btn ghost sm"
+                              style={{ color: '#dc2626' }}
+                              onClick={() => toggleHide(r.epc)}
+                            >
+                              {hiddenMap[r.epc] ? "Unhide" : "Hide"}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -156,13 +195,27 @@ export default function DQPage({ allRows, onConfigChanged, onDataVersionBump, ev
                       >
                         {isDQ ? "DSQ" : "OK"}
                       </span>
+                      {hiddenMap[r.epc] && (
+                        <span className="px-2 py-1 rounded text-[10px] font-black uppercase bg-stone-200 text-stone-600 ml-1">
+                          HIDDEN
+                        </span>
+                      )}
                     </div>
-                    <button
-                      className={`btn w-full text-xs font-bold uppercase ${isDQ ? '' : 'ghost'}`}
-                      onClick={() => toggleDQ(r.epc)}
-                    >
-                      {isDQ ? "Undo DSQ" : "Disqualify"}
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        className={`btn w-full text-xs font-bold uppercase ${isDQ ? '' : 'ghost'}`}
+                        onClick={() => toggleDQ(r.epc)}
+                      >
+                        {isDQ ? "Undo DSQ" : "Disqualify"}
+                      </button>
+                      <button
+                        className={`btn w-full text-xs font-bold uppercase ghost`}
+                        style={{ color: '#dc2626' }}
+                        onClick={() => toggleHide(r.epc)}
+                      >
+                        {hiddenMap[r.epc] ? "Unhide" : "Hide"}
+                      </button>
+                    </div>
                   </div>
                 );
               })
@@ -213,7 +266,7 @@ export default function DQPage({ allRows, onConfigChanged, onDataVersionBump, ev
         )}
 
         <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-blue-800 text-xs font-medium">
-          <strong>Summary:</strong> {Object.values(dqMap).filter(Boolean).length} runners disqualified.
+          <strong>Summary:</strong> {Object.values(dqMap).filter(Boolean).length} runners disqualified, {Object.values(hiddenMap).filter(Boolean).length} runners hidden.
         </div>
       </div>
     </div>

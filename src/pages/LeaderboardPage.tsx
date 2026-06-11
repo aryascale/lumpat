@@ -25,6 +25,15 @@ function loadDQMap(eventId: string): Record<string, boolean> {
   }
 }
 
+function loadHiddenMap(eventId: string): Record<string, boolean> {
+  try {
+    const key = `imr_hidden_map_${eventId}`;
+    return JSON.parse(localStorage.getItem(key) || "{}");
+  } catch {
+    return {};
+  }
+}
+
 type LoadState =
   | { status: "loading"; msg: string }
   | { status: "error"; msg: string }
@@ -190,6 +199,7 @@ export default function LeaderboardPage() {
         const baseRows: LeaderRow[] = [];
 
         master.all.forEach((p) => {
+          if (loadHiddenMap(eventId)[p.epc]) return;
           const finishEntry = finishMap.get(p.epc);
           if (!finishEntry?.ms) return;
 

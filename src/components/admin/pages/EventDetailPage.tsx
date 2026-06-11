@@ -2300,6 +2300,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                         <option value="email">Email</option>
                         <option value="textarea">Textarea</option>
                         <option value="dropdown">Dropdown</option>
+                        <option value="nationality">Nationality</option>
                       </select>
                     </div>
                     {field.type === 'dropdown' && (

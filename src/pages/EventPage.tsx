@@ -19,6 +19,8 @@ import {
 import { LS_DATA_VERSION } from "../lib/config";
 import parseTimeToMs, { extractTimeOfDay, formatDuration } from "../lib/time";
 import type { MasterParticipant } from "../lib/data";
+import getUnicodeFlagIcon from "country-flag-icons/unicode";
+import { getData } from "country-list";
 
 function loadDQMap(eventId: string): Record<string, boolean> {
   try {
@@ -754,6 +756,7 @@ export default function EventPage() {
             const resolvedCategoryKey = resolveAdminCategory(p.sourceCategoryKey, p.gender);
 
             const isDQ = !!dqMap[p.epc];
+            if (loadHiddenMap(event.id)[p.epc]) return;
             const finishEntry = finishMap.get(p.epc);
 
             const pushIncompleteRow = (status: string) => {
@@ -1769,6 +1772,24 @@ export default function EventPage() {
                                   return updated;
                                 })}
                                 options={(field.options ? field.options.split(',') : []).map(opt => ({ label: opt.trim(), value: opt.trim() }))}
+                              />
+                            ) : field.type === 'nationality' ? (
+                              <Select
+                                showSearch
+                                className="w-full"
+                                size="large"
+                                placeholder={`Pilih ${field.label}`}
+                                optionFilterProp="label"
+                                value={bulkParticipants[activeTabIdx]?.[field.id] || undefined}
+                                onChange={(val) => setBulkParticipants(prev => {
+                                  const updated = [...prev];
+                                  updated[activeTabIdx] = { ...updated[activeTabIdx], [field.id]: val };
+                                  return updated;
+                                })}
+                                options={getData().map(c => ({
+                                  label: `${getUnicodeFlagIcon(c.code)} ${c.name}`,
+                                  value: `${getUnicodeFlagIcon(c.code)} ${c.name}`
+                                }))}
                               />
                             ) : field.type === 'textarea' ? (
                               <Input.TextArea
