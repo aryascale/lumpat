@@ -45,9 +45,12 @@ function generateSplashSeeds(count: number) {
   return Array.from({ length: count }, (_, i) => {
     const s = i + 42; // stable seed base
     return {
-      x: (seededRandom(s * 1) - 0.5) * 340,        // -170 to +170
-      y: (seededRandom(s * 2) - 0.5) * 340,        // -170 to +170
+      x: (seededRandom(s * 1) - 0.5) * 600,        // widened
+      y: (seededRandom(s * 2) - 0.5) * 600,        // widened
       rot: (seededRandom(s * 3) - 0.5) * 120,      // -60 to +60
+      rotX: (seededRandom(s * 4) - 0.5) * 120,     // 3D tumble
+      rotY: (seededRandom(s * 5) - 0.5) * 120,     // 3D tumble
+      z: (seededRandom(s * 6) - 0.5) * 300,        // Depth
     };
   });
 }
@@ -176,7 +179,7 @@ export default function HeroCircularGallery() {
       {/* ─── Rotating Master Container ─── */}
       <div
         className="absolute inset-0 flex items-center justify-center pointer-events-none"
-        style={{ willChange: "transform" }}
+        style={{ willChange: "transform", perspective: "1200px" }}
       >
         <div
           style={{
@@ -185,6 +188,7 @@ export default function HeroCircularGallery() {
             width: 0,
             height: 0,
             position: "relative",
+            transformStyle: "preserve-3d"
           }}
         >
           {GALLERY_IMAGES.map((src, index) => {
@@ -216,16 +220,22 @@ export default function HeroCircularGallery() {
                 initial={{
                   x: 0,
                   y: 0,
+                  z: 0,
                   scale: index === 0 ? 0.2 : 0,
                   opacity: index === 0 ? 0 : 0,
                   rotate: 0,
+                  rotateX: 0,
+                  rotateY: 0,
                 }}
                 animate={{
                   x: targetX,
                   y: isPulledUp ? -1500 : targetY,
+                  z: isSplash ? splashSeeds[index].z * (isMobile ? 0.5 : 1) : 0,
                   scale: isInit ? (index === 0 ? 1.6 : 0) : 1,
                   opacity: isInit ? (index === 0 ? 1 : 0) : (isSplash ? 0.7 : 1),
                   rotate: targetRotation + counterRotate,
+                  rotateX: isSplash ? splashSeeds[index].rotX : 0,
+                  rotateY: isSplash ? splashSeeds[index].rotY : 0,
                 }}
                 transition={{
                   type: "spring",
