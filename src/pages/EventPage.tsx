@@ -836,7 +836,10 @@ export default function EventPage() {
               }
             }
 
-            if (!Number.isFinite(total) || total == null || total < 0) return;
+            if (!Number.isFinite(total) || total == null || total < 0) {
+              pushIncompleteRow("NO START TIME");
+              return;
+            }
 
             // Add penalty time
             const penMs = penaltyMap.get(p.epc) || 0;
@@ -903,12 +906,16 @@ export default function EventPage() {
           .sort((a, b) => a.totalTimeMs - b.totalTimeMs);
         const dsqs = baseRows.filter((r) => r.totalTimeDisplay === "DSQ");
         const actives = baseRows.filter((r) => r.totalTimeDisplay === "ACTIVE");
+        const registereds = baseRows.filter((r) => r.totalTimeDisplay === "Registered");
+        const noStartTimes = baseRows.filter((r) => r.totalTimeDisplay === "NO START TIME");
 
         const overallFinal: LeaderRow[] = [
           ...finisherSorted,
           ...actives.map((r) => ({ ...r, rank: null })),
           ...dnfs.map((r) => ({ ...r, rank: null })),
           ...dsqs.map((r) => ({ ...r, rank: null })),
+          ...noStartTimes.map((r) => ({ ...r, rank: null })),
+          ...registereds.map((r) => ({ ...r, rank: null })),
         ];
 
         const catMap: Record<string, LeaderRow[]> = {};
