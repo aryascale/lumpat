@@ -134,7 +134,7 @@ export default function LandingPage() {
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(245,245,245,0.8) 0%, transparent 15%, transparent 85%, rgba(245,245,245,0.8) 100%)' }} />
 
         {/* Section Header */}
-        <div className="text-center mb-8 md:mb-20 px-6 relative z-10">
+        <div className="text-center mb-6 md:mb-10 px-6 relative z-10">
           <span className="text-red-500 font-extrabold tracking-[0.3em] text-[11px] uppercase mb-3 block">SOFTWARE PLATFORM</span>
           <h2 className="text-4xl sm:text-5xl md:text-7xl font-black uppercase text-stone-900 mb-4 tracking-[-0.04em] leading-[0.92]">COMPLETE<br className="sm:hidden" /> ECOSYSTEM</h2>
           <p className="text-stone-400 max-w-md mx-auto text-sm md:text-[15px] font-medium leading-relaxed">
@@ -143,7 +143,7 @@ export default function LandingPage() {
         </div>
 
         {/* === 3D STAGE === */}
-        <div className={`relative w-full max-w-7xl mx-auto flex items-center justify-center transition-all duration-500 ${isMobile ? 'h-[360px]' : 'h-[800px]'}`}>
+        <div className={`relative w-full max-w-7xl mx-auto flex items-center justify-center transition-all duration-500 ${isMobile ? 'h-[360px]' : 'h-[600px]'}`}>
           {/* Atmospheric glows */}
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(220,38,38,0.07) 0%, transparent 70%)', filter: 'blur(60px)' }} />
           
@@ -161,9 +161,9 @@ export default function LandingPage() {
               "/Assets/landing2/portfolio.png"
             ]}
             duration={45}
-            cardWidth={isMobile ? "18rem" : "50rem"}
+            cardWidth={isMobile ? "18rem" : "60rem"}
             cardAspectRatio={isMobile ? "12/10" : "16/10"}
-            perspective={isMobile ? "45rem" : "80rem"}
+            perspective={isMobile ? "45rem" : "90rem"}
             withMask={true}
             containerClassName="w-full h-full"
             imageClassName="border border-stone-200/20 shadow-[0_20px_50px_rgba(0,0,0,0.15)] select-none pointer-events-none brightness-[1.02] saturate-[1.05]"
