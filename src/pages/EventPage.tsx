@@ -1042,6 +1042,25 @@ export default function EventPage() {
   const hasCover = !!event.bannerUrl;
   const coverImageUrl = hasCover ? event.bannerUrl : (banners.length > 0 ? banners[0].imageUrl : '');
 
+  const handleDownloadImage = async (url: string) => {
+    if (window.confirm("Apakah Anda ingin mengunduh gambar ini?")) {
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `gallery-${Date.now()}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+      } catch (err) {
+        message.error("Gagal mengunduh gambar");
+      }
+    }
+  };
+
   return (
     <>
       <Navbar />
@@ -1410,16 +1429,29 @@ export default function EventPage() {
                 <div className="h-[2px] flex-grow bg-stone-200 w-full md:w-auto"></div>
               </div>
               
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 pb-12">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4 pb-12">
                 {event?.content?.galleryUrls?.map((url: string, idx: number) => (
-                  <div key={idx} className="relative aspect-square overflow-hidden rounded-2xl bg-stone-100 shadow-sm hover:shadow-md transition-shadow group">
+                  <div 
+                    key={idx} 
+                    className="relative aspect-square md:aspect-[4/5] overflow-hidden bg-stone-100 group cursor-pointer"
+                    onClick={() => handleDownloadImage(url)}
+                  >
                     <img 
                       src={url} 
                       alt={`Gallery Image ${idx + 1}`} 
                       loading="lazy" 
-                      className="w-full h-full object-cover transition-transform duration-[1.5s] ease-out group-hover:scale-105" 
+                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" 
                     />
-                    <div className="absolute inset-0 border border-black/5 rounded-2xl pointer-events-none"></div>
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center">
+                      <div className="translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                        <div className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-6 py-2 rounded-full font-bold text-sm tracking-widest flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                          DOWNLOAD
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
