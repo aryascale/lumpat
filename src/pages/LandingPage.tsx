@@ -15,7 +15,6 @@ export default function LandingPage() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showComingSoon, setShowComingSoon] = useState(false);
   const [activeEcosystem, setActiveEcosystem] = useState(0);
-  const [heroIndex, setHeroIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {

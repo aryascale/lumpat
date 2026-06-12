@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { initFrontendLogger } from "./lib/frontend-logger";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import LandingPage from "./pages/LandingPage";
+import AboutPage from "./pages/AboutPage";
 import UserEventPage from "./pages/UserEventPage";
 import HomePage from "./pages/HomePage";
 import CreateEventPage from "./pages/CreateEventPage";
@@ -45,6 +46,7 @@ export default function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/verify/:id" element={<VerifyPage />} /> */}
         <Route path="/" element={<LandingPage />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="/leaderboard" element={<UserEventPage />} />
         <Route path="/event" element={<UserEventPage />} />
         <Route path="/bantuan" element={<SupportTicketPage />} />
