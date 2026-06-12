@@ -31,6 +31,15 @@ function loadDQMap(eventId: string): Record<string, boolean> {
   }
 }
 
+function loadHiddenMap(eventId: string): Record<string, boolean> {
+  try {
+    const key = `imr_hidden_map_${eventId}`;
+    return JSON.parse(localStorage.getItem(key) || "{}");
+  } catch {
+    return {};
+  }
+}
+
 /**
  * Match a registered participant (from DB) to a master CSV participant.
  * Strategy: name+category (most reliable) → name-only fallback.
@@ -937,6 +946,7 @@ export default function EventPage() {
         setState({ status: "ready" });
         setHasLoadedOnce(true);
       } catch (e: any) {
+        console.error("fetchData error:", e);
         // Allow page to render even without data - don't block UI
         setState({ status: "ready" });
         setHasLoadedOnce(true);
