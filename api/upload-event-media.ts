@@ -25,13 +25,13 @@ export default async function handler(event: any) {
     if (!eventId) return errorResponse('eventId is required', 400);
 
     const targetField = fields.field;
-    if (targetField !== 'logo' && targetField !== 'banner' && targetField !== 'home_image' && targetField !== 'rpc_bg' && targetField !== 'rpc_bg_mobile' && targetField !== 'gallery') {
+    if (targetField !== 'logo' && targetField !== 'banner' && targetField !== 'home_image' && targetField !== 'rpc_bg' && targetField !== 'rpc_bg_mobile' && targetField !== 'gallery' && targetField !== 'tnc_doc') {
       return errorResponse('Invalid field type', 400);
     }
 
     const result = await uploadFile(eventId, file.data, file.name, 'images');
     
-    if (targetField === 'rpc_bg' || targetField === 'rpc_bg_mobile' || targetField === 'gallery') {
+    if (targetField === 'rpc_bg' || targetField === 'rpc_bg_mobile' || targetField === 'gallery' || targetField === 'tnc_doc') {
       const existing: any = await query('SELECT content FROM Event WHERE id = ?', [eventId]);
       const currentContentStr = existing[0]?.content;
       let currentContent = {};
@@ -45,8 +45,10 @@ export default async function handler(event: any) {
         (currentContent as any).galleryUrls = galleryUrls;
       } else if (targetField === 'rpc_bg') {
         (currentContent as any).rpcBgUrl = result.url;
-      } else {
+      } else if (targetField === 'rpc_bg_mobile') {
         (currentContent as any).rpcBgUrlMobile = result.url;
+      } else if (targetField === 'tnc_doc') {
+        (currentContent as any).tncUrl = result.url;
       }
       await query(
         `UPDATE Event SET content = ?, updatedAt = NOW() WHERE id = ?`,

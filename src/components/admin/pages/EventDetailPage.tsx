@@ -68,6 +68,9 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   const [uploadingHomeImage, setUploadingHomeImage] = useState(false);
   const [uploadingRpcBg, setUploadingRpcBg] = useState(false);
   const [uploadingRpcBgMobile, setUploadingRpcBgMobile] = useState(false);
+
+  const [tncDocFile, setTncDocFile] = useState<File | null>(null);
+  const [uploadingTncDoc, setUploadingTncDoc] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
 
   // Category state
@@ -479,13 +482,14 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
     }
   };
 
-  const handleMediaUpload = async (type: 'logo' | 'banner' | 'home_image' | 'rpc_bg' | 'rpc_bg_mobile') => {
+  const handleMediaUpload = async (type: 'logo' | 'banner' | 'home_image' | 'rpc_bg' | 'rpc_bg_mobile' | 'tnc_doc') => {
     let file = null;
     if (type === 'logo') file = logoFile;
     else if (type === 'banner') file = coverBannerFile;
     else if (type === 'home_image') file = homeImageFile;
     else if (type === 'rpc_bg') file = rpcBgFile;
     else if (type === 'rpc_bg_mobile') file = rpcBgMobileFile;
+    else if (type === 'tnc_doc') file = tncDocFile;
 
     if (!file) {
       alert('Please select a file');
@@ -497,6 +501,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
     else if (type === 'home_image') setUploadingHomeImage(true);
     else if (type === 'rpc_bg') setUploadingRpcBg(true);
     else if (type === 'rpc_bg_mobile') setUploadingRpcBgMobile(true);
+    else if (type === 'tnc_doc') setUploadingTncDoc(true);
     
     try {
       const formData = new FormData();
@@ -543,6 +548,10 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         setRpcBgMobileFile(null);
         const fileInput = document.getElementById('rpc-bg-mobile-upload') as HTMLInputElement;
         if (fileInput) fileInput.value = '';
+      } else if (type === 'tnc_doc') {
+        setTncDocFile(null);
+        const fileInput = document.getElementById('tnc-doc-upload') as HTMLInputElement;
+        if (fileInput) fileInput.value = '';
       }
       
       alert('Media uploaded successfully!');
@@ -554,6 +563,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       else if (type === 'home_image') setUploadingHomeImage(false);
       else if (type === 'rpc_bg') setUploadingRpcBg(false);
       else if (type === 'rpc_bg_mobile') setUploadingRpcBgMobile(false);
+      else if (type === 'tnc_doc') setUploadingTncDoc(false);
     }
   };
 
@@ -2345,6 +2355,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                         <option value="textarea">Textarea</option>
                         <option value="dropdown">Dropdown</option>
                         <option value="nationality">Nationality</option>
+                        <option value="nik">NIK</option>
                       </select>
                     </div>
                     {field.type === 'dropdown' && (
@@ -2636,7 +2647,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                         enableRegisteredScan: eventData.content?.enableRegisteredScan !== false,
                         rpcBgUrl: eventData.content?.rpcBgUrl || '',
                         rpcBgUrlMobile: eventData.content?.rpcBgUrlMobile || '',
-                        isDateTBA: eventData.content?.isDateTBA || false
+                        isDateTBA: eventData.content?.isDateTBA || false,
+                        tncUrl: eventData.content?.tncUrl || ''
                       }
                     }),
                   });
@@ -2759,6 +2771,44 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                     </span>
                   </div>
                 </label>
+              </div>
+            </div>
+
+            <div className="admin-cutoff border-t border-gray-100 pt-6">
+              <div className="label">Syarat & Ketentuan (T&C)</div>
+              <div className="tools">
+                <div className="mb-4">
+                  <div className="text-sm font-bold text-gray-700 mb-1">Dokumen T&C (PDF/Gambar)</div>
+                  <input
+                    type="text"
+                    className="search w-full mb-2"
+                    placeholder="URL Syarat & Ketentuan"
+                    value={eventData?.content?.tncUrl || ''}
+                    onChange={(e) => setEventData({ 
+                      ...eventData, 
+                      content: { ...(eventData?.content || {}), tncUrl: e.target.value }
+                    })}
+                  />
+                  <div className="flex gap-2">
+                    <input
+                      id="tnc-doc-upload"
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={(e) => setTncDocFile(e.target.files?.[0] || null)}
+                      className="flex-1 text-sm block w-full text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300"
+                    />
+                    <button
+                      className="btn w-full sm:w-auto text-xs"
+                      onClick={() => handleMediaUpload('tnc_doc')}
+                      disabled={!tncDocFile || uploadingTncDoc}
+                    >
+                      {uploadingTncDoc ? 'Uploading...' : 'Upload Dokumen'}
+                    </button>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-2">
+                    Peserta harus menyetujui dokumen ini sebelum melakukan pembayaran.
+                  </div>
+                </div>
               </div>
             </div>
 

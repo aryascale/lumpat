@@ -162,6 +162,8 @@ export default function EventPage() {
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scanValidResult, setScanValidResult] = useState<any | null>(null);
   const [scanErrorResult, setScanErrorResult] = useState<string | null>(null);
+  const [tncModalOpen, setTncModalOpen] = useState(false);
+  const [tncAgreed, setTncAgreed] = useState(false);
   const scannerStateRef = useRef({
     isPaused: false,
     timeoutId: null as any
@@ -1887,7 +1889,7 @@ export default function EventPage() {
                             ) : (
                               <Input
                                 size="large"
-                                type={field.type}
+                                type={field.type === 'nik' ? 'text' : field.type}
                                 placeholder={`Masukkan ${field.label}`}
                                 value={bulkParticipants[activeTabIdx]?.[field.id] || ''}
                                 onChange={(e) => setBulkParticipants(prev => {
@@ -1945,7 +1947,27 @@ export default function EventPage() {
                     )}
                   </div>
 
-                  <div className="flex flex-col-reverse sm:flex-row justify-between pt-6 gap-4">
+                  {event?.content?.tncUrl && (
+                    <div className="w-full flex items-center gap-3 bg-white p-4 rounded-xl border border-stone-200 mb-6 shadow-sm">
+                      <input 
+                         type="checkbox" 
+                         className="w-5 h-5 accent-emerald-500 cursor-pointer"
+                         checked={tncAgreed}
+                         onChange={(e) => {
+                           if (e.target.checked) {
+                             setTncModalOpen(true);
+                           } else {
+                             setTncAgreed(false);
+                           }
+                         }}
+                      />
+                      <span className="text-sm font-medium text-stone-600">
+                        Saya menyetujui <button className="text-emerald-600 font-bold hover:underline" onClick={() => setTncModalOpen(true)}>Syarat dan Ketentuan</button> perlombaan ini.
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col-reverse sm:flex-row justify-between gap-4">
                     <Button size="large" onClick={() => setCurrentStep(1)} className="w-full sm:w-auto h-14">
                       Kembali
                     </Button>
@@ -1964,7 +1986,30 @@ export default function EventPage() {
                               message.error(`Pelanggan ${i+1}: Harap isi: ${missing.map(f => f.label).join(', ')}`);
                               return;
                             }
+
+                            const nikFields = customFields.filter(f => f.type === 'nik');
+                            for (const nf of nikFields) {
+                               const val = p[nf.id];
+                               if (val) {
+                                   if (!/^\d+$/.test(val)) {
+                                       setActiveTabIdx(i);
+                                       message.error(`Pelanggan ${i+1}: Format ${nf.label} salah. Harus berupa angka.`);
+                                       return;
+                                   }
+                                   if (val.length < 12) {
+                                       setActiveTabIdx(i);
+                                       message.error(`Pelanggan ${i+1}: ${nf.label} tidak boleh di bawah 12 digit.`);
+                                       return;
+                                   }
+                               }
+                            }
                           }
+
+                          if (event?.content?.tncUrl && !tncAgreed) {
+                             message.error('Anda harus menyetujui Syarat dan Ketentuan terlebih dahulu.');
+                             return;
+                          }
+
                           setCurrentStep(3);
                         }}
                       >
@@ -2002,7 +2047,16 @@ export default function EventPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col-reverse sm:flex-row justify-between pt-4 gap-4">
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl flex items-start gap-3 mt-4">
+                    <svg className="w-6 h-6 text-yellow-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div className="text-sm font-bold text-yellow-800 pt-0.5">
+                      Pastikan data dan kategori yang Anda pilih sudah sesuai.
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col-reverse sm:flex-row justify-between pt-2 gap-4">
                     <Button size="large" onClick={() => setCurrentStep(2)} className="w-full sm:w-auto h-14">
                       Kembali
                     </Button>
@@ -2127,6 +2181,39 @@ export default function EventPage() {
               )}
             </div>
           )}
+
+        <Modal
+          title={<div className="font-black text-xl">Syarat dan Ketentuan</div>}
+          open={tncModalOpen}
+          onCancel={() => setTncModalOpen(false)}
+          footer={
+            <div className="flex justify-end pt-4 border-t border-stone-200 mt-4">
+               <Button 
+                 type="primary" 
+                 size="large"
+                 className="bg-emerald-500 hover:bg-emerald-600 font-bold border-none"
+                 onClick={() => {
+                   setTncAgreed(true);
+                   setTncModalOpen(false);
+                 }}
+               >
+                 Setuju & Lanjutkan
+               </Button>
+            </div>
+          }
+          width={800}
+          centered
+        >
+          <div className="w-full h-[60vh] overflow-y-auto bg-stone-50 rounded-xl border border-stone-200 p-2 relative">
+            {event?.content?.tncUrl ? (
+              event.content.tncUrl.toLowerCase().endsWith('.pdf') ? (
+                 <iframe src={`${event.content.tncUrl}#toolbar=0`} className="w-full h-full rounded-lg" />
+              ) : (
+                 <img src={event.content.tncUrl} alt="Terms and Conditions" className="w-full h-auto rounded-lg" />
+              )
+            ) : null}
+          </div>
+        </Modal>
 
         <ParticipantModal
           open={modalOpen}
