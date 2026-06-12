@@ -15,6 +15,10 @@ export default function LandingNavbar() {
 
   const handleNav = (link: (typeof NAV_LINKS)[0]) => {
     setIsOpen(false);
+    if (link.label === "Live Results") {
+      window.dispatchEvent(new Event("show-coming-soon"));
+      return;
+    }
     if (link.action === "navigate") {
       navigate(link.to);
     } else {

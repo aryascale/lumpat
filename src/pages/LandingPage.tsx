@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import LandingNavbar from "../components/landing/LandingNavbar";
 import HeroCircularGallery from "../components/landing/HeroCircularGallery";
 import EventSearchModal from "../components/EventSearchModal";
@@ -12,9 +13,24 @@ export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [scrollY, setScrollY] = useState(0);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [showComingSoon, setShowComingSoon] = useState(false);
   const [activeEcosystem, setActiveEcosystem] = useState(0);
   const [heroIndex, setHeroIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleComingSoon = () => {
+      setShowComingSoon(true);
+      setTimeout(() => setShowComingSoon(false), 2500);
+    };
+    window.addEventListener("show-coming-soon", handleComingSoon);
+    return () => window.removeEventListener("show-coming-soon", handleComingSoon);
+  }, []);
+
+  const triggerComingSoon = (e: React.MouseEvent) => {
+    e.preventDefault();
+    window.dispatchEvent(new Event("show-coming-soon"));
+  };
 
   // Responsive state observer
   useEffect(() => {
@@ -106,6 +122,22 @@ export default function LandingPage() {
 
   return (
     <div className="w-full overflow-hidden relative bg-[#F1F3F6]">
+      <AnimatePresence>
+        {showComingSoon && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: -20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none"
+          >
+            <span className="text-4xl md:text-6xl font-black text-slate-900 tracking-tight" style={{ textShadow: "0 4px 20px rgba(0,0,0,0.15), 0 0 40px rgba(255,255,255,0.8)" }}>
+              COMING SOON
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <LandingNavbar />
       <HeroCircularGallery />
 
@@ -451,7 +483,7 @@ export default function LandingPage() {
               <a onClick={() => setIsSearchOpen(true)} className="hover:text-gray-900 hover:underline cursor-pointer transition-colors">Search Events</a>
               <a href="#products" className="hover:text-gray-900 hover:underline transition-colors">Transponders</a>
               <a href="#features" className="hover:text-gray-900 hover:underline transition-colors">Features</a>
-              <a href="#live-results" className="hover:text-gray-900 hover:underline transition-colors">Live Results</a>
+              <a href="#" onClick={triggerComingSoon} className="hover:text-gray-900 hover:underline transition-colors">Live Results</a>
             </div>
             <div className="flex flex-col space-y-2.5">
               <h5 className="font-semibold text-gray-900 mb-1">Company</h5>
