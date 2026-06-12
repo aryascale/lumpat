@@ -318,9 +318,9 @@ export default function LandingPage() {
               </div>
               <div className="w-full md:w-[45%] h-[240px] md:h-[300px] flex items-center justify-center">
                 <img 
-                  src="/Assets/landing2/PRO TIME DECODER.png" 
+                  src="/Assets/landing2/PRO TIME DECODER.webp" 
                   alt="Pro Time Decoder" 
-                  className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-700 group-hover:scale-105"
+                  className="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-700 group-hover:scale-105"
                 />
               </div>
             </div>
@@ -336,9 +336,9 @@ export default function LandingPage() {
               </div>
               <div className="w-full h-[200px] md:h-[220px] flex items-center justify-center mt-auto">
                 <img 
-                  src="/Assets/landing2/MAGIC ANTENNA.png" 
+                  src="/Assets/landing2/MAGIC ANTENNA.webp" 
                   alt="Magic Antenna" 
-                  className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-700 group-hover:scale-105"
+                  className="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-700 group-hover:scale-105"
                 />
               </div>
             </div>
@@ -354,9 +354,9 @@ export default function LandingPage() {
               </div>
               <div className="w-full h-[200px] md:h-[220px] flex items-center justify-center mt-auto">
                 <img 
-                  src="/Assets/landing2/Active Chip.png" 
+                  src="/Assets/landing2/Active Chip.webp" 
                   alt="Active Chip" 
-                  className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-700 group-hover:scale-105"
+                  className="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-700 group-hover:scale-105"
                 />
               </div>
             </div>
@@ -377,9 +377,9 @@ export default function LandingPage() {
               </div>
               <div className="w-full md:w-[45%] h-[240px] md:h-[300px] flex items-center justify-center">
                 <img 
-                  src="/Assets/landing2/RUNNING Chip.png" 
+                  src="/Assets/landing2/RUNNING Chip.webp" 
                   alt="Running Chip" 
-                  className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-700 group-hover:scale-105"
+                  className="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-700 group-hover:scale-105"
                 />
               </div>
             </div>
