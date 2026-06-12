@@ -106,6 +106,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   const [allRows, setAllRows] = useState<LeaderRow[]>([]);
   const [dqSearch, setDqSearch] = useState("");
   const [dqMap, setDqMap] = useState<Record<string, boolean>>({});
+  const [hiddenMap, setHiddenMap] = useState<Record<string, boolean>>({});
   const [eventData, setEventData] = useState<any>(null);
 
   // Certificate state
@@ -225,6 +226,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
 
       // Load runner status map from API
       let dqData: Record<string, boolean> = {};
+      let hiddenData: Record<string, boolean> = {};
       try {
         const res = await fetch(`/api/runner-status?eventId=${eventId}`);
         if (res.ok) {
@@ -232,6 +234,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           if (Array.isArray(data)) {
             data.forEach((s: any) => {
               if (s.isDQ) dqData[s.epc] = true;
+              if (s.isHidden) hiddenData[s.epc] = true;
             });
           }
         }
@@ -239,6 +242,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         console.error("Failed to load runner status:", e);
       }
       setDqMap(dqData);
+      setHiddenMap(hiddenData);
 
       const absOverrideMs: Record<string, number | null> = {};
       const timeOnlyStr: Record<string, string | null> = {};
@@ -942,19 +946,28 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       await fetch('/api/runner-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId, epc, bib, isDQ: nextVal, isHidden: false })
+        body: JSON.stringify({ eventId, epc, bib, isDQ: nextVal, isHidden: !!hiddenMap[epc] })
       });
     } catch (e) { console.error(e); }
 
     bumpDataVersion();
+  };
 
-    // Update all rows to reflect DQ status
-    const updatedRows = allRows.map(row =>
-      row.epc === epc
-        ? { ...row, totalTimeDisplay: next[epc] ? "DSQ" : formatDuration(row.totalTimeMs) }
-        : row
-    );
-    setAllRows(updatedRows);
+  const toggleHide = async (epc: string, bib: string) => {
+    const nextVal = !hiddenMap[epc];
+    const next = { ...hiddenMap, [epc]: nextVal };
+    if (!nextVal) delete next[epc];
+    setHiddenMap(next);
+
+    try {
+      await fetch('/api/runner-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId, epc, bib, isDQ: !!dqMap[epc], isHidden: nextVal })
+      });
+    } catch (e) { console.error(e); }
+
+    bumpDataVersion();
   };
 
   // Certificate handlers
@@ -1960,12 +1973,21 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                       <td>{r.category}</td>
                       <td className="mono strong">{isDQ ? "DSQ" : "OK"}</td>
                       <td>
-                        <button
-                          className="btn ghost"
-                          onClick={() => toggleDQ(r.epc, r.bib || '')}
-                        >
-                          {isDQ ? "Undo DSQ" : "Disqualify"}
-                        </button>
+                        <div className="flex gap-1">
+                          <button
+                            className="btn ghost sm"
+                            onClick={() => toggleDQ(r.epc, r.bib || '')}
+                          >
+                            {isDQ ? "Undo DSQ" : "Disqualify"}
+                          </button>
+                          <button
+                            className="btn ghost sm"
+                            style={{ color: '#dc2626' }}
+                            onClick={() => toggleHide(r.epc, r.bib || '')}
+                          >
+                            {hiddenMap[r.epc] ? "Unhide" : "Hide"}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -2016,12 +2038,21 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                         {isDQ ? "DSQ" : "OK"}
                       </span>
                     </div>
-                    <button
-                      className={`btn w-full text-sm ${isDQ ? '' : 'ghost'}`}
-                      onClick={() => toggleDQ(r.epc, r.bib || '')}
-                    >
-                      {isDQ ? "Undo DSQ" : "Disqualify"}
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        className={`btn w-full text-xs font-bold uppercase ${isDQ ? '' : 'ghost'}`}
+                        onClick={() => toggleDQ(r.epc, r.bib || '')}
+                      >
+                        {isDQ ? "Undo DSQ" : "Disqualify"}
+                      </button>
+                      <button
+                        className={`btn w-full text-xs font-bold uppercase ghost`}
+                        style={{ color: '#dc2626' }}
+                        onClick={() => toggleHide(r.epc, r.bib || '')}
+                      >
+                        {hiddenMap[r.epc] ? "Unhide" : "Hide"}
+                      </button>
+                    </div>
                   </div>
                 );
               })

@@ -5,8 +5,10 @@ export default async function handler(event: any) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
 
   try {
-    const eventId = event.queryStringParameters?.eventId;
-    if (!eventId) return errorResponse('eventId is required', 400);
+    let eventId = event.queryStringParameters?.eventId;
+    if (!eventId && event.httpMethod !== 'POST' && event.httpMethod !== 'PUT') {
+      return errorResponse('eventId is required', 400);
+    }
 
     if (event.httpMethod === 'GET') {
       const statuses: any = await query(
@@ -21,7 +23,9 @@ export default async function handler(event: any) {
       if (!body) return errorResponse('Missing request body', 400);
 
       const { epc, bib, isDQ = false, isHidden = false } = body;
+      eventId = eventId || body.eventId;
 
+      if (!eventId) return errorResponse('eventId is required', 400);
       if (!epc) return errorResponse('epc is required', 400);
 
       const existing: any = await query(
