@@ -7,8 +7,8 @@ import AppSidebar, { defaultMenuItems } from './AppSidebar';
 const { Header, Content } = Layout;
 
 const LS_AUTH = "imr_admin_authed";
-const ADMIN_USER = "izbat@izbat.org";
-const ADMIN_PASS = "12345678";
+const ADMIN_USER = import.meta.env.VITE_ADMIN_USER || "";
+const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASS || "";
 
 function loadAuth() {
   return localStorage.getItem(LS_AUTH) === "true";
