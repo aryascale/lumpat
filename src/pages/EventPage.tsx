@@ -297,6 +297,9 @@ export default function EventPage() {
   const [otpCode, setOtpCode] = useState('');
   const [otpLoading, setOtpLoading] = useState(false);
 
+  const [downloadImage, setDownloadImage] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+
   const updateRegForm = (field: string, value: string) => {
     setRegForm(prev => ({ ...prev, [field]: value }));
     // Reset verification if email changes
@@ -1042,22 +1045,25 @@ export default function EventPage() {
   const hasCover = !!event.bannerUrl;
   const coverImageUrl = hasCover ? event.bannerUrl : (banners.length > 0 ? banners[0].imageUrl : '');
 
-  const handleDownloadImage = async (url: string) => {
-    if (window.confirm("Apakah Anda ingin mengunduh gambar ini?")) {
-      try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.download = `gallery-${Date.now()}.jpg`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(blobUrl);
-      } catch (err) {
-        message.error("Gagal mengunduh gambar");
-      }
+  const executeDownload = async () => {
+    if (!downloadImage) return;
+    setIsDownloading(true);
+    try {
+      const response = await fetch(downloadImage);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `gallery-${Date.now()}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+      setDownloadImage(null);
+    } catch (err) {
+      message.error("Gagal mengunduh gambar");
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -1434,7 +1440,7 @@ export default function EventPage() {
                   <div 
                     key={idx} 
                     className="relative aspect-square md:aspect-[4/5] overflow-hidden bg-stone-100 group cursor-pointer"
-                    onClick={() => handleDownloadImage(url)}
+                    onClick={() => setDownloadImage(url)}
                   >
                     <img 
                       src={url} 
@@ -2548,6 +2554,53 @@ export default function EventPage() {
             }
           }
         `}</style>
+        {/* Download Image Modal */}
+        <Modal
+          open={!!downloadImage}
+          onCancel={() => setDownloadImage(null)}
+          footer={null}
+          centered
+          width={600}
+          className="modern-modal"
+          closeIcon={<div className="bg-white/10 hover:bg-white/20 p-2 rounded-full text-white backdrop-blur-md transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg></div>}
+          styles={{ 
+            content: { padding: 0, overflow: 'hidden', backgroundColor: 'transparent', boxShadow: 'none' },
+            mask: { backdropFilter: 'blur(12px)', backgroundColor: 'rgba(0,0,0,0.85)' }
+          }}
+        >
+          {downloadImage && (
+            <div className="flex flex-col items-center">
+              <div className="w-full relative rounded-2xl overflow-hidden shadow-2xl mb-6">
+                <img src={downloadImage} alt="Download Preview" className="w-full h-auto object-contain max-h-[70vh] bg-stone-900/50" />
+              </div>
+              <div className="flex gap-4 w-full">
+                <Button 
+                  size="large" 
+                  className="flex-1 h-14 bg-white/10 hover:bg-white/20 text-white border-0 hover:text-white backdrop-blur-md font-bold tracking-widest uppercase"
+                  onClick={() => setDownloadImage(null)}
+                  disabled={isDownloading}
+                >
+                  Batal
+                </Button>
+                <Button 
+                  type="primary" 
+                  size="large" 
+                  className="flex-1 h-14 bg-white text-stone-900 hover:bg-stone-100 hover:text-stone-900 border-0 font-black tracking-widest uppercase flex items-center justify-center gap-2"
+                  onClick={executeDownload}
+                  loading={isDownloading}
+                >
+                  {!isDownloading && (
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                  )}
+                  Unduh
+                </Button>
+              </div>
+            </div>
+          )}
+        </Modal>
+
       </div>
     </>
   );
