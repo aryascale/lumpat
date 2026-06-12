@@ -2220,11 +2220,7 @@ export default function EventPage() {
         >
           <div className="w-full h-[60vh] overflow-y-auto bg-stone-50 rounded-xl border border-stone-200 p-2 relative">
             {event?.content?.tncUrl ? (
-              event.content.tncUrl.toLowerCase().endsWith('.pdf') ? (
                  <iframe src={`${event.content.tncUrl}#toolbar=0`} className="w-full h-full rounded-lg" />
-              ) : (
-                 <img src={event.content.tncUrl} alt="Terms and Conditions" className="w-full h-auto rounded-lg" />
-              )
             ) : null}
           </div>
         </Modal>

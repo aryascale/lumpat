@@ -2804,7 +2804,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
               <div className="label">Syarat & Ketentuan (T&C)</div>
               <div className="tools">
                 <div className="mb-4">
-                  <div className="text-sm font-bold text-gray-700 mb-1">Dokumen T&C (PDF/Gambar)</div>
+                  <div className="text-sm font-bold text-gray-700 mb-1">Dokumen T&C (Khusus PDF)</div>
                   <input
                     type="text"
                     className="search w-full mb-2"
@@ -2819,7 +2819,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                     <input
                       id="tnc-doc-upload"
                       type="file"
-                      accept="image/*,.pdf"
+                      accept=".pdf"
                       onChange={(e) => setTncDocFile(e.target.files?.[0] || null)}
                       className="flex-1 text-sm block w-full text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300"
                     />
