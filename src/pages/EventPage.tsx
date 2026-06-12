@@ -2010,9 +2010,9 @@ export default function EventPage() {
                                        message.error(`Pelanggan ${i+1}: Format ${nf.label} salah. Harus berupa angka.`);
                                        return;
                                    }
-                                   if (val.length < 12) {
+                                   if (val !== '0' && val.length < 12) {
                                        setActiveTabIdx(i);
-                                       message.error(`Pelanggan ${i+1}: ${nf.label} tidak boleh di bawah 12 digit.`);
+                                       message.error(`Pelanggan ${i+1}: ${nf.label} harus diisi 0 (WNA) atau minimal 12 digit.`);
                                        return;
                                    }
                                }
