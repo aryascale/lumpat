@@ -973,6 +973,9 @@ export default function EventPage() {
     if (hasRoute) {
       baseTabs.push("Route");
     }
+    if (event?.content?.galleryUrls && event.content.galleryUrls.length > 0) {
+      baseTabs.push("Gallery");
+    }
     baseTabs.push("Results");
     
     // Append categories
@@ -1398,31 +1401,34 @@ export default function EventPage() {
             );
           })()}
 
-          {activeTab !== "Home" && activeTab !== "Participants" && activeTab !== "Registered" && activeTab !== "Results" && activeTab !== "Route" && (
+          {activeTab === "Gallery" && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6 mb-8 mt-4">
+                <h2 className="text-3xl md:text-4xl font-black text-stone-900 uppercase tracking-tighter">
+                  Event Gallery
+                </h2>
+                <div className="h-[2px] flex-grow bg-stone-200 w-full md:w-auto"></div>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 pb-12">
+                {event?.content?.galleryUrls?.map((url: string, idx: number) => (
+                  <div key={idx} className="relative aspect-square overflow-hidden rounded-2xl bg-stone-100 shadow-sm hover:shadow-md transition-shadow group">
+                    <img 
+                      src={url} 
+                      alt={`Gallery Image ${idx + 1}`} 
+                      loading="lazy" 
+                      className="w-full h-full object-cover transition-transform duration-[1.5s] ease-out group-hover:scale-105" 
+                    />
+                    <div className="absolute inset-0 border border-black/5 rounded-2xl pointer-events-none"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeTab !== "Home" && activeTab !== "Participants" && activeTab !== "Registered" && activeTab !== "Results" && activeTab !== "Route" && activeTab !== "Gallery" && (
             <div className="space-y-8">
-              {/* Category-Level Gallery Parallax Grid */}
-              {event?.content?.galleryUrls && event.content.galleryUrls.length > 0 && (
-                <div className="mb-12">
-                  <div className="flex items-center gap-4 mb-6">
-                    <h3 className="text-xl md:text-2xl font-black text-stone-900 uppercase tracking-tighter">Event Gallery</h3>
-                    <div className="h-[2px] flex-grow bg-stone-200"></div>
-                  </div>
-                  {/* Modern Parallax Masonry-ish tight grid */}
-                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1 md:gap-2 pb-6">
-                    {event.content.galleryUrls.slice(0, 20).map((url: string, idx: number) => (
-                      <div key={idx} className="relative aspect-[3/4] overflow-hidden group bg-stone-100">
-                        <img 
-                          src={url} 
-                          alt={`Gallery ${idx}`} 
-                          loading="lazy" 
-                          className="w-full h-full object-cover transition-transform duration-[1.5s] ease-out group-hover:scale-110" 
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {/* Gallery is now in its own tab */}
 
               {!((byCategory as any)[activeTab] || []).some((r: any) => r.rank != null && r.rank <= 3) && (
                 <RaceClock cutoffMs={event?.cutoffMs} categoryStartTimes={event?.categoryStartTimes} />
