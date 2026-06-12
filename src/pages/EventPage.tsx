@@ -1841,7 +1841,7 @@ export default function EventPage() {
                         {customFields.map(field => (
                           <div key={field.id} className={field.type === 'textarea' ? 'md:col-span-2' : ''}>
                             <label className="block text-xs font-bold text-gray-700 mb-1">
-                              {field.label} {field.required && <span className="text-red-500">*</span>}
+                              {field.label} {field.required ? <span className="text-red-500">*</span> : null}
                             </label>
                             
                             {field.type === 'dropdown' ? (
