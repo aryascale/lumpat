@@ -458,8 +458,8 @@ export default function EventPage() {
               const fieldsData = await fieldsRes.json();
               const fetchedFields = fieldsData.fields || [];
               const transformedFields = fetchedFields.map((f: any) => {
-                if (f.label.includes('National ID Number') || f.label.includes('Nationality')) {
-                  return { ...f, label: 'Nationality', type: 'nationality' };
+                if (f.label.trim() === 'Nationality' && f.type !== 'nationality') {
+                  return { ...f, type: 'nationality' };
                 }
                 return f;
               });
@@ -1890,13 +1890,27 @@ export default function EventPage() {
                               <Input
                                 size="large"
                                 type={field.type === 'nik' ? 'text' : field.type}
+                                inputMode={field.type === 'nik' ? 'numeric' : undefined}
+                                pattern={field.type === 'nik' ? '[0-9]*' : undefined}
+                                maxLength={field.type === 'nik' ? 16 : undefined}
                                 placeholder={`Masukkan ${field.label}`}
                                 value={bulkParticipants[activeTabIdx]?.[field.id] || ''}
-                                onChange={(e) => setBulkParticipants(prev => {
-                                  const updated = [...prev];
-                                  updated[activeTabIdx] = { ...updated[activeTabIdx], [field.id]: e.target.value };
-                                  return updated;
-                                })}
+                                onChange={(e) => {
+                                  if (field.type === 'nik') {
+                                    const val = e.target.value.replace(/\D/g, '');
+                                    setBulkParticipants(prev => {
+                                      const updated = [...prev];
+                                      updated[activeTabIdx] = { ...updated[activeTabIdx], [field.id]: val };
+                                      return updated;
+                                    });
+                                  } else {
+                                    setBulkParticipants(prev => {
+                                      const updated = [...prev];
+                                      updated[activeTabIdx] = { ...updated[activeTabIdx], [field.id]: e.target.value };
+                                      return updated;
+                                    });
+                                  }
+                                }}
                               />
                             )}
                           </div>
