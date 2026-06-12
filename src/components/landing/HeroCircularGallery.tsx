@@ -2,56 +2,32 @@ import { useState, useEffect, useMemo } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
-// ─── Triathlon-focused Unsplash images: swim, bike, run ───
+// ─── Local Hero Images ───
 const GALLERY_IMAGES = [
-  // 1
-  "https://plus.unsplash.com/premium_photo-1661963958813-dd7402cc7caa?ixid=M3wxMjA3fDB8MXxzZWFyY2h8MXx8dHJpYXRobG9uJTIwY29tcGV0aXRpb258ZW58MHx8fHwxNzc5NzgyOTQ5fDA&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
-  // 2
-  "https://images.unsplash.com/photo-1658748721978-68fc04f3739b?ixid=M3wxMjA3fDB8MXxzZWFyY2h8Mnx8dHJpYXRobG9uJTIwY29tcGV0aXRpb258ZW58MHx8fHwxNzc5NzgyOTQ5fDA&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
-  // 3
-  "https://images.unsplash.com/photo-1533547477463-bcffb9ef386d?ixid=M3wxMjA3fDB8MXxzZWFyY2h8M3x8dHJpYXRobG9uJTIwY29tcGV0aXRpb258ZW58MHx8fHwxNzc5NzgyOTQ5fDA&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
-  // 4
-  "https://images.unsplash.com/photo-1576858574144-9ae1ebcf5ae5?ixid=M3wxMjA3fDB8MXxzZWFyY2h8NHx8dHJpYXRobG9uJTIwY29tcGV0aXRpb258ZW58MHx8fHwxNzc5NzgyOTQ5fDA&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
-  // 5
-  "https://plus.unsplash.com/premium_photo-1661964408302-d88b6e98322a?ixid=M3wxMjA3fDB8MXxzZWFyY2h8NXx8dHJpYXRobG9uJTIwY29tcGV0aXRpb258ZW58MHx8fHwxNzc5NzgyOTQ5fDA&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
-  // 6
-  "https://images.unsplash.com/photo-1627156399021-721b0f720f8d?ixid=M3wxMjA3fDB8MXxzZWFyY2h8Nnx8dHJpYXRobG9uJTIwY29tcGV0aXRpb258ZW58MHx8fHwxNzc5NzgyOTQ5fDA&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
-  // 7
-  "https://images.unsplash.com/photo-1628689529124-3e0db67e984c?ixid=M3wxMjA3fDB8MXxzZWFyY2h8N3x8dHJpYXRobG9uJTIwY29tcGV0aXRpb258ZW58MHx8fHwxNzc5NzgyOTQ5fDA&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
-  // 8
-  "https://images.unsplash.com/photo-1695808403904-a43973fb42a6?ixid=M3wxMjA3fDB8MXxzZWFyY2h8OHx8dHJpYXRobG9uJTIwY29tcGV0aXRpb258ZW58MHx8fHwxNzc5NzgyOTQ5fDA&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
-  // 9
-  "https://plus.unsplash.com/premium_photo-1661964347110-8972b7e1569c?ixid=M3wxMjA3fDB8MXxzZWFyY2h8OXx8dHJpYXRobG9uJTIwY29tcGV0aXRpb258ZW58MHx8fHwxNzc5NzgyOTQ5fDA&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
-  // 10
-  "https://images.unsplash.com/photo-1716462420479-5a6ae7436425?ixid=M3wxMjA3fDB8MXxzZWFyY2h8MTB8fHRyaWF0aGxvbiUyMGNvbXBldGl0aW9ufGVufDB8fHx8MTc3OTc4Mjk0OXww&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
-  // 11
-  "https://images.unsplash.com/photo-1533049426476-9a889e21ece5?ixid=M3wxMjA3fDB8MXxzZWFyY2h8MTF8fHRyaWF0aGxvbiUyMGNvbXBldGl0aW9ufGVufDB8fHx8MTc3OTc4Mjk0OXww&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
-  // 12
-  "https://images.unsplash.com/photo-1633114078244-353b1ce7b096?ixid=M3wxMjA3fDB8MXxzZWFyY2h8MTJ8fHRyaWF0aGxvbiUyMGNvbXBldGl0aW9ufGVufDB8fHx8MTc3OTc4Mjk0OXww&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
-  // 13
-  "https://plus.unsplash.com/premium_photo-1664302497172-b759cbdc1b6a?ixid=M3wxMjA3fDB8MXxzZWFyY2h8MTN8fHRyaWF0aGxvbiUyMGNvbXBldGl0aW9ufGVufDB8fHx8MTc3OTc4Mjk0OXww&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
-  // 14
-  "https://images.unsplash.com/photo-1720423753777-d40550822d63?ixid=M3wxMjA3fDB8MXxzZWFyY2h8MTR8fHRyaWF0aGxvbiUyMGNvbXBldGl0aW9ufGVufDB8fHx8MTc3OTc4Mjk0OXww&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
-  // 15
-  "https://images.unsplash.com/photo-1580748386343-376c85dd4887?ixid=M3wxMjA3fDB8MXxzZWFyY2h8MTV8fHRyaWF0aGxvbiUyMGNvbXBldGl0aW9ufGVufDB8fHx8MTc3OTc4Mjk0OXww&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
-  // 16
-  "https://images.unsplash.com/photo-1728454994678-21be5481e249?ixid=M3wxMjA3fDB8MXxzZWFyY2h8MTZ8fHRyaWF0aGxvbiUyMGNvbXBldGl0aW9ufGVufDB8fHx8MTc3OTc4Mjk0OXww&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
-  // 17
-  "https://plus.unsplash.com/premium_photo-1661964350721-92fd41ac1e9f?ixid=M3wxMjA3fDB8MXxzZWFyY2h8MTd8fHRyaWF0aGxvbiUyMGNvbXBldGl0aW9ufGVufDB8fHx8MTc3OTc4Mjk0OXww&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
-  // 18
-  "https://images.unsplash.com/photo-1633653872373-b3fd8eaf72a6?ixid=M3wxMjA3fDB8MXxzZWFyY2h8MTh8fHRyaWF0aGxvbiUyMGNvbXBldGl0aW9ufGVufDB8fHx8MTc3OTc4Mjk0OXww&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
-  // 19
-  "https://images.unsplash.com/photo-1512203492609-972c16baa28b?ixid=M3wxMjA3fDB8MXxzZWFyY2h8MTl8fHRyaWF0aGxvbiUyMGNvbXBldGl0aW9ufGVufDB8fHx8MTc3OTc4Mjk0OXww&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
-  // 20
-  "https://images.unsplash.com/photo-1627900258552-50850df9dbc5?ixid=M3wxMjA3fDB8MXxzZWFyY2h8MjB8fHRyaWF0aGxvbiUyMGNvbXBldGl0aW9ufGVufDB8fHx8MTc3OTc4Mjk0OXww&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
-  // 21
-  "https://plus.unsplash.com/premium_photo-1664297510120-354f5adbb9eb?ixid=M3wxMjA3fDB8MXxzZWFyY2h8MXx8cnVubmluZyUyMHJhY2V8ZW58MHx8fHwxNzc5NzgyOTQ5fDA&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
-  // 22
-  "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?ixid=M3wxMjA3fDB8MXxzZWFyY2h8Mnx8cnVubmluZyUyMHJhY2V8ZW58MHx8fHwxNzc5NzgyOTQ5fDA&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
-  // 23
-  "https://images.unsplash.com/photo-1502904550040-7534597429ae?ixid=M3wxMjA3fDB8MXxzZWFyY2h8M3x8cnVubmluZyUyMHJhY2V8ZW58MHx8fHwxNzc5NzgyOTQ5fDA&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
-  // 24
-  "https://images.unsplash.com/photo-1590333748338-d629e4564ad9?ixid=M3wxMjA3fDB8MXxzZWFyY2h8NHx8cnVubmluZyUyMHJhY2V8ZW58MHx8fHwxNzc5NzgyOTQ5fDA&ixlib=rb-4.1.0&w=200&h=260&fit=crop",
+  "/Assets/landing2/hero/1.webp",
+  "/Assets/landing2/hero/2.webp",
+  "/Assets/landing2/hero/3.webp",
+  "/Assets/landing2/hero/4.webp",
+  "/Assets/landing2/hero/5.webp",
+  "/Assets/landing2/hero/6.webp",
+  "/Assets/landing2/hero/7.webp",
+  "/Assets/landing2/hero/8.webp",
+  "/Assets/landing2/hero/9.webp",
+  "/Assets/landing2/hero/10.webp",
+  "/Assets/landing2/hero/11.webp",
+  "/Assets/landing2/hero/1.webp",
+  "/Assets/landing2/hero/2.webp",
+  "/Assets/landing2/hero/3.webp",
+  "/Assets/landing2/hero/4.webp",
+  "/Assets/landing2/hero/5.webp",
+  "/Assets/landing2/hero/6.webp",
+  "/Assets/landing2/hero/7.webp",
+  "/Assets/landing2/hero/8.webp",
+  "/Assets/landing2/hero/9.webp",
+  "/Assets/landing2/hero/10.webp",
+  "/Assets/landing2/hero/11.webp",
+  "/Assets/landing2/hero/1.webp",
+  "/Assets/landing2/hero/2.webp",
 ];
 
 const TOTAL_CARDS = 24;
