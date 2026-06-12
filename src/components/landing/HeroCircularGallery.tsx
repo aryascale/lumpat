@@ -130,9 +130,9 @@ export default function HeroCircularGallery() {
   }, [phase]);
 
   // ─── Responsive dimensions ───
-  const radius = isMobile ? 110 : 340;
-  const cardW = isMobile ? 34 : 60;
-  const cardH = isMobile ? 46 : 80;
+  const radius = isMobile ? 120 : 340;
+  const cardW = isMobile ? 36 : 60;
+  const cardH = isMobile ? 48 : 80;
 
   // ─── Scroll-linked Parallax Animation ───
   const { scrollY } = useScroll();
@@ -198,10 +198,10 @@ export default function HeroCircularGallery() {
             const tangentialRot = (angle + Math.PI / 2) * (180 / Math.PI);
 
             const targetX = isInit ? 0 : (isSplash
-              ? circleX + splashSeeds[index].x * (isMobile ? 0.35 : 1)
+              ? circleX + splashSeeds[index].x * (isMobile ? 0.45 : 1)
               : circleX);
             const targetY = isInit ? 0 : (isSplash
-              ? circleY + splashSeeds[index].y * (isMobile ? 0.35 : 1)
+              ? circleY + splashSeeds[index].y * (isMobile ? 0.45 : 1)
               : circleY);
             const targetRotation = isInit ? 0 : (isSplash
               ? splashSeeds[index].rot
