@@ -1950,10 +1950,9 @@ export default function EventPage() {
                       Kembali
                     </Button>
                     <div className="w-full sm:w-[320px]">
-                      <SlideToConfirm
-                        text="Lanjut Pembayaran"
-                        successText="Memproses..."
-                        onConfirm={() => {
+                      <button
+                        className="w-full h-14 bg-[#10b981] hover:bg-[#059669] text-white font-bold rounded-full transition-all duration-300 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:-translate-y-0.5 active:translate-y-0 uppercase tracking-widest text-sm"
+                        onClick={() => {
                           for (let i = 0; i < bulkQty; i++) {
                             const p = bulkParticipants[i] || {};
                             const missing = customFields.filter(f => f.required && !p[f.id]);
@@ -1963,13 +1962,14 @@ export default function EventPage() {
                             if (missing.length > 0) {
                               setActiveTabIdx(i);
                               message.error(`Pelanggan ${i+1}: Harap isi: ${missing.map(f => f.label).join(', ')}`);
-                              return Promise.reject(new Error("Missing fields"));
+                              return;
                             }
                           }
                           setCurrentStep(3);
-                          return Promise.resolve();
                         }}
-                      />
+                      >
+                        Lanjut Pembayaran
+                      </button>
                     </div>
                   </div>
                 </div>
