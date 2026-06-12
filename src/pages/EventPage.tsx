@@ -340,8 +340,7 @@ export default function EventPage() {
       message.error('Pilih kategori terlebih dahulu');
       return;
     }
-    const skipOtp = event?.content?.allowBulkNoOtp && bulkQty > 1;
-    if (!emailVerified && !skipOtp) {
+    if (!emailVerified && !event?.content?.allowBulkNoOtp) {
       message.error('Silakan verifikasi email kamu terlebih dahulu.');
       return;
     }
@@ -1653,9 +1652,9 @@ export default function EventPage() {
                   </div>
 
                   <div className="bg-stone-50 p-6 rounded-2xl border border-stone-200">
-                    <h3 className="text-lg font-black mb-4">2. {(event?.content?.allowBulkNoOtp && bulkQty > 1) ? 'Alamat Email' : 'Verifikasi Email'}</h3>
+                    <h3 className="text-lg font-black mb-4">2. {event?.content?.allowBulkNoOtp ? 'Alamat Email' : 'Verifikasi Email'}</h3>
                     <p className="text-sm text-gray-500 mb-4">
-                      {(event?.content?.allowBulkNoOtp && bulkQty > 1)
+                      {event?.content?.allowBulkNoOtp 
                         ? 'Masukkan alamat email Anda untuk keperluan tiket dan informasi.' 
                         : 'Kode OTP akan dikirimkan ke email Anda untuk validasi pendaftaran.'}
                     </p>
@@ -1669,10 +1668,10 @@ export default function EventPage() {
                           className="w-full"
                           value={regForm.email} 
                           onChange={e => updateRegForm('email', e.target.value)} 
-                          disabled={(emailVerified && !(event?.content?.allowBulkNoOtp && bulkQty > 1)) || otpLoading}
+                          disabled={(emailVerified && !event?.content?.allowBulkNoOtp) || otpLoading}
                         />
                       </div>
-                      {!(event?.content?.allowBulkNoOtp && bulkQty > 1) && (
+                      {!event?.content?.allowBulkNoOtp && (
                         <>
                           {!emailVerified ? (
                             <Button 
@@ -1697,7 +1696,7 @@ export default function EventPage() {
                       )}
                     </div>
 
-                    {!(event?.content?.allowBulkNoOtp && bulkQty > 1) && otpSent && !emailVerified && (
+                    {!event?.content?.allowBulkNoOtp && otpSent && !emailVerified && (
                       <div className="mt-4 pt-4 border-t border-gray-200">
                         <p className="text-xs font-bold text-gray-500 uppercase mb-2">Masukkan 6 Digit OTP</p>
                         <div className="flex flex-col sm:flex-row gap-3">
@@ -1731,7 +1730,7 @@ export default function EventPage() {
                       danger 
                       size="large" 
                       className="w-full sm:w-auto px-8 font-bold uppercase tracking-widest text-xs h-14"
-                      disabled={!regForm.categoryId || (!(event?.content?.allowBulkNoOtp && bulkQty > 1) && !emailVerified) || ((event?.content?.allowBulkNoOtp && bulkQty > 1) && (!regForm.email || !regForm.email.includes('@')))}
+                      disabled={!regForm.categoryId || (!event?.content?.allowBulkNoOtp && !emailVerified) || (event?.content?.allowBulkNoOtp && (!regForm.email || !regForm.email.includes('@')))}
                       onClick={() => setCurrentStep(2)}
                     >
                       Selanjutnya
