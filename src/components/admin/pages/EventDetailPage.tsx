@@ -2314,13 +2314,39 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                 <div key={idx} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <span className="text-xs font-bold text-gray-400 uppercase">Field #{idx + 1}</span>
-                    <button
-                      className="btn ghost text-xs"
-                      style={{ color: '#dc2626' }}
-                      onClick={() => setRegFields(regFields.filter((_, i) => i !== idx))}
-                    >
-                      Remove
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        className="btn ghost text-xs px-2 disabled:opacity-30 disabled:cursor-not-allowed"
+                        disabled={idx === 0}
+                        onClick={() => {
+                          const updated = [...regFields];
+                          [updated[idx - 1], updated[idx]] = [updated[idx], updated[idx - 1]];
+                          setRegFields(updated);
+                        }}
+                        title="Move Up"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        className="btn ghost text-xs px-2 disabled:opacity-30 disabled:cursor-not-allowed"
+                        disabled={idx === regFields.length - 1}
+                        onClick={() => {
+                          const updated = [...regFields];
+                          [updated[idx + 1], updated[idx]] = [updated[idx], updated[idx + 1]];
+                          setRegFields(updated);
+                        }}
+                        title="Move Down"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        className="btn ghost text-xs"
+                        style={{ color: '#dc2626' }}
+                        onClick={() => setRegFields(regFields.filter((_, i) => i !== idx))}
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
