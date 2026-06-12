@@ -190,16 +190,44 @@ export default function PaymentsPage() {
             className="btn ghost whitespace-nowrap w-full sm:w-auto text-xs"
             onClick={() => {
               if (filtered.length === 0) return alert('Tidak ada data untuk diexport');
+              
+              const escapeCsv = (val: any) => {
+                if (val == null) return '';
+                const str = String(val);
+                if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                  return `"${str.replace(/"/g, '""')}"`;
+                }
+                return str;
+              };
+
               const customKeys = new Set<string>();
               filtered.forEach(p => { if (p.customData) Object.keys(p.customData).forEach(k => customKeys.add(k)); });
               const customKeysArray = Array.from(customKeys);
-              const headers = ['Order ID','Status','Tanggal Daftar','Nama','Email','No HP','Tanggal Lahir','Gender','T-Shirt Size','BIB Name','Event','Kategori','Gross Amount',...customKeysArray];
+              const headers = ['Order ID','Status','Tanggal Daftar','Nama','Email','No HP','Tanggal Lahir','Gender','T-Shirt Size','BIB Name','Event','Kategori','Gross Amount',...customKeysArray].map(escapeCsv);
+              
               const csvData = filtered.map(p => {
-                const row = [p.orderId,p.paymentStatus,new Date(p.createdAt).toLocaleDateString('id-ID'),`"${p.name||''}"`,p.email,`'${p.phoneNumber||''}`,p.dateOfBirth?new Date(p.dateOfBirth).toLocaleDateString('id-ID'):'',p.gender||'',p.tshirtSize||'',p.bibName||'',`"${p.eventName||''}"`,`"${p.categoryName||''}"`,p.grossAmount];
-                customKeysArray.forEach(k => { let val = p.customData?.[k]||''; if(typeof val==='string'&&val.includes(',')) val=`"${val}"`; row.push(val); });
+                const row = [
+                  p.orderId,
+                  p.paymentStatus,
+                  new Date(p.createdAt).toLocaleDateString('id-ID'),
+                  p.name || '',
+                  p.email || '',
+                  p.phoneNumber ? `'${p.phoneNumber}` : '',
+                  p.dateOfBirth ? new Date(p.dateOfBirth).toLocaleDateString('id-ID') : '',
+                  p.gender || '',
+                  p.tshirtSize || '',
+                  p.bibName || '',
+                  p.eventName || '',
+                  p.categoryName || '',
+                  p.grossAmount
+                ].map(escapeCsv);
+                
+                customKeysArray.forEach(k => { 
+                  row.push(escapeCsv(p.customData?.[k] || '')); 
+                });
                 return row.join(',');
               });
-              const csvContent = [headers.join(','),...csvData].join('\n');
+              const csvContent = [headers.join(','), ...csvData].join('\n');
               const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
               const url = URL.createObjectURL(blob);
               const link = document.createElement('a');
