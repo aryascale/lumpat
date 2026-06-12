@@ -119,7 +119,7 @@ export default function LandingPage() {
           {/* We repeat the items 16 times so it's wide enough. -50% translateX will loop exactly halfway. */}
           {[...Array(16)].map((_, i) => (
             <div key={i} className="flex items-center justify-center px-10 sm:px-20 opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300 cursor-default">
-              <img src="/Assets/logo2.gif" alt="Logo" className="h-10 sm:h-16 object-contain" />
+              <img src="/Assets/landing2/IJT LOGO.PNG" alt="Logo" className="h-10 sm:h-16 object-contain" />
             </div>
           ))}
         </div>
@@ -128,14 +128,14 @@ export default function LandingPage() {
       {/* ===================== PLATFORM ECOSYSTEM — CINEMATIC 3D ===================== */}
       <section className="overflow-hidden relative" id="platform" style={{ 
         background: 'radial-gradient(ellipse 120% 80% at 50% 40%, #f0f0f0 0%, #e8e8e8 40%, #f5f5f5 100%)',
-        padding: isMobile ? '50px 0 30px' : '100px 0 80px' 
+        padding: isMobile ? '40px 0 30px' : '50px 0 40px' 
       }}>
         {/* Subtle top/bottom vignette */}
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(245,245,245,0.8) 0%, transparent 15%, transparent 85%, rgba(245,245,245,0.8) 100%)' }} />
 
         {/* Section Header */}
-        <div className="text-center mb-6 md:mb-10 px-6 relative z-10">
-          <span className="text-red-500 font-extrabold tracking-[0.3em] text-[11px] uppercase mb-3 block">SOFTWARE PLATFORM</span>
+        <div className="text-center mb-4 md:mb-6 px-6 relative z-10">
+          <span className="text-red-500 font-extrabold tracking-[0.3em] text-[11px] uppercase mb-2 block">SOFTWARE PLATFORM</span>
           <h2 className="text-4xl sm:text-5xl md:text-7xl font-black uppercase text-stone-900 mb-4 tracking-[-0.04em] leading-[0.92]">COMPLETE<br className="sm:hidden" /> ECOSYSTEM</h2>
           <p className="text-stone-400 max-w-md mx-auto text-sm md:text-[15px] font-medium leading-relaxed">
             Manage your entire event from one unified dashboard.<br className="hidden md:block" /> From custom branding to real-time results.
