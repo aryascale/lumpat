@@ -3,7 +3,32 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
 // ─── Local Hero Images ───
-const GALLERY_IMAGES = Array(24).fill("/Assets/landing2/hero/2.webp");
+const GALLERY_IMAGES = [
+  "/Assets/landing2/hero/2.webp",
+  "/Assets/landing2/hero/2.webp",
+  "/Assets/landing2/hero/3.webp",
+  "/Assets/landing2/hero/4.webp",
+  "/Assets/landing2/hero/5.webp",
+  "/Assets/landing2/hero/6.webp",
+  "/Assets/landing2/hero/7.webp",
+  "/Assets/landing2/hero/8.webp",
+  "/Assets/landing2/hero/9.webp",
+  "/Assets/landing2/hero/10.webp",
+  "/Assets/landing2/hero/11.webp",
+  "/Assets/landing2/hero/1.webp",
+  "/Assets/landing2/hero/2.webp",
+  "/Assets/landing2/hero/3.webp",
+  "/Assets/landing2/hero/4.webp",
+  "/Assets/landing2/hero/5.webp",
+  "/Assets/landing2/hero/6.webp",
+  "/Assets/landing2/hero/7.webp",
+  "/Assets/landing2/hero/8.webp",
+  "/Assets/landing2/hero/9.webp",
+  "/Assets/landing2/hero/10.webp",
+  "/Assets/landing2/hero/11.webp",
+  "/Assets/landing2/hero/1.webp",
+  "/Assets/landing2/hero/2.webp",
+];
 
 const TOTAL_CARDS = 24;
 const PHASE_DURATION_MS = 4000;
