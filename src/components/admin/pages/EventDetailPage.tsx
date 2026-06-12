@@ -223,13 +223,20 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       const cutoffMs = eventData?.cutoffMs ?? null;
       const catStartRaw: Record<string, string> = (eventData?.categoryStartTimes as Record<string, string>) ?? {};
 
-      // Load DQ map from localStorage
-      const dqKey = `imr_dq_map_${eventId}`;
+      // Load runner status map from API
       let dqData: Record<string, boolean> = {};
       try {
-        dqData = JSON.parse(localStorage.getItem(dqKey) || "{}");
-      } catch {
-        dqData = {};
+        const res = await fetch(`/api/runner-status?eventId=${eventId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            data.forEach((s: any) => {
+              if (s.isDQ) dqData[s.epc] = true;
+            });
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load runner status:", e);
       }
       setDqMap(dqData);
 
@@ -925,13 +932,19 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   };
 
   // Toggle DQ
-  const toggleDQ = (epc: string) => {
-    const next = { ...dqMap, [epc]: !dqMap[epc] };
-    if (!next[epc]) delete next[epc];
+  const toggleDQ = async (epc: string, bib: string) => {
+    const nextVal = !dqMap[epc];
+    const next = { ...dqMap, [epc]: nextVal };
+    if (!nextVal) delete next[epc];
     setDqMap(next);
 
-    const dqKey = `imr_dq_map_${eventId}`;
-    localStorage.setItem(dqKey, JSON.stringify(next));
+    try {
+      await fetch('/api/runner-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId, epc, bib, isDQ: nextVal, isHidden: false })
+      });
+    } catch (e) { console.error(e); }
 
     bumpDataVersion();
 
@@ -1949,7 +1962,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                       <td>
                         <button
                           className="btn ghost"
-                          onClick={() => toggleDQ(r.epc)}
+                          onClick={() => toggleDQ(r.epc, r.bib || '')}
                         >
                           {isDQ ? "Undo DSQ" : "Disqualify"}
                         </button>
@@ -2005,7 +2018,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                     </div>
                     <button
                       className={`btn w-full text-sm ${isDQ ? '' : 'ghost'}`}
-                      onClick={() => toggleDQ(r.epc)}
+                      onClick={() => toggleDQ(r.epc, r.bib || '')}
                     >
                       {isDQ ? "Undo DSQ" : "Disqualify"}
                     </button>

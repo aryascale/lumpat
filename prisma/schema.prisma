@@ -210,3 +210,17 @@ model Penalty {
   @@index([eventId])
   @@index([epc])
 }
+
+model RunnerStatus {
+  id        String   @id @default(uuid())
+  eventId   String
+  epc       String
+  bib       String?
+  isDQ      Boolean  @default(false)
+  isHidden  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([eventId, epc])
+  @@index([eventId])
+}

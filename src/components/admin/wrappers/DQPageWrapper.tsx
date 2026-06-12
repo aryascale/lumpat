@@ -5,14 +5,7 @@ import parseTimeToMs, { extractTimeOfDay, formatDuration } from '../../../lib/ti
 import type { LeaderRow } from '../../LeaderboardTable';
 import DQPage from '../pages/DQPage';
 
-function loadDQMap(eventId: string): Record<string, boolean> {
-  try {
-    const key = `imr_dq_map_${eventId}`;
-    return JSON.parse(localStorage.getItem(key) || "{}");
-  } catch {
-    return {};
-  }
-}
+
 
 export default function DQPageWrapper() {
   const { currentEvent, loading: eventLoading } = useEvent();
@@ -38,7 +31,19 @@ export default function DQPageWrapper() {
 
         // Use timing from event (per-event database) instead of localStorage
         const cutoffMs = currentEvent?.cutoffMs ?? null;
-        const dqMap = loadDQMap(eventId);
+        
+        const dqMap: Record<string, boolean> = {};
+        try {
+          const statusRes = await fetch(`/api/runner-status?eventId=${eventId}`);
+          if (statusRes.ok) {
+            const statusData = await statusRes.json();
+            if (Array.isArray(statusData)) {
+              statusData.forEach((s: any) => {
+                if (s.isDQ) dqMap[s.epc] = true;
+              });
+            }
+          }
+        } catch {}
         const catStartRaw: Record<string, string> = (currentEvent?.categoryStartTimes as Record<string, string>) ?? {};
 
         // Load penalty map from API

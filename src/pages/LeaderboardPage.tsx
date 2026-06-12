@@ -16,23 +16,7 @@ import { DEFAULT_EVENT_TITLE, LS_EVENT_TITLE, LS_DATA_VERSION } from "../lib/con
 import parseTimeToMs, { extractTimeOfDay, formatDuration } from "../lib/time";
 
 
-function loadDQMap(eventId: string): Record<string, boolean> {
-  try {
-    const key = `imr_dq_map_${eventId}`;
-    return JSON.parse(localStorage.getItem(key) || "{}");
-  } catch {
-    return {};
-  }
-}
 
-function loadHiddenMap(eventId: string): Record<string, boolean> {
-  try {
-    const key = `imr_hidden_map_${eventId}`;
-    return JSON.parse(localStorage.getItem(key) || "{}");
-  } catch {
-    return {};
-  }
-}
 
 type LoadState =
   | { status: "loading"; msg: string }
@@ -129,7 +113,22 @@ export default function LeaderboardPage() {
 
         // Use timing from event (per-event database) instead of localStorage
         const cutoffMs = currentEvent?.cutoffMs ?? null;
-        const dqMap = loadDQMap(eventId);
+        
+        // Load runner status map from API
+        const dqMap: Record<string, boolean> = {};
+        const hiddenMap: Record<string, boolean> = {};
+        try {
+          const statusRes = await fetch(`/api/runner-status?eventId=${eventId}`);
+          if (statusRes.ok) {
+            const statusData = await statusRes.json();
+            if (Array.isArray(statusData)) {
+              statusData.forEach((s: any) => {
+                if (s.isDQ) dqMap[s.epc] = true;
+                if (s.isHidden) hiddenMap[s.epc] = true;
+              });
+            }
+          }
+        } catch {}
         const catStartRaw: Record<string, string> = (currentEvent?.categoryStartTimes as Record<string, string>) ?? {};
 
         // Load penalty map from API
@@ -199,11 +198,11 @@ export default function LeaderboardPage() {
         const baseRows: LeaderRow[] = [];
 
         master.all.forEach((p) => {
-          if (loadHiddenMap(eventId)[p.epc]) return;
+          if (hiddenMap[p.epc]) return;
           const finishEntry = finishMap.get(p.epc);
           if (!finishEntry?.ms) return;
 
-          const catKey = p.sourceCategoryKey;
+          const catKey = normCat(p.sourceCategoryKey);
           const absMs = absOverrideMs[catKey] ?? null;
           const timeOnly = timeOnlyStr[catKey] ?? null;
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import type { LeaderRow } from "../../LeaderboardTable";
 
 interface DQPageProps {
@@ -8,38 +8,34 @@ interface DQPageProps {
   eventId: string;
 }
 
-function loadDQMap(eventId: string): Record<string, boolean> {
-  try {
-    const key = `imr_dq_map_${eventId}`;
-    return JSON.parse(localStorage.getItem(key) || "{}");
-  } catch {
-    return {};
-  }
-}
-
-function saveDQMap(map: Record<string, boolean>, eventId: string) {
-  const key = `imr_dq_map_${eventId}`;
-  localStorage.setItem(key, JSON.stringify(map));
-}
-
-function loadHiddenMap(eventId: string): Record<string, boolean> {
-  try {
-    const key = `imr_hidden_map_${eventId}`;
-    return JSON.parse(localStorage.getItem(key) || "{}");
-  } catch {
-    return {};
-  }
-}
-
-function saveHiddenMap(map: Record<string, boolean>, eventId: string) {
-  const key = `imr_hidden_map_${eventId}`;
-  localStorage.setItem(key, JSON.stringify(map));
-}
-
 export default function DQPage({ allRows, onConfigChanged, onDataVersionBump, eventId }: DQPageProps) {
   const [q, setQ] = useState("");
-  const [dqMap, setDqMap] = useState<Record<string, boolean>>(loadDQMap(eventId));
-  const [hiddenMap, setHiddenMap] = useState<Record<string, boolean>>(loadHiddenMap(eventId));
+  const [dqMap, setDqMap] = useState<Record<string, boolean>>({});
+  const [hiddenMap, setHiddenMap] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    async function loadStatus() {
+      try {
+        const res = await fetch(`/api/runner-status?eventId=${eventId}`);
+        if (res.ok) {
+          const data = await res.json();
+          const nextDq: Record<string, boolean> = {};
+          const nextHidden: Record<string, boolean> = {};
+          if (Array.isArray(data)) {
+            data.forEach((s: any) => {
+              if (s.isDQ) nextDq[s.epc] = true;
+              if (s.isHidden) nextHidden[s.epc] = true;
+            });
+          }
+          setDqMap(nextDq);
+          setHiddenMap(nextHidden);
+        }
+      } catch (err) {
+        console.error("Failed to load runner status:", err);
+      }
+    }
+    loadStatus();
+  }, [eventId]);
 
   const filtered = useMemo(() => {
     const qq = q.trim().toLowerCase();
@@ -62,20 +58,38 @@ export default function DQPage({ allRows, onConfigChanged, onDataVersionBump, ev
     setCurrentPage(1);
   }, [q]);
 
-  const toggleDQ = async (epc: string) => {
-    const next = { ...dqMap, [epc]: !dqMap[epc] };
-    if (!next[epc]) delete next[epc];
+  const toggleDQ = async (epc: string, bib: string) => {
+    const nextVal = !dqMap[epc];
+    const next = { ...dqMap, [epc]: nextVal };
+    if (!nextVal) delete next[epc];
     setDqMap(next);
-    saveDQMap(next, eventId);
+    
+    try {
+      await fetch('/api/runner-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId, epc, bib, isDQ: nextVal, isHidden: !!hiddenMap[epc] })
+      });
+    } catch (e) { console.error(e); }
+
     onDataVersionBump();
     onConfigChanged();
   };
 
-  const toggleHide = async (epc: string) => {
-    const next = { ...hiddenMap, [epc]: !hiddenMap[epc] };
-    if (!next[epc]) delete next[epc];
+  const toggleHide = async (epc: string, bib: string) => {
+    const nextVal = !hiddenMap[epc];
+    const next = { ...hiddenMap, [epc]: nextVal };
+    if (!nextVal) delete next[epc];
     setHiddenMap(next);
-    saveHiddenMap(next, eventId);
+    
+    try {
+      await fetch('/api/runner-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId, epc, bib, isDQ: !!dqMap[epc], isHidden: nextVal })
+      });
+    } catch (e) { console.error(e); }
+
     onDataVersionBump();
     onConfigChanged();
   };
@@ -146,14 +160,14 @@ export default function DQPage({ allRows, onConfigChanged, onDataVersionBump, ev
                           <div className="flex gap-1">
                             <button
                               className="btn ghost sm"
-                              onClick={() => toggleDQ(r.epc)}
+                              onClick={() => toggleDQ(r.epc, r.bib || '')}
                             >
                               {isDQ ? "Undo DSQ" : "Disqualify"}
                             </button>
                             <button
                               className="btn ghost sm"
                               style={{ color: '#dc2626' }}
-                              onClick={() => toggleHide(r.epc)}
+                              onClick={() => toggleHide(r.epc, r.bib || '')}
                             >
                               {hiddenMap[r.epc] ? "Unhide" : "Hide"}
                             </button>
@@ -204,14 +218,14 @@ export default function DQPage({ allRows, onConfigChanged, onDataVersionBump, ev
                     <div className="flex gap-2">
                       <button
                         className={`btn w-full text-xs font-bold uppercase ${isDQ ? '' : 'ghost'}`}
-                        onClick={() => toggleDQ(r.epc)}
+                        onClick={() => toggleDQ(r.epc, r.bib || '')}
                       >
                         {isDQ ? "Undo DSQ" : "Disqualify"}
                       </button>
                       <button
                         className={`btn w-full text-xs font-bold uppercase ghost`}
                         style={{ color: '#dc2626' }}
-                        onClick={() => toggleHide(r.epc)}
+                        onClick={() => toggleHide(r.epc, r.bib || '')}
                       >
                         {hiddenMap[r.epc] ? "Unhide" : "Hide"}
                       </button>

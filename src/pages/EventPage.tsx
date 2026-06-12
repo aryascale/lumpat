@@ -22,23 +22,6 @@ import type { MasterParticipant } from "../lib/data";
 import getUnicodeFlagIcon from "country-flag-icons/unicode";
 import { getData } from "country-list";
 
-function loadDQMap(eventId: string): Record<string, boolean> {
-  try {
-    const key = `imr_dq_map_${eventId}`;
-    return JSON.parse(localStorage.getItem(key) || "{}");
-  } catch {
-    return {};
-  }
-}
-
-function loadHiddenMap(eventId: string): Record<string, boolean> {
-  try {
-    const key = `imr_hidden_map_${eventId}`;
-    return JSON.parse(localStorage.getItem(key) || "{}");
-  } catch {
-    return {};
-  }
-}
 
 /**
  * Match a registered participant (from DB) to a master CSV participant.
@@ -689,7 +672,22 @@ export default function EventPage() {
 
         // Use timing from event (per-event database) instead of localStorage
         const cutoffMs = event.cutoffMs ?? null;
-        const dqMap = loadDQMap(event.id);
+
+        // Load runner status map from API
+        const dqMap: Record<string, boolean> = {};
+        const hiddenMap: Record<string, boolean> = {};
+        try {
+          const statusRes = await fetch(`/api/runner-status?eventId=${event.id}`);
+          if (statusRes.ok) {
+            const statusData = await statusRes.json();
+            if (Array.isArray(statusData)) {
+              statusData.forEach((s: any) => {
+                if (s.isDQ) dqMap[s.epc] = true;
+                if (s.isHidden) hiddenMap[s.epc] = true;
+              });
+            }
+          }
+        } catch {}
         const catStartRaw = event.categoryStartTimes ?? {};
 
         // Load penalty map from API
@@ -784,7 +782,7 @@ export default function EventPage() {
             const resolvedCategoryKey = resolveAdminCategory(p.sourceCategoryKey, p.gender);
 
             const isDQ = !!dqMap[p.epc];
-            if (loadHiddenMap(event.id)[p.epc]) return;
+            if (hiddenMap[p.epc]) return;
             const finishEntry = finishMap.get(p.epc);
 
             const pushIncompleteRow = (status: string) => {
