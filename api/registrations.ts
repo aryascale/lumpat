@@ -10,8 +10,8 @@ export default async function handler(event: any) {
       if (!eventId) return errorResponse('eventId is required', 400);
 
       const registrations: any = await query(
-        `SELECT er.id, er.name, er.email, er.phoneNumber, er.gender, er.tshirtSize, er.bibName,
-                er.paymentStatus, er.grossAmount, er.orderId, er.paidAt, er.createdAt,
+        `SELECT er.id, er.name, er.email, er.phoneNumber, er.gender, er.tshirtSize, er.bibName, er.bibNumber,
+                er.bloodType, er.emergencyName, er.emergencyPhone, er.paymentStatus, er.grossAmount, er.orderId, er.paidAt, er.createdAt,
                 er.customData, c.id as categoryId, c.name as categoryName
          FROM EventRegistration er
          JOIN Category c ON er.categoryId = c.id
@@ -29,6 +29,10 @@ export default async function handler(event: any) {
         gender: r.gender,
         tshirtSize: r.tshirtSize,
         bibName: r.bibName,
+        bibNumber: r.bibNumber,
+        bloodType: r.bloodType,
+        emergencyName: r.emergencyName,
+        emergencyPhone: r.emergencyPhone,
         category: { id: r.categoryId, name: r.categoryName },
         paymentStatus: r.paymentStatus,
         grossAmount: r.grossAmount,

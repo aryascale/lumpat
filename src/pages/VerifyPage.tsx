@@ -10,6 +10,7 @@ interface ParticipantData {
   gender: string;
   tshirtSize: string | null;
   bibName: string | null;
+  bibNumber: string | null;
   bloodType: string | null;
   dateOfBirth: string | null;
   categoryName: string;
@@ -96,6 +97,7 @@ export default function VerifyPage() {
                         ['Gender', participant.gender === 'L' ? 'Laki-laki' : 'Perempuan'],
                         ['Ukuran Baju', participant.tshirtSize || '-'],
                         ['Custom BIB', participant.bibName || '-'],
+                        ['No. BIB', participant.bibNumber || '-'],
                         ['Gol. Darah', participant.bloodType || '-'],
                         ['Order ID', participant.orderId],
                         ['Status', participant.paymentStatus === 'settlement' ? '✅ Lunas' : participant.paymentStatus],

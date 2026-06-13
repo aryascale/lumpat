@@ -89,6 +89,7 @@ model EventRegistration {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   bibName        String?
+  bibNumber      String?
   bloodType      String?
   email          String
   emergencyName  String?

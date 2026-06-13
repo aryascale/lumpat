@@ -2,6 +2,7 @@ import { query } from '../src/lib/db';
 import { successResponse, errorResponse, CORS_HEADERS } from '../src/lib/api-utils';
 import { logActivity } from '../src/lib/activity-logger';
 import { createBackup } from '../src/lib/backup';
+import { assignAutoBibsIfEnabled } from '../src/lib/bib-generator';
 
 export default async function handler(event: any) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
@@ -34,6 +35,12 @@ export default async function handler(event: any) {
     );
 
     if (regRes.length > 0) {
+      try {
+        await assignAutoBibsIfEnabled(orderId);
+      } catch (e) {
+        console.error('[ADMIN-SETTLE] Error generating BIBs:', e);
+      }
+
       const { sendRegistrationConfirmation } = await import('../src/lib/email-service');
       await sendRegistrationConfirmation(regRes[0]);
     }

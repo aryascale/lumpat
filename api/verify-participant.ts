@@ -55,6 +55,7 @@ export default async function handler(event: any) {
         gender: reg.gender,
         tshirtSize: reg.tshirtSize,
         bibName: reg.bibName,
+        bibNumber: reg.bibNumber,
         bloodType: reg.bloodType,
         dateOfBirth: reg.dateOfBirth,
         categoryName: reg.categoryName,

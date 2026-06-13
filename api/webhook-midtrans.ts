@@ -3,6 +3,7 @@ import { CORS_HEADERS } from '../src/lib/api-utils';
 import { logActivity } from '../src/lib/activity-logger';
 import { sendRegistrationConfirmation } from '../src/lib/email-service';
 import { createBackup } from '../src/lib/backup';
+import { assignAutoBibsIfEnabled } from '../src/lib/bib-generator';
 import crypto from 'crypto';
 
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY || '';
@@ -125,8 +126,14 @@ export default async function handler(event: any) {
       const actionKey = actionMap[paymentStatus] || 'payment.update';
       await logActivity(actionKey, `Pembayaran ${paymentStatus} untuk ${primaryReg.name} (+${regRes.length - 1} others) (${order_id})`, primaryReg.email, primaryReg.eventId, { orderId: order_id, paymentStatus, paymentType: payment_type });
 
-      // Send Confirmation Email if settlement
+      // Send Confirmation Email and Assign BIBs if settlement
       if (paymentStatus === 'settlement') {
+        try {
+          await assignAutoBibsIfEnabled(order_id);
+        } catch (e) {
+          console.error('[WEBHOOK-MIDTRANS] Error generating BIBs:', e);
+        }
+
         for (const reg of regRes) {
           await sendRegistrationConfirmation(reg);
 

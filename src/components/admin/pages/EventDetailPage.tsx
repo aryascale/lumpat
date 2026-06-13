@@ -2801,6 +2801,86 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
             </div>
 
             <div className="admin-cutoff border-t border-gray-100 pt-6">
+              <div className="label">Auto Generate BIB</div>
+              <div className="tools">
+                <label className="flex items-center gap-3 cursor-pointer mb-4">
+                  <input
+                    type="checkbox"
+                    checked={eventData?.content?.autoGenerateBibs?.enabled || false}
+                    onChange={(e) => setEventData({ 
+                      ...eventData, 
+                      content: { 
+                        ...(eventData?.content || {}), 
+                        autoGenerateBibs: { ...(eventData?.content?.autoGenerateBibs || {}), enabled: e.target.checked } 
+                      }
+                    })}
+                    className="w-5 h-5"
+                  />
+                  <div className="flex flex-col">
+                    <span className="font-bold text-gray-900">Aktifkan Auto Generate BIB</span>
+                    <span className="text-xs text-gray-500">
+                      Nomor BIB akan dibuat otomatis setelah peserta sukses membayar (PAID).
+                    </span>
+                  </div>
+                </label>
+
+                {eventData?.content?.autoGenerateBibs?.enabled && (
+                  <div className="bg-stone-50 border border-stone-200 p-4 rounded-xl space-y-4">
+                    <div className="text-sm font-bold text-stone-700">Nomor Mulai (Start Number) per Kategori</div>
+                    {categories.length === 0 ? (
+                      <div className="text-xs text-stone-500 italic">Belum ada kategori yang ditambahkan.</div>
+                    ) : (
+                      categories.map(cat => (
+                        <div key={cat.id} className="flex flex-col sm:flex-row sm:items-center gap-2">
+                          <div className="text-xs font-bold w-1/3">{cat.name}</div>
+                          <input
+                            type="text"
+                            placeholder="Contoh: 5001"
+                            className="search flex-1 text-sm"
+                            value={eventData?.content?.autoGenerateBibs?.categories?.[cat.id] || ''}
+                            onChange={(e) => {
+                              const currentCats = eventData?.content?.autoGenerateBibs?.categories || {};
+                              setEventData({
+                                ...eventData,
+                                content: {
+                                  ...(eventData?.content || {}),
+                                  autoGenerateBibs: {
+                                    ...(eventData?.content?.autoGenerateBibs || {}),
+                                    categories: { ...currentCats, [cat.id]: e.target.value }
+                                  }
+                                }
+                              });
+                            }}
+                          />
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="admin-cutoff border-t border-gray-100 pt-6">
+              <div className="label">Peringatan Checkout (Step 3)</div>
+              <div className="tools">
+                <div className="text-sm font-bold text-gray-700 mb-2">Teks Peringatan Kustom</div>
+                <input
+                  type="text"
+                  className="search w-full"
+                  placeholder="Pastikan data dan kategori yang Anda pilih sudah sesuai."
+                  value={eventData?.content?.checkoutWarningText || ''}
+                  onChange={(e) => setEventData({ 
+                    ...eventData, 
+                    content: { ...(eventData?.content || {}), checkoutWarningText: e.target.value }
+                  })}
+                />
+                <div className="text-xs text-gray-500 mt-2">
+                  Pesan ini akan muncul dalam kotak peringatan kuning sebelum peserta melakukan checkout / pembayaran.
+                </div>
+              </div>
+            </div>
+
+            <div className="admin-cutoff border-t border-gray-100 pt-6">
               <div className="label">Syarat & Ketentuan (T&C)</div>
               <div className="tools">
                 <div className="mb-4">
