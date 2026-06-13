@@ -382,6 +382,8 @@ export default function EventPage() {
         });
         return {
           ...regForm,
+          tshirtSize: p.tshirtSize,
+          bibName: p.bibName,
           customData: Object.keys(mappedCustomData).length > 0 ? mappedCustomData : undefined
         };
       });

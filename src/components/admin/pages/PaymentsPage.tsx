@@ -202,21 +202,49 @@ export default function PaymentsPage() {
 
               const customKeys = new Set<string>();
               filtered.forEach(p => { if (p.customData) Object.keys(p.customData).forEach(k => customKeys.add(k)); });
-              const customKeysArray = Array.from(customKeys);
-              const headers = ['Order ID','Status','Tanggal Daftar','Nama','Email','No HP','Tanggal Lahir','Gender','T-Shirt Size','BIB Name','Event','Kategori','Gross Amount',...customKeysArray].map(escapeCsv);
+              const knownNameKeys = ['FULL NAME', 'FULLNAME', 'Full Name', 'Nama Lengkap'];
+              const knownEmailKeys = ['Active E-MAIL', 'Email', 'E-mail'];
+              const knownPhoneKeys = ['Phone Number', 'Nomor HP', 'ACTIVE PHONE NUMBER'];
+              const knownDOBKeys = ['Date of Birth', 'DATE OF BIRTH', 'Tanggal Lahir'];
+              const knownGenderKeys = ['Gender', 'GENDER', 'Jenis Kelamin'];
+              const knownTshirtKeys = ['T-Shirt Size', 'T-SHIRT SIZE', 'Ukuran Baju'];
+              const knownBIBKeys = ['BIB Name', 'Nama BIB'];
+              const knownNationalKeys = ['National', 'NATIONAL', 'Nationality'];
+
+              const allKnownKeys = new Set([
+                ...knownNameKeys, ...knownEmailKeys, ...knownPhoneKeys, 
+                ...knownDOBKeys, ...knownGenderKeys, ...knownTshirtKeys, 
+                ...knownBIBKeys, ...knownNationalKeys
+              ]);
+              
+              const customKeysArray = Array.from(customKeys).filter(k => !allKnownKeys.has(k));
+              const headers = ['Order ID','Status','Tanggal Daftar','Nama','Email','No HP','Tanggal Lahir','Gender','Nationality','T-Shirt Size','BIB Name','Event','Kategori','Gross Amount',...customKeysArray].map(escapeCsv);
               
               const csvData = filtered.map(p => {
+                const getCustomVal = (keys: string[]) => keys.reduce((acc, k) => acc || p.customData?.[k], '');
+                
+                const mappedName = getCustomVal(knownNameKeys) || p.name || '';
+                const mappedEmail = getCustomVal(knownEmailKeys) || p.email || '';
+                const mappedPhone = getCustomVal(knownPhoneKeys) || p.phoneNumber || '';
+                let mappedDOB = getCustomVal(knownDOBKeys) || p.dateOfBirth || '';
+                if (mappedDOB && mappedDOB === p.dateOfBirth) mappedDOB = new Date(mappedDOB).toLocaleDateString('id-ID');
+                const mappedGender = getCustomVal(knownGenderKeys) || p.gender || '';
+                const mappedTshirt = getCustomVal(knownTshirtKeys) || p.tshirtSize || '';
+                const mappedBIB = getCustomVal(knownBIBKeys) || p.bibName || '';
+                const mappedNational = getCustomVal(knownNationalKeys) || '';
+
                 const row = [
                   p.orderId,
                   p.paymentStatus,
                   new Date(p.createdAt).toLocaleDateString('id-ID'),
-                  p.name || '',
-                  p.email || '',
-                  p.phoneNumber ? `'${p.phoneNumber}` : '',
-                  p.dateOfBirth ? new Date(p.dateOfBirth).toLocaleDateString('id-ID') : '',
-                  p.gender || '',
-                  p.tshirtSize || '',
-                  p.bibName || '',
+                  mappedName,
+                  mappedEmail,
+                  mappedPhone ? `'${mappedPhone}` : '',
+                  mappedDOB,
+                  mappedGender,
+                  mappedNational,
+                  mappedTshirt,
+                  mappedBIB,
                   p.eventName || '',
                   p.categoryName || '',
                   p.grossAmount
@@ -464,7 +492,7 @@ export default function PaymentsPage() {
                     {/* Add standard fields that were in customData but are important */}
                     <div className="flex justify-between items-start py-1 border-b border-gray-200 last:border-0">
                       <span className="text-[10px] font-bold text-gray-500 uppercase">T-Shirt Size</span>
-                      <span className="text-sm font-medium text-gray-900">{selectedPayment.tshirtSize || '-'}</span>
+                      <span className="text-sm font-medium text-gray-900">{selectedPayment.tshirtSize || selectedPayment.customData?.['T-Shirt Size'] || selectedPayment.customData?.['T-SHIRT SIZE'] || '-'}</span>
                     </div>
                   </div>
                 ) : (
