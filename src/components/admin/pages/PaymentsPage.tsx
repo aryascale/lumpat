@@ -86,6 +86,7 @@ export default function PaymentsPage() {
       case 'settlement': return 'bg-green-100 text-green-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'cancel': case 'expire': return 'bg-red-100 text-red-800';
+      case 'deleted': return 'bg-gray-200 text-gray-500 line-through';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -96,6 +97,7 @@ export default function PaymentsPage() {
       case 'pending': return 'Pending';
       case 'cancel': return 'Cancelled';
       case 'expire': return 'Expired';
+      case 'deleted': return 'Deleted';
       default: return status;
     }
   };
@@ -174,6 +176,7 @@ export default function PaymentsPage() {
             <option value="pending">Pending</option>
             <option value="cancel">Cancelled</option>
             <option value="expire">Expired</option>
+            <option value="deleted">Deleted</option>
           </select>
           {categories.length > 0 && (
             <select
@@ -349,6 +352,30 @@ export default function PaymentsPage() {
                                 }}
                               >
                                 Settle
+                              </button>
+                            )}
+                            {p.paymentStatus !== 'deleted' && (
+                              <button 
+                                className="px-2 py-1 bg-red-100 text-red-600 border border-red-200 text-[10px] font-bold uppercase rounded hover:bg-red-200 transition-colors"
+                                onClick={async () => {
+                                  if (confirm(`Yakin ingin melakukan soft-delete peserta ${p.name}? (Data tidak akan muncul di halaman publik)`)) {
+                                    try {
+                                      const res = await fetch('/api/admin-delete-payment', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ orderId: p.orderId })
+                                      });
+                                      if (res.ok) {
+                                        alert('Peserta berhasil di-soft-delete');
+                                        loadPayments();
+                                      }
+                                    } catch (e) {
+                                      alert('Gagal melakukan soft-delete');
+                                    }
+                                  }
+                                }}
+                              >
+                                Delete
                               </button>
                             )}
                           </td>
