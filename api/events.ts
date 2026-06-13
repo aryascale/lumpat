@@ -71,7 +71,7 @@ export default async function handler(req: any) {
         }
 
         const categories: any = await query(
-          'SELECT * FROM Category WHERE eventId = ? ORDER BY `order` ASC',
+          `SELECT * FROM Category WHERE eventId = ? ${!showDrafts ? 'AND isHidden = false' : ''} ORDER BY \`order\` ASC`,
           [events[0].id]
         );
         events[0]._categories = categories.map((c: any) => c.name);
@@ -106,7 +106,7 @@ export default async function handler(req: any) {
         const eventIds = allEvents.map((e: any) => e.id);
         const placeholders = eventIds.map(() => '?').join(',');
         const categories: any = await query(
-          `SELECT eventId, name FROM Category WHERE eventId IN (${placeholders}) ORDER BY \`order\` ASC`,
+          `SELECT eventId, name FROM Category WHERE eventId IN (${placeholders}) ${!showDrafts ? 'AND isHidden = false' : ''} ORDER BY \`order\` ASC`,
           eventIds
         );
         

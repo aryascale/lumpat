@@ -1336,7 +1336,7 @@ export default function EventPage() {
                 )}
               </div>
               {(() => {
-                const settled = registeredParticipants.filter(p => p.paymentStatus === 'settlement');
+                const settled = registeredParticipants.filter(p => p.paymentStatus === 'settlement' && !p.category?.isHidden);
                 const filtered = settled.filter(p => {
                   const leader = matchRegisteredToMaster(p, masterParticipants);
                   const bib = leader?.bib || '';

@@ -12,7 +12,7 @@ export default async function handler(event: any) {
       const registrations: any = await query(
         `SELECT er.id, er.name, er.email, er.phoneNumber, er.gender, er.tshirtSize, er.bibName, er.bibNumber,
                 er.bloodType, er.emergencyName, er.emergencyPhone, er.paymentStatus, er.grossAmount, er.orderId, er.paidAt, er.createdAt,
-                er.customData, c.id as categoryId, c.name as categoryName
+                er.customData, c.id as categoryId, c.name as categoryName, c.isHidden as categoryIsHidden
          FROM EventRegistration er
          JOIN Category c ON er.categoryId = c.id
          JOIN Event e ON er.eventId = e.id
@@ -33,7 +33,7 @@ export default async function handler(event: any) {
         bloodType: r.bloodType,
         emergencyName: r.emergencyName,
         emergencyPhone: r.emergencyPhone,
-        category: { id: r.categoryId, name: r.categoryName },
+        category: { id: r.categoryId, name: r.categoryName, isHidden: !!r.categoryIsHidden },
         paymentStatus: r.paymentStatus,
         grossAmount: r.grossAmount,
         orderId: r.orderId,
