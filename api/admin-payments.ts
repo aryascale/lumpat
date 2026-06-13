@@ -65,6 +65,7 @@ export default async function handler(event: any) {
           gender: r.gender,
           tshirtSize: r.tshirtSize,
           bibName: r.bibName,
+          bibNumber: r.bibNumber,
           grossAmount: r.grossAmount,
           paymentStatus: r.paymentStatus,
           paymentMethod: r.paymentMethod,

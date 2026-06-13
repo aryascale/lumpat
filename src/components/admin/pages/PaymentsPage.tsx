@@ -212,16 +212,17 @@ export default function PaymentsPage() {
               const knownGenderKeys = ['Gender', 'GENDER', 'Jenis Kelamin'];
               const knownTshirtKeys = ['T-Shirt Size', 'T-SHIRT SIZE', 'Ukuran Baju'];
               const knownBIBKeys = ['BIB Name', 'Nama BIB'];
+              const knownBIBNumKeys = ['BIB Number', 'No BIB', 'Nomor BIB'];
               const knownNationalKeys = ['National', 'NATIONAL', 'Nationality'];
 
               const allKnownKeys = new Set([
                 ...knownNameKeys, ...knownEmailKeys, ...knownPhoneKeys, 
                 ...knownDOBKeys, ...knownGenderKeys, ...knownTshirtKeys, 
-                ...knownBIBKeys, ...knownNationalKeys
+                ...knownBIBKeys, ...knownBIBNumKeys, ...knownNationalKeys
               ]);
               
               const customKeysArray = Array.from(customKeys).filter(k => !allKnownKeys.has(k));
-              const headers = ['Order ID','Status','Tanggal Daftar','Nama','Email','No HP','Tanggal Lahir','Gender','Nationality','T-Shirt Size','BIB Name','Event','Kategori','Gross Amount',...customKeysArray].map(escapeCsv);
+              const headers = ['Order ID','Status','Tanggal Daftar','Nama','Email','No HP','Tanggal Lahir','Gender','Nationality','T-Shirt Size','BIB Name','BIB Number','Event','Kategori','Gross Amount',...customKeysArray].map(escapeCsv);
               
               const csvData = filtered.map(p => {
                 const getCustomVal = (keys: string[]) => keys.reduce((acc, k) => acc || p.customData?.[k], '');
@@ -248,6 +249,7 @@ export default function PaymentsPage() {
                   mappedNational,
                   mappedTshirt,
                   mappedBIB,
+                  p.bibNumber || '',
                   p.eventName || '',
                   p.categoryName || '',
                   p.grossAmount
@@ -309,6 +311,11 @@ export default function PaymentsPage() {
                             <div className="font-bold text-sm text-gray-900">{p.name}</div>
                             <div className="text-[10px] text-gray-500">{p.email}</div>
                             <div className="text-[10px] text-gray-400 italic">Lahir: {p.dateOfBirth ? new Date(p.dateOfBirth).toLocaleDateString('id-ID') : '-'}</div>
+                            {p.bibNumber && (
+                              <div className="mt-1 text-[10px] font-black tracking-widest text-blue-600 border border-blue-200 bg-blue-50 px-1 py-0.5 rounded inline-block">
+                                BIB: {p.bibNumber}
+                              </div>
+                            )}
                           </td>
                           <td className="text-xs font-medium">{p.eventName}</td>
                           <td className="text-xs">{p.categoryName}</td>
@@ -520,6 +527,10 @@ export default function PaymentsPage() {
                     <div className="flex justify-between items-start py-1 border-b border-gray-200 last:border-0">
                       <span className="text-[10px] font-bold text-gray-500 uppercase">T-Shirt Size</span>
                       <span className="text-sm font-medium text-gray-900">{selectedPayment.tshirtSize || selectedPayment.customData?.['T-Shirt Size'] || selectedPayment.customData?.['T-SHIRT SIZE'] || '-'}</span>
+                    </div>
+                    <div className="flex justify-between items-start py-1 border-b border-gray-200 last:border-0">
+                      <span className="text-[10px] font-bold text-gray-500 uppercase">BIB Number (Auto)</span>
+                      <span className="text-sm font-medium text-blue-600">{selectedPayment.bibNumber || '-'}</span>
                     </div>
                   </div>
                 ) : (
