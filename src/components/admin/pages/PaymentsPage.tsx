@@ -221,11 +221,20 @@ export default function PaymentsPage() {
                 ...knownBIBKeys, ...knownBIBNumKeys, ...knownNationalKeys
               ]);
               
-              const customKeysArray = Array.from(customKeys).filter(k => !allKnownKeys.has(k));
+              const customKeysArray = Array.from(customKeys).filter(k => !Array.from(allKnownKeys).some(ak => ak.toLowerCase() === k.toLowerCase()));
               const headers = ['Order ID','Status','Tanggal Daftar','Nama','Email','No HP','Tanggal Lahir','Gender','Nationality','T-Shirt Size','BIB Name','BIB Number','Event','Kategori','Gross Amount',...customKeysArray].map(escapeCsv);
               
               const csvData = filtered.map(p => {
-                const getCustomVal = (keys: string[]) => keys.reduce((acc, k) => acc || p.customData?.[k], '');
+                // Case-insensitive lookup in customData
+                const getCustomVal = (keys: string[]) => {
+                  if (!p.customData) return '';
+                  const dataEntries = Object.entries(p.customData);
+                  for (const searchKey of keys) {
+                    const found = dataEntries.find(([k]) => k.toLowerCase() === searchKey.toLowerCase());
+                    if (found && found[1]) return String(found[1]);
+                  }
+                  return '';
+                };
                 
                 const mappedName = getCustomVal(knownNameKeys) || p.name || '';
                 const mappedEmail = getCustomVal(knownEmailKeys) || p.email || '';

@@ -1,6 +1,8 @@
 import { query } from './db';
 
 export async function assignAutoBibsIfEnabled(orderId: string): Promise<void> {
+  console.log(`[BIB_GEN] Starting BIB assignment for orderId: ${orderId}`);
+  
   // 1. Fetch all registrations for this order
   const registrations: any = await query(
     `SELECT er.id, er.eventId, er.categoryId, e.content as eventContent
@@ -10,7 +12,12 @@ export async function assignAutoBibsIfEnabled(orderId: string): Promise<void> {
     [orderId]
   );
 
-  if (!registrations || registrations.length === 0) return;
+  if (!registrations || registrations.length === 0) {
+    console.log(`[BIB_GEN] No registrations found without BIB for orderId: ${orderId}`);
+    return;
+  }
+
+  console.log(`[BIB_GEN] Found ${registrations.length} registration(s) without BIB`);
 
   // Process event by event (though usually it's one event per order)
   const eventIds = [...new Set(registrations.map((r: any) => r.eventId))];
@@ -30,18 +37,24 @@ export async function assignAutoBibsIfEnabled(orderId: string): Promise<void> {
     }
 
     if (!content.autoGenerateBibs?.enabled) {
-      continue; // Auto generate is disabled for this event
+      console.log(`[BIB_GEN] Auto-generate BIBs is DISABLED for event: ${eventId}`);
+      continue;
     }
+
+    console.log(`[BIB_GEN] Auto-generate BIBs is ENABLED for event: ${eventId}`);
+    console.log(`[BIB_GEN] Configured categories:`, JSON.stringify(content.autoGenerateBibs.categories || {}));
 
     // Process each registration sequentially to prevent race conditions within the same order
     for (const reg of regsForEvent) {
       const categoryId = reg.categoryId;
       const configuredStartStr = content.autoGenerateBibs.categories?.[categoryId];
       
-      if (!configuredStartStr) continue; // No start number configured for this category
+      if (!configuredStartStr || String(configuredStartStr).trim() === '') {
+        console.log(`[BIB_GEN] No start number configured for categoryId: ${categoryId} — skipping`);
+        continue;
+      }
 
       // Fetch the max bib number currently assigned for this event & category
-      // We'll cast to UNSIGNED to find the numeric maximum
       const maxRes: any = await query(
         `SELECT MAX(CAST(bibNumber AS UNSIGNED)) as maxBib
          FROM EventRegistration
@@ -49,7 +62,7 @@ export async function assignAutoBibsIfEnabled(orderId: string): Promise<void> {
         [eventId, categoryId]
       );
 
-      let nextBibInt = parseInt(configuredStartStr, 10);
+      let nextBibInt = parseInt(String(configuredStartStr).trim(), 10);
       
       if (maxRes && maxRes.length > 0 && maxRes[0].maxBib !== null) {
         const currentMax = parseInt(maxRes[0].maxBib, 10);
@@ -60,17 +73,15 @@ export async function assignAutoBibsIfEnabled(orderId: string): Promise<void> {
 
       const nextBibString = nextBibInt.toString();
 
+      console.log(`[BIB_GEN] Assigning BIB ${nextBibString} to registration ${reg.id} (category: ${categoryId})`);
+
       // Update the DB
       await query(
         `UPDATE EventRegistration SET bibNumber = ?, updatedAt = NOW() WHERE id = ?`,
         [nextBibString, reg.id]
       );
-      
-      // We MUST ensure the next query in the loop sees this update, 
-      // but since we compute max dynamically in the DB, as long as it's sequential, it should be fine.
-      // However, to be absolutely safe against concurrent midtrans webhooks, we could use a transaction, 
-      // but our `query` helper doesn't support transactions easily. Sequential execution here is usually enough 
-      // for bulk registrations in the same order.
     }
   }
+
+  console.log(`[BIB_GEN] BIB assignment complete for orderId: ${orderId}`);
 }

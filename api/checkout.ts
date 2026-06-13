@@ -1,6 +1,8 @@
 import { query } from '../src/lib/db';
 import { successResponse, errorResponse, parseBody, CORS_HEADERS } from '../src/lib/api-utils';
 import { logActivity } from '../src/lib/activity-logger';
+import { assignAutoBibsIfEnabled } from '../src/lib/bib-generator';
+import { sendRegistrationConfirmation } from '../src/lib/email-service';
 import crypto from 'crypto';
 
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY || '';
@@ -46,6 +48,7 @@ export default async function handler(event: any) {
        const waId = getFieldByLabel(/whatsapp|wa|phone|nomor hp|no hp|telp/);
        const gnId = getFieldByLabel(/gender|jenis kelamin/);
        const dobId = getFieldByLabel(/birth|lahir|tanggal lahir/);
+       const tsId = getFieldByLabel(/t-shirt|tshirt|kaos|jersey|ukuran baju|ukuran kaos/);
 
        let pName = p.name;
        if (!pName) {
@@ -61,7 +64,14 @@ export default async function handler(event: any) {
        let pPhone = p.phoneNumber || pCustom[waId || ''] || pCustom['phone'] || pCustom['nohp'] || pCustom['whatsapp'] || '000000000000';
        let pGender = p.gender || pCustom[gnId || ''] || pCustom['gender'] || pCustom['jeniskelamin'] || 'U';
        let pDob = p.dateOfBirth || pCustom[dobId || ''] || pCustom['dob'] || pCustom['birth_date'] || null;
-       let pTshirtSize = p.tshirtSize || pCustom['tshirtSize'] || null;
+       let pTshirtSize = p.tshirtSize || pCustom[tsId || ''] || pCustom['tshirtSize'] || null;
+
+       // Fallback: search customData labels case-insensitively for tshirt
+       if (!pTshirtSize && p.customData) {
+         const entries = Object.entries(p.customData);
+         const tshirtEntry = entries.find(([k]) => /t-shirt|tshirt|kaos|jersey|ukuran baju|ukuran kaos/i.test(k));
+         if (tshirtEntry) pTshirtSize = String(tshirtEntry[1]);
+       }
 
        return { ...p, name: pName, phoneNumber: pPhone, gender: pGender, dateOfBirth: pDob, tshirtSize: pTshirtSize, customData: pCustom };
     });
@@ -165,10 +175,41 @@ export default async function handler(event: any) {
     if (totalGrossAmount === 0) {
       for (const regId of regIds) {
         await query(
-          "UPDATE EventRegistration SET paymentStatus = 'settlement', updatedAt = NOW() WHERE id = ?",
+          "UPDATE EventRegistration SET paymentStatus = 'settlement', paidAt = NOW(), updatedAt = NOW() WHERE id = ?",
           [regId]
         );
       }
+
+      // Auto-generate BIB for free events
+      try {
+        await assignAutoBibsIfEnabled(orderId);
+      } catch (e) {
+        console.error('[CHECKOUT] Error generating BIBs for free event:', e);
+      }
+
+      // Send confirmation email + update tshirt inventory for free events
+      try {
+        const regRes: any = await query(
+          `SELECT er.*, e.name as eventName, e.eventDate, c.name as categoryName 
+           FROM EventRegistration er
+           JOIN Event e ON er.eventId = e.id
+           JOIN Category c ON er.categoryId = c.id
+           WHERE er.orderId = ?`,
+          [orderId]
+        );
+        for (const reg of regRes) {
+          await sendRegistrationConfirmation(reg);
+          if (reg.tshirtSize) {
+            await query(
+              'UPDATE TshirtInventory SET sold = sold + 1 WHERE eventId = ? AND size = ?',
+              [reg.eventId, reg.tshirtSize]
+            );
+          }
+        }
+      } catch (e) {
+        console.error('[CHECKOUT] Error sending email for free event:', e);
+      }
+
       await logActivity('registration.created', `${primaryParticipant.name} (+${qty-1} others) mendaftar ke event (Gratis)`, email, eventId, { orderId, totalGrossAmount, category: categories[0].name });
       return successResponse({ orderId, grossAmount: totalGrossAmount, registration: { id: regIds[0] }, message: 'Registrasi gratis berhasil', isFree: true });
     }
