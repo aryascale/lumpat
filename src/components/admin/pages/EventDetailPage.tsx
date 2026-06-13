@@ -53,7 +53,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   const [loadingParticipants, setLoadingParticipants] = useState(false);
   const [csvMeta, setCsvMeta] = useState<Array<{ key: CsvKind; filename: string; updatedAt: number; rows: number }>>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
-  const [categories, setCategories] = useState<Array<{ name: string; price: number; quota: number }>>([]);
+  const [categories, setCategories] = useState<Array<{ name: string; price: number; quota: number; isHidden?: boolean }>>([]);
   const [loading, setLoading] = useState(true);
 
   const [bannerFile, setBannerFile] = useState<File | null>(null);
@@ -150,7 +150,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       const catRes = await fetch(`/api/categories?eventId=${eventId}`);
       if (catRes.ok) {
         const data = await catRes.json();
-        const cats = (data.categories || []).map((c: any) => typeof c === 'string' ? { name: c, price: 0, quota: 0 } : { name: c.name, price: c.price || 0, quota: c.quota || 0 });
+        const cats = (data.categories || []).map((c: any) => typeof c === 'string' ? { name: c, price: 0, quota: 0, isHidden: false } : { name: c.name, price: c.price || 0, quota: c.quota || 0, isHidden: !!c.isHidden, sold: c.sold || 0 });
         setCategories(cats);
       }
 
@@ -663,7 +663,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
 
     const price = parseInt(newCategoryPrice) || 0;
     const quota = parseInt(newCategoryQuota) || 0;
-    const updated = [...categories, { name: trimmed, price, quota }];
+    const updated = [...categories, { name: trimmed, price, quota, isHidden: false }];
     await saveCategories(updated);
     setNewCategory('');
     setNewCategoryPrice('');
@@ -684,6 +684,12 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   const updateCategoryPrice = (catName: string, price: number) => {
     const updated = categories.map(c => c.name === catName ? { ...c, price } : c);
     setCategories(updated);
+  };
+
+  const toggleCategoryHidden = async (catName: string) => {
+    const updated = categories.map(c => c.name === catName ? { ...c, isHidden: !c.isHidden } : c);
+    setCategories(updated);
+    await saveCategories(updated);
   };
 
   // Homepage content save
@@ -774,7 +780,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
     }
   };
 
-  const saveCategories = async (cats: Array<{ name: string; price: number; quota: number }>) => {
+  const saveCategories = async (cats: Array<{ name: string; price: number; quota: number; isHidden?: boolean }>) => {
     setSavingCategories(true);
     try {
       const res = await fetch(`/api/categories?eventId=${eventId}`, {
@@ -1668,13 +1674,22 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                         {(cat as any).sold || 0}
                       </td>
                       <td>
-                        <button 
-                          className="btn ghost" 
-                          style={{ color: '#dc2626' }}
-                          onClick={() => removeCategory(cat.name)}
-                        >
-                          Remove
-                        </button>
+                        <div className="flex gap-2">
+                          <button 
+                            className="btn ghost text-sm px-2 py-1" 
+                            style={{ color: cat.isHidden ? '#10b981' : '#f59e0b' }}
+                            onClick={() => toggleCategoryHidden(cat.name)}
+                          >
+                            {cat.isHidden ? 'Show' : 'Hide'}
+                          </button>
+                          <button 
+                            className="btn ghost text-sm px-2 py-1" 
+                            style={{ color: '#dc2626' }}
+                            onClick={() => removeCategory(cat.name)}
+                          >
+                            Remove
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -1695,13 +1710,22 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                       <span className="font-medium text-gray-900">{cat.name}</span>
                       <span className="text-xs text-gray-400 ml-2">#{index + 1}</span>
                     </div>
-                    <button 
-                      className="btn ghost text-sm" 
-                      style={{ color: '#dc2626' }}
-                      onClick={() => removeCategory(cat.name)}
-                    >
-                      Remove
-                    </button>
+                    <div className="flex gap-2">
+                      <button 
+                        className="btn ghost text-sm" 
+                        style={{ color: cat.isHidden ? '#10b981' : '#f59e0b' }}
+                        onClick={() => toggleCategoryHidden(cat.name)}
+                      >
+                        {cat.isHidden ? 'Show' : 'Hide'}
+                      </button>
+                      <button 
+                        className="btn ghost text-sm" 
+                        style={{ color: '#dc2626' }}
+                        onClick={() => removeCategory(cat.name)}
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-500">Harga:</span>

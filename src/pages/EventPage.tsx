@@ -311,8 +311,8 @@ export default function EventPage() {
     try {
       const res = await fetch(`/api/categories?eventId=${eventId}`);
       if (res.ok) {
-        const data = await res.json();
-        setCategoryDetails(data.categories || []);
+        const categories = data.categories || [];
+        setCategoryDetails(categories.filter((c: any) => !c.isHidden));
       }
     } catch (err) {
       console.error('Failed to load categories', err);
@@ -2061,11 +2061,8 @@ export default function EventPage() {
                     </div>
                   </div>
 
-                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl flex items-start gap-3 mt-4">
-                    <svg className="w-6 h-6 text-yellow-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    <div className="text-sm font-bold text-yellow-800 pt-0.5">
+                  <div className="py-2 flex items-center justify-center mt-2 mb-2">
+                    <div className="text-sm font-bold text-center text-stone-500">
                       {event?.content?.checkoutWarningText || 'Pastikan data dan kategori yang Anda pilih sudah sesuai.'}
                     </div>
                   </div>
