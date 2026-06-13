@@ -2218,10 +2218,25 @@ export default function EventPage() {
           width={800}
           centered
         >
-          <div className="w-full h-[60vh] overflow-y-auto bg-stone-50 rounded-xl border border-stone-200 p-2 relative">
-            {event?.content?.tncUrl ? (
-                 <iframe src={`${event.content.tncUrl}#toolbar=0`} className="w-full h-full rounded-lg" />
-            ) : null}
+          <div className="flex flex-col h-[70vh]">
+            <div className="w-full flex-1 overflow-y-auto bg-stone-50 rounded-xl border border-stone-200 p-2 relative" style={{ WebkitOverflowScrolling: 'touch' }}>
+              {event?.content?.tncUrl ? (
+                   <iframe src={`${event.content.tncUrl}#toolbar=0`} className="w-full h-full rounded-lg border-0" />
+              ) : null}
+            </div>
+            {event?.content?.tncUrl && (
+              <div className="mt-3 text-center">
+                <p className="text-xs text-stone-500 mb-2">Jika dokumen tidak bisa di-scroll di perangkat Anda:</p>
+                <a 
+                  href={event.content.tncUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-block px-4 py-2 bg-stone-800 text-white text-xs font-bold rounded-lg hover:bg-stone-900 transition-colors"
+                >
+                  Buka Dokumen di Tab Baru
+                </a>
+              </div>
+            )}
           </div>
         </Modal>
 
