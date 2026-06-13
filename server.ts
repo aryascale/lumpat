@@ -37,7 +37,15 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(PROJECT_ROOT, 'dist'), { maxAge: '1d' }));
-app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '1d' }));
+app.use('/uploads', express.static(UPLOAD_DIR, { 
+  maxAge: '1d',
+  setHeaders: (res, filePath) => {
+    if (filePath.toLowerCase().endsWith('.pdf')) {
+      res.setHeader('Content-Disposition', 'inline');
+      res.setHeader('Content-Type', 'application/pdf');
+    }
+  }
+}));
 
 const apiHandler = async (req: any, res: any) => {
   const url = new URL(req.originalUrl, `http://${req.headers.host}`);
