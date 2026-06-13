@@ -1369,7 +1369,7 @@ export default function EventPage() {
                               <td className="py-3 px-2 font-mono text-stone-400">{idx + 1}</td>
                               <td className="py-3 px-2 font-bold text-stone-900">
                                 {flag && <span className="mr-2" title={nationalityStr}>{flag}</span>}
-                                {p.name}
+                                {p.customData?.['FULL NAME'] || p.customData?.['FULLNAME'] || p.customData?.['Full Name'] || p.customData?.['Nama Lengkap'] || p.name}
                               </td>
                               <td className="py-3 px-2 text-stone-600">{p.category?.name}</td>
                               <td className="py-3 px-2 font-mono font-bold text-stone-900">{bib}</td>
