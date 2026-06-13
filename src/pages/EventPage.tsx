@@ -311,6 +311,7 @@ export default function EventPage() {
     try {
       const res = await fetch(`/api/categories?eventId=${eventId}`);
       if (res.ok) {
+        const data = await res.json();
         const categories = data.categories || [];
         setCategoryDetails(categories.filter((c: any) => !c.isHidden));
       }
