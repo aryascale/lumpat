@@ -1461,7 +1461,7 @@ export default function EventPage() {
                                       const dobKeys = ['date of birth', 'tanggal lahir', 'dob'];
                                       const dobEntry = Object.entries(p.customData).find(([k]) => dobKeys.some(dk => k.toLowerCase().includes(dk)));
                                       if (dobEntry && dobEntry[1]) {
-                                        const age = calculateAgeOnRaceDay(String(dobEntry[1]), event?.date || '');
+                                        const age = calculateAgeOnRaceDay(String(dobEntry[1]), event?.eventDate || '');
                                         ageCategory = getAgeCategory(age);
                                       }
                                     }
@@ -2038,7 +2038,7 @@ export default function EventPage() {
                                       // Auto Assign Age Category based on DOB
                                       const labelLower = field.label.toLowerCase();
                                       if (field.type === 'date' || labelLower.includes('date of birth') || labelLower.includes('tanggal lahir') || labelLower === 'dob') {
-                                        const age = calculateAgeOnRaceDay(e.target.value, event?.date || '');
+                                        const age = calculateAgeOnRaceDay(e.target.value, event?.eventDate || '');
                                         const category = getAgeCategory(age);
                                         if (category) {
                                           updated[activeTabIdx]['Age Category'] = category;
