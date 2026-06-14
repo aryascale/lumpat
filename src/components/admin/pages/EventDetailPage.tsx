@@ -53,7 +53,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   const [loadingParticipants, setLoadingParticipants] = useState(false);
   const [csvMeta, setCsvMeta] = useState<Array<{ key: CsvKind; filename: string; updatedAt: number; rows: number }>>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
-  const [categories, setCategories] = useState<Array<{ name: string; price: number; quota: number; isHidden?: boolean }>>([]);
+  const [categories, setCategories] = useState<Array<{ id?: string; name: string; price: number; quota: number; isHidden?: boolean; sold?: number }>>([]);
   const [loading, setLoading] = useState(true);
 
   const [bannerFile, setBannerFile] = useState<File | null>(null);
@@ -150,7 +150,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       const catRes = await fetch(`/api/categories?eventId=${eventId}`);
       if (catRes.ok) {
         const data = await catRes.json();
-        const cats = (data.categories || []).map((c: any) => typeof c === 'string' ? { name: c, price: 0, quota: 0, isHidden: false } : { name: c.name, price: c.price || 0, quota: c.quota || 0, isHidden: !!c.isHidden, sold: c.sold || 0 });
+        const cats = (data.categories || []).map((c: any) => typeof c === 'string' ? { name: c, price: 0, quota: 0, isHidden: false } : { id: c.id, name: c.name, price: c.price || 0, quota: c.quota || 0, isHidden: !!c.isHidden, sold: c.sold || 0 });
         setCategories(cats);
       }
 
