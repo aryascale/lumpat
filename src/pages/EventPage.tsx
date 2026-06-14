@@ -1367,7 +1367,14 @@ export default function EventPage() {
                   const leader = matchRegisteredToMaster(p, masterParticipants);
                   const bib = leader?.bib || '';
                   const term = regSearchTerm.toLowerCase();
-                  return p.name.toLowerCase().includes(term) || bib.toLowerCase().includes(term);
+                  // Get display name from customData (full name) or fallback to p.name
+                  let displayName = p.name;
+                  if (p.customData) {
+                    const nameKeys = ['full name', 'fullname', 'nama lengkap', 'nama'];
+                    const found = Object.entries(p.customData).find(([k]) => nameKeys.includes(k.toLowerCase()));
+                    if (found && found[1]) displayName = String(found[1]);
+                  }
+                  return displayName.toLowerCase().includes(term) || p.name.toLowerCase().includes(term) || bib.toLowerCase().includes(term);
                 });
                 return filtered.length > 0 ? (
                   <div className="overflow-x-auto">
@@ -1397,7 +1404,15 @@ export default function EventPage() {
                               <td className="py-3 px-2 font-mono text-stone-400">{idx + 1}</td>
                               <td className="py-3 px-2 font-bold text-stone-900">
                                 {flag && <span className="mr-2" title={nationalityStr}>{flag}</span>}
-                                {p.customData?.['FULL NAME'] || p.customData?.['FULLNAME'] || p.customData?.['Full Name'] || p.customData?.['Nama Lengkap'] || p.name}
+                              {(() => {
+                                if (p.customData) {
+                                  const entries = Object.entries(p.customData);
+                                  const nameKeys = ['full name', 'fullname', 'nama lengkap', 'nama'];
+                                  const found = entries.find(([k]) => nameKeys.includes(k.toLowerCase()));
+                                  if (found && found[1]) return String(found[1]);
+                                }
+                                return p.name;
+                              })()}
                               </td>
                               <td className="py-3 px-2 text-stone-600">{p.category?.name}</td>
                               <td className="py-3 px-2 font-mono font-bold text-stone-900">{bib}</td>
