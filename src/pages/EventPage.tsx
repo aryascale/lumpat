@@ -338,7 +338,7 @@ export default function EventPage() {
       if (res.ok) {
         const data = await res.json();
         const categories = data.categories || [];
-        setCategoryDetails(categories.filter((c: any) => !c.isHidden));
+        setCategoryDetails(categories);
       }
     } catch (err) {
       console.error('Failed to load categories', err);
@@ -1400,7 +1400,7 @@ export default function EventPage() {
                 )}
               </div>
               {(() => {
-                const settled = registeredParticipants.filter(p => p.paymentStatus === 'settlement' && !p.category?.isHidden);
+                const settled = registeredParticipants.filter(p => p.paymentStatus === 'settlement');
                 const filtered = settled.filter(p => {
                   const leader = matchRegisteredToMaster(p, masterParticipants);
                   const bib = leader?.bib || '';
