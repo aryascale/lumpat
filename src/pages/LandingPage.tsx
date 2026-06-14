@@ -180,18 +180,18 @@ export default function LandingPage() {
           
             <ImageSlider3D 
             images={[
-              "/Assets/carousel/p1.webp",
-              "/Assets/carousel/p2.webp",
-              "/Assets/carousel/p3.webp",
-              "/Assets/carousel/p4.webp",
-              "/Assets/carousel/p5.webp",
-              "/Assets/carousel/p6.webp",
-              "/Assets/carousel/p1.webp",
-              "/Assets/carousel/p2.webp",
-              "/Assets/carousel/p3.webp",
-              "/Assets/carousel/p4.webp",
-              "/Assets/carousel/p5.webp",
-              "/Assets/carousel/p6.webp"
+              "/Assets/carousel/p1.webp?v=1",
+              "/Assets/carousel/p2.webp?v=1",
+              "/Assets/carousel/p3.webp?v=1",
+              "/Assets/carousel/p4.webp?v=1",
+              "/Assets/carousel/p5.webp?v=1",
+              "/Assets/carousel/p6.webp?v=1",
+              "/Assets/carousel/p1.webp?v=1",
+              "/Assets/carousel/p2.webp?v=1",
+              "/Assets/carousel/p3.webp?v=1",
+              "/Assets/carousel/p4.webp?v=1",
+              "/Assets/carousel/p5.webp?v=1",
+              "/Assets/carousel/p6.webp?v=1"
             ]}
             duration={45}
             cardWidth={isMobile ? "18rem" : "60rem"}
