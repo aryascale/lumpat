@@ -1795,6 +1795,8 @@ export default function EventPage() {
                     <Select
                       className="w-full"
                       size="large"
+                      virtual={false}
+                      getPopupContainer={(triggerNode) => triggerNode.parentNode}
                       placeholder="Pilih Kategori Perlombaan"
                       value={regForm.categoryId || undefined}
                       onChange={(val) => {
@@ -1925,6 +1927,8 @@ export default function EventPage() {
                           <Select 
                             size="small"
                             bordered={false}
+                            virtual={false}
+                            getPopupContainer={(triggerNode) => triggerNode.parentNode}
                             value={bulkQty} 
                             onChange={(val) => {
                               setBulkQty(val);
@@ -1978,6 +1982,8 @@ export default function EventPage() {
                               <Select
                                 className="w-full"
                                 size="large"
+                                virtual={false}
+                                getPopupContainer={(triggerNode) => triggerNode.parentNode}
                                 placeholder={`Pilih ${field.label}`}
                                 value={bulkParticipants[activeTabIdx]?.[field.id] || undefined}
                                 onChange={(val) => setBulkParticipants(prev => {
@@ -1992,6 +1998,8 @@ export default function EventPage() {
                                 showSearch
                                 className="w-full"
                                 size="large"
+                                virtual={false}
+                                getPopupContainer={(triggerNode) => triggerNode.parentNode}
                                 placeholder={`Pilih ${field.label}`}
                                 optionFilterProp="label"
                                 value={bulkParticipants[activeTabIdx]?.[field.id] || undefined}
@@ -2067,6 +2075,8 @@ export default function EventPage() {
                             <Select
                               className="w-full mb-3"
                               size="large"
+                              virtual={false}
+                              getPopupContainer={(triggerNode) => triggerNode.parentNode}
                               placeholder="Pilih Ukuran"
                               value={bulkParticipants[activeTabIdx]?.['tshirtSize'] || undefined}
                               onChange={(val) => setBulkParticipants(prev => {
