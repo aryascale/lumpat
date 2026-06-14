@@ -43,8 +43,8 @@ export default function App() {
       <Routes>
         {/* <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/verify/:id" element={<VerifyPage />} /> */}
+        <Route path="/profile" element={<Profile />} /> */}
+        <Route path="/verify/:id" element={<VerifyPage />} />
         <Route path="/" element={<LandingPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/leaderboard" element={<UserEventPage />} />
