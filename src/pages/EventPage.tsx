@@ -1422,6 +1422,7 @@ export default function EventPage() {
                           <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500" style={{width: 60}}>No</th>
                           <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500">Nama</th>
                           <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500">Kategori</th>
+                          <th className="text-center py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500">Age Category</th>
                           <th className="text-left py-3 px-2 font-black uppercase tracking-widest text-[10px] text-stone-500">No BIB</th>
                         </tr>
                       </thead>
@@ -1453,25 +1454,27 @@ export default function EventPage() {
                               })()}
                               </td>
                               <td className="py-3 px-2 text-stone-600">
-                                <div className="flex items-center gap-2">
-                                  <span>{p.category?.name}</span>
-                                  {(() => {
-                                    let ageCategory = p.customData?.['Age Category'];
-                                    if (!ageCategory && p.customData) {
-                                      const dobKeys = ['date of birth', 'tanggal lahir', 'dob'];
-                                      const dobEntry = Object.entries(p.customData).find(([k]) => dobKeys.some(dk => k.toLowerCase().includes(dk)));
-                                      if (dobEntry && dobEntry[1]) {
-                                        const age = calculateAgeOnRaceDay(String(dobEntry[1]), event?.eventDate || '');
-                                        ageCategory = getAgeCategory(age);
-                                      }
+                                <span>{p.category?.name}</span>
+                              </td>
+                              <td className="py-3 px-2 text-center">
+                                {(() => {
+                                  let ageCategory = p.customData?.['Age Category'];
+                                  if (!ageCategory && p.customData) {
+                                    const dobKeys = ['date of birth', 'tanggal lahir', 'dob'];
+                                    const dobEntry = Object.entries(p.customData).find(([k]) => dobKeys.some(dk => k.toLowerCase().includes(dk)));
+                                    if (dobEntry && dobEntry[1]) {
+                                      const age = calculateAgeOnRaceDay(String(dobEntry[1]), event?.eventDate || '');
+                                      ageCategory = getAgeCategory(age);
                                     }
-                                    return ageCategory ? (
-                                      <span className="text-[10px] font-bold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded border border-purple-200 whitespace-nowrap">
-                                        {ageCategory}
-                                      </span>
-                                    ) : null;
-                                  })()}
-                                </div>
+                                  }
+                                  return ageCategory ? (
+                                    <span className="inline-block px-4 py-1.5 bg-stone-50 text-stone-600 font-bold text-xs rounded-xl border-2 border-stone-200 whitespace-nowrap">
+                                      {ageCategory}
+                                    </span>
+                                  ) : (
+                                    <span className="text-stone-300">-</span>
+                                  );
+                                })()}
                               </td>
                               <td className="py-3 px-2 font-mono font-bold text-stone-900">{bib}</td>
                             </tr>
