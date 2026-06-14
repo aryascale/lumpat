@@ -2698,7 +2698,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                         rpcBgUrl: eventData.content?.rpcBgUrl || '',
                         rpcBgUrlMobile: eventData.content?.rpcBgUrlMobile || '',
                         isDateTBA: eventData.content?.isDateTBA || false,
-                        tncUrl: eventData.content?.tncUrl || ''
+                        tncUrl: eventData.content?.tncUrl || '',
+                        autoGenerateBibs: eventData.content?.autoGenerateBibs || undefined,
                       }
                     }),
                   });

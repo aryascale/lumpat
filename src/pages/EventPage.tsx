@@ -1390,7 +1390,7 @@ export default function EventPage() {
                       <tbody>
                         {filtered.map((p: any, idx: number) => {
                           const leader = matchRegisteredToMaster(p, masterParticipants);
-                          const bib = leader && leader.bib !== 'RDY' ? leader.bib : '-';
+                          const bib = p.bibNumber || (leader && leader.bib !== 'RDY' ? leader.bib : '') || '-';
                           const nationalityStr = p.customData?.['Nationality'] || p.customData?.['Kewarganegaraan'] || p.customData?.['nationality'] || '';
                           const flagMatch = nationalityStr.match(/^[\uD83C][\uDDE6-\uDDFF][\uD83C][\uDDE6-\uDDFF]/) || nationalityStr.match(/[\uD83C][\uDDE6-\uDDFF][\uD83C][\uDDE6-\uDDFF]/);
                           const flag = flagMatch ? flagMatch[0] : '';
@@ -1441,7 +1441,16 @@ export default function EventPage() {
           {/* Registered Participant Detail Modal */}
           {regDetailOpen && regDetailParticipant && (() => {
             const leader = matchRegisteredToMaster(regDetailParticipant, masterParticipants);
-            const bib = leader && leader.bib !== 'RDY' ? leader.bib : '-';
+            const bib = regDetailParticipant.bibNumber || (leader && leader.bib !== 'RDY' ? leader.bib : '') || '-';
+            const displayName = (() => {
+              if (regDetailParticipant.customData) {
+                const entries = Object.entries(regDetailParticipant.customData);
+                const nameKeys = ['full name', 'fullname', 'nama lengkap', 'nama'];
+                const found = entries.find(([k]) => nameKeys.includes(k.toLowerCase()));
+                if (found && found[1]) return String(found[1]);
+              }
+              return regDetailParticipant.name;
+            })();
             return (
               <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setRegDetailOpen(false)}>
                 <div className="bg-white rounded-2xl max-w-md w-full max-h-[80vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -1454,7 +1463,7 @@ export default function EventPage() {
                   <div className="p-6 space-y-4">
                     <div className="flex justify-between items-start py-2 border-b border-stone-100">
                       <span className="text-[10px] font-black text-stone-400 uppercase">Nama</span>
-                      <span className="font-bold text-stone-900">{regDetailParticipant.name}</span>
+                      <span className="font-bold text-stone-900">{displayName}</span>
                     </div>
                     <div className="flex justify-between items-start py-2 border-b border-stone-100">
                       <span className="text-[10px] font-black text-stone-400 uppercase">Kategori</span>
