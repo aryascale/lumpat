@@ -164,6 +164,7 @@ export default function EventPage() {
   const [scanErrorResult, setScanErrorResult] = useState<string | null>(null);
   const [tncModalOpen, setTncModalOpen] = useState(false);
   const [tncAgreed, setTncAgreed] = useState(false);
+  const [dataAgreed, setDataAgreed] = useState(false);
   const scannerStateRef = useRef({
     isPaused: false,
     timeoutId: null as any
@@ -1776,6 +1777,10 @@ export default function EventPage() {
                           onChange={e => updateRegForm('email', e.target.value)} 
                           disabled={(emailVerified && !event?.content?.allowBulkNoOtp) || otpLoading}
                         />
+                        <p className="text-xs text-amber-600 mt-1.5 flex items-center gap-1">
+                          <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01" /></svg>
+                          *Pastikan alamat email benar, tiket akan dikirim ke email ini.
+                        </p>
                       </div>
                       {!event?.content?.allowBulkNoOtp && (
                         <>
@@ -2023,25 +2028,44 @@ export default function EventPage() {
                     )}
                   </div>
 
-                  {event?.content?.tncUrl && (
-                    <div className="w-full flex items-center gap-3 bg-white p-4 rounded-xl border border-stone-200 mb-6 shadow-sm">
-                      <input 
-                         type="checkbox" 
-                         className="w-5 h-5 accent-emerald-500 cursor-pointer"
-                         checked={tncAgreed}
-                         onChange={(e) => {
-                           if (e.target.checked) {
-                             setTncModalOpen(true);
-                           } else {
-                             setTncAgreed(false);
-                           }
-                         }}
-                      />
-                      <span className="text-sm font-medium text-stone-600">
-                        Saya menyetujui <button className="text-emerald-600 font-bold hover:underline" onClick={() => setTncModalOpen(true)}>Syarat dan Ketentuan</button> perlombaan ini.
-                      </span>
-                    </div>
-                  )}
+                  {(() => {
+                    const tncUrls = event?.content?.tncUrls || (event?.content?.tncUrl ? [event.content.tncUrl] : []);
+                    if (tncUrls.length > 0) {
+                      return (
+                        <div className="w-full flex flex-col gap-3 bg-white p-4 rounded-xl border border-stone-200 mb-6 shadow-sm">
+                          <div className="flex items-start gap-3">
+                            <input 
+                              type="checkbox" 
+                              className="w-5 h-5 accent-emerald-500 cursor-pointer mt-0.5"
+                              checked={tncAgreed}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setTncModalOpen(true);
+                                } else {
+                                  setTncAgreed(false);
+                                }
+                              }}
+                            />
+                            <span className="text-sm font-medium text-stone-600 leading-relaxed">
+                              Saya telah membaca dan menyetujui seluruh <button className="text-emerald-600 font-bold hover:underline" onClick={() => setTncModalOpen(true)}>Syarat dan Ketentuan</button> perlombaan ini.
+                            </span>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <input 
+                              type="checkbox" 
+                              className="w-5 h-5 accent-emerald-500 cursor-pointer mt-0.5"
+                              checked={dataAgreed}
+                              onChange={(e) => setDataAgreed(e.target.checked)}
+                            />
+                            <span className="text-sm font-medium text-stone-600 leading-relaxed">
+                              Saya menyatakan bahwa seluruh data yang saya isi adalah benar, valid, dan dapat dipertanggungjawabkan.
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
 
                   <div className="flex flex-col-reverse sm:flex-row justify-between gap-4">
                     <Button size="large" onClick={() => setCurrentStep(1)} className="w-full sm:w-auto h-14">
@@ -2081,9 +2105,12 @@ export default function EventPage() {
                             }
                           }
 
-                          if (event?.content?.tncUrl && !tncAgreed) {
-                             message.error('Anda harus menyetujui Syarat dan Ketentuan terlebih dahulu.');
-                             return;
+                          const tncUrls = event?.content?.tncUrls || (event?.content?.tncUrl ? [event.content.tncUrl] : []);
+                          if (tncUrls.length > 0) {
+                             if (!tncAgreed || !dataAgreed) {
+                               message.error('Anda harus menyetujui seluruh Syarat dan Ketentuan serta validitas data terlebih dahulu.');
+                               return;
+                             }
                           }
 
                           setCurrentStep(3);
@@ -2278,24 +2305,36 @@ export default function EventPage() {
           centered
         >
           <div className="flex flex-col h-[70vh]">
-            <div className="w-full flex-1 overflow-y-auto bg-stone-50 rounded-xl border border-stone-200 p-2 relative" style={{ WebkitOverflowScrolling: 'touch' }}>
-              {event?.content?.tncUrl ? (
-                   <iframe src={`${event.content.tncUrl}#toolbar=0`} className="w-full h-full rounded-lg border-0" />
-              ) : null}
-            </div>
-            {event?.content?.tncUrl && (
-              <div className="mt-3 text-center">
-                <p className="text-xs text-stone-500 mb-2">Jika dokumen tidak bisa di-scroll di perangkat Anda:</p>
-                <a 
-                  href={event.content.tncUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-block px-4 py-2 bg-stone-800 text-white text-xs font-bold rounded-lg hover:bg-stone-900 transition-colors"
-                >
-                  Buka Dokumen di Tab Baru
-                </a>
-              </div>
-            )}
+            {(() => {
+              const tncUrls = event?.content?.tncUrls || (event?.content?.tncUrl ? [event.content.tncUrl] : []);
+              return (
+                <>
+                  {tncUrls.length > 0 && (
+                    <div className="w-full flex-1 overflow-y-auto bg-stone-50 rounded-xl border border-stone-200 p-2 relative" style={{ WebkitOverflowScrolling: 'touch' }}>
+                      <iframe src={`${tncUrls[0]}#toolbar=0`} className="w-full h-full rounded-lg border-0" />
+                    </div>
+                  )}
+                  {tncUrls.length > 0 && (
+                    <div className="mt-3 text-center">
+                      <p className="text-xs text-stone-500 mb-2">{tncUrls.length > 1 ? 'Pilih dokumen untuk dibaca:' : 'Jika dokumen tidak bisa di-scroll di perangkat Anda:'}</p>
+                      <div className="flex flex-wrap gap-2 justify-center">
+                        {tncUrls.map((url: string, idx: number) => (
+                          <a 
+                            key={idx}
+                            href={url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-block px-4 py-2 bg-stone-800 text-white text-xs font-bold rounded-lg hover:bg-stone-900 transition-colors"
+                          >
+                            Buka Dokumen {tncUrls.length > 1 ? idx + 1 : 'T&C'}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </Modal>
 

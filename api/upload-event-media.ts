@@ -48,7 +48,15 @@ export default async function handler(event: any) {
       } else if (targetField === 'rpc_bg_mobile') {
         (currentContent as any).rpcBgUrlMobile = result.url;
       } else if (targetField === 'tnc_doc') {
-        (currentContent as any).tncUrl = result.url;
+        let tncUrls = Array.isArray((currentContent as any).tncUrls) ? (currentContent as any).tncUrls : [];
+        if (tncUrls.length === 0 && (currentContent as any).tncUrl) {
+          tncUrls.push((currentContent as any).tncUrl);
+        }
+        if (tncUrls.length < 5) {
+          tncUrls.push(result.url);
+        }
+        (currentContent as any).tncUrls = tncUrls;
+        (currentContent as any).tncUrl = tncUrls[0] || ''; // keep backward compatibility
       }
       await query(
         `UPDATE Event SET content = ?, updatedAt = NOW() WHERE id = ?`,

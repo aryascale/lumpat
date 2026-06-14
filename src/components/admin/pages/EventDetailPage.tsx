@@ -2699,6 +2699,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                         rpcBgUrlMobile: eventData.content?.rpcBgUrlMobile || '',
                         isDateTBA: eventData.content?.isDateTBA || false,
                         tncUrl: eventData.content?.tncUrl || '',
+                        tncUrls: eventData.content?.tncUrls || undefined,
                         autoGenerateBibs: eventData.content?.autoGenerateBibs || undefined,
                       }
                     }),
@@ -2913,33 +2914,76 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
               <div className="label">Syarat & Ketentuan (T&C)</div>
               <div className="tools">
                 <div className="mb-4">
-                  <div className="text-sm font-bold text-gray-700 mb-1">Dokumen T&C (Khusus PDF)</div>
-                  <input
-                    type="text"
-                    className="search w-full mb-2"
-                    placeholder="URL Syarat & Ketentuan"
-                    value={eventData?.content?.tncUrl || ''}
-                    onChange={(e) => setEventData({ 
-                      ...eventData, 
-                      content: { ...(eventData?.content || {}), tncUrl: e.target.value }
-                    })}
-                  />
-                  <div className="flex gap-2">
-                    <input
-                      id="tnc-doc-upload"
-                      type="file"
-                      accept=".pdf"
-                      onChange={(e) => setTncDocFile(e.target.files?.[0] || null)}
-                      className="flex-1 text-sm block w-full text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300"
-                    />
-                    <button
-                      className="btn w-full sm:w-auto text-xs"
-                      onClick={() => handleMediaUpload('tnc_doc')}
-                      disabled={!tncDocFile || uploadingTncDoc}
-                    >
-                      {uploadingTncDoc ? 'Uploading...' : 'Upload Dokumen'}
-                    </button>
-                  </div>
+                  <div className="text-sm font-bold text-gray-700 mb-1">Dokumen T&C (Khusus PDF, Maks 5)</div>
+                  {(() => {
+                    const tncUrls = eventData?.content?.tncUrls || (eventData?.content?.tncUrl ? [eventData.content.tncUrl] : []);
+                    return (
+                      <div className="space-y-2 mb-2">
+                        {tncUrls.map((url: string, idx: number) => (
+                          <div key={idx} className="flex gap-2 items-center">
+                            <input
+                              type="text"
+                              className="search flex-1"
+                              placeholder={`URL Syarat & Ketentuan ${idx + 1}`}
+                              value={url}
+                              onChange={(e) => {
+                                const newUrls = [...tncUrls];
+                                newUrls[idx] = e.target.value;
+                                setEventData({ 
+                                  ...eventData, 
+                                  content: { ...(eventData?.content || {}), tncUrls: newUrls, tncUrl: newUrls[0] || '' }
+                                });
+                              }}
+                            />
+                            <button
+                              className="btn ghost !text-red-500 !px-2"
+                              onClick={() => {
+                                const newUrls = tncUrls.filter((_: any, i: number) => i !== idx);
+                                setEventData({ 
+                                  ...eventData, 
+                                  content: { ...(eventData?.content || {}), tncUrls: newUrls, tncUrl: newUrls[0] || '' }
+                                });
+                              }}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                        {tncUrls.length < 5 && (
+                          <button
+                            className="text-xs text-blue-600 font-bold hover:underline mb-2 block"
+                            onClick={() => {
+                              const newUrls = [...tncUrls, ''];
+                              setEventData({ 
+                                ...eventData, 
+                                content: { ...(eventData?.content || {}), tncUrls: newUrls }
+                              });
+                            }}
+                          >
+                            + Tambah Link T&C Manual
+                          </button>
+                        )}
+                        {tncUrls.length < 5 && (
+                          <div className="flex gap-2 mt-2">
+                            <input
+                              id="tnc-doc-upload"
+                              type="file"
+                              accept=".pdf"
+                              onChange={(e) => setTncDocFile(e.target.files?.[0] || null)}
+                              className="flex-1 text-sm block w-full text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300"
+                            />
+                            <button
+                              className="btn w-full sm:w-auto text-xs"
+                              onClick={() => handleMediaUpload('tnc_doc')}
+                              disabled={!tncDocFile || uploadingTncDoc}
+                            >
+                              {uploadingTncDoc ? 'Uploading...' : 'Upload Dokumen'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                   <div className="text-xs text-gray-500 mt-2">
                     Peserta harus menyetujui dokumen ini sebelum melakukan pembayaran.
                   </div>
