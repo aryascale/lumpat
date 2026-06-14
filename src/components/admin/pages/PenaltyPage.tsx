@@ -247,7 +247,14 @@ export default function PenaltyPage({ allRows, onDataVersionBump, eventId }: Pen
                         <td className="mono text-xs font-bold">{r.bib}</td>
                         <td className="name-cell text-sm">{r.name}</td>
                         <td className="text-xs uppercase">{r.gender}</td>
-                        <td className="text-xs">{r.category}</td>
+                        <td className="text-xs">
+                          <div>{r.category}</div>
+                          {r.ageCategory && (
+                            <div className="text-[9px] font-bold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded mt-1 inline-block">
+                              {r.ageCategory}
+                            </div>
+                          )}
+                        </td>
                         <td className="mono text-xs">{r.finishTimeRaw || "-"}</td>
                         <td>
                           {pen ? (
@@ -378,7 +385,10 @@ export default function PenaltyPage({ allRows, onDataVersionBump, eventId }: Pen
                           <span className="mx-2">·</span>
                           <span className="uppercase text-xs">{r.gender}</span>
                         </div>
-                        <div className="text-xs text-gray-400">{r.category}</div>
+                        <div className="text-xs text-gray-400">
+                          {r.category}
+                          {r.ageCategory && <span className="ml-2 bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded text-[9px] font-bold">{r.ageCategory}</span>}
+                        </div>
                         <div className="text-xs text-gray-400 mono mt-0.5">Finish: {r.finishTimeRaw || "-"}</div>
                       </div>
                       <span

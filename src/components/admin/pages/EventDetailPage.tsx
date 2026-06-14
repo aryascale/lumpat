@@ -2004,7 +2004,14 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                       <td className="mono">{r.bib}</td>
                       <td className="name-cell">{r.name}</td>
                       <td>{r.gender}</td>
-                      <td>{r.category}</td>
+                      <td>
+                        <div>{r.category}</div>
+                        {r.ageCategory && (
+                          <div className="text-[10px] font-bold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded mt-1 inline-block">
+                            {r.ageCategory}
+                          </div>
+                        )}
+                      </td>
                       <td className="mono strong">{isDQ ? "DSQ" : "OK"}</td>
                       <td>
                         <div className="flex gap-1">
@@ -2060,7 +2067,10 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                           <span className="mx-2">·</span>
                           <span>{r.gender}</span>
                         </div>
-                        <div className="text-xs text-gray-400">{r.category}</div>
+                        <div className="text-xs text-gray-400">
+                          {r.category}
+                          {r.ageCategory && <span className="ml-2 bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded text-[9px] font-bold">{r.ageCategory}</span>}
+                        </div>
                       </div>
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-bold ${

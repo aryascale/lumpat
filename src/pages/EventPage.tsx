@@ -114,6 +114,30 @@ type LoadState =
   | { status: "error"; msg: string }
   | { status: "ready" };
 
+// Helper functions for Age Category calculation
+function calculateAgeOnRaceDay(dobStr: string, raceDateStr: string): number | null {
+  if (!dobStr || !raceDateStr) return null;
+  const dob = new Date(dobStr);
+  const raceDate = new Date(raceDateStr);
+  if (isNaN(dob.getTime()) || isNaN(raceDate.getTime())) return null;
+
+  let age = raceDate.getFullYear() - dob.getFullYear();
+  const m = raceDate.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && raceDate.getDate() < dob.getDate())) {
+    age--;
+  }
+  return age;
+}
+
+function getAgeCategory(age: number | null): string {
+  if (age === null || age < 0) return "";
+  if (age < 8) return "Underage"; 
+  if (age >= 8 && age < 18) return "Student";
+  if (age >= 18 && age < 40) return "Open";
+  if (age >= 40) return "Master";
+  return "";
+}
+
 export default function EventPage() {
   const { slug } = useParams<{ slug: string }>();
   const [event, setEvent] = useState<EventData | null>(null);
@@ -376,6 +400,10 @@ export default function EventPage() {
       const participantsToSend = bulkParticipants.slice(0, bulkQty).map(p => {
         const mappedCustomData: Record<string, string> = {};
         Object.keys(p).forEach(fieldId => {
+          if (fieldId === 'Age Category') {
+            mappedCustomData['Age Category'] = p[fieldId];
+            return;
+          }
           const field = customFields.find(f => f.id === fieldId);
           if (field) {
             mappedCustomData[field.label] = p[fieldId];
@@ -1424,7 +1452,27 @@ export default function EventPage() {
                                 return p.name;
                               })()}
                               </td>
-                              <td className="py-3 px-2 text-stone-600">{p.category?.name}</td>
+                              <td className="py-3 px-2 text-stone-600">
+                                <div className="flex items-center gap-2">
+                                  <span>{p.category?.name}</span>
+                                  {(() => {
+                                    let ageCategory = p.customData?.['Age Category'];
+                                    if (!ageCategory && p.customData) {
+                                      const dobKeys = ['date of birth', 'tanggal lahir', 'dob'];
+                                      const dobEntry = Object.entries(p.customData).find(([k]) => dobKeys.some(dk => k.toLowerCase().includes(dk)));
+                                      if (dobEntry && dobEntry[1]) {
+                                        const age = calculateAgeOnRaceDay(String(dobEntry[1]), event?.date || '');
+                                        ageCategory = getAgeCategory(age);
+                                      }
+                                    }
+                                    return ageCategory ? (
+                                      <span className="text-[10px] font-bold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded border border-purple-200 whitespace-nowrap">
+                                        {ageCategory}
+                                      </span>
+                                    ) : null;
+                                  })()}
+                                </div>
+                              </td>
                               <td className="py-3 px-2 font-mono font-bold text-stone-900">{bib}</td>
                             </tr>
                           );
@@ -1855,7 +1903,19 @@ export default function EventPage() {
                 <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
                   <div className="bg-stone-50 p-6 rounded-2xl border border-stone-200">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                      <h3 className="text-lg font-black">Data Peserta</h3>
+                      <div className="flex flex-col">
+                        <h3 className="text-lg font-black">Data Peserta</h3>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2.5 py-1 rounded-md border border-blue-200">
+                            {categoryDetails.find(c => c.id === regForm.categoryId)?.name || ''}
+                          </span>
+                          {bulkParticipants[activeTabIdx]?.['Age Category'] && (
+                            <span className="text-xs font-bold bg-purple-100 text-purple-700 px-2.5 py-1 rounded-md border border-purple-200 shadow-sm animate-in zoom-in duration-300">
+                              {bulkParticipants[activeTabIdx]['Age Category']}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                       {event?.content?.allowBulkNoOtp && (
                         <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-lg border border-stone-200">
                           <span className="font-bold text-xs text-stone-500 uppercase">Qty</span>
@@ -1974,6 +2034,19 @@ export default function EventPage() {
                                     setBulkParticipants(prev => {
                                       const updated = [...prev];
                                       updated[activeTabIdx] = { ...updated[activeTabIdx], [field.id]: e.target.value };
+                                      
+                                      // Auto Assign Age Category based on DOB
+                                      const labelLower = field.label.toLowerCase();
+                                      if (field.type === 'date' || labelLower.includes('date of birth') || labelLower.includes('tanggal lahir') || labelLower === 'dob') {
+                                        const age = calculateAgeOnRaceDay(e.target.value, event?.date || '');
+                                        const category = getAgeCategory(age);
+                                        if (category) {
+                                          updated[activeTabIdx]['Age Category'] = category;
+                                        } else {
+                                          delete updated[activeTabIdx]['Age Category'];
+                                        }
+                                      }
+                                      
                                       return updated;
                                     });
                                   }
@@ -1998,11 +2071,15 @@ export default function EventPage() {
                                   updated[activeTabIdx] = { ...updated[activeTabIdx], tshirtSize: val };
                                   return updated;
                               })}
-                              options={tshirtInventory.map(t => ({
-                                label: `${t.size} ${t.quota > 0 ? (t.sold >= t.quota ? '(Habis)' : `(${t.quota - t.sold} tersisa)`) : ''}`,
-                                value: t.size,
-                                disabled: t.quota > 0 && t.sold >= t.quota
-                              }))}
+                              options={tshirtInventory.map(t => {
+                                const selectedCount = bulkParticipants.filter((p, i) => i !== activeTabIdx && p.tshirtSize === t.size).length;
+                                const remaining = t.quota - t.sold - selectedCount;
+                                return {
+                                  label: `${t.size} ${t.quota > 0 ? (remaining <= 0 ? '(Habis)' : `(${remaining} tersisa)`) : ''}`,
+                                  value: t.size,
+                                  disabled: t.quota > 0 && remaining <= 0
+                                };
+                              })}
                             />
                             <div className="mt-4">
                               <div className="flex items-center gap-2 mb-3">
@@ -2310,14 +2387,16 @@ export default function EventPage() {
               return (
                 <>
                   {tncUrls.length > 0 && (
-                    <div className="w-full flex-1 overflow-y-auto bg-stone-50 rounded-xl border border-stone-200 p-2 relative" style={{ WebkitOverflowScrolling: 'touch' }}>
-                      <iframe src={`${tncUrls[0]}#toolbar=0`} className="w-full h-full rounded-lg border-0" />
+                    <div className="w-full flex-1 overflow-y-auto bg-stone-50 rounded-xl border border-stone-200 p-2 relative flex flex-col gap-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+                      {tncUrls.map((url: string, idx: number) => (
+                        <iframe key={idx} src={`${url}#toolbar=0`} className="w-full min-h-[50vh] rounded-lg border-0 shadow-sm" />
+                      ))}
                     </div>
                   )}
                   {tncUrls.length > 0 && (
                     <div className="mt-3 text-center">
-                      <p className="text-xs text-stone-500 mb-2">{tncUrls.length > 1 ? 'Pilih dokumen untuk dibaca:' : 'Jika dokumen tidak bisa di-scroll di perangkat Anda:'}</p>
-                      <div className="flex flex-wrap gap-2 justify-center">
+                      <p className="text-xs text-stone-500">Anda harus menyetujui syarat & ketentuan di atas sebelum melanjutkan pendaftaran.</p>
+                      <div className="flex flex-wrap gap-2 justify-center mt-3">
                         {tncUrls.map((url: string, idx: number) => (
                           <a 
                             key={idx}
@@ -2330,6 +2409,11 @@ export default function EventPage() {
                           </a>
                         ))}
                       </div>
+                    </div>
+                  )}
+                  {tncUrls.length === 0 && (
+                    <div className="flex-1 flex items-center justify-center">
+                      <p className="text-stone-400 italic">Belum ada dokumen Syarat dan Ketentuan.</p>
                     </div>
                   )}
                 </>

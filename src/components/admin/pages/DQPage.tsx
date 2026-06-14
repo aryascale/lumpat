@@ -145,7 +145,14 @@ export default function DQPage({ allRows, onConfigChanged, onDataVersionBump, ev
                         <td className="mono text-xs font-bold">{r.bib}</td>
                         <td className="name-cell text-sm">{r.name}</td>
                         <td className="text-xs uppercase">{r.gender}</td>
-                        <td className="text-xs">{r.category}</td>
+                        <td className="text-xs">
+                          <div>{r.category}</div>
+                          {r.ageCategory && (
+                            <div className="text-[9px] font-bold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded mt-1 inline-block">
+                              {r.ageCategory}
+                            </div>
+                          )}
+                        </td>
                         <td>
                           <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase ${isDQ ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
                             {isDQ ? "DSQ" : "OK"}
@@ -198,7 +205,10 @@ export default function DQPage({ allRows, onConfigChanged, onDataVersionBump, ev
                           <span className="mx-2">·</span>
                           <span className="uppercase text-xs">{r.gender}</span>
                         </div>
-                        <div className="text-xs text-gray-400">{r.category}</div>
+                        <div className="text-xs text-gray-400">
+                          {r.category}
+                          {r.ageCategory && <span className="ml-2 bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded text-[9px] font-bold">{r.ageCategory}</span>}
+                        </div>
                       </div>
                       <span
                         className={`px-2 py-1 rounded text-[10px] font-black uppercase ${
