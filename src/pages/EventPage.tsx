@@ -410,9 +410,9 @@ export default function EventPage() {
       }
 
       if (data.snapToken && (window as any).snap) {
-        const pollPaymentStatus = async (oid: string, maxRetries = 5) => {
+        const pollPaymentStatus = async (oid: string, maxRetries = 8) => {
           for (let i = 0; i < maxRetries; i++) {
-            await new Promise(r => setTimeout(r, 3000 * (i + 1))); // 3s, 6s, 9s...
+            await new Promise(r => setTimeout(r, 3000 * (i + 1)));
             try {
               const res = await fetch('/api/check-payment-status', {
                 method: 'POST',
@@ -420,12 +420,16 @@ export default function EventPage() {
                 body: JSON.stringify({ orderId: oid }),
               });
               const result = await res.json();
-              if (result?.data?.status === 'settlement') {
+              console.log(`[POLL] Attempt ${i+1}: orderId=${oid}, status=${result?.status}`);
+              if (result?.status === 'settlement') {
                 message.success('Pembayaran berhasil dikonfirmasi!');
                 if (event?.id) fetchRegisteredParticipants(event.id);
                 return;
               }
-            } catch (e) { /* silent retry */ }
+              if (result?.status === 'cancel' || result?.status === 'expire') {
+                return; // stop polling
+              }
+            } catch (e) { console.error('[POLL] Error:', e); }
           }
         };
 
