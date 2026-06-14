@@ -2864,17 +2864,21 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                             className="search flex-1 text-sm"
                             value={eventData?.content?.autoGenerateBibs?.categories?.[cat.id] || ''}
                             onChange={(e) => {
-                              const currentCats = eventData?.content?.autoGenerateBibs?.categories || {};
-                              setEventData({
-                                ...eventData,
+                              const val = e.target.value;
+                              const catId = cat.id;
+                              setEventData((prev: any) => ({
+                                ...prev,
                                 content: {
-                                  ...(eventData?.content || {}),
+                                  ...(prev?.content || {}),
                                   autoGenerateBibs: {
-                                    ...(eventData?.content?.autoGenerateBibs || {}),
-                                    categories: { ...currentCats, [cat.id]: e.target.value }
+                                    ...(prev?.content?.autoGenerateBibs || {}),
+                                    categories: { 
+                                      ...(prev?.content?.autoGenerateBibs?.categories || {}), 
+                                      [catId]: val 
+                                    }
                                   }
                                 }
-                              });
+                              }));
                             }}
                           />
                         </div>

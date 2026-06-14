@@ -410,27 +410,36 @@ export default function EventPage() {
       }
 
       if (data.snapToken && (window as any).snap) {
-        const pollPaymentStatus = async (oid: string, maxRetries = 8) => {
+        const pollPaymentStatus = async (oid: string, maxRetries = 10) => {
+          console.log(`[POLL] Starting payment polling for orderId: ${oid}`);
+          if (!oid) { console.error('[POLL] orderId is empty!'); return; }
+          const delays = [500, 2000, 3000, 5000, 5000, 8000, 8000, 10000, 15000, 20000];
           for (let i = 0; i < maxRetries; i++) {
-            await new Promise(r => setTimeout(r, 3000 * (i + 1)));
+            await new Promise(r => setTimeout(r, delays[i] || 10000));
             try {
+              console.log(`[POLL] Attempt ${i+1}/${maxRetries} for ${oid}`);
               const res = await fetch('/api/check-payment-status', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ orderId: oid }),
               });
               const result = await res.json();
-              console.log(`[POLL] Attempt ${i+1}: orderId=${oid}, status=${result?.status}`);
+              console.log(`[POLL] Response:`, result);
               if (result?.status === 'settlement') {
                 message.success('Pembayaran berhasil dikonfirmasi!');
                 if (event?.id) fetchRegisteredParticipants(event.id);
                 return;
               }
-              if (result?.status === 'cancel' || result?.status === 'expire') {
-                return; // stop polling
+              if (result?.error) {
+                console.error(`[POLL] API error: ${result.error}`);
               }
-            } catch (e) { console.error('[POLL] Error:', e); }
+              if (result?.status === 'cancel' || result?.status === 'expire') {
+                console.log(`[POLL] Terminal status: ${result.status}`);
+                return;
+              }
+            } catch (e) { console.error('[POLL] Fetch error:', e); }
           }
+          console.log(`[POLL] Max retries reached for ${oid}`);
         };
 
         (window as any).snap.pay(data.snapToken, {
