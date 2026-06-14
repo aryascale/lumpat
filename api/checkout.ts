@@ -39,39 +39,51 @@ export default async function handler(event: any) {
 
     const participantsData = participantsList.map(p => {
        const pCustom = p.customData || p;
+       const entries = Object.entries(pCustom);
        
-       // Detect fields from labels
+       // Case-insensitive lookup helper for customData (keys are labels from frontend)
+       const getCustomByLabel = (regex: RegExp): string => {
+         const found = entries.find(([k]) => regex.test(k.toLowerCase()));
+         return found ? String(found[1]) : '';
+       };
+
+       // Also try by field ID (legacy/fallback)
        const getFieldByLabel = (regex: RegExp) => regFields.find((f: any) => regex.test(f.label.toLowerCase()))?.id;
-       
-       const fnId = getFieldByLabel(/first name|nama depan/);
-       const lnId = getFieldByLabel(/last name|nama belakang/);
-       const waId = getFieldByLabel(/whatsapp|wa|phone|nomor hp|no hp|telp/);
-       const gnId = getFieldByLabel(/gender|jenis kelamin/);
-       const dobId = getFieldByLabel(/birth|lahir|tanggal lahir/);
-       const tsId = getFieldByLabel(/t-shirt|tshirt|kaos|jersey|ukuran baju|ukuran kaos/);
 
        let pName = p.name;
        if (!pName) {
-         const fn = pCustom[fnId || ''] || pCustom['first_name'] || '';
-         const ln = pCustom[lnId || ''] || pCustom['last_name'] || '';
+         // Try by label first (what frontend actually sends)
+         const fn = getCustomByLabel(/first name|nama depan/) || pCustom[getFieldByLabel(/first name|nama depan/) || ''] || '';
+         const ln = getCustomByLabel(/last name|nama belakang/) || pCustom[getFieldByLabel(/last name|nama belakang/) || ''] || '';
          if (fn || ln) {
            pName = `${fn} ${ln}`.trim();
          } else {
-           pName = (nameField ? pCustom[nameField.id] : null) || pCustom['nama'] || pCustom['name'] || email.split('@')[0];
+           // Try full name / nama lengkap
+           pName = getCustomByLabel(/full name|fullname|nama lengkap/) 
+             || getCustomByLabel(/^nama$/)
+             || (nameField ? pCustom[nameField.id] : null)
+             || '';
          }
+         // Last resort: email prefix
+         if (!pName) pName = email.split('@')[0];
        }
 
-       let pPhone = p.phoneNumber || pCustom[waId || ''] || pCustom['phone'] || pCustom['nohp'] || pCustom['whatsapp'] || '000000000000';
-       let pGender = p.gender || pCustom[gnId || ''] || pCustom['gender'] || pCustom['jeniskelamin'] || 'U';
-       let pDob = p.dateOfBirth || pCustom[dobId || ''] || pCustom['dob'] || pCustom['birth_date'] || null;
-       let pTshirtSize = p.tshirtSize || pCustom[tsId || ''] || pCustom['tshirtSize'] || null;
-
-       // Fallback: search customData labels case-insensitively for tshirt
-       if (!pTshirtSize && p.customData) {
-         const entries = Object.entries(p.customData);
-         const tshirtEntry = entries.find(([k]) => /t-shirt|tshirt|kaos|jersey|ukuran baju|ukuran kaos/i.test(k));
-         if (tshirtEntry) pTshirtSize = String(tshirtEntry[1]);
-       }
+       let pPhone = p.phoneNumber 
+         || getCustomByLabel(/whatsapp|wa|phone|nomor hp|no hp|telp/)
+         || pCustom[getFieldByLabel(/whatsapp|wa|phone|nomor hp|no hp|telp/) || '']
+         || '000000000000';
+       let pGender = p.gender 
+         || getCustomByLabel(/^gender$|jenis kelamin/) 
+         || pCustom[getFieldByLabel(/gender|jenis kelamin/) || ''] 
+         || 'U';
+       let pDob = p.dateOfBirth 
+         || getCustomByLabel(/birth|lahir|tanggal lahir/) 
+         || pCustom[getFieldByLabel(/birth|lahir|tanggal lahir/) || ''] 
+         || null;
+       let pTshirtSize = p.tshirtSize 
+         || getCustomByLabel(/t-shirt|tshirt|kaos|jersey|ukuran baju|ukuran kaos/) 
+         || pCustom[getFieldByLabel(/t-shirt|tshirt|kaos|jersey|ukuran baju|ukuran kaos/) || ''] 
+         || null;
 
        return { ...p, name: pName, phoneNumber: pPhone, gender: pGender, dateOfBirth: pDob, tshirtSize: pTshirtSize, customData: pCustom };
     });
