@@ -2371,9 +2371,25 @@ export default function EventPage() {
                  type="primary" 
                  size="large"
                  className="bg-emerald-500 hover:bg-emerald-600 font-bold border-none"
-                 onClick={() => {
+                 onClick={async () => {
                    setTncAgreed(true);
                    setTncModalOpen(false);
+                   try {
+                     await fetch('/api/client-logs', {
+                       method: 'POST',
+                       headers: { 'Content-Type': 'application/json' },
+                       body: JSON.stringify({
+                         action: 'TNC_AGREED',
+                         detail: `Peserta telah membaca/scroll dan menyetujui Syarat & Ketentuan. Waktu (Local): ${new Date().toLocaleString('id-ID')}`,
+                         metadata: {
+                           userEmail: regForm.email || 'guest',
+                           eventId: event?.id || '',
+                         }
+                       })
+                     });
+                   } catch (err) {
+                     console.error('Failed to log TNC agreement', err);
+                   }
                  }}
                >
                  Setuju & Lanjutkan
