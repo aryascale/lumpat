@@ -131,12 +131,11 @@ function calculateAgeOnRaceDay(dobStr: string, raceDateStr: string): number | nu
 
 function getAgeCategory(age: number | null): string {
   if (age === null || age < 0) return "";
-  if (age < 8) return "Underage"; 
-  if (age >= 8 && age < 18) return "Student";
-  if (age >= 18 && age < 40) return "Open";
+  if (age < 40) return "Open";
   if (age >= 40) return "Master";
   return "";
 }
+
 
 export default function EventPage() {
   const { slug } = useParams<{ slug: string }>();
