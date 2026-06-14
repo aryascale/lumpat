@@ -410,16 +410,37 @@ export default function EventPage() {
       }
 
       if (data.snapToken && (window as any).snap) {
+        const pollPaymentStatus = async (oid: string, maxRetries = 5) => {
+          for (let i = 0; i < maxRetries; i++) {
+            await new Promise(r => setTimeout(r, 3000 * (i + 1))); // 3s, 6s, 9s...
+            try {
+              const res = await fetch('/api/check-payment-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderId: oid }),
+              });
+              const result = await res.json();
+              if (result?.data?.status === 'settlement') {
+                message.success('Pembayaran berhasil dikonfirmasi!');
+                if (event?.id) fetchRegisteredParticipants(event.id);
+                return;
+              }
+            } catch (e) { /* silent retry */ }
+          }
+        };
+
         (window as any).snap.pay(data.snapToken, {
           onSuccess: () => {
             message.success('Pembayaran berhasil! Kamu terdaftar.');
             setRegisterModalOpen(false);
             if (event?.id) fetchRegisteredParticipants(event.id);
+            pollPaymentStatus(data.orderId);
           },
           onPending: () => {
             message.info('Menunggu pembayaran...');
             setRegisterModalOpen(false);
             if (event?.id) fetchRegisteredParticipants(event.id);
+            pollPaymentStatus(data.orderId);
           },
           onError: () => {
             message.error('Pembayaran gagal');
@@ -428,6 +449,7 @@ export default function EventPage() {
           onClose: () => {
             message.info('Popup pembayaran ditutup');
             if (event?.id) fetchRegisteredParticipants(event.id);
+            pollPaymentStatus(data.orderId);
           },
         });
       } else {
