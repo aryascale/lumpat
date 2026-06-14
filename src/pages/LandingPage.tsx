@@ -178,18 +178,20 @@ export default function LandingPage() {
           {/* Atmospheric glows */}
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(220,38,38,0.07) 0%, transparent 70%)', filter: 'blur(60px)' }} />
           
-          <ImageSlider3D 
+            <ImageSlider3D 
             images={[
-              "/Assets/landing2/White Label Website.png",
-              "/Assets/landing2/result.png",
-              "/Assets/landing2/map start and finish.png",
-              "/Assets/landing2/multisport.png",
-              "/Assets/landing2/portfolio.png",
-              "/Assets/landing2/White Label Website.png",
-              "/Assets/landing2/result.png",
-              "/Assets/landing2/map start and finish.png",
-              "/Assets/landing2/multisport.png",
-              "/Assets/landing2/portfolio.png"
+              "/Assets/carousel/p1.webp",
+              "/Assets/carousel/p2.webp",
+              "/Assets/carousel/p3.webp",
+              "/Assets/carousel/p4.webp",
+              "/Assets/carousel/p5.webp",
+              "/Assets/carousel/p6.webp",
+              "/Assets/carousel/p1.webp",
+              "/Assets/carousel/p2.webp",
+              "/Assets/carousel/p3.webp",
+              "/Assets/carousel/p4.webp",
+              "/Assets/carousel/p5.webp",
+              "/Assets/carousel/p6.webp"
             ]}
             duration={45}
             cardWidth={isMobile ? "18rem" : "60rem"}
