@@ -50,6 +50,7 @@ export default function ActivityLogsPage() {
               className="search text-sm w-32 sm:w-40"
             >
               <option value="ALL">Semua Log</option>
+              <option value="USER">User Actions (TNC)</option>
               <option value="ERROR">Errors & Fails</option>
               <option value="AUTH">Authentication</option>
               <option value="PAYMENT">Payments</option>

@@ -61,6 +61,9 @@ export default async function handler(event: any) {
       } else if (category === 'SYSTEM') {
         where += ' AND (action LIKE ? OR action LIKE ? OR action LIKE ?)';
         params.push('SYSTEM%', 'WEBHOOK%', 'CRON%');
+      } else if (category === 'USER') {
+        where += ' AND (action LIKE ? OR action LIKE ?)';
+        params.push('TNC%', 'USER%');
       } else {
         where += ' AND action LIKE ?';
         params.push(`${category}%`);
