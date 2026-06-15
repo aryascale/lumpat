@@ -1,4 +1,4 @@
-import { prisma } from '../src/lib/prisma';
+import prisma from '../src/lib/prisma';
 import { successResponse, errorResponse, CORS_HEADERS } from '../src/lib/api-utils';
 
 export default async function handler(event: any) {
