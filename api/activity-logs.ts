@@ -1,4 +1,4 @@
-import { query } from '../src/lib/db';
+import { prisma } from '../src/lib/prisma';
 import { successResponse, errorResponse, CORS_HEADERS } from '../src/lib/api-utils';
 
 export default async function handler(event: any) {
@@ -12,50 +12,46 @@ export default async function handler(event: any) {
     const limit = parseInt(event.queryStringParameters?.limit || '50');
     const offset = parseInt(event.queryStringParameters?.offset || '0');
 
-    let where = 'WHERE 1=1';
-    const params: any[] = [];
+    let where: any = { AND: [] };
 
-    if (eventId && eventId !== 'all') { 
-      where += ' AND (eventId = ? OR eventId IS NULL)'; 
-      params.push(eventId); 
+    if (eventId && eventId !== 'all') {
+      where.AND.push({
+        OR: [{ eventId: eventId }, { eventId: null }]
+      });
     }
-    
-    if (action) { 
-      where += ' AND action LIKE ?'; 
-      params.push(`${action}%`); 
+
+    if (action) {
+      where.AND.push({ action: { startsWith: action } });
     }
 
     if (category && category !== 'ALL') {
       if (category === 'ERROR') {
-        where += ' AND (action LIKE ? OR action LIKE ?)';
-        params.push('%ERROR%', '%FAIL%');
+        where.AND.push({ OR: [{ action: { contains: 'ERROR' } }, { action: { contains: 'FAIL' } }] });
       } else if (category === 'AUTH') {
-        where += ' AND (action LIKE ? OR action LIKE ? OR action LIKE ?)';
-        params.push('%LOGIN%', '%LOGOUT%', '%REGISTER%');
+        where.AND.push({ OR: [{ action: { contains: 'LOGIN' } }, { action: { contains: 'LOGOUT' } }, { action: { contains: 'REGISTER' } }] });
       } else if (category === 'PAYMENT') {
-        where += ' AND (action LIKE ? OR action LIKE ? OR action LIKE ?)';
-        params.push('%PAYMENT%', '%CHECKOUT%', '%SETTLE%');
+        where.AND.push({ OR: [{ action: { contains: 'PAYMENT' } }, { action: { contains: 'CHECKOUT' } }, { action: { contains: 'SETTLE' } }] });
       } else if (category === 'ADMIN') {
-        where += ' AND action LIKE ?';
-        params.push('ADMIN%');
+        where.AND.push({ action: { startsWith: 'ADMIN' } });
       } else if (category === 'SYSTEM') {
-        where += ' AND (action LIKE ? OR action LIKE ? OR action LIKE ?)';
-        params.push('SYSTEM%', 'WEBHOOK%', 'CRON%');
+        where.AND.push({ OR: [{ action: { startsWith: 'SYSTEM' } }, { action: { startsWith: 'WEBHOOK' } }, { action: { startsWith: 'CRON' } }] });
       } else {
-        where += ' AND action LIKE ?';
-        params.push(`${category}%`);
+        where.AND.push({ action: { startsWith: category } });
       }
     }
 
-    const logs: any = await query(
-      `SELECT * FROM ActivityLog ${where} ORDER BY createdAt DESC LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
-    );
+    if (where.AND.length === 0) {
+      delete where.AND;
+    }
 
-    const countResult: any = await query(
-      `SELECT COUNT(*) as total FROM ActivityLog ${where}`,
-      params
-    );
+    const logs = await prisma.activityLog.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      skip: offset
+    });
+
+    const total = await prisma.activityLog.count({ where });
 
     return successResponse({
       logs: logs.map((l: any) => ({
@@ -64,10 +60,10 @@ export default async function handler(event: any) {
         action: l.action,
         detail: l.detail,
         actor: l.actor,
-        metadata: l.metadata ? (typeof l.metadata === 'string' ? JSON.parse(l.metadata) : l.metadata) : null,
+        metadata: l.metadata,
         createdAt: l.createdAt,
       })),
-      total: countResult[0]?.total || 0,
+      total
     });
   } catch (error: any) {
     console.error('[ACTIVITY-LOGS] Error:', error);
