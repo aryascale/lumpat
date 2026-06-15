@@ -1530,6 +1530,23 @@ export default function EventPage() {
                       <span className="text-[10px] font-black text-stone-400 uppercase">Kategori</span>
                       <span className="text-sm text-stone-700">{regDetailParticipant.category?.name}</span>
                     </div>
+                    <div className="flex justify-between items-start py-2 border-b border-stone-100">
+                      <span className="text-[10px] font-black text-stone-400 uppercase">Age Category</span>
+                      <span className="text-sm text-stone-700">
+                        {(() => {
+                          let ageCat = regDetailParticipant.customData?.['Age Category'];
+                          if (!ageCat && regDetailParticipant.customData) {
+                            const dobKeys = ['date of birth', 'tanggal lahir', 'dob'];
+                            const dobEntry = Object.entries(regDetailParticipant.customData).find(([k]) => dobKeys.some(dk => k.toLowerCase().includes(dk)));
+                            if (dobEntry && dobEntry[1]) {
+                              const age = calculateAgeOnRaceDay(String(dobEntry[1]), event?.eventDate || '');
+                              ageCat = getAgeCategory(age);
+                            }
+                          }
+                          return ageCat || '-';
+                        })()}
+                      </span>
+                    </div>
                     <div className="flex justify-between items-start py-2">
                       <span className="text-[10px] font-black text-stone-400 uppercase">No BIB</span>
                       <span className="text-sm font-mono font-bold text-stone-900">{bib}</span>
