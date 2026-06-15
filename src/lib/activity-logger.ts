@@ -1,4 +1,5 @@
-import prisma from './prisma';
+import { query } from './db';
+import crypto from 'crypto';
 
 export async function logActivity(
   action: string,
@@ -8,15 +9,17 @@ export async function logActivity(
   metadata?: Record<string, any>
 ) {
   try {
-    await prisma.activityLog.create({
-      data: {
+    await query(
+      "INSERT INTO ActivityLog (id, eventId, action, detail, actor, metadata, createdAt) VALUES (?, ?, ?, ?, ?, ?, NOW())",
+      [
+        crypto.randomUUID(),
+        eventId || null,
         action,
-        detail: detail || null,
-        actor: actor || 'system',
-        eventId: eventId || null,
-        metadata: metadata || null,
-      }
-    });
+        detail || null,
+        actor || 'system',
+        metadata ? JSON.stringify(metadata) : null,
+      ]
+    );
   } catch (error) {
     console.error('[ACTIVITY-LOG] Failed to log:', error);
   }
