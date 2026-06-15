@@ -1,11 +1,31 @@
 import { query } from '../src/lib/db';
 import { successResponse, errorResponse, CORS_HEADERS } from '../src/lib/api-utils';
 
+let tableCreated = false;
+
 export default async function handler(event: any) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
   if (event.httpMethod !== 'GET') return errorResponse('Method not allowed', 405);
 
   try {
+    if (!tableCreated) {
+      await query(`
+        CREATE TABLE IF NOT EXISTS ActivityLog (
+          id VARCHAR(191) NOT NULL PRIMARY KEY,
+          eventId VARCHAR(191) NULL,
+          action VARCHAR(191) NOT NULL,
+          detail TEXT NULL,
+          actor VARCHAR(191) NULL,
+          metadata JSON NULL,
+          createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+          INDEX \`ActivityLog_eventId_idx\`(\`eventId\`),
+          INDEX \`ActivityLog_action_idx\`(\`action\`),
+          INDEX \`ActivityLog_createdAt_idx\`(\`createdAt\`)
+        ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+      `);
+      tableCreated = true;
+    }
+
     const eventId = event.queryStringParameters?.eventId;
     const action = event.queryStringParameters?.action;
     const category = event.queryStringParameters?.category;
