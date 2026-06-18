@@ -962,7 +962,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   };
 
   const saveManualStartDirectly = async (timeStr: string) => {
-    if (!confirm(timeStr ? "Simpan Official Gun Time ini?" : "Hapus Official Gun Time?")) return;
+    if (!confirm(timeStr ? "Simpan Manual Start ini?" : "Hapus Manual Start?")) return;
     setSavingManualStart(true);
     try {
       const manualRes = await fetch(`/api/manual-start?eventId=${eventId}`, {
@@ -973,7 +973,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       if (!manualRes.ok) throw new Error("Gagal menyimpan waktu start.");
       setManualStartTime(timeStr);
       bumpDataVersion();
-      alert(timeStr ? "Official Gun Time berhasil di-set!" : "Official Gun Time berhasil dihapus!");
+      alert(timeStr ? "Manual Start berhasil di-set!" : "Manual Start berhasil dihapus!");
     } catch (e: any) {
       alert(e.message);
     } finally {
@@ -1862,10 +1862,10 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
             </div>
           </div>
 
-          {/* Official Gun Time (Manual Start Time) - Dipisah karena ini operasional *real-time* */}
+          {/* Manual Start Time - Dipisah karena ini operasional *real-time* */}
           <div className="card border-blue-500 border-2 bg-blue-50/10">
             <div className="mb-4">
-              <h2 className="section-title text-blue-600">Official Gun Time (Live Start)</h2>
+              <h2 className="section-title text-blue-600">Manual Start</h2>
               <div className="subtle text-sm">
                 Gunakan ini secara *real-time* saat bendera diangkat. Menyimpan di sini akan langsung berlaku tanpa perlu menekan tombol "Save Timing Rules".
               </div>
