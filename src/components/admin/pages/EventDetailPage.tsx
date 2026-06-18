@@ -2050,6 +2050,53 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
               </div>
             </div>
           </div>
+
+          <div className="card mt-6 border-stone-200 border-2">
+            <div className="mb-4">
+              <h2 className="section-title">Decoder Sync Simulation (Demo)</h2>
+              <div className="subtle text-sm">Simulate RFID taps to test the checkpoint / laps table on the public page.</div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 items-end">
+              <div className="w-full sm:w-1/3">
+                <div className="label font-medium text-sm mb-1">EPC / BIB Number</div>
+                <input
+                  id="demo-epc"
+                  className="search w-full"
+                  placeholder="e.g. 101"
+                />
+              </div>
+              <button
+                className="btn primary"
+                onClick={async () => {
+                  const epcInput = document.getElementById("demo-epc") as HTMLInputElement;
+                  if (!epcInput.value) return alert("Please enter an EPC / BIB Number");
+                  try {
+                    const res = await fetch("/api/decoder-sync", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        eventId: eventId,
+                        logs: [
+                          {
+                            epc: epcInput.value,
+                            timestamp: new Date().toISOString(),
+                            readerId: "Demo-Reader-1"
+                          }
+                        ]
+                      })
+                    });
+                    const data = await res.json();
+                    if (res.ok) alert("Decoder sync success! Check the public leaderboard.");
+                    else alert("Error: " + data.error);
+                  } catch (e) {
+                    alert("Failed to hit API");
+                  }
+                }}
+              >
+                Simulate Tap
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

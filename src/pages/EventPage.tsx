@@ -737,6 +737,21 @@ export default function EventPage() {
         const startMap = await loadTimesMap("start", event.id);
         const finishMap = await loadTimesMap("finish", event.id);
         const cpMap = await loadCheckpointTimesMap(event.id);
+        
+        // Merge decoder logs from API
+        try {
+          const decoderRes = await fetch(`/api/decoder-logs?eventId=${event.id}`);
+          if (decoderRes.ok) {
+            const decoderLogs = await decoderRes.json();
+            if (Array.isArray(decoderLogs)) {
+              decoderLogs.forEach((log: any) => {
+                if (!cpMap.has(log.epc)) cpMap.set(log.epc, []);
+                cpMap.get(log.epc)!.push(log.timestamp);
+              });
+            }
+          }
+        } catch {}
+
         setCheckpointMap(cpMap);
 
         // Use timing from event (per-event database) instead of localStorage
