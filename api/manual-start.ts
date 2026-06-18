@@ -1,5 +1,6 @@
 import { query } from '../src/lib/db';
 import { successResponse, errorResponse, parseBody, CORS_HEADERS } from '../src/lib/api-utils';
+import { logActivity } from '../src/lib/activity-logger';
 
 export default async function handler(event: any) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
@@ -46,6 +47,9 @@ export default async function handler(event: any) {
         [eventId]
       );
 
+      const actionDesc = manualStartTime ? `Manual Start Time di-set: ${manualStartTime}` : `Manual Start Time dihapus (Clear)`;
+      await logActivity('event.update', actionDesc, 'admin', eventId);
+
       return successResponse({ manualStartTime: updated[0].manualStartTime });
     }
 
@@ -57,6 +61,8 @@ export default async function handler(event: any) {
         'UPDATE Event SET manualStartTime = NULL, updatedAt = NOW() WHERE id = ?',
         [eventId]
       );
+
+      await logActivity('event.update', 'Manual Start Time dihapus (Clear)', 'admin', eventId);
 
       return successResponse({ manualStartTime: null });
     }
