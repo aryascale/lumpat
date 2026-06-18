@@ -104,6 +104,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   const [cutoffHours, setCutoffHours] = useState("");
   const [catStart, setCatStart] = useState<Record<string, string>>({});
   const [manualStartTime, setManualStartTime] = useState<string>("");
+  const [savingManualStart, setSavingManualStart] = useState(false);
   const [savingTiming, setSavingTiming] = useState(false);
 
   // DQ state
@@ -951,30 +952,32 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         throw new Error(errorMsg);
       }
 
-      // Save manual start time
-      const manualRes = await fetch(`/api/manual-start?eventId=${eventId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ manualStartTime: manualStartTime || null }),
-      });
-
-      if (!manualRes.ok) {
-        let errorMsg = "Failed to save manual start time";
-        try {
-          const err = await manualRes.json();
-          errorMsg = err.error || errorMsg;
-        } catch (e) {
-          errorMsg = `Server error (${manualRes.status}).`;
-        }
-        throw new Error(errorMsg);
-      }
-
       bumpDataVersion();
       alert("Timing rules berhasil disimpan!");
     } catch (error: any) {
       alert(`Error: ${error.message}`);
     } finally {
       setSavingTiming(false);
+    }
+  };
+
+  const saveManualStartDirectly = async (timeStr: string) => {
+    if (!confirm(timeStr ? "Simpan Official Gun Time ini?" : "Hapus Official Gun Time?")) return;
+    setSavingManualStart(true);
+    try {
+      const manualRes = await fetch(`/api/manual-start?eventId=${eventId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ manualStartTime: timeStr || null }),
+      });
+      if (!manualRes.ok) throw new Error("Gagal menyimpan waktu start.");
+      setManualStartTime(timeStr);
+      bumpDataVersion();
+      alert(timeStr ? "Official Gun Time berhasil di-set!" : "Official Gun Time berhasil dihapus!");
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setSavingManualStart(false);
     }
   };
 
@@ -1859,17 +1862,17 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
             </div>
           </div>
 
-          {/* Official Gun Time (Manual Start Time) */}
-          <div className="card">
+          {/* Official Gun Time (Manual Start Time) - Dipisah karena ini operasional *real-time* */}
+          <div className="card border-blue-500 border-2 bg-blue-50/10">
             <div className="mb-4">
-              <h2 className="section-title">Official Gun Time (Manual Start)</h2>
+              <h2 className="section-title text-blue-600">Official Gun Time (Live Start)</h2>
               <div className="subtle text-sm">
-                Waktu resmi dimulainya perlombaan. Gunakan format ISO. Tombol "Set Now" akan mengisinya otomatis.
+                Gunakan ini secara *real-time* saat bendera diangkat. Menyimpan di sini akan langsung berlaku tanpa perlu menekan tombol "Save Timing Rules".
               </div>
             </div>
             <div className="admin-cutoff">
-              <div className="label font-medium text-sm mb-1">Manual Start Time</div>
-              <div className="flex gap-2">
+              <div className="label font-medium text-sm mb-1">Manual Start Time (ISO Format)</div>
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   className="search w-full"
                   placeholder="e.g. 2025-06-15T06:00:00.000Z"
@@ -1877,14 +1880,27 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                   onChange={(e) => setManualStartTime(e.target.value)}
                 />
                 <button
-                  className="btn ghost whitespace-nowrap"
-                  onClick={() => setManualStartTime(new Date().toISOString())}
+                  className="btn primary whitespace-nowrap"
+                  disabled={savingManualStart}
+                  onClick={() => saveManualStartDirectly(manualStartTime)}
                 >
-                  Set Now
+                  {savingManualStart ? "Saving..." : "Save Time"}
+                </button>
+                <button
+                  className="btn ghost whitespace-nowrap border border-blue-500 text-blue-600"
+                  disabled={savingManualStart}
+                  onClick={() => {
+                    const nowStr = new Date().toISOString();
+                    setManualStartTime(nowStr);
+                    saveManualStartDirectly(nowStr);
+                  }}
+                >
+                  Start Now!
                 </button>
                 <button
                   className="btn ghost whitespace-nowrap text-red-500"
-                  onClick={() => setManualStartTime("")}
+                  disabled={savingManualStart}
+                  onClick={() => saveManualStartDirectly("")}
                 >
                   Clear
                 </button>
