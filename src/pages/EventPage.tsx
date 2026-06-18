@@ -1203,7 +1203,7 @@ export default function EventPage() {
                 ) : (
                   <button 
                     onClick={() => setRegisterModalOpen(true)}
-                    className="mt-3 md:mt-6 bg-white text-black font-bold py-2 md:py-3 px-6 md:px-10 rounded-full uppercase tracking-widest text-[10px] md:text-xs transition-all hover:bg-stone-100 hover:scale-105 cursor-pointer mx-auto md:mx-0 block md:inline-block shadow-[0_0_15px_rgba(255,255,255,0.3)]"
+                    className="mt-3 md:mt-6 bg-white text-black mix-blend-difference font-bold py-2 md:py-3 px-6 md:px-10 rounded-full uppercase tracking-widest text-[10px] md:text-xs transition-transform hover:scale-105 cursor-pointer mx-auto md:mx-0 block md:inline-block shadow-[0_0_15px_rgba(255,255,255,0.3)]"
                   >
                     Daftar Sekarang →
                   </button>
@@ -1739,10 +1739,10 @@ export default function EventPage() {
 
         {/* Floating CTA Button */}
         {!(event?.eventDate && new Date(event.eventDate).setHours(0,0,0,0) < new Date().setHours(0,0,0,0)) && (
-          <div className="fixed bottom-6 right-6 z-50" style={{ display: registerModalOpen ? 'none' : 'block' }}>
+          <div className="fixed bottom-6 right-6 z-50 mix-blend-difference" style={{ display: registerModalOpen ? 'none' : 'block' }}>
             <button
               onClick={() => setRegisterModalOpen(true)}
-              className="bg-black/80 backdrop-blur-md text-white font-bold py-3 px-6 rounded-full shadow-lg uppercase tracking-widest text-[10px] transition-all hover:bg-black hover:scale-105 cursor-pointer border border-white/10"
+              className="bg-white text-black font-bold py-3 px-6 rounded-full uppercase tracking-widest text-[10px] transition-transform hover:scale-105 cursor-pointer"
             >
               Daftar →
             </button>

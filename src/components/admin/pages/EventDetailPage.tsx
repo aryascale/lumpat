@@ -42,7 +42,7 @@ function formatNowAsTimestamp(): string {
 }
 
 export default function EventDetailPage({ eventId, eventSlug, eventName, onBack }: EventDetailPageProps) {
-  const [activeTab, setActiveTab] = useState<'homepage' | 'data' | 'banners' | 'gallery' | 'categories' | 'route' | 'timing' | 'dq' | 'penalty' | 'certified' | 'settings' | 'registration' | 'inventory'>(() => {
+  const [activeTab, setActiveTab] = useState<'homepage' | 'data' | 'banners' | 'gallery' | 'categories' | 'route' | 'timing' | 'manual_start' | 'dq' | 'penalty' | 'certified' | 'settings' | 'registration' | 'inventory'>(() => {
     return (localStorage.getItem(`admin_tab_${eventId}`) as any) || 'homepage';
   });
 
@@ -1192,6 +1192,12 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           Timing Rules
         </button>
         <button
+          className={`detail-tab whitespace-nowrap ${activeTab === 'manual_start' ? 'active' : ''}`}
+          onClick={() => setActiveTab('manual_start')}
+        >
+          Manual Start
+        </button>
+        <button
           className={`detail-tab whitespace-nowrap ${activeTab === 'dq' ? 'active' : ''}`}
           onClick={() => setActiveTab('dq')}
         >
@@ -1862,49 +1868,6 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
             </div>
           </div>
 
-          {/* Manual Start Time - Dipisah karena ini operasional *real-time* */}
-          <div className="card border-blue-500 border-2 bg-blue-50/10">
-            <div className="mb-4">
-              <h2 className="section-title text-blue-600">Manual Start</h2>
-            </div>
-            <div className="admin-cutoff">
-              <div className="label font-medium text-sm mb-1">Manual Start Time (ISO Format)</div>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <input
-                  className="search w-full"
-                  placeholder="e.g. 2025-06-15T06:00:00.000Z"
-                  value={manualStartTime}
-                  onChange={(e) => setManualStartTime(e.target.value)}
-                />
-                <button
-                  className="btn primary whitespace-nowrap"
-                  disabled={savingManualStart}
-                  onClick={() => saveManualStartDirectly(manualStartTime)}
-                >
-                  {savingManualStart ? "Saving..." : "Save Time"}
-                </button>
-                <button
-                  className="btn ghost whitespace-nowrap border border-blue-500 text-blue-600"
-                  disabled={savingManualStart}
-                  onClick={() => {
-                    const nowStr = new Date().toISOString();
-                    setManualStartTime(nowStr);
-                    saveManualStartDirectly(nowStr);
-                  }}
-                >
-                  Start Now!
-                </button>
-                <button
-                  className="btn ghost whitespace-nowrap text-red-500"
-                  disabled={savingManualStart}
-                  onClick={() => saveManualStartDirectly("")}
-                >
-                  Clear
-                </button>
-              </div>
-            </div>
-          </div>
-
           {/* Category Start Time Overrides */}
           <div className="card">
             <div className="mb-4">
@@ -2033,6 +1996,58 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
               Gunakan format tanggal &amp; jam yang sama dengan di CSV timing
               (misal: <code>2025-11-23 07:00:00.000</code>). Kamu juga bisa klik <b>Set Now</b>
               untuk mengisi otomatis berdasarkan jam saat ini.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'manual_start' && (
+        <div className="tab-pane active fade-in mt-6">
+          <div className="card border-blue-500 border-2 bg-blue-50/10">
+            <div className="mb-4">
+              <h2 className="section-title text-blue-600">Manual Start</h2>
+            </div>
+            <div className="admin-cutoff">
+              <div className="label font-medium text-sm mb-1">Manual Start Time (ISO Format)</div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  className="search w-full"
+                  placeholder="e.g. 2025-06-15T06:00:00.000Z"
+                  value={manualStartTime}
+                  onChange={(e) => setManualStartTime(e.target.value)}
+                />
+                <button
+                  className="btn primary whitespace-nowrap"
+                  disabled={savingManualStart}
+                  onClick={() => saveManualStartDirectly(manualStartTime)}
+                >
+                  {savingManualStart ? "Saving..." : "Save Time"}
+                </button>
+                <button
+                  className="btn ghost whitespace-nowrap border border-blue-500 text-blue-600"
+                  disabled={savingManualStart}
+                  onClick={() => {
+                    const nowStr = new Date().toISOString();
+                    setManualStartTime(nowStr);
+                    saveManualStartDirectly(nowStr);
+                  }}
+                >
+                  Start Now!
+                </button>
+                <button
+                  className="btn ghost whitespace-nowrap text-red-500 border border-red-200"
+                  disabled={savingManualStart}
+                  onClick={() => {
+                    setManualStartTime("");
+                    saveManualStartDirectly("");
+                  }}
+                >
+                  Clear
+                </button>
+              </div>
+              <div className="subtle text-sm mt-2 text-blue-600 font-medium">
+                Gunakan ini secara *real-time* saat bendera diangkat. Menyimpan di sini akan langsung berlaku.
+              </div>
             </div>
           </div>
         </div>
