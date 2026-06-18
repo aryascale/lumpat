@@ -38,6 +38,8 @@ model Event {
   registrations      EventRegistration[]
   supportTickets     SupportTicket[]
   decoderLogs        DecoderLog[]
+  checkpoints        Checkpoint[]
+  runnerRecords      RunnerRecord[]
 }
 
 model Category {
@@ -242,4 +244,35 @@ model DecoderLog {
   @@index([eventId])
   @@index([epc])
   @@index([timestamp])
+}
+
+model Checkpoint {
+  id        String   @id @default(uuid())
+  eventId   String
+  name      String
+  identitas String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  records   RunnerRecord[]
+
+  @@unique([eventId, identitas])
+  @@index([eventId])
+}
+
+model RunnerRecord {
+  id           String     @id @default(uuid())
+  eventId      String
+  epc          String
+  checkpointId String
+  time         DateTime
+  createdAt    DateTime   @default(now())
+
+  checkpoint   Checkpoint @relation(fields: [checkpointId], references: [id], onDelete: Cascade)
+  event        Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, epc, checkpointId])
+  @@index([eventId])
+  @@index([epc])
 }

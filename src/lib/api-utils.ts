@@ -4,6 +4,9 @@ export const CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cookie',
   'Access-Control-Allow-Credentials': 'true',
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+  'Pragma': 'no-cache',
+  'Expires': '0',
 };
 
 export function successResponse(data: any, statusCode = 200) {

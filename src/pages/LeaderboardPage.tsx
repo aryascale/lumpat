@@ -14,6 +14,7 @@ import {
 } from "../lib/data";
 import { DEFAULT_EVENT_TITLE, LS_EVENT_TITLE, LS_DATA_VERSION } from "../lib/config";
 import parseTimeToMs, { extractTimeOfDay, formatDuration } from "../lib/time";
+import { useLiveTiming } from "../hooks/useLiveTiming";
 
 
 
@@ -64,6 +65,7 @@ export default function LeaderboardPage() {
   const [mobileEventSelectorOpen, setMobileEventSelectorOpen] = useState(false);
 
   const eventId = currentEvent?.id || 'default';
+  const { checkpoints, registrations, recordsByEpc } = useLiveTiming(eventId);
   
   // Get categories from current event
   const eventCategories: string[] = useMemo(() => {
@@ -197,10 +199,25 @@ export default function LeaderboardPage() {
 
         const baseRows: LeaderRow[] = [];
 
-        master.all.forEach((p) => {
+        const localMasterAll = [...master.all];
+        const masterEpcSet = new Set(localMasterAll.map((p: any) => p.epc));
+        Object.values(registrations).forEach((reg: any) => {
+          if (!masterEpcSet.has(reg.epc)) {
+            localMasterAll.push({
+              epc: reg.epc,
+              bib: reg.bib,
+              name: reg.name,
+              gender: reg.gender,
+              category: reg.category,
+              sourceCategoryKey: reg.category,
+              ageCategory: ''
+            });
+          }
+        });
+
+        localMasterAll.forEach((p) => {
           if (hiddenMap[p.epc]) return;
           const finishEntry = finishMap.get(p.epc);
-          if (!finishEntry?.ms) return;
 
           const catKey = normCat(p.sourceCategoryKey);
           const absMs = absOverrideMs[catKey] ?? null;
@@ -238,18 +255,35 @@ export default function LeaderboardPage() {
             }
           } else {
             const startEntry = startMap.get(p.epc);
-            if (!startEntry?.ms) return;
-            total = finishEntry.ms - startEntry.ms;
+            if (startEntry?.ms && finishEntry?.ms) {
+              total = finishEntry.ms - startEntry.ms;
+            }
+          }
+
+          // Calculate Latest CP
+          let latestCpStr = "-";
+          const epsRecords = recordsByEpc[p.epc];
+          if (epsRecords && epsRecords.length > 0) {
+            const latest = epsRecords[epsRecords.length - 1];
+            const cpTime = new Date(latest.time);
+            const cpTimeStr = cpTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            latestCpStr = `${latest.checkpointName} (${cpTimeStr})`;
+          }
+
+          // Compute total time for live runners if finish.csv doesn't exist
+          if ((!total || total < 0) && epsRecords && epsRecords.length > 0 && startMap.get(p.epc)?.ms) {
+            const latest = epsRecords[epsRecords.length - 1];
+            total = new Date(latest.time).getTime() - startMap.get(p.epc)!.ms;
           }
 
           if (!Number.isFinite(total) || total == null || total < 0) return;
 
           // Add penalty time
           const penMs = penaltyMap.get(p.bib) || 0;
-          total += penMs;
+          total! += penMs;
 
           const isDQ = !!dqMap[p.epc];
-          const isDNF = cutoffMs != null && total > cutoffMs;
+          const isDNF = cutoffMs != null && total! > cutoffMs;
 
           baseRows.push({
             rank: null,
@@ -259,15 +293,16 @@ export default function LeaderboardPage() {
             category: p.category || p.sourceCategoryKey,
             sourceCategoryKey: p.sourceCategoryKey,
             ageCategory: p.ageCategory,
-            finishTimeRaw: extractTimeOfDay(finishEntry.raw),
-            totalTimeMs: total,
+            finishTimeRaw: extractTimeOfDay(finishEntry?.raw || ""),
+            totalTimeMs: total!,
             totalTimeDisplay: isDQ
               ? "DSQ"
               : isDNF
               ? "DNF"
-              : formatDuration(total),
+              : formatDuration(total!),
             penaltyMs: penMs,
             epc: p.epc,
+            latestCp: latestCpStr,
           });
         });
 
@@ -359,7 +394,7 @@ export default function LeaderboardPage() {
         }
       }
     })();
-  }, [recalcTick, hasLoadedOnce, eventId, eventLoading, eventCategories]);
+  }, [recalcTick, hasLoadedOnce, eventId, eventLoading, eventCategories, recordsByEpc, registrations]);
 
   // Refresh when Admin uploads CSV / changes title (cross-tab)
   useEffect(() => {
@@ -418,6 +453,19 @@ export default function LeaderboardPage() {
       ageRank,
     };
   }, [selected, checkpointMap]);
+
+  // Patch latestCp reactively from recordsByEpc (bypasses useEffect timing)
+  const overallWithLatestCp = useMemo(() => {
+    if (Object.keys(recordsByEpc).length === 0) return overall;
+    return overall.map(row => {
+      const epsRecords = recordsByEpc[row.epc];
+      if (!epsRecords || epsRecords.length === 0) return row;
+      const latest = epsRecords[epsRecords.length - 1];
+      const cpTime = new Date(latest.time);
+      const cpTimeStr = cpTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      return { ...row, latestCp: `${latest.checkpointName} (${cpTimeStr})` };
+    });
+  }, [overall, recordsByEpc]);
 
   // Jangan memblokir UI ketika data belum ada:
   // Admin harus tetap bisa diakses untuk upload CSV pertama kali.
@@ -595,7 +643,7 @@ export default function LeaderboardPage() {
                     <RaceClock cutoffMs={currentEvent?.cutoffMs} categoryStartTimes={currentEvent?.categoryStartTimes} />
                     <LeaderboardTable
                       title="Overall Result (All Categories)"
-                      rows={overall}
+                      rows={overallWithLatestCp}
                       onSelect={onSelectParticipant}
                       hidePodium={true}
                     />

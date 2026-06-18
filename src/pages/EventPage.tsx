@@ -19,6 +19,7 @@ import {
 import { LS_DATA_VERSION } from "../lib/config";
 import parseTimeToMs, { extractTimeOfDay, formatDuration } from "../lib/time";
 import type { MasterParticipant } from "../lib/data";
+import { useLiveTiming } from "../hooks/useLiveTiming";
 import getUnicodeFlagIcon from "country-flag-icons/unicode";
 import { getData } from "country-list";
 
@@ -164,6 +165,7 @@ export default function EventPage() {
   const [selected, setSelected] = useState<LeaderRow | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [recalcTick, setRecalcTick] = useState(0);
+  const { recordsByEpc } = useLiveTiming(event?.id || 'default');
   const [gpxTrackPoints, setGpxTrackPoints] = useState<Array<[number, number]>>([]);
 
   const [registerModalOpen, setRegisterModalOpen] = useState(false);
@@ -871,6 +873,7 @@ export default function EventPage() {
             };
 
             if (!finishEntry?.ms) {
+              pushIncompleteRow("ACTIVE");
               return;
             }
 
@@ -963,7 +966,12 @@ export default function EventPage() {
         }
 
         const finishers = baseRows.filter(
-          (r) => r.totalTimeDisplay !== "DNF" && r.totalTimeDisplay !== "DSQ" && r.totalTimeDisplay !== "ACTIVE"
+          (r) => 
+            r.totalTimeDisplay !== "DNF" && 
+            r.totalTimeDisplay !== "DSQ" && 
+            r.totalTimeDisplay !== "ACTIVE" &&
+            r.totalTimeDisplay !== "NO START TIME" &&
+            r.totalTimeDisplay !== "Registered"
         );
 
         const finisherSorted = [...finishers]
@@ -1042,6 +1050,18 @@ export default function EventPage() {
       }
     })();
   }, [recalcTick, event?.id, event?.categories, registeredParticipants]);
+
+  // Patch latestCp from live timing directly into rows
+  const overallWithLatestCp = useMemo(() => {
+    if (Object.keys(recordsByEpc).length === 0) return overall;
+    return overall.map(row => {
+      const recs = recordsByEpc[row.epc];
+      if (!recs || recs.length === 0) return row;
+      const latest = recs[recs.length - 1];
+      const cpTimeStr = new Date(latest.time).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      return { ...row, latestCp: `${latest.checkpointName} (${cpTimeStr})` };
+    });
+  }, [overall, recordsByEpc]);
 
   // Refresh when data changes
   useEffect(() => {
@@ -1376,7 +1396,7 @@ export default function EventPage() {
               <LeaderboardTable
                 title="Overall Result Rankings"
                 eventName={event?.name}
-                rows={overall}
+                rows={overallWithLatestCp}
                 categories={event?.categories || []}
                 onSelect={onSelectParticipant}
                 showTop10Badge={true}
