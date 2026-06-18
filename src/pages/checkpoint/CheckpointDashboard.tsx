@@ -236,11 +236,11 @@ export default function App() {
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-[#FFD700] rounded-none text-black font-extrabold font-mono text-base tracking-tighter shadow-none">
-              CHRONO
+              LUMPAT
             </div>
             <div>
               <h1 className="text-sm font-mono uppercase tracking-[0.25em] text-white">
-                ChronoRace BIB Timer & Log
+                Lumpat Chrono Time IZT
               </h1>
               <p className="text-[10px] text-[#666] font-mono mt-0.5 uppercase tracking-wider">
                 Precision Finish-Line Chronometer & Live CSV Runner Matcher
@@ -415,7 +415,7 @@ export default function App() {
       {/* Footer */}
       <footer id="app_footer" className="bg-[#0D0D0D] border-t border-[#222] mt-auto py-5 text-center text-[9px] text-[#555] font-mono uppercase tracking-[0.2em]">
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-2.5">
-          <p>© 2026 ChronoRace Console. All rights reserved.</p>
+          <p>© 2026 Lumpat Chrono Time IZT. All rights reserved.</p>
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-[#FFD700] animate-pulse" />
             <span>Console Online • Local Persistence Active</span>

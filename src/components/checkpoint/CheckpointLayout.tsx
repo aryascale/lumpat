@@ -33,11 +33,11 @@ export default function CheckpointLayout() {
             {/* Logo */}
             <div className="flex justify-center mb-8">
               <div className="p-2 bg-[#FFD700] rounded-none text-black font-extrabold font-mono text-xl tracking-tighter">
-                CHRONO
+                LUMPAT
               </div>
             </div>
 
-            <h2 className="text-2xl font-bold text-center text-white mb-2">Checkpoint Login</h2>
+            <h2 className="text-2xl font-bold text-center text-white mb-2">Lumpat Chrono Time IZT</h2>
             <p className="text-center text-gray-400 mb-8">Masuk untuk akses panel pencatat waktu BIB</p>
 
             <form onSubmit={(e) => {
