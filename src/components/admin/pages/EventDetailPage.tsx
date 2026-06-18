@@ -1866,9 +1866,6 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           <div className="card border-blue-500 border-2 bg-blue-50/10">
             <div className="mb-4">
               <h2 className="section-title text-blue-600">Manual Start</h2>
-              <div className="subtle text-sm">
-                Gunakan ini secara *real-time* saat bendera diangkat. Menyimpan di sini akan langsung berlaku tanpa perlu menekan tombol "Save Timing Rules".
-              </div>
             </div>
             <div className="admin-cutoff">
               <div className="label font-medium text-sm mb-1">Manual Start Time (ISO Format)</div>
