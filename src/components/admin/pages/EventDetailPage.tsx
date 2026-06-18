@@ -103,6 +103,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   // Timing state
   const [cutoffHours, setCutoffHours] = useState("");
   const [catStart, setCatStart] = useState<Record<string, string>>({});
+  const [manualStartTime, setManualStartTime] = useState<string>("");
   const [savingTiming, setSavingTiming] = useState(false);
 
   // DQ state
@@ -210,6 +211,14 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         } else {
           setCatStart({});
         }
+
+        try {
+          const mRes = await fetch(`/api/manual-start?eventId=${eventId}`);
+          if (mRes.ok) {
+            const mData = await mRes.json();
+            setManualStartTime(mData.manualStartTime || "");
+          }
+        } catch (e) {}
       }
     } catch (error) {
       console.error('Failed to load event data:', error);
@@ -938,6 +947,24 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           errorMsg = err.error || errorMsg;
         } catch (e) {
           errorMsg = `Server error (${res.status}).`;
+        }
+        throw new Error(errorMsg);
+      }
+
+      // Save manual start time
+      const manualRes = await fetch(`/api/manual-start?eventId=${eventId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ manualStartTime: manualStartTime || null }),
+      });
+
+      if (!manualRes.ok) {
+        let errorMsg = "Failed to save manual start time";
+        try {
+          const err = await manualRes.json();
+          errorMsg = err.error || errorMsg;
+        } catch (e) {
+          errorMsg = `Server error (${manualRes.status}).`;
         }
         throw new Error(errorMsg);
       }
@@ -1829,6 +1856,39 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                 />
               </div>
               <div className="subtle text-sm mt-2">Jika kosong / 0 → cut off nonaktif.</div>
+            </div>
+          </div>
+
+          {/* Official Gun Time (Manual Start Time) */}
+          <div className="card">
+            <div className="mb-4">
+              <h2 className="section-title">Official Gun Time (Manual Start)</h2>
+              <div className="subtle text-sm">
+                Waktu resmi dimulainya perlombaan. Gunakan format ISO. Tombol "Set Now" akan mengisinya otomatis.
+              </div>
+            </div>
+            <div className="admin-cutoff">
+              <div className="label font-medium text-sm mb-1">Manual Start Time</div>
+              <div className="flex gap-2">
+                <input
+                  className="search w-full"
+                  placeholder="e.g. 2025-06-15T06:00:00.000Z"
+                  value={manualStartTime}
+                  onChange={(e) => setManualStartTime(e.target.value)}
+                />
+                <button
+                  className="btn ghost whitespace-nowrap"
+                  onClick={() => setManualStartTime(new Date().toISOString())}
+                >
+                  Set Now
+                </button>
+                <button
+                  className="btn ghost whitespace-nowrap text-red-500"
+                  onClick={() => setManualStartTime("")}
+                >
+                  Clear
+                </button>
+              </div>
             </div>
           </div>
 
