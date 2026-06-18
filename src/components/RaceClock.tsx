@@ -5,6 +5,7 @@ const LS_EVENT_DATE = "imr_event_date"; // optional: "2025-11-23"
 interface RaceClockProps {
   cutoffMs?: number | null;
   categoryStartTimes?: Record<string, string> | null;
+  manualStartTime?: string | null;
 }
 
 function normalizeCutoffMs(n: number | null): number | null {
@@ -90,7 +91,7 @@ function toAbsStartMs(raw: string, baseDateYMD: string): number | null {
   return d.getTime();
 }
 
-export default function RaceClock({ cutoffMs: propCutoffMs, categoryStartTimes: propCategoryStartTimes }: RaceClockProps = {}) {
+export default function RaceClock({ cutoffMs: propCutoffMs, categoryStartTimes: propCategoryStartTimes, manualStartTime }: RaceClockProps = {}) {
   const [nowMs, setNowMs] = useState(Date.now());
   const [slot, setSlot] = useState(0);
 
@@ -118,7 +119,7 @@ export default function RaceClock({ cutoffMs: propCutoffMs, categoryStartTimes: 
   const baseDateYMD = useMemo(() => deriveBaseDate(catStartRaw), [catStartRaw]);
 
   const catEntries = useMemo(() => {
-    return Object.keys(catStartRaw)
+    const entries = Object.keys(catStartRaw)
       .map((key) => {
         const raw = catStartRaw[key];
         const startMs = raw ? toAbsStartMs(raw, baseDateYMD) : null;
@@ -128,7 +129,13 @@ export default function RaceClock({ cutoffMs: propCutoffMs, categoryStartTimes: 
       key: string;
       startMs: number;
     }>;
-  }, [catStartRaw, baseDateYMD]);
+
+    if (manualStartTime) {
+      const msStart = new Date(manualStartTime).getTime();
+      entries.unshift({ key: "Overall (Gun Time)", startMs: msStart });
+    }
+    return entries;
+  }, [catStartRaw, baseDateYMD, manualStartTime]);
 
   useEffect(() => setSlot(0), [catEntries.length]);
 

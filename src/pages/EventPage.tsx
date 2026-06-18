@@ -878,17 +878,19 @@ export default function EventPage() {
             const absMs = absOverrideMs[catKey] ?? null;
             const timeOnly = timeOnlyStr[catKey] ?? null;
 
+            // Global T0 priority: manualStartMs > startEntry.ms
+            const manualStartMs = event.manualStartTime ? new Date(event.manualStartTime).getTime() : null;
+            const startEntry = startMap.get(p.epc);
+            const fallbackStartMs = manualStartMs || startEntry?.ms;
+
             let total: number | null = null;
 
             if (absMs != null && Number.isFinite(absMs)) {
               const delta = finishEntry.ms - absMs;
               if (Number.isFinite(delta) && delta >= 0) {
                 total = delta;
-              } else {
-                const startEntry = startMap.get(p.epc);
-                if (startEntry?.ms) {
-                  total = finishEntry.ms - startEntry.ms;
-                }
+              } else if (fallbackStartMs) {
+                total = finishEntry.ms - fallbackStartMs;
               }
             } else if (timeOnly) {
               const builtOverride = buildOverrideFromFinishDate(finishEntry.ms, timeOnly);
@@ -896,23 +898,14 @@ export default function EventPage() {
                 const delta = finishEntry.ms - builtOverride;
                 if (Number.isFinite(delta) && delta >= 0) {
                   total = delta;
-                } else {
-                  const startEntry = startMap.get(p.epc);
-                  if (startEntry?.ms) {
-                    total = finishEntry.ms - startEntry.ms;
-                  }
+                } else if (fallbackStartMs) {
+                  total = finishEntry.ms - fallbackStartMs;
                 }
-              } else {
-                const startEntry = startMap.get(p.epc);
-                if (startEntry?.ms) {
-                  total = finishEntry.ms - startEntry.ms;
-                }
+              } else if (fallbackStartMs) {
+                total = finishEntry.ms - fallbackStartMs;
               }
-            } else {
-              const startEntry = startMap.get(p.epc);
-              if (startEntry?.ms) {
-                total = finishEntry.ms - startEntry.ms;
-              }
+            } else if (fallbackStartMs) {
+              total = finishEntry.ms - fallbackStartMs;
             }
 
             if (!Number.isFinite(total) || total == null || total < 0) {
@@ -925,6 +918,31 @@ export default function EventPage() {
             total += penMs;
 
             const isDNF = cutoffMs != null && total > cutoffMs;
+
+            // Resolve checkpoints to Laps
+            const rawCheckpoints = checkpointMap.get(p.epc) || [];
+            // Calculate T0 for laps: depends on whether category override was used
+            let t0Ms: number | null = null;
+            if (absMs != null && Number.isFinite(absMs)) {
+              t0Ms = absMs;
+            } else if (timeOnly) {
+              // Time only requires knowing the finish time to build override, but for laps we might just use the lap time itself
+              // For simplicity, we just use fallbackStartMs if available for timeOnly, since lap time building is complex
+              t0Ms = fallbackStartMs;
+            } else {
+              t0Ms = fallbackStartMs;
+            }
+
+            const laps = rawCheckpoints.map((rawStr, i) => {
+              const parsed = parseTimeToMs(rawStr);
+              if (!parsed.ms || !t0Ms) return null;
+              const lapTotal = parsed.ms - t0Ms;
+              if (lapTotal < 0) return null;
+              return {
+                label: `Lap ${i + 1}`,
+                timeDisplay: formatDuration(lapTotal),
+              };
+            }).filter(Boolean) as { label: string, timeDisplay: string }[];
 
             baseRows.push({
               rank: null,
@@ -939,6 +957,7 @@ export default function EventPage() {
               totalTimeDisplay: isDQ ? "DSQ" : isDNF ? "DNF" : formatDuration(total),
               penaltyMs: penMs,
               epc: p.epc,
+              laps,
             });
           });
         }
@@ -1352,7 +1371,7 @@ export default function EventPage() {
           {activeTab === "Results" && (
             <div className="space-y-8">
               {!(overall.some((r) => r.rank != null && r.rank <= 3)) && (
-                 <RaceClock cutoffMs={event?.cutoffMs} categoryStartTimes={event?.categoryStartTimes} />
+                 <RaceClock cutoffMs={event?.cutoffMs} categoryStartTimes={event?.categoryStartTimes} manualStartTime={event?.manualStartTime} />
               )}
               <LeaderboardTable
                 title="Overall Result Rankings"
@@ -1600,7 +1619,7 @@ export default function EventPage() {
               {/* Gallery is now in its own tab */}
 
               {!((byCategory as any)[activeTab] || []).some((r: any) => r.rank != null && r.rank <= 3) && (
-                <RaceClock cutoffMs={event?.cutoffMs} categoryStartTimes={event?.categoryStartTimes} />
+                <RaceClock cutoffMs={event?.cutoffMs} categoryStartTimes={event?.categoryStartTimes} manualStartTime={event?.manualStartTime} />
               )}
               <CategorySection
                 categoryKey={activeTab}

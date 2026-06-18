@@ -15,6 +15,7 @@ export type LeaderRow = {
   totalTimeDisplay: string;
   penaltyMs?: number;
   epc: string;
+  laps?: { label: string, timeDisplay: string }[];
 };
 
 export default function LeaderboardTable({
@@ -71,6 +72,15 @@ export default function LeaderboardTable({
     });
     return Array.from(set).sort();
   }, [rows]);
+
+  const maxLapsCount = useMemo(() => {
+    return rows.reduce((max, r) => Math.max(max, r.laps?.length || 0), 0);
+  }, [rows]);
+
+  const gridColsClass = useMemo(() => {
+    const lapCols = Array(maxLapsCount).fill('120px').join('_');
+    return `grid-cols-[80px_120px_minmax(200px,1fr)_120px_140px_140px_120px${lapCols ? '_' + lapCols : ''}_140px]`;
+  }, [maxLapsCount]);
 
   const rankedRows = useMemo(() => {
     let currentRows = rows;
@@ -220,6 +230,16 @@ export default function LeaderboardTable({
               </div>
            </div>
         </div>
+        {r.laps && r.laps.length > 0 && (
+          <div className="flex gap-2 mt-3 pt-3 border-t-2 border-dashed border-stone-100 overflow-x-auto pb-1">
+            {r.laps.map((lap, i) => (
+              <div key={i} className="flex flex-col flex-shrink-0 bg-stone-50 border-2 border-stone-100 rounded-lg px-2 py-1">
+                <span className="text-[10px] font-bold text-stone-400 uppercase">{lap.label}</span>
+                <span className="font-mono text-sm font-bold text-stone-700">{lap.timeDisplay}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   };
@@ -512,9 +532,9 @@ export default function LeaderboardTable({
           </div>
 
           {/* Desktop Table View (Duolingo Style) */}
-          <div className="hidden md:flex flex-col gap-3">
+          <div className="hidden md:flex flex-col gap-3 overflow-x-auto pb-4">
             {/* Header */}
-            <div className="grid grid-cols-[80px_120px_minmax(200px,1fr)_120px_140px_140px_120px_140px] gap-4 px-6 py-2 text-[11px] font-black tracking-widest text-stone-400 uppercase">
+            <div className={`grid ${gridColsClass} gap-4 px-6 py-2 text-[11px] font-black tracking-widest text-stone-400 uppercase min-w-max`}>
                 <div className="text-center">Pos</div>
                 <div>BIB</div>
                 <div>Athlete Name</div>
@@ -522,6 +542,9 @@ export default function LeaderboardTable({
                 <div>Category</div>
                 <div>Age Category</div>
                 <div>Time of Day</div>
+                {Array.from({ length: maxLapsCount }).map((_, i) => (
+                  <div key={i}>Lap {i + 1}</div>
+                ))}
                 <div className="text-right">Race Time</div>
             </div>
 
@@ -556,6 +579,14 @@ export default function LeaderboardTable({
                           <span className="text-sm font-bold text-stone-500 bg-stone-100 border-2 border-stone-200 border-b-[3px] px-3 py-1.5 rounded-xl inline-block">{r.ageCategory || "-"}</span>
                         </div>
                         <div className="text-sm font-mono font-bold text-stone-400">{r.finishTimeRaw || "-"}</div>
+                        {Array.from({ length: maxLapsCount }).map((_, i) => {
+                          const lap = r.laps?.[i];
+                          return (
+                            <div key={i} className="text-sm font-mono font-bold text-stone-600">
+                              {lap ? lap.timeDisplay : "-"}
+                            </div>
+                          );
+                        })}
                         <div className="text-right">
                           <span className={`font-mono font-black text-xl tracking-tighter bg-stone-100 border-2 border-stone-200 border-b-[4px] px-4 py-2 rounded-xl inline-block ${isSpecial ? "text-orange-600" : "text-stone-900"}`}>
                               {r.totalTimeDisplay}

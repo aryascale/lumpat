@@ -37,6 +37,7 @@ model Event {
   categories         Category[]
   registrations      EventRegistration[]
   supportTickets     SupportTicket[]
+  decoderLogs        DecoderLog[]
 }
 
 model Category {
@@ -225,4 +226,20 @@ model RunnerStatus {
 
   @@unique([eventId, epc])
   @@index([eventId])
+}
+
+model DecoderLog {
+  id        String   @id @default(uuid())
+  eventId   String
+  epc       String   // The RFID / BIB tag
+  timestamp DateTime // The exact time recorded by decoder
+  readerId  String?  // ID or IP of the decoder
+  antenna   String?  // Antenna number
+  createdAt DateTime @default(now())
+
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@index([epc])
+  @@index([timestamp])
 }
