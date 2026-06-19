@@ -11,6 +11,8 @@ import { loadMasterParticipants, loadTimesMap } from "../../../lib/data";
 import parseTimeToMs, { extractTimeOfDay, formatDuration } from "../../../lib/time";
 import type { LeaderRow } from "../../LeaderboardTable";
 import PenaltyPage from "./PenaltyPage";
+import ManualStartBibPage from "./ManualStartBibPage";
+import CheckpointsPage from "./CheckpointsPage";
 
 interface EventDetailPageProps {
   eventId: string;
@@ -2005,7 +2007,10 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         <div className="tab-pane active fade-in mt-6">
           <div className="card border-blue-500 border-2 bg-blue-50/10">
             <div className="mb-4">
-              <h2 className="section-title text-blue-600">Manual Start</h2>
+              <h2 className="section-title text-blue-600">Global Manual Start</h2>
+              <div className="subtle text-sm">
+                Set waktu start untuk seluruh peserta sekaligus. Ini akan digunakan sebagai waktu awal (T0) jika tidak ada waktu spesifik untuk BIB atau Kategori.
+              </div>
             </div>
             <div className="admin-cutoff">
               <div className="label font-medium text-sm mb-1">Manual Start Time (ISO Format)</div>
@@ -2043,6 +2048,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                   }}
                 >
                   Clear
+                </button>
+              </div>
             </div>
           </div>
 
@@ -2092,6 +2099,11 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
               </button>
             </div>
           </div>
+          <ManualStartBibPage
+            allRows={mergedRows}
+            onDataVersionBump={bumpDataVersion}
+            eventId={eventId}
+          />
         </div>
       )}
 
