@@ -2048,6 +2048,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                   }}
                 >
                   Clear
+                </button>
+              </div>
             </div>
           </div>
 
