@@ -14,6 +14,8 @@ import {
 } from "../lib/data";
 import { DEFAULT_EVENT_TITLE, LS_EVENT_TITLE, LS_DATA_VERSION } from "../lib/config";
 import parseTimeToMs, { extractTimeOfDay, formatDuration } from "../lib/time";
+import { useLeaderboardData } from "../hooks/useLeaderboardData";
+
 
 
 
@@ -41,359 +43,17 @@ export default function LeaderboardPage() {
     }
   }, [searchParams, events, eventLoading]);
 
-  const [state, setState] = useState<LoadState>({
-    status: "loading",
-    msg: "Loading CSV data…",
-  });
-
-  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
-
-  const [overall, setOverall] = useState<LeaderRow[]>([]);
-  const [byCategory, setByCategory] = useState<Record<string, LeaderRow[]>>({});
+  const { state, overall, byCategory, eventCategories, forceRecalc, hasLoadedOnce } = useLeaderboardData(currentEvent?.id || "");
   const [activeTab, setActiveTab] = useState<string>("Overall");
-  const [checkpointMap, setCheckpointMap] = useState<Map<string, string[]>>(
-    new Map()
-  );
-
   const [selected, setSelected] = useState<LeaderRow | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-
-  const [recalcTick, setRecalcTick] = useState(0);
-  
-  // Mobile event selector state
   const [mobileEventSelectorOpen, setMobileEventSelectorOpen] = useState(false);
-
-  const eventId = currentEvent?.id || 'default';
-  
-  // Get categories from current event
-  const eventCategories: string[] = useMemo(() => {
-    return currentEvent?.categories || [];
-  }, [currentEvent?.categories]);
-
-  // Reset data and reload when event changes
-  useEffect(() => {
-    if (currentEvent?.id) {
-      setHasLoadedOnce(false);
-      setRecalcTick(t => t + 1);
-      setActiveTab("Overall"); // Reset to Overall tab when switching events
-      // Update event title when switching events
-      setEventTitle(currentEvent.name || DEFAULT_EVENT_TITLE);
-    }
-  }, [currentEvent?.id, currentEvent?.name]);
-
-  useEffect(() => {
-    // Wait for event context to finish loading
-    if (eventLoading) {
-      return;
-    }
-
-    (async () => {
-      try {
-        if (!hasLoadedOnce) {
-          setState({
-            status: "loading",
-            msg: "Loading participant master (CSV)…",
-          });
-        }
-
-        console.log('[LeaderboardApp] Loading data for eventId:', eventId);
-        const master = await loadMasterParticipants(eventId);
-
-        if (!hasLoadedOnce) {
-          setState({
-            status: "loading",
-            msg: "Load start, finish, checkpoint (CSV)…",
-          });
-        }
-
-        const startMap = await loadTimesMap("start", eventId);
-        const finishMap = await loadTimesMap("finish", eventId);
-        const cpMap = await loadCheckpointTimesMap(eventId);
-        setCheckpointMap(cpMap);
-
-        // Use timing from event (per-event database) instead of localStorage
-        const cutoffMs = currentEvent?.cutoffMs ?? null;
-        
-        // Load runner status map from API
-        const dqMap: Record<string, boolean> = {};
-        const hiddenMap: Record<string, boolean> = {};
-        try {
-          const statusRes = await fetch(`/api/runner-status?eventId=${eventId}`);
-          if (statusRes.ok) {
-            const statusData = await statusRes.json();
-            if (Array.isArray(statusData)) {
-              statusData.forEach((s: any) => {
-                if (s.isDQ) dqMap[s.epc] = true;
-                if (s.isHidden) hiddenMap[s.epc] = true;
-              });
-            }
-          }
-        } catch {}
-        const catStartRaw: Record<string, string> = (currentEvent?.categoryStartTimes as Record<string, string>) ?? {};
-
-        // Load penalty map from API
-        const penaltyMap = new Map<string, number>();
-        try {
-          const penRes = await fetch(`/api/penalty?eventId=${eventId}`);
-          if (penRes.ok) {
-            const penData = await penRes.json();
-            if (Array.isArray(penData)) {
-              penData.forEach((p: any) => penaltyMap.set(p.bib, p.penaltyMs || 0));
-            }
-          }
-        } catch {}
-
-        // Load manual start map from API
-        const manualStartMap = new Map<string, string>();
-        try {
-          const msRes = await fetch(`/api/manual-start-bib?eventId=${eventId}`);
-          if (msRes.ok) {
-            const msData = await msRes.json();
-            if (Array.isArray(msData)) {
-              msData.forEach((ms: any) => manualStartMap.set(ms.epc, ms.timeStr));
-            }
-          }
-        } catch {}
-
-        // Calculate Leaderboard Data
-        // This function is getting big, ideally we move the calculation logic to a helper
-        // But for now, let's keep it here to match previous behavior 
-        
-        const absOverrideMs: Record<string, number | null> = {};
-        const timeOnlyStr: Record<string, string | null> = {};
-
-        Object.entries(catStartRaw).forEach(([key, raw]) => {
-          const normKey = normCat(key);
-          const s = String(raw || "").trim();
-          if (!s) {
-            absOverrideMs[normKey] = null;
-            timeOnlyStr[normKey] = null;
-            return;
-          }
-          if (/\d{4}-\d{2}-\d{2}/.test(s)) {
-            const parsed = parseTimeToMs(s);
-            absOverrideMs[normKey] = parsed.ms;
-            timeOnlyStr[normKey] = null;
-          } else {
-            absOverrideMs[normKey] = null;
-            timeOnlyStr[normKey] = s;
-          }
-        });
-
-        function buildOverrideFromFinishDate(
-          finishMs: number,
-          timeStr: string
-        ): number | null {
-          if (!timeStr) return null;
-          if (timeStr.includes(" ") || timeStr.includes("T")) {
-             const parsed = parseTimeToMs(timeStr);
-             if (parsed && parsed.ms) return parsed.ms;
-          }
-          const m = timeStr.match(
-            /(\d{1,2}):(\d{2})(?::(\d{2}))?(?:[:\.](\d{1,3}))?/
-          );
-          if (!m) return null;
-
-          const h = Number(m[1] || 0);
-          const mi = Number(m[2] || 0);
-          const se = Number(m[3] || 0);
-          const ms = m[4] ? Number(String(m[4]).padEnd(3, "0").slice(0, 3)) : 0;
-
-          const d = new Date(finishMs);
-          const override = new Date(
-            d.getFullYear(),
-            d.getMonth(),
-            d.getDate(),
-            h,
-            mi,
-            se,
-            ms
-          );
-          return override.getTime();
-        }
-
-        const baseRows: LeaderRow[] = [];
-
-        master.all.forEach((p) => {
-          if (hiddenMap[p.epc]) return;
-          const finishEntry = finishMap.get(p.epc);
-          if (!finishEntry?.ms) return;
-
-          const catKey = normCat(p.sourceCategoryKey);
-          let absMs = absOverrideMs[catKey] ?? null;
-          let timeOnly = timeOnlyStr[catKey] ?? null;
-
-          let total: number | null = null;
-          const manualStartMs = eventData?.manualStartTime ? new Date(eventData.manualStartTime).getTime() : null;
-          let startMs = manualStartMs || startMap.get(p.epc)?.ms;
-          
-          // Individual per-BIB Manual Start Priority overrides Global AND Category Start
-          const bibManualStartStr = manualStartMap.get(p.epc);
-          if (bibManualStartStr && finishEntry?.ms) {
-            const builtOverride = buildOverrideFromFinishDate(finishEntry.ms, bibManualStartStr);
-            if (builtOverride != null) {
-              startMs = builtOverride;
-              absMs = null;
-              timeOnly = null;
-            }
-          }
-
-          if (absMs != null && Number.isFinite(absMs)) {
-            const delta = finishEntry.ms - absMs;
-            if (Number.isFinite(delta) && delta >= 0) {
-              total = delta;
-            } else {
-              if (!startMs) return;
-              total = finishEntry.ms - startMs;
-            }
-          } else if (timeOnly) {
-            const builtOverride = buildOverrideFromFinishDate(
-              finishEntry.ms,
-              timeOnly
-            );
-            if (builtOverride != null) {
-              const delta = finishEntry.ms - builtOverride;
-              if (Number.isFinite(delta) && delta >= 0) {
-                total = delta;
-              } else {
-                if (!startMs) return;
-                total = finishEntry.ms - startMs;
-              }
-            } else {
-              if (!startMs) return;
-              total = finishEntry.ms - startMs;
-            }
-          } else {
-            if (startMs && finishEntry?.ms) {
-              total = finishEntry.ms - startMs;
-            }
-          }
-          }
-
-          if (!Number.isFinite(total) || total == null || total < 0) return;
-
-          // Add penalty time
-          const penMs = penaltyMap.get(p.bib) || 0;
-          total += penMs;
-
-          const isDQ = !!dqMap[p.epc];
-          const isDNF = cutoffMs != null && total > cutoffMs;
-
-          baseRows.push({
-            rank: null,
-            bib: p.bib,
-            name: p.name,
-            gender: p.gender,
-            category: p.category || p.sourceCategoryKey,
-            sourceCategoryKey: p.sourceCategoryKey,
-            ageCategory: p.ageCategory,
-            finishTimeRaw: extractTimeOfDay(finishEntry.raw),
-            totalTimeMs: total,
-            totalTimeDisplay: isDQ
-              ? "DSQ"
-              : isDNF
-              ? "DNF"
-              : formatDuration(total),
-            penaltyMs: penMs,
-            epc: p.epc,
-          });
-        });
-
-        // Deduplicate by EPC to ensure unique participants
-        const uniqueRows = Array.from(
-          new Map(baseRows.map(r => [r.epc, r])).values()
-        );
-
-        const finishers = uniqueRows.filter(
-          (r) => r.totalTimeDisplay !== "DNF" && r.totalTimeDisplay !== "DSQ"
-        );
-
-        const finisherSorted = [...finishers]
-          .sort((a, b) => a.totalTimeMs - b.totalTimeMs)
-          .map((r, i) => ({ ...r, rank: i + 1 }));
-
-        const finisherRankByEpc = new Map(
-          finisherSorted.map((r) => [r.epc, r.rank!])
-        );
-
-        const genderRankByEpc = new Map<string, number>();
-        // Use event-specific categories
-        const categoryRankByEpc = new Map<string, number>();
-        const ageRankByEpc = new Map<string, number>();
-
-        eventCategories.forEach((catKey: string) => {
-          // Category Rank: Scoped by Distance (Category)
-          const catList = finisherSorted.filter((r) => r.sourceCategoryKey === catKey);
-          catList.forEach((r, i) => categoryRankByEpc.set(r.epc, i + 1));
-
-          // Gender Rank: Scoped by Distance + Gender
-          const genders = Array.from(new Set(catList.map((r) => (r.gender || "").toLowerCase())));
-          genders.forEach((g) => {
-            const genderList = catList.filter((r) => (r.gender || "").toLowerCase() === g);
-            genderList.forEach((r, i) => genderRankByEpc.set(r.epc, i + 1));
-
-            // Age Rank: Scoped by Distance + Gender + Age Category
-            const ageCategories = Array.from(new Set(genderList.map((r) => (r.ageCategory || "").trim())));
-            ageCategories.forEach((age) => {
-              if (!age || age === "-") return;
-              const ageList = genderList.filter((r) => (r.ageCategory || "").trim() === age);
-              ageList.forEach((r, i) => ageRankByEpc.set(r.epc, i + 1));
-            });
-          });
-        });
-
-        const dnfs = uniqueRows
-          .filter((r) => r.totalTimeDisplay === "DNF")
-          .sort((a, b) => a.totalTimeMs - b.totalTimeMs);
-        const dsqs = uniqueRows.filter((r) => r.totalTimeDisplay === "DSQ");
-
-        const overallFinal: LeaderRow[] = [
-          ...finisherSorted,
-          ...dnfs.map((r) => ({ ...r, rank: null })),
-          ...dsqs.map((r) => ({ ...r, rank: null })),
-        ];
-
-        // Use event-specific categories for category map
-        const catMap: Record<string, LeaderRow[]> = {};
-        eventCategories.forEach((catKey: string) => {
-          const list = overallFinal.filter((r) => r.sourceCategoryKey === catKey);
-          catMap[catKey] = list;
-        });
-
-        setOverall(overallFinal);
-        setByCategory(catMap);
-
-        (LeaderboardPage as any)._rankMaps = {
-          finisherRankByEpc,
-          genderRankByEpc,
-          categoryRankByEpc,
-          ageRankByEpc,
-        };
-
-        setState({ status: "ready" });
-        setHasLoadedOnce(true);
-      } catch (e: any) {
-        const errorMsg = e?.message || "";
-        if (errorMsg.includes("not uploaded")) {
-          setState({
-            status: "error",
-            msg: "CSV files have not been uploaded for this event. Please open the Admin tab to upload Master and Finish CSV.",
-          });
-        } else {
-          setState({
-            status: "error",
-            msg: e?.message || "Gagal load data",
-          });
-        }
-      }
-    })();
-  }, [recalcTick, hasLoadedOnce, eventId, eventLoading, eventCategories]);
 
   // Refresh when Admin uploads CSV / changes title (cross-tab)
   useEffect(() => {
     const onStorage = (ev: StorageEvent) => {
       if (ev.key === LS_DATA_VERSION) {
-        setRecalcTick((t) => t + 1);
+        forceRecalc();
       }
       if (ev.key === LS_EVENT_TITLE) {
         setEventTitle(ev.newValue || DEFAULT_EVENT_TITLE);
@@ -436,16 +96,17 @@ export default function LeaderboardPage() {
       gender: selected.gender,
       category: selected.category,
       ageCategory: selected.ageCategory,
-      finishTimeRaw: selected.finishTimeRaw,
+      startTimeRaw: "-",
+      finishTimeRaw: "-",
       totalTimeDisplay: selected.totalTimeDisplay,
-      checkpointTimes: checkpointMap.get(selected.epc) || [],
+      checkpointTimes: selected.laps?.map(l => l.timeDisplay) || [],
       penaltyMs: selected.penaltyMs || 0,
       overallRank,
       genderRank,
       categoryRank,
       ageRank,
     };
-  }, [selected, checkpointMap]);
+  }, [selected, overall]);
 
   // Jangan memblokir UI ketika data belum ada:
   // Admin harus tetap bisa diakses untuk upload CSV pertama kali.
@@ -643,7 +304,7 @@ export default function LeaderboardPage() {
                     <RaceClock cutoffMs={currentEvent?.cutoffMs} categoryStartTimes={currentEvent?.categoryStartTimes} />
                     <CategorySection
                       categoryKey={activeTab}
-                      rows={(byCategory as any)[activeTab] || []}
+                      rows={activeTab === "Overall" ? overall : (byCategory[activeTab] || [])}
                       onSelect={onSelectParticipant}
                     />
                   </div>
@@ -658,7 +319,7 @@ export default function LeaderboardPage() {
             <ParticipantModal
               open={modalOpen}
               onClose={() => setModalOpen(false)}
-              eventId={eventId}
+              eventId={currentEvent?.id || ""}
               eventName={eventTitle}
               data={modalData}
             />

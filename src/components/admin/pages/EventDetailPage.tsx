@@ -1,6 +1,4 @@
 // Admin Event Detail Page - for managing individual event data, CSV uploads, banners, categories
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
 import { useState, useEffect, useMemo } from "react";
 import { putCsvFile, deleteCsvFile, listCsvMeta } from "../../../lib/idb";
 import { parseCsv, countDataRows } from "../../../lib/csvParse";
@@ -13,6 +11,7 @@ import type { LeaderRow } from "../../LeaderboardTable";
 import PenaltyPage from "./PenaltyPage";
 import ManualStartBibPage from "./ManualStartBibPage";
 import CheckpointsPage from "./CheckpointsPage";
+import AdminLiveTrackingTab from '../tabs/AdminLiveTrackingTab';
 
 interface EventDetailPageProps {
   eventId: string;
@@ -44,7 +43,7 @@ function formatNowAsTimestamp(): string {
 }
 
 export default function EventDetailPage({ eventId, eventSlug, eventName, onBack }: EventDetailPageProps) {
-  const [activeTab, setActiveTab] = useState<'homepage' | 'data' | 'banners' | 'gallery' | 'categories' | 'route' | 'timing' | 'manual_start' | 'dq' | 'penalty' | 'certified' | 'settings' | 'registration' | 'inventory'>(() => {
+  const [activeTab, setActiveTab] = useState<'homepage' | 'data' | 'live_data' | 'banners' | 'gallery' | 'categories' | 'route' | 'timing' | 'manual_start' | 'dq' | 'penalty' | 'certified' | 'settings' | 'registration' | 'inventory' | 'checkpoints'>(() => {
     return (localStorage.getItem(`admin_tab_${eventId}`) as any) || 'homepage';
   });
 
@@ -52,7 +51,6 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
     localStorage.setItem(`admin_tab_${eventId}`, activeTab);
   }, [activeTab, eventId]);
   const [participants, setParticipants] = useState<any[]>([]);
-  const [loadingParticipants, setLoadingParticipants] = useState(false);
   const [csvMeta, setCsvMeta] = useState<Array<{ key: CsvKind; filename: string; updatedAt: number; rows: number }>>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [categories, setCategories] = useState<Array<{ id?: string; name: string; price: number; quota: number; isHidden?: boolean; sold?: number }>>([]);
@@ -98,7 +96,6 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   const [savingCategories, setSavingCategories] = useState(false);
 
   // GPX upload state
-  const [gpxFile, setGpxFile] = useState<File | null>(null);
   const [uploadingGpx, setUploadingGpx] = useState(false);
   const [currentGpxPath, setCurrentGpxPath] = useState<string | null>(null);
 
@@ -221,7 +218,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
             const mData = await mRes.json();
             setManualStartTime(mData.manualStartTime || "");
           }
-        } catch (e) {}
+        } catch (e) { }
       }
     } catch (error) {
       console.error('Failed to load event data:', error);
@@ -412,11 +409,11 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
     const rows = countDataRows(grid);
     await putCsvFile({ kind, text, filename: file.name, rows, eventId });
     bumpDataVersion();
-    
+
     // Reload CSV meta
     const meta = await listCsvMeta(eventId);
     setCsvMeta(meta as any);
-    
+
     alert(`'${kind}' berhasil diupload (${rows} baris)`);
   };
 
@@ -459,7 +456,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       const epc = `""`;
       return [name, category, gender, '""', '""', epc].join(',');
     });
-    
+
     const csvContent = [headers.join(','), ...rows].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -484,7 +481,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       setBannerFile(null);
       const fileInput = document.getElementById('banner-upload') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
-      
+
       // Reload banners
       const res = await fetch(`/api/banners?eventId=${eventId}`);
       if (res.ok) {
@@ -519,7 +516,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
     else if (type === 'rpc_bg') setUploadingRpcBg(true);
     else if (type === 'rpc_bg_mobile') setUploadingRpcBgMobile(true);
     else if (type === 'tnc_doc') setUploadingTncDoc(true);
-    
+
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -548,7 +545,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
 
       const result = await res.json();
       setEventData(result.event);
-      
+
       if (type === 'logo') {
         setLogoFile(null);
         const fileInput = document.getElementById('logo-upload') as HTMLInputElement;
@@ -570,7 +567,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         const fileInput = document.getElementById('tnc-doc-upload') as HTMLInputElement;
         if (fileInput) fileInput.value = '';
       }
-      
+
       alert('Media uploaded successfully!');
     } catch (error: any) {
       alert(error.message || 'Failed to upload media');
@@ -594,7 +591,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bannerId, isActive: !banner.isActive }),
       });
-      
+
       const res = await fetch(`/api/banners?eventId=${eventId}`);
       if (res.ok) {
         const data = await res.json();
@@ -612,7 +609,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       await fetch(`/api/delete-banner?bannerId=${bannerId}&imageUrl=${encodeURIComponent(imageUrl)}`, {
         method: 'DELETE',
       });
-      
+
       const res = await fetch(`/api/banners?eventId=${eventId}`);
       if (res.ok) {
         const data = await res.json();
@@ -716,7 +713,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       const res = await fetch(`/api/events?eventId=${eventId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           content: {
             ...(eventData?.content || {}),
             about: homeContent.about || eventData?.content?.about || '',
@@ -780,10 +777,10 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       });
       if (res.ok) {
         const data = await res.json();
-        setTshirtInventory((data.inventory || []).map((i: any) => ({ 
-          id: i.id, 
-          size: i.size, 
-          quota: i.quota || 0, 
+        setTshirtInventory((data.inventory || []).map((i: any) => ({
+          id: i.id,
+          size: i.size,
+          quota: i.quota || 0,
           sold: i.sold || 0,
           width: i.width || '',
           height: i.height || ''
@@ -805,7 +802,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ categories: cats }),
       });
-      
+
       if (res.ok) {
         const data = await res.json();
         setCategories(data.categories || cats);
@@ -845,7 +842,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
     setUploadingGpx(true);
     try {
       const content = await file.text();
-      
+
       const response = await fetch('/api/gpx-upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -883,7 +880,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
 
   const clearGpxFile = async (categoryName: string) => {
     if (!confirm(`Remove GPX route file for category ${categoryName}?`)) return;
-    
+
     try {
       const updatedContent = { ...(eventData?.content || {}) };
       if (updatedContent.routeGpxFiles) {
@@ -917,7 +914,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         alert('File not found or empty');
         return;
       }
-      
+
       const blob = new Blob([data.text], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1079,7 +1076,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       setCertFile(null);
       const fileInput = document.getElementById('cert-upload') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
-      
+
       await loadCertData();
       alert('Certificate template uploaded!');
     } catch (error: any) {
@@ -1142,8 +1139,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           <h1 className="text-lg md:text-xl font-bold text-gray-900 truncate">{eventName}</h1>
           <span className="text-gray-500 text-sm">/{eventSlug}</span>
         </div>
-        <button 
-          className="btn w-full sm:w-auto" 
+        <button
+          className="btn w-full sm:w-auto"
           onClick={() => window.open(`/event/${eventSlug}`, '_blank')}
         >
           View Public Page
@@ -1199,6 +1196,19 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           onClick={() => setActiveTab('data')}
         >
           Data Upload
+        </button>
+        <button
+          className={`detail-tab whitespace-nowrap ${activeTab === 'live_data' ? 'active' : ''}`}
+          onClick={() => setActiveTab('live_data')}
+        >
+          Current Data
+        </button>
+
+        <button
+          className={`detail-tab whitespace-nowrap ${activeTab === 'checkpoints' ? 'active' : ''}`}
+          onClick={() => setActiveTab('checkpoints')}
+        >
+          Checkpoints
         </button>
         <button
           className={`detail-tab whitespace-nowrap ${activeTab === 'timing' ? 'active' : ''}`}
@@ -1336,7 +1346,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                       </span>
                     )}
                   </div>
-                  
+
                   {meta && (
                     <div className="text-sm text-gray-600 mb-2 space-y-1">
                       <div className="flex justify-between">
@@ -1385,6 +1395,17 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           </div>
         </div>
       )}
+
+      {/* Checkpoints Tab */}
+      {activeTab === 'checkpoints' && (
+        <CheckpointsPage eventId={eventId} />
+      )}
+
+      {/* Live Data Tab */}
+      {activeTab === 'live_data' && (
+        <AdminLiveTrackingTab eventId={eventId} />
+      )}
+
 
       {/* Banners Tab */}
       {activeTab === 'banners' && (
@@ -1519,8 +1540,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                           <button className="btn ghost" onClick={() => toggleBannerActive(banner.id)}>
                             {banner.isActive ? 'Hide' : 'Show'}
                           </button>
-                          <button 
-                            className="btn ghost" 
+                          <button
+                            className="btn ghost"
                             style={{ color: '#dc2626' }}
                             onClick={() => deleteBanner(banner.id, banner.imageUrl)}
                           >
@@ -1563,8 +1584,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                       <button className="btn ghost flex-1 text-sm" onClick={() => toggleBannerActive(banner.id)}>
                         {banner.isActive ? 'Hide' : 'Show'}
                       </button>
-                      <button 
-                        className="btn ghost flex-1 text-sm" 
+                      <button
+                        className="btn ghost flex-1 text-sm"
                         style={{ color: '#dc2626' }}
                         onClick={() => deleteBanner(banner.id, banner.imageUrl)}
                       >
@@ -1589,7 +1610,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
             </div>
             <div className="flex gap-2">
               <input type="file" id="gallery-upload" multiple accept="image/*" className="hidden" onChange={(e) => handleGalleryUpload(e.target.files)} />
-              <button 
+              <button
                 onClick={() => document.getElementById('gallery-upload')?.click()}
                 disabled={uploadingGallery}
                 className="bg-stone-900 hover:bg-black text-white font-bold py-2 px-6 rounded-xl flex items-center gap-2 transition-all shadow-md active:scale-95"
@@ -1598,14 +1619,14 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
               </button>
             </div>
           </div>
-          
+
           {eventData?.content?.galleryUrls && eventData.content.galleryUrls.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {eventData.content.galleryUrls.map((url: string, idx: number) => (
                 <div key={idx} className="relative group rounded-2xl overflow-hidden shadow-sm border border-stone-200 aspect-square bg-stone-100">
                   <img src={url} alt={`Gallery ${idx}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
-                    <button 
+                    <button
                       onClick={() => deleteGalleryImage(url)}
                       className="bg-red-500 hover:bg-red-600 text-white font-bold py-1.5 px-4 rounded-full text-xs shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300"
                     >
@@ -1638,9 +1659,9 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                 Kelola kategori lomba dan harga tiket per kategori.
               </div>
             </div>
-            <button 
-              className="btn" 
-              onClick={() => saveCategories(categories)} 
+            <button
+              className="btn"
+              onClick={() => saveCategories(categories)}
               disabled={savingCategories || categories.length === 0}
             >
               {savingCategories ? 'Saving...' : 'Save Categories'}
@@ -1726,15 +1747,15 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                       </td>
                       <td>
                         <div className="flex gap-2">
-                          <button 
-                            className="btn ghost text-sm px-2 py-1" 
+                          <button
+                            className="btn ghost text-sm px-2 py-1"
                             style={{ color: cat.isHidden ? '#10b981' : '#f59e0b' }}
                             onClick={() => toggleCategoryHidden(cat.name)}
                           >
                             {cat.isHidden ? 'Show' : 'Hide'}
                           </button>
-                          <button 
-                            className="btn ghost text-sm px-2 py-1" 
+                          <button
+                            className="btn ghost text-sm px-2 py-1"
                             style={{ color: '#dc2626' }}
                             onClick={() => removeCategory(cat.name)}
                           >
@@ -1762,15 +1783,15 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                       <span className="text-xs text-gray-400 ml-2">#{index + 1}</span>
                     </div>
                     <div className="flex gap-2">
-                      <button 
-                        className="btn ghost text-sm" 
+                      <button
+                        className="btn ghost text-sm"
                         style={{ color: cat.isHidden ? '#10b981' : '#f59e0b' }}
                         onClick={() => toggleCategoryHidden(cat.name)}
                       >
                         {cat.isHidden ? 'Show' : 'Hide'}
                       </button>
-                      <button 
-                        className="btn ghost text-sm" 
+                      <button
+                        className="btn ghost text-sm"
                         style={{ color: '#dc2626' }}
                         onClick={() => removeCategory(cat.name)}
                       >
@@ -2046,7 +2067,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                   className="btn ghost whitespace-nowrap border border-blue-500 text-blue-600 text-lg font-bold"
                   disabled={savingManualStart}
                   onClick={() => {
-                    const nowStr = new Date().toISOString();
+                    const nowStr = formatNowAsTimestamp();
                     setManualStartTime(nowStr);
                     saveManualStartDirectly(nowStr);
                   }}
@@ -2067,56 +2088,11 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
             </div>
           </div>
 
-          <div className="card mt-6 border-stone-200 border-2">
-            <div className="mb-4">
-              <h2 className="section-title">Decoder Sync Simulation (Demo)</h2>
-              <div className="subtle text-sm">Simulate RFID taps to test the checkpoint / laps table on the public page.</div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 items-end">
-              <div className="w-full sm:w-1/3">
-                <div className="label font-medium text-sm mb-1">EPC / BIB Number</div>
-                <input
-                  id="demo-epc"
-                  className="search w-full"
-                  placeholder="e.g. 101"
-                />
-              </div>
-              <button
-                className="btn primary"
-                onClick={async () => {
-                  const epcInput = document.getElementById("demo-epc") as HTMLInputElement;
-                  if (!epcInput.value) return alert("Please enter an EPC / BIB Number");
-                  try {
-                    const res = await fetch("/api/decoder-sync", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        eventId: eventId,
-                        logs: [
-                          {
-                            epc: epcInput.value,
-                            timestamp: new Date().toISOString(),
-                            readerId: "Demo-Reader-1"
-                          }
-                        ]
-                      })
-                    });
-                    const data = await res.json();
-                    if (res.ok) alert("Decoder sync success! Check the public leaderboard.");
-                    else alert("Error: " + data.error);
-                  } catch (e) {
-                    alert("Failed to hit API");
-                  }
-                }}
-              >
-                Simulate Tap
-              </button>
-            </div>
-          </div>
           <ManualStartBibPage
-            allRows={mergedRows}
+            allRows={allRows}
             onDataVersionBump={bumpDataVersion}
             eventId={eventId}
+            globalManualStartTime={manualStartTime}
           />
         </div>
       )}
@@ -2229,11 +2205,10 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                         </div>
                       </div>
                       <span
-                        className={`px-2 py-1 rounded-full text-xs font-bold ${
-                          isDQ
-                            ? 'bg-red-100 text-red-700'
-                            : 'bg-green-100 text-green-700'
-                        }`}
+                        className={`px-2 py-1 rounded-full text-xs font-bold ${isDQ
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-green-100 text-green-700'
+                          }`}
                       >
                         {isDQ ? "DSQ" : "OK"}
                       </span>
@@ -2328,7 +2303,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                         <div className="w-full sm:w-48 h-32 bg-gray-100 rounded border flex items-center justify-center">
                           <div className="text-center">
                             <svg width="32" height="32" viewBox="0 0 24 24" fill="#9ca3af" className="mx-auto mb-1">
-                              <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                              <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
                             </svg>
                             <span className="text-xs text-gray-500">PDF</span>
                           </div>
@@ -2368,7 +2343,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           ) : (
             <div className="text-center py-8 text-gray-400">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="#d1d5db" className="mx-auto mb-3">
-                <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
               </svg>
               <p className="text-gray-600 font-medium">Belum ada template sertifikat</p>
               <p className="text-sm text-gray-400 mt-1">Upload template sertifikat untuk event ini</p>
@@ -2832,55 +2807,55 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
               <div className="subtle">Kelola status publikasi dan jadwal rilis event.</div>
             </div>
             <div className="flex gap-2 flex-col sm:flex-row">
-              <a 
-                href={`/rpc/${eventSlug}`} 
-                target="_blank" 
+              <a
+                href={`/rpc/${eventSlug}`}
+                target="_blank"
                 rel="noreferrer"
                 className="btn text-white w-full sm:w-auto text-center flex items-center justify-center font-bold px-4"
                 style={{ backgroundColor: '#dc2626', borderColor: '#b91c1c' }}
               >
                 Buka Layar RPC
               </a>
-              <button 
-                className="btn" 
-              onClick={async () => {
-                try {
-                  const res = await fetch(`/api/events?eventId=${eventId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                      isDraft: eventData.isDraft, 
-                      publishAt: eventData.publishAt,
-                      name: eventData.name,
-                      eventDate: eventData.eventDate,
-                      location: eventData.location,
-                      content: {
-                        ...(eventData.content || {}),
-                        about: homeContent.about || eventData.content?.about || '',
-                        schedule: homeContent.schedule || eventData.content?.schedule || '',
-                        rules: homeContent.rules || eventData.content?.rules || '',
-                        allowBulkNoOtp: eventData.content?.allowBulkNoOtp || false,
-                        enableRegisteredScan: eventData.content?.enableRegisteredScan !== false,
-                        rpcBgUrl: eventData.content?.rpcBgUrl || '',
-                        rpcBgUrlMobile: eventData.content?.rpcBgUrlMobile || '',
-                        isDateTBA: eventData.content?.isDateTBA || false,
-                        tncUrl: eventData.content?.tncUrl || '',
-                        tncUrls: eventData.content?.tncUrls || undefined,
-                        autoGenerateBibs: eventData.content?.autoGenerateBibs || undefined,
-                      }
-                    }),
-                  });
-                  if (res.ok) {
-                    alert('Settings saved!');
-                    await loadAllData();
-                  } else alert('Failed to save settings');
-                } catch {
-                  alert('Failed to save settings');
-                }
-              }}
-            >
-              Save Settings
-            </button>
+              <button
+                className="btn"
+                onClick={async () => {
+                  try {
+                    const res = await fetch(`/api/events?eventId=${eventId}`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        isDraft: eventData.isDraft,
+                        publishAt: eventData.publishAt,
+                        name: eventData.name,
+                        eventDate: eventData.eventDate,
+                        location: eventData.location,
+                        content: {
+                          ...(eventData.content || {}),
+                          about: homeContent.about || eventData.content?.about || '',
+                          schedule: homeContent.schedule || eventData.content?.schedule || '',
+                          rules: homeContent.rules || eventData.content?.rules || '',
+                          allowBulkNoOtp: eventData.content?.allowBulkNoOtp || false,
+                          enableRegisteredScan: eventData.content?.enableRegisteredScan !== false,
+                          rpcBgUrl: eventData.content?.rpcBgUrl || '',
+                          rpcBgUrlMobile: eventData.content?.rpcBgUrlMobile || '',
+                          isDateTBA: eventData.content?.isDateTBA || false,
+                          tncUrl: eventData.content?.tncUrl || '',
+                          tncUrls: eventData.content?.tncUrls || undefined,
+                          autoGenerateBibs: eventData.content?.autoGenerateBibs || undefined,
+                        }
+                      }),
+                    });
+                    if (res.ok) {
+                      alert('Settings saved!');
+                      await loadAllData();
+                    } else alert('Failed to save settings');
+                  } catch {
+                    alert('Failed to save settings');
+                  }
+                }}
+              >
+                Save Settings
+              </button>
             </div>
           </div>
 
@@ -2909,8 +2884,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                     <input
                       type="checkbox"
                       checked={eventData?.content?.isDateTBA || false}
-                      onChange={(e) => setEventData({ 
-                        ...eventData, 
+                      onChange={(e) => setEventData({
+                        ...eventData,
                         content: { ...(eventData?.content || {}), isDateTBA: e.target.checked }
                       })}
                       className="w-4 h-4"
@@ -2943,8 +2918,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                   <div className="flex flex-col">
                     <span className="font-bold text-gray-900">{eventData?.isDraft ? 'Draft Mode' : 'Live Mode'}</span>
                     <span className="text-xs text-gray-500">
-                      {eventData?.isDraft 
-                        ? 'Event disembunyikan dari halaman publik dan pendaftaran ditutup.' 
+                      {eventData?.isDraft
+                        ? 'Event disembunyikan dari halaman publik dan pendaftaran ditutup.'
                         : 'Event tampil di halaman publik dan pendaftaran dibuka.'}
                     </span>
                   </div>
@@ -2976,8 +2951,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                   <input
                     type="checkbox"
                     checked={eventData?.content?.allowBulkNoOtp || false}
-                    onChange={(e) => setEventData({ 
-                      ...eventData, 
+                    onChange={(e) => setEventData({
+                      ...eventData,
                       content: { ...(eventData?.content || {}), allowBulkNoOtp: e.target.checked }
                     })}
                     className="w-5 h-5"
@@ -2999,11 +2974,11 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                   <input
                     type="checkbox"
                     checked={eventData?.content?.autoGenerateBibs?.enabled || false}
-                    onChange={(e) => setEventData({ 
-                      ...eventData, 
-                      content: { 
-                        ...(eventData?.content || {}), 
-                        autoGenerateBibs: { ...(eventData?.content?.autoGenerateBibs || {}), enabled: e.target.checked } 
+                    onChange={(e) => setEventData({
+                      ...eventData,
+                      content: {
+                        ...(eventData?.content || {}),
+                        autoGenerateBibs: { ...(eventData?.content?.autoGenerateBibs || {}), enabled: e.target.checked }
                       }
                     })}
                     className="w-5 h-5"
@@ -3029,19 +3004,19 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                             type="text"
                             placeholder="Contoh: 5001"
                             className="search flex-1 text-sm"
-                            value={eventData?.content?.autoGenerateBibs?.categories?.[cat.id] || ''}
+                            value={eventData?.content?.autoGenerateBibs?.categories?.[cat.id!] || ''}
                             onChange={(e) => {
                               const val = e.target.value;
-                              const catId = cat.id;
+                              const catId = cat.id!;
                               setEventData((prev: any) => ({
                                 ...prev,
                                 content: {
                                   ...(prev?.content || {}),
                                   autoGenerateBibs: {
                                     ...(prev?.content?.autoGenerateBibs || {}),
-                                    categories: { 
-                                      ...(prev?.content?.autoGenerateBibs?.categories || {}), 
-                                      [catId]: val 
+                                    categories: {
+                                      ...(prev?.content?.autoGenerateBibs?.categories || {}),
+                                      [catId]: val
                                     }
                                   }
                                 }
@@ -3065,8 +3040,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                   className="search w-full"
                   placeholder="Pastikan data dan kategori yang Anda pilih sudah sesuai."
                   value={eventData?.content?.checkoutWarningText || ''}
-                  onChange={(e) => setEventData({ 
-                    ...eventData, 
+                  onChange={(e) => setEventData({
+                    ...eventData,
                     content: { ...(eventData?.content || {}), checkoutWarningText: e.target.value }
                   })}
                 />
@@ -3095,8 +3070,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                               onChange={(e) => {
                                 const newUrls = [...tncUrls];
                                 newUrls[idx] = e.target.value;
-                                setEventData({ 
-                                  ...eventData, 
+                                setEventData({
+                                  ...eventData,
                                   content: { ...(eventData?.content || {}), tncUrls: newUrls, tncUrl: newUrls[0] || '' }
                                 });
                               }}
@@ -3105,8 +3080,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                               className="btn ghost !text-red-500 !px-2"
                               onClick={() => {
                                 const newUrls = tncUrls.filter((_: any, i: number) => i !== idx);
-                                setEventData({ 
-                                  ...eventData, 
+                                setEventData({
+                                  ...eventData,
                                   content: { ...(eventData?.content || {}), tncUrls: newUrls, tncUrl: newUrls[0] || '' }
                                 });
                               }}
@@ -3120,8 +3095,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                             className="text-xs text-blue-600 font-bold hover:underline mb-2 block"
                             onClick={() => {
                               const newUrls = [...tncUrls, ''];
-                              setEventData({ 
-                                ...eventData, 
+                              setEventData({
+                                ...eventData,
                                 content: { ...(eventData?.content || {}), tncUrls: newUrls }
                               });
                             }}
@@ -3167,8 +3142,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                     className="search w-full mb-2"
                     placeholder="https://example.com/image-landscape.jpg atau MP4"
                     value={eventData?.content?.rpcBgUrl || ''}
-                    onChange={(e) => setEventData({ 
-                      ...eventData, 
+                    onChange={(e) => setEventData({
+                      ...eventData,
                       content: { ...(eventData?.content || {}), rpcBgUrl: e.target.value }
                     })}
                   />
@@ -3197,8 +3172,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                     className="search w-full mb-2"
                     placeholder="https://example.com/image-portrait.jpg atau MP4"
                     value={eventData?.content?.rpcBgUrlMobile || ''}
-                    onChange={(e) => setEventData({ 
-                      ...eventData, 
+                    onChange={(e) => setEventData({
+                      ...eventData,
                       content: { ...(eventData?.content || {}), rpcBgUrlMobile: e.target.value }
                     })}
                   />
@@ -3219,7 +3194,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="text-xs text-gray-500 mt-2">
                   Paste URL atau Upload file untuk background halaman validasi RPC. Sangat disarankan mengupload 2 gambar (landscape & portrait) agar tidak kepotong di HP.
                 </div>
@@ -3231,12 +3206,12 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
               <div className="tools">
                 <label className="flex items-center gap-3 cursor-pointer">
                   <div className="relative">
-                    <input 
-                      type="checkbox" 
-                      className="sr-only" 
+                    <input
+                      type="checkbox"
+                      className="sr-only"
                       checked={eventData?.content?.enableRegisteredScan !== false}
-                      onChange={(e) => setEventData({ 
-                        ...eventData, 
+                      onChange={(e) => setEventData({
+                        ...eventData,
                         content: { ...(eventData?.content || {}), enableRegisteredScan: e.target.checked }
                       })}
                     />
@@ -3254,8 +3229,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                   <h3 className="text-red-600 font-bold">Danger Zone</h3>
                   <div className="text-sm text-gray-500">Hapus event secara permanen. Tindakan ini tidak dapat dibatalkan.</div>
                 </div>
-                <button 
-                  className="btn" 
+                <button
+                  className="btn"
                   style={{ backgroundColor: '#fee2e2', color: '#dc2626', border: 'none' }}
                   onClick={async () => {
                     if (confirm(`Hapus event "${eventName}"? Semua data akan hilang permanen.`)) {
