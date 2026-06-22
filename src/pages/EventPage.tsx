@@ -19,6 +19,7 @@ import {
 import { LS_DATA_VERSION } from "../lib/config";
 import parseTimeToMs, { extractTimeOfDay, formatDuration } from "../lib/time";
 import type { MasterParticipant } from "../lib/data";
+import { useLiveTiming } from "../hooks/useLiveTiming";
 import getUnicodeFlagIcon from "country-flag-icons/unicode";
 import { getData } from "country-list";
 
@@ -164,6 +165,7 @@ export default function EventPage() {
   const [selected, setSelected] = useState<LeaderRow | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [recalcTick, setRecalcTick] = useState(0);
+  const { recordsByEpc } = useLiveTiming(event?.id || 'default');
   const [gpxTrackPoints, setGpxTrackPoints] = useState<Array<[number, number]>>([]);
 
   const [registerModalOpen, setRegisterModalOpen] = useState(false);
@@ -737,21 +739,6 @@ export default function EventPage() {
         const startMap = await loadTimesMap("start", event.id);
         const finishMap = await loadTimesMap("finish", event.id);
         const cpMap = await loadCheckpointTimesMap(event.id);
-        
-        // Merge decoder logs from API
-        try {
-          const decoderRes = await fetch(`/api/decoder-logs?eventId=${event.id}`);
-          if (decoderRes.ok) {
-            const decoderLogs = await decoderRes.json();
-            if (Array.isArray(decoderLogs)) {
-              decoderLogs.forEach((log: any) => {
-                if (!cpMap.has(log.epc)) cpMap.set(log.epc, []);
-                cpMap.get(log.epc)!.push(log.timestamp);
-              });
-            }
-          }
-        } catch {}
-
         setCheckpointMap(cpMap);
 
         // Use timing from event (per-event database) instead of localStorage
@@ -906,7 +893,7 @@ export default function EventPage() {
               }
             }
 
-            const pushIncompleteRow = (status: string) => {
+            const pushIncompleteRow = (statusText: string, computedStartMs?: number | null, rawStart?: string | null) => {
               baseRows.push({
                 rank: null,
                 bib: p.bib,
@@ -915,14 +902,16 @@ export default function EventPage() {
                 category: p.category || resolvedCategoryKey,
                 sourceCategoryKey: resolvedCategoryKey,
                 ageCategory: p.ageCategory,
-                finishTimeRaw: finishEntry ? extractTimeOfDay(finishEntry.raw) : '-',
+                startTimeRaw: rawStart ? extractTimeOfDay(rawStart) : computedStartMs ? extractTimeOfDay(new Date(computedStartMs).toISOString()) : "-",
+                finishTimeRaw: extractTimeOfDay(finishEntry?.raw || "-"),
                 totalTimeMs: 0,
-                totalTimeDisplay: isDQ ? "DSQ" : status,
+                totalTimeDisplay: isDQ ? "DSQ" : statusText,
                 epc: p.epc,
               });
             };
 
             if (!finishEntry?.ms) {
+              pushIncompleteRow("ACTIVE");
               return;
             }
 
@@ -931,18 +920,21 @@ export default function EventPage() {
             let timeOnly = timeOnlyStr[catKey] ?? null;
 
             // Global T0 priority: manualStartMs > startEntry.ms
-            const manualStartMs = event.manualStartTime ? new Date(event.manualStartTime).getTime() : null;
+            const manualStartMs = (event as any)?.manualStartTime ? new Date((event as any).manualStartTime).getTime() : null;
             const startEntry = startMap.get(p.epc);
-            let fallbackStartMs = manualStartMs || startEntry?.ms;
+            let fallbackStartMs = manualStartMs || startEntry?.ms || null;
 
             // Individual per-BIB Manual Start Priority overrides Global AND Category Start
             const bibManualStartStr = manualStartMap.get(p.epc);
+            let rawStartStr = startEntry?.raw;
+
             if (bibManualStartStr) {
               const builtOverride = buildOverrideFromFinishDate(finishEntry.ms, bibManualStartStr);
               if (builtOverride != null) {
                 fallbackStartMs = builtOverride;
                 absMs = null;
                 timeOnly = null;
+                rawStartStr = bibManualStartStr;
               }
             }
 
@@ -950,7 +942,7 @@ export default function EventPage() {
 
             if (absMs != null && Number.isFinite(absMs)) {
               const delta = finishEntry.ms - absMs;
-              if (Number.isFinite(delta) && delta >= 0) {
+              if (Number.isFinite(delta)) {
                 total = delta;
               } else if (fallbackStartMs) {
                 total = finishEntry.ms - fallbackStartMs;
@@ -959,7 +951,7 @@ export default function EventPage() {
               const builtOverride = buildOverrideFromFinishDate(finishEntry.ms, timeOnly);
               if (builtOverride != null) {
                 const delta = finishEntry.ms - builtOverride;
-                if (Number.isFinite(delta) && delta >= 0) {
+                if (Number.isFinite(delta)) {
                   total = delta;
                 } else if (fallbackStartMs) {
                   total = finishEntry.ms - fallbackStartMs;
@@ -971,8 +963,8 @@ export default function EventPage() {
               total = finishEntry.ms - fallbackStartMs;
             }
 
-            if (!Number.isFinite(total) || total == null || total < 0) {
-              pushIncompleteRow("NO START TIME");
+            if (!Number.isFinite(total) || total == null) {
+              pushIncompleteRow("NO START TIME", fallbackStartMs, rawStartStr);
               return;
             }
 
@@ -1015,6 +1007,7 @@ export default function EventPage() {
               category: p.category || resolvedCategoryKey,
               sourceCategoryKey: resolvedCategoryKey,
               ageCategory: p.ageCategory,
+              startTimeRaw: rawStartStr ? extractTimeOfDay(rawStartStr) : t0Ms ? extractTimeOfDay(new Date(t0Ms).toISOString()) : "-",
               finishTimeRaw: extractTimeOfDay(finishEntry.raw),
               totalTimeMs: total,
               totalTimeDisplay: isDQ ? "DSQ" : isDNF ? "DNF" : formatDuration(total),
@@ -1026,7 +1019,12 @@ export default function EventPage() {
         }
 
         const finishers = baseRows.filter(
-          (r) => r.totalTimeDisplay !== "DNF" && r.totalTimeDisplay !== "DSQ" && r.totalTimeDisplay !== "ACTIVE"
+          (r) => 
+            r.totalTimeDisplay !== "DNF" && 
+            r.totalTimeDisplay !== "DSQ" && 
+            r.totalTimeDisplay !== "ACTIVE" &&
+            r.totalTimeDisplay !== "NO START TIME" &&
+            r.totalTimeDisplay !== "Registered"
         );
 
         const finisherSorted = [...finishers]
@@ -1106,6 +1104,18 @@ export default function EventPage() {
     })();
   }, [recalcTick, event?.id, event?.categories, registeredParticipants]);
 
+  // Patch latestCp from live timing directly into rows
+  const overallWithLatestCp = useMemo(() => {
+    if (Object.keys(recordsByEpc).length === 0) return overall;
+    return overall.map(row => {
+      const recs = recordsByEpc[row.epc];
+      if (!recs || recs.length === 0) return row;
+      const latest = recs[recs.length - 1];
+      const cpTimeStr = new Date(latest.time).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      return { ...row, latestCp: `${latest.checkpointName} (${cpTimeStr})` };
+    });
+  }, [overall, recordsByEpc]);
+
   // Refresh when data changes
   useEffect(() => {
     const onStorage = (ev: StorageEvent) => {
@@ -1154,10 +1164,12 @@ export default function EventPage() {
       gender: selected.gender,
       category: selected.category,
       ageCategory: selected.ageCategory,
+      startTimeRaw: selected.startTimeRaw,
       finishTimeRaw: selected.finishTimeRaw,
       totalTimeDisplay: selected.totalTimeDisplay,
       checkpointTimes: checkpointMap.get(selected.epc) || [],
       penaltyMs: selected.penaltyMs || 0,
+      totalTimeMs: selected.totalTimeMs,
       overallRank,
       genderRank,
       categoryRank,
@@ -1434,12 +1446,12 @@ export default function EventPage() {
           {activeTab === "Results" && (
             <div className="space-y-8">
               {!(overall.some((r) => r.rank != null && r.rank <= 3)) && (
-                 <RaceClock cutoffMs={event?.cutoffMs} categoryStartTimes={event?.categoryStartTimes} manualStartTime={event?.manualStartTime} />
+                 <RaceClock cutoffMs={event?.cutoffMs} categoryStartTimes={event?.categoryStartTimes} manualStartTime={(event as any)?.manualStartTime} />
               )}
               <LeaderboardTable
                 title="Overall Result Rankings"
                 eventName={event?.name}
-                rows={overall}
+                rows={overallWithLatestCp}
                 categories={event?.categories || []}
                 onSelect={onSelectParticipant}
                 showTop10Badge={true}
@@ -1682,7 +1694,7 @@ export default function EventPage() {
               {/* Gallery is now in its own tab */}
 
               {!((byCategory as any)[activeTab] || []).some((r: any) => r.rank != null && r.rank <= 3) && (
-                <RaceClock cutoffMs={event?.cutoffMs} categoryStartTimes={event?.categoryStartTimes} manualStartTime={event?.manualStartTime} />
+                <RaceClock cutoffMs={event?.cutoffMs} categoryStartTimes={event?.categoryStartTimes} manualStartTime={(event as any)?.manualStartTime} />
               )}
               <CategorySection
                 categoryKey={activeTab}
@@ -2285,9 +2297,9 @@ export default function EventPage() {
                                        message.error(`Pelanggan ${i+1}: Format ${nf.label} salah. Harus berupa angka.`);
                                        return;
                                    }
-                                   if (val !== '0' && val.length < 10) {
+                                   if (val !== '0' && val.length < 12) {
                                        setActiveTabIdx(i);
-                                       message.error(`Pelanggan ${i+1}: ${nf.label} harus diisi 0 (WNA) atau minimal 10 digit.`);
+                                       message.error(`Pelanggan ${i+1}: ${nf.label} harus diisi 0 (WNA) atau minimal 12 digit.`);
                                        return;
                                    }
                                }

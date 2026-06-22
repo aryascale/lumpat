@@ -11,7 +11,7 @@ export type LoadState =
   | { status: "ready" };
 
 export function useLeaderboardData(eventId: string) {
-  const { currentEvent, eventData, loading: eventLoading } = useEvent();
+  const { currentEvent, loading: eventLoading } = useEvent();
   const [state, setState] = useState<LoadState>({
     status: "loading",
     msg: "Loading CSV data…",
@@ -108,7 +108,7 @@ export function useLeaderboardData(eventId: string) {
         // Load manual start map from API
         const manualStartMap = new Map<string, string>();
         try {
-          const msRes = await fetch(`/api/manual-start-bib?eventId=${eventId}`);
+          const msRes = await fetch(`/api/manual-start-bib?eventId=${eventId}&_t=${Date.now()}`);
           if (msRes.ok) {
             const msData = await msRes.json();
             if (Array.isArray(msData)) {
@@ -120,7 +120,7 @@ export function useLeaderboardData(eventId: string) {
         // Load manual finish map from API
         const manualFinishMap = new Map<string, string>();
         try {
-          const mfRes = await fetch(`/api/manual-finish-bib?eventId=${eventId}`);
+          const mfRes = await fetch(`/api/manual-finish-bib?eventId=${eventId}&_t=${Date.now()}`);
           if (mfRes.ok) {
             const mfData = await mfRes.json();
             if (Array.isArray(mfData)) {
@@ -205,9 +205,12 @@ export function useLeaderboardData(eventId: string) {
           let timeOnly = timeOnlyStr[catKey] ?? null;
 
           let total: number | null = null;
-          const manualStartMs = eventData?.manualStartTime ? new Date(eventData.manualStartTime).getTime() : null;
-          let startMs = manualStartMs || startMap.get(p.epc)?.ms;
+          const manualStartMs = (currentEvent as any)?.manualStartTime ? new Date((currentEvent as any).manualStartTime).getTime() : null;
+          const startEntry = startMap.get(p.epc);
+          let startMs = manualStartMs || startEntry?.ms;
           
+          let rawStartStrForDisplay = startEntry?.raw;
+
           const bibManualStartStr = manualStartMap.get(p.epc);
           if (bibManualStartStr && finishEntry?.ms) {
             const builtOverride = buildOverrideFromFinishDate(finishEntry.ms, bibManualStartStr);
@@ -215,35 +218,50 @@ export function useLeaderboardData(eventId: string) {
               startMs = builtOverride;
               absMs = null;
               timeOnly = null;
+              rawStartStrForDisplay = bibManualStartStr;
             }
           }
 
           if (absMs != null && Number.isFinite(absMs)) {
-            const delta = finishEntry.ms - absMs;
-            if (Number.isFinite(delta)) {
-              total = delta;
+            if (!finishEntry?.ms) return;
+            const startStr = extractTimeOfDay(new Date(absMs).toISOString());
+            const startNormalized = buildOverrideFromFinishDate(finishEntry.ms, startStr);
+            if (startNormalized != null) {
+              total = finishEntry.ms - startNormalized;
+              if (total < -43200000) total += 86400000; // Only add 24h if it's deeply negative (crosses midnight)
             } else {
-              if (!startMs) return;
-              total = finishEntry.ms - startMs;
+              total = finishEntry.ms - absMs;
             }
           } else if (timeOnly) {
+            if (!finishEntry?.ms) return;
             const builtOverride = buildOverrideFromFinishDate(finishEntry.ms, timeOnly);
             if (builtOverride != null) {
-              const delta = finishEntry.ms - builtOverride;
-              if (Number.isFinite(delta)) {
-                total = delta;
-              } else {
-                if (!startMs) return;
+              total = finishEntry.ms - builtOverride;
+              if (total < -43200000) total += 86400000;
+            } else {
+              if (startMs) {
                 total = finishEntry.ms - startMs;
               }
-            } else {
-              if (!startMs) return;
-              total = finishEntry.ms - startMs;
             }
           } else {
             if (startMs && finishEntry?.ms) {
-              total = finishEntry.ms - startMs;
+              const startStr = extractTimeOfDay(new Date(startMs).toISOString());
+              const startNormalized = buildOverrideFromFinishDate(finishEntry.ms, startStr);
+              if (startNormalized != null) {
+                total = finishEntry.ms - startNormalized;
+                if (total < -43200000) total += 86400000;
+              } else {
+                total = finishEntry.ms - startMs;
+              }
             }
+          }
+          
+          // Final safety fallback to prevent massive negative durations from breaking the UI
+          if (total != null && total < 0) {
+             // If we STILL have a negative duration, it means start is genuinely after finish even on the same day.
+             // Usually this implies midnight crossing but we just added 24h above if it was < -12h.
+             // Let's ensure it's positive.
+             while (total < 0) total += 86400000;
           }
 
           let latestCpStr = "-";
@@ -261,7 +279,7 @@ export function useLeaderboardData(eventId: string) {
           }
 
           let isLiveActive = false;
-          if (!Number.isFinite(total) || total == null || total < 0) {
+          if (!Number.isFinite(total) || total == null) {
             isLiveActive = true;
             total = 0;
           }
@@ -304,7 +322,7 @@ export function useLeaderboardData(eventId: string) {
             category: p.category || p.sourceCategoryKey,
             sourceCategoryKey: p.sourceCategoryKey,
             ageCategory: p.ageCategory,
-            startTimeRaw: startMs ? extractTimeOfDay(new Date(startMs).toISOString()) : "-",
+            startTimeRaw: rawStartStrForDisplay ? extractTimeOfDay(rawStartStrForDisplay) : startMs ? extractTimeOfDay(new Date(startMs).toISOString()) : "-",
             finishTimeRaw: extractTimeOfDay(finishEntry?.raw || ""),
             totalTimeMs: total!,
             totalTimeDisplay: isDQ ? "DSQ" : isDNF ? "DNF" : isLiveActive ? "ACTIVE" : formatDuration(total!),
