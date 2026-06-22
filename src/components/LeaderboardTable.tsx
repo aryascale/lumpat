@@ -17,7 +17,7 @@ export type LeaderRow = {
   totalTimeDisplay: string;
   penaltyMs?: number;
   epc: string;
-  laps?: { label: string, timeDisplay: string }[];
+  laps?: { label: string, timeDisplay: string, isDuration?: boolean }[];
   latestCp?: string;
 };
 
@@ -76,15 +76,6 @@ export default function LeaderboardTable({
     return Array.from(set).sort();
   }, [rows]);
 
-  const maxLapsCount = useMemo(() => {
-    return rows.reduce((max, r) => Math.max(max, r.laps?.length || 0), 0);
-  }, [rows]);
-
-  const gridTemplateColumnsInner = useMemo(() => {
-    const lapCols = Array(maxLapsCount).fill('100px').join(' ');
-    return `36px 56px minmax(140px, 1fr) 80px 80px 80px 130px ${lapCols ? lapCols + ' ' : ''}`;
-  }, [maxLapsCount]);
-
   const rankedRows = useMemo(() => {
     let currentRows = rows;
     if (genderFilter !== "All") {
@@ -134,7 +125,7 @@ export default function LeaderboardTable({
   }, [q, rankedRows]);
 
   const podiums = useMemo(() => {
-    if (q) return []; // Only show champions when not searching
+    if (q) return [];
 
     const buildTop3 = (list: LeaderRow[]) => {
       const finishers = list.filter(r => r.totalTimeDisplay !== 'DNF' && r.totalTimeDisplay !== 'DSQ' && r.totalTimeDisplay !== 'ACTIVE');
@@ -185,20 +176,17 @@ export default function LeaderboardTable({
     );
   };
 
-  const showingCount = filtered.length;
-
-  const getPosStyle = (rank: number | null) => {
-    if (rank === 1) return "bg-gradient-to-br from-yellow-300 to-yellow-500 text-yellow-950 font-black shadow-lg shadow-yellow-200";
-    if (rank === 2) return "bg-gradient-to-br from-gray-200 to-gray-400 text-gray-800 font-black shadow-lg shadow-gray-200";
-    if (rank === 3) return "bg-gradient-to-br from-orange-300 to-orange-600 text-orange-950 font-black shadow-lg shadow-orange-200/50";
-    return "bg-black text-white font-bold opacity-80";
+  // Card border style for top 3 (like the reference)
+  const getRowBorder = (rank: number | null) => {
+    if (rank === 1) return "border-2 border-[#d4af37] shadow-[0_4px_15px_rgba(212,175,55,0.15)]";
+    if (rank === 2) return "border-2 border-slate-300 shadow-[0_4px_15px_rgba(148,163,184,0.15)]";
+    if (rank === 3) return "border-2 border-[#cd7f32] shadow-[0_4px_15px_rgba(205,127,50,0.15)]";
+    return "border border-slate-200 shadow-sm hover:border-slate-300 hover:shadow-md";
   };
-
-
 
   return (
     <div className="editorial-table-wrapper w-full">
-      {/* Champions Spotlights */}
+      {/* ═══════════════════ OLD PODIUM (PRESERVED) ═══════════════════ */}
       {!hidePodium && podiums.length > 0 && (
         <div
           ref={podiumRef}
@@ -413,24 +401,22 @@ export default function LeaderboardTable({
         </div>
       )}
 
-      {/* Main Table Tools */}
+      {/* ═══════════════════ TABLE SECTION (NEW SHARP DESIGN) ═══════════════════ */}
       {!hideTable && (
         <>
-          <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end gap-4 border-b-2 border-stone-900 pb-4 mb-6">
+          {/* Toolbar */}
+          <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end gap-4 pb-5 mb-5 border-b border-slate-200">
             <div>
-              {title && <h2 className="text-2xl font-black tracking-tighter text-stone-900 uppercase">{title}</h2>}
-              <div className="text-sm font-medium text-stone-500 tracking-wide mt-1">
-                Displaying <span className="font-bold text-red-600">{showingCount}</span> verified entries
-              </div>
+              {title && <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-800">{title}</h2>}
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
               <div className="relative flex-1 sm:flex-none">
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 <input
-                  className="w-full sm:w-64 pl-9 pr-4 py-2 border-2 border-stone-200 rounded-lg font-medium text-stone-800 placeholder-stone-400 focus:border-red-500 focus:ring-0 outline-none transition-colors"
+                  className="w-full sm:w-56 pl-9 pr-3 py-2 border border-slate-200 rounded font-medium text-slate-700 text-sm placeholder-slate-400 focus:border-slate-400 focus:ring-0 outline-none transition-all bg-white"
                   type="text"
                   placeholder="Search BIB or Name..."
                   value={q}
@@ -438,7 +424,7 @@ export default function LeaderboardTable({
                 />
               </div>
               <select
-                className="w-full sm:w-auto px-4 py-2 border-2 border-stone-200 rounded-lg font-medium text-stone-800 focus:border-red-500 focus:ring-0 outline-none transition-colors bg-white cursor-pointer"
+                className="w-full sm:w-auto px-3 py-2 border border-slate-200 rounded font-medium text-slate-700 text-sm focus:border-slate-400 focus:ring-0 outline-none transition-all bg-white cursor-pointer"
                 value={genderFilter}
                 onChange={(e) => setGenderFilter(e.target.value)}
               >
@@ -447,7 +433,7 @@ export default function LeaderboardTable({
                 <option value="Perempuan">Female</option>
               </select>
               <select
-                className="w-full sm:w-auto px-4 py-2 border-2 border-stone-200 rounded-lg font-medium text-stone-800 focus:border-red-500 focus:ring-0 outline-none transition-colors bg-white cursor-pointer"
+                className="w-full sm:w-auto px-3 py-2 border border-slate-200 rounded font-medium text-slate-700 text-sm focus:border-slate-400 focus:ring-0 outline-none transition-all bg-white cursor-pointer"
                 value={ageCategoryFilter}
                 onChange={(e) => setAgeCategoryFilter(e.target.value)}
               >
@@ -456,125 +442,203 @@ export default function LeaderboardTable({
                   <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
-              <button className="px-5 py-2 font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors border border-transparent" onClick={() => { setQ(""); setGenderFilter("All"); setAgeCategoryFilter("All"); }}>
+              <button className="px-3.5 py-2 font-semibold text-slate-500 bg-slate-100 hover:bg-slate-200 rounded transition-colors text-sm" onClick={() => { setQ(""); setGenderFilter("All"); setAgeCategoryFilter("All"); }}>
                 Reset
               </button>
-              <button onClick={handleExport} className="px-5 py-2 font-bold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg shadow-md hover:shadow-lg transition-all border border-red-700">
+              <button onClick={handleExport} className="px-4 py-2 font-semibold text-white bg-red-500 hover:bg-red-600 active:bg-red-700 rounded shadow-sm hover:shadow transition-all text-sm">
                 Export CSV
               </button>
             </div>
           </div>
 
-          {/* Unified Card Feed View */}
-          <div className="flex flex-col gap-3 pb-4">
-            {filtered.map((r) => {
-              const pos = r.rank ?? "-";
-              const isTop10 = r.rank != null && r.rank <= 10;
-              const isSpecial = r.totalTimeDisplay === "DNF" || r.totalTimeDisplay === "DSQ";
+          {/* Column Header */}
+          <div className="hidden md:grid grid-cols-[44px_1fr_90px_90px_90px_110px_80px_28px] gap-2 px-4 py-2.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-0.5">
+            <div>#</div>
+            <div>Name</div>
+            <div>Category</div>
+            <div>Start</div>
+            <div>Finish</div>
+            <div>Race Time</div>
+            <div>Avg Pace</div>
+            <div></div>
+          </div>
 
-              return (
-                <div 
-                  key={r.epc} 
-                  onClick={() => onSelect?.(r)}
-                  className={`flex flex-col rounded-2xl border cursor-pointer hover:-translate-y-1 transition-all duration-300 min-w-0 ${
-                    isSpecial ? 'border-red-200 bg-red-50/80 backdrop-blur-sm' :
-                    (isTop10 && showTop10Badge) ? 'border-white/50 bg-white/40 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)]' :
-                    (isTop10 && showTop10Badge) ? 'border-white/50 bg-white/60 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.06)]' :
-                    'border-slate-200/60 bg-white/80 backdrop-blur-md hover:border-slate-300 hover:shadow-lg'
-                  }`}
-                >
-                  {/* Top Section */}
-                  <div className="flex flex-col sm:flex-row justify-between p-4 lg:p-5 gap-4">
-                    {/* Left: Pos + Athlete Details */}
-                    <div className="flex items-start gap-3 sm:gap-4">
-                      {/* Pos Badge */}
-                      <span className={`flex-shrink-0 inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl text-lg sm:text-xl font-black ${getPosStyle(r.rank)}`}>
+          {/* Table Rows — sharp corners */}
+          <div className="flex flex-col gap-2.5 overflow-x-auto pb-4 pt-1">
+            <div className="min-w-[800px] md:min-w-0 flex flex-col gap-2.5">
+              {filtered.map((r) => {
+                const pos = r.rank ?? "-";
+                const isSpecial = r.totalTimeDisplay === "DNF" || r.totalTimeDisplay === "DSQ";
+                const isActive = r.totalTimeDisplay === "ACTIVE";
+                const isTop3 = r.rank != null && r.rank <= 3;
+
+                return (
+                  <div
+                    key={r.epc}
+                    onClick={() => onSelect?.(r)}
+                    className={`group cursor-pointer transition-all duration-300 hover:-translate-y-0.5 rounded-xl ${getRowBorder(r.rank)} ${
+                      isSpecial ? 'bg-red-50/50' :
+                      isActive ? 'bg-emerald-50/30' :
+                      'bg-white'
+                    }`}
+                  >
+                    {/* Desktop row */}
+                    <div className="hidden md:grid grid-cols-[44px_1fr_90px_90px_90px_110px_80px_28px] gap-2 items-center px-4 py-3">
+                      {/* Rank */}
+                      <div className={`font-black text-base ${
+                        r.rank === 1 ? 'text-amber-500' :
+                        r.rank === 2 ? 'text-slate-400' :
+                        r.rank === 3 ? 'text-orange-400' :
+                        'text-slate-300'
+                      }`}>
                         {pos}
-                      </span>
-                      
-                      {/* Athlete Info */}
-                      <div className="flex flex-col gap-1.5 min-w-0">
-                        <div className="font-extrabold text-slate-900 tracking-tight text-base sm:text-lg lg:text-xl truncate max-w-full">
-                          {r.name || "-"}
+                      </div>
+
+                      {/* Name + Avatar + BIB */}
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                          r.rank === 1 ? 'bg-amber-100 text-amber-700' :
+                          r.rank === 2 ? 'bg-slate-100 text-slate-600' :
+                          r.rank === 3 ? 'bg-orange-100 text-orange-700' :
+                          'bg-slate-50 text-slate-400'
+                        }`}>
+                          {(r.name || "?").charAt(0).toUpperCase()}
                         </div>
-                        
-                        {/* Pills */}
-                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                          <span className="font-mono font-semibold text-rose-600 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-md text-[10px] lg:text-xs tracking-wide shadow-sm">
-                            BIB {r.bib || "-"}
-                          </span>
-                          <span className="font-semibold text-slate-600 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md text-[10px] lg:text-xs shadow-sm">
-                            {r.gender || "-"}
-                          </span>
-                          <span className="font-semibold text-slate-600 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md text-[10px] lg:text-xs shadow-sm">
-                            {r.category || "-"}
-                          </span>
-                          {r.ageCategory && (
-                            <span className="font-bold text-stone-600 bg-stone-100 border border-stone-200 px-1.5 sm:px-2 py-0.5 rounded text-[10px] lg:text-xs">
-                              {r.ageCategory}
-                            </span>
-                          )}
-                        </div>
-                        
-                        {/* Pace */}
-                        <div className="text-[10px] font-black text-stone-400 mt-1 uppercase tracking-widest flex items-center gap-1">
-                          Pace <span className="text-yellow-600">{calculatePace(r.totalTimeMs, r.category)} /km</span>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-slate-800 text-sm truncate leading-tight">{r.name || "-"}</div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="font-mono text-[10px] font-semibold text-red-400">{r.bib}</span>
+                            {r.ageCategory && (
+                              <>
+                                <span className="text-slate-200">•</span>
+                                <span className="text-[10px] text-slate-400">{r.ageCategory}</span>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Right: Race Time */}
-                    <div className="flex flex-col items-end sm:items-end justify-start self-end sm:self-start mt-2 sm:mt-0 mr-4 lg:mr-8">
-                      <div className="text-[9px] uppercase font-black text-stone-400 tracking-widest mb-1 text-right">Race Time</div>
-                      <span className={`font-mono font-black text-sm lg:text-lg tracking-tighter bg-stone-100 border-2 border-stone-200 border-b-[4px] px-3 py-1.5 rounded-xl inline-block text-center whitespace-nowrap min-w-[120px] ${isSpecial ? "text-orange-600" : r.totalTimeDisplay === "ACTIVE" ? "text-emerald-600 border-emerald-200 bg-emerald-50" : "text-stone-900"}`}>
+                      {/* Category */}
+                      <div className="text-xs font-medium text-slate-500">{r.category || "-"}</div>
+
+                      {/* Start */}
+                      <div className="font-mono text-[11px] text-emerald-500 font-medium">{r.startTimeRaw || "-"}</div>
+
+                      {/* Finish */}
+                      <div className="font-mono text-[11px] text-rose-400 font-medium">{r.finishTimeRaw || "-"}</div>
+
+                      {/* Race Time */}
+                      <div className={`font-mono font-bold text-xs px-2.5 py-1 rounded inline-flex items-center justify-center ${
+                        isSpecial ? 'bg-red-100 text-red-600' :
+                        isActive ? 'bg-emerald-100 text-emerald-600' :
+                        isTop3 ? 'bg-slate-800 text-white' :
+                        'bg-slate-100 text-slate-700'
+                      }`}>
                         {r.totalTimeDisplay}
-                      </span>
-                    </div>
-                  </div>
+                      </div>
 
-                  {/* Bottom Bar: Timestamps */}
-                  <div className="flex flex-wrap md:flex-nowrap items-center bg-slate-50/50 backdrop-blur-sm border-t border-slate-100 rounded-b-2xl overflow-hidden divide-y md:divide-y-0 md:divide-x divide-slate-100">
-                    <div className="flex-1 px-4 py-2 sm:px-5 sm:py-3">
-                      <div className="text-[9px] uppercase font-bold text-slate-400 tracking-widest mb-0.5">Start</div>
-                      <div className="font-mono text-[10px] sm:text-xs font-semibold text-emerald-500">{r.startTimeRaw || "-"}</div>
-                    </div>
-                    <div className="flex-1 px-4 py-2 sm:px-5 sm:py-3">
-                      <div className="text-[9px] uppercase font-bold text-slate-400 tracking-widest mb-0.5">Finish</div>
-                      <div className="font-mono text-[10px] sm:text-xs font-semibold text-rose-500">{r.finishTimeRaw || "-"}</div>
-                    </div>
-                    <div className="flex-1 px-4 py-2 sm:px-5 sm:py-3">
-                      <div className="text-[9px] uppercase font-bold text-slate-400 tracking-widest mb-0.5">Total</div>
-                      <div className="font-mono text-[10px] sm:text-xs font-semibold text-slate-800">
-                        {r.totalTimeDisplay === "INVALID" ? "Start time tidak valid" : r.totalTimeDisplay}
+                      {/* Avg Pace */}
+                      <div className="font-mono text-[11px] font-semibold text-slate-500">
+                        {calculatePace(r.totalTimeMs, r.category)}
+                      </div>
+
+                      {/* Chevron */}
+                      <div className="text-slate-200 group-hover:text-slate-400 transition-colors flex justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* Laps (if any) */}
-                  {r.laps && r.laps.length > 0 && (
-                    <div className="flex gap-2 p-3 sm:p-4 border-t-2 border-dashed border-stone-100 bg-white overflow-x-auto rounded-b-xl">
-                      {r.laps.map((lap, i) => (
-                        <div key={i} className="flex flex-col flex-shrink-0 bg-stone-50 border-2 border-stone-100 rounded-lg px-2 py-1">
-                          <span className="text-[10px] font-bold text-stone-400 uppercase">{lap.label}</span>
-                          <span className="font-mono text-xs sm:text-sm font-bold text-stone-700">{lap.timeDisplay}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
 
-            {filtered.length === 0 && (
-              <div className="text-center py-16 bg-stone-50 rounded-2xl border-2 border-dashed border-stone-200 px-4">
-                <div className="font-black text-2xl text-stone-300 mb-2 tracking-tighter uppercase">No Tracking Data</div>
-                <div className="text-sm font-medium text-stone-500">
-                  {rows.length === 0
-                    ? "The leaderboards are currently empty. Awaiting timing data."
-                    : `No results found for "${q}".`}
+                    {/* Mobile card */}
+                    <div className="md:hidden p-3.5">
+                      <div className="flex items-start gap-3">
+                        <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                          <span className={`font-black text-sm ${
+                            r.rank === 1 ? 'text-amber-500' :
+                            r.rank === 2 ? 'text-slate-400' :
+                            r.rank === 3 ? 'text-orange-400' :
+                            'text-slate-300'
+                          }`}>
+                            {pos}
+                          </span>
+                          <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold ${
+                            r.rank === 1 ? 'bg-amber-100 text-amber-700' :
+                            r.rank === 2 ? 'bg-slate-100 text-slate-600' :
+                            r.rank === 3 ? 'bg-orange-100 text-orange-700' :
+                            'bg-slate-50 text-slate-400'
+                          }`}>
+                            {(r.name || "?").charAt(0).toUpperCase()}
+                          </div>
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="font-semibold text-slate-800 text-sm truncate">{r.name || "-"}</div>
+                              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                <span className="font-mono text-[10px] font-semibold text-red-400">BIB {r.bib}</span>
+                                <span className="text-[10px] text-slate-400">{r.category}</span>
+                                {r.ageCategory && <span className="text-[10px] text-slate-300">• {r.ageCategory}</span>}
+                              </div>
+                            </div>
+                            <div className={`flex-shrink-0 font-mono font-bold text-[11px] px-2 py-1 rounded ${
+                              isSpecial ? 'bg-red-100 text-red-600' :
+                              isActive ? 'bg-emerald-100 text-emerald-600' :
+                              isTop3 ? 'bg-slate-800 text-white' :
+                              'bg-slate-100 text-slate-700'
+                            }`}>
+                              {r.totalTimeDisplay}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2 text-[10px]">
+                            <div className="whitespace-nowrap">
+                              <span className="text-slate-400">Start </span>
+                              <span className="font-mono font-medium text-emerald-500">{r.startTimeRaw || "-"}</span>
+                            </div>
+                            <div className="whitespace-nowrap">
+                              <span className="text-slate-400">Finish </span>
+                              <span className="font-mono font-medium text-rose-400">{r.finishTimeRaw || "-"}</span>
+                            </div>
+                            <div className="whitespace-nowrap">
+                              <span className="text-slate-400">Pace </span>
+                              <span className="font-mono font-medium text-slate-500">{calculatePace(r.totalTimeMs, r.category)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Laps (if any) */}
+                    {r.laps && r.laps.length > 0 && (
+                      <div className="flex gap-2 px-4 pb-3 overflow-x-auto">
+                        {r.laps.map((lap, i) => (
+                          <div key={i} className="flex-shrink-0 bg-slate-50 border border-slate-100 rounded px-2 py-1">
+                            <div className="flex justify-between items-start gap-3 mb-0.5">
+                              <span className="text-[9px] font-bold text-slate-400 uppercase leading-none">{lap.label}</span>
+                              <span className="text-[7px] font-bold text-slate-300 bg-slate-100/50 px-1 rounded-sm leading-none pt-[1px]" title={lap.isDuration ? "Duration from Start" : "Time of Day"}>
+                                {lap.isDuration ? "DUR" : "JAM"}
+                              </span>
+                            </div>
+                            <span className="font-mono text-xs font-bold text-slate-600 block">{lap.timeDisplay}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {filtered.length === 0 && (
+                <div className="text-center py-16 bg-slate-50 border border-dashed border-slate-200 px-4">
+                  <div className="font-bold text-xl text-slate-300 mb-1 tracking-tight">No Tracking Data</div>
+                  <div className="text-sm font-medium text-slate-400">
+                    {rows.length === 0
+                      ? "The leaderboards are currently empty. Awaiting timing data."
+                      : `No results found for "${q}".`}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </>
       )}
