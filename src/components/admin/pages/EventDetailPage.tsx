@@ -1189,7 +1189,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           className={`detail-tab whitespace-nowrap ${activeTab === 'checkpoints' ? 'active' : ''}`}
           onClick={() => setActiveTab('checkpoints')}
         >
-          Checkpoints
+          Decoder Management
         </button>
         <button
           className={`detail-tab whitespace-nowrap ${activeTab === 'timing' ? 'active' : ''}`}
