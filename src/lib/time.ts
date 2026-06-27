@@ -74,8 +74,13 @@ export default function parseTimeToMs(raw: string): {
 
 export function extractTimeOfDay(raw: string): string {
   if (!raw) return "-";
-  // Attempt to match time either after a space or at the beginning of the string
-  let m = raw.match(/(?:^|\s)(\d{2}:\d{2}:\d{2}(?:[:\.]\d{1,3})?)/);
+  
+  // First, try to match a time that comes AFTER a space (e.g. from "YYYY-MM-DD HH:MM:SS" or "DD:MM:YYYY HH:MM:SS")
+  let m = raw.match(/\s(\d{2}:\d{2}:\d{2}(?:[:\.]\d{1,3})?)/);
+  if (m) return m[1];
+
+  // If no space, try to match time at the beginning or anywhere
+  m = raw.match(/(?:^|\s|T)(\d{2}:\d{2}:\d{2}(?:[:\.]\d{1,3})?)/);
   if (!m) {
      // fallback if it somehow just has it
      m = raw.match(/(\d{2}:\d{2}:\d{2}(?:[:\.]\d{1,3})?)/);
@@ -98,13 +103,14 @@ export function extractTimeOfDay(raw: string): string {
 }
 
 export function formatDuration(ms: number | null): string {
-  if (ms == null || !Number.isFinite(ms) || ms < 0) return "-";
-  const total = Math.floor(ms / 1000);
+  if (ms == null || !Number.isFinite(ms)) return "-";
+  const isNegative = ms < 0;
+  const total = Math.floor(Math.abs(ms) / 1000);
   const h = Math.floor(total / 3600);
   const m = Math.floor((total % 3600) / 60);
   const s = total % 60;
   const pad = (n: number) => n.toString().padStart(2, "0");
-  return `${pad(h)}:${pad(m)}:${pad(s)}`;
+  return `${isNegative ? "-" : ""}${pad(h)}:${pad(m)}:${pad(s)}`;
 }
 
 export function buildOverrideFromFinishDate(finishMs: number, timeStr: string): number | null {
