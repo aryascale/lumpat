@@ -288,6 +288,7 @@ export default function LeaderboardPage() {
                       rows={overall}
                       onSelect={onSelectParticipant}
                       hidePodium={true}
+                      hideStartTime={currentEvent?.hideStartTime}
                     />
                   </div>
                 ) : (
@@ -307,6 +308,7 @@ export default function LeaderboardPage() {
                       categoryKey={activeTab}
                       rows={activeTab === "Overall" ? overall : (byCategory[activeTab] || [])}
                       onSelect={onSelectParticipant}
+                      hideStartTime={currentEvent?.hideStartTime}
                     />
                   </div>
                 ) : (
@@ -323,6 +325,7 @@ export default function LeaderboardPage() {
               eventId={currentEvent?.id || ""}
               eventName={eventTitle}
               data={modalData}
+              hideStartTime={currentEvent?.hideStartTime}
             />
           </div>
         </div>

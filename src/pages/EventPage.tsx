@@ -74,6 +74,7 @@ interface EventData {
   bibCustomPrice?: number;
   categories?: any[];
   content?: any;
+  hideStartTime?: boolean;
 }
 
 interface CategoryDetail {
@@ -1572,6 +1573,7 @@ export default function EventPage() {
                     eventName={event?.name}
                     rows={overall}
                     onSelect={onSelectParticipant}
+                    hideStartTime={event?.hideStartTime}
                   />
                 </>
               ) : (
@@ -1596,6 +1598,7 @@ export default function EventPage() {
                 onSelect={onSelectParticipant}
                 showTop10Badge={true}
                 hidePodium={true}
+                hideStartTime={event?.hideStartTime}
               />
             </div>
           )}
@@ -1840,6 +1843,7 @@ export default function EventPage() {
                 categoryKey={activeTab}
                 rows={(byCategory as any)[activeTab] || []}
                 onSelect={onSelectParticipant}
+                hideStartTime={event?.hideStartTime}
               />
             </div>
           )}
@@ -2707,6 +2711,8 @@ export default function EventPage() {
           onClose={() => setModalOpen(false)}
           data={modalData}
           eventId={event?.id}
+          eventName={event?.name}
+          hideStartTime={event?.hideStartTime}
         />
 
         <style>{`

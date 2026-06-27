@@ -5,10 +5,12 @@ import { exportLeaderboardCSV } from "../lib/csv";
 export default function CategorySection({
   categoryKey,
   rows,
+  hideStartTime,
   onSelect,
 }: {
   categoryKey: string;
   rows: LeaderRow[];
+  hideStartTime?: boolean;
   onSelect?: (row: LeaderRow) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -75,6 +77,7 @@ export default function CategorySection({
         rows={rankedRows}
         showTop10Badge
         hideTable={!expanded}
+        hideStartTime={hideStartTime}
         onSelect={onSelect}
       />
     </div>

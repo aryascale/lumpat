@@ -26,6 +26,7 @@ interface Event {
   };
   isDraft?: boolean;
   publishAt?: string;
+  hideStartTime?: boolean;
 }
 
 interface EventContextType {

@@ -25,6 +25,7 @@ type Props = {
     categoryRank: number | null;
     ageRank: number | null;
   } | null;
+  hideStartTime?: boolean;
 };
 
 function onlyTime(raw: string) {
@@ -40,7 +41,7 @@ function onlyTime(raw: string) {
   return t;
 }
 
-export default function ParticipantModal({ open, onClose, eventId, eventName, data }: Props) {
+export default function ParticipantModal({ open, onClose, eventId, eventName, data, hideStartTime }: Props) {
   const [downloading, setDownloading] = useState(false);
 
   const cp =
@@ -150,10 +151,14 @@ export default function ParticipantModal({ open, onClose, eventId, eventName, da
                 <div className="font-semibold text-slate-800 text-xs sm:text-sm">{data.ageCategory?.trim() || "-"}</div>
               </div>
 
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                <div className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Start Time</div>
-                <div className="font-mono font-semibold text-emerald-600 text-xs sm:text-sm">{data.startTimeRaw || "-"}</div>
-              </div>
+              {!hideStartTime && (
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Start Time</div>
+                  <div className="font-mono font-semibold text-emerald-600 text-xs sm:text-sm">
+                    {data.startTimeRaw || "-"}
+                  </div>
+                </div>
+              )}
 
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
                 <div className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Finish Time</div>
