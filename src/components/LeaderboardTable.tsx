@@ -29,6 +29,7 @@ export default function LeaderboardTable({
   showTop10Badge = false,
   hideTable = false,
   hidePodium = false,
+  hideStartTime = false,
   onSelect,
 }: {
   title: string;
