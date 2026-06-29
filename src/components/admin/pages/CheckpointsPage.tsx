@@ -97,7 +97,7 @@ export default function CheckpointsPage({ eventId }: CheckpointsPageProps) {
     <div className="card">
       <div className="header-row mb-4">
         <div>
-          <h2 className="section-title">Decoder Management</h2>
+          <h2 className="section-title">Checkpoints Management</h2>
           <div className="subtle text-sm">
             Configure the timing points for your event. Hardware sensors will send "identitas" (e.g. CP1) which maps to the Checkpoint Name.
           </div>

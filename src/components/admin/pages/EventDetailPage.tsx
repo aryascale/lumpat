@@ -101,7 +101,6 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   // Timing state
   const [cutoffHours, setCutoffHours] = useState("");
   const [catStart, setCatStart] = useState<Record<string, string>>({});
-  const [hideStartTime, setHideStartTime] = useState(false);
   const [manualStartTime, setManualStartTime] = useState<string>("");
   const [savingManualStart, setSavingManualStart] = useState(false);
   const [savingTiming, setSavingTiming] = useState(false);
@@ -210,7 +209,6 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         } else {
           setCatStart({});
         }
-        setHideStartTime(eventData.hideStartTime || false);
 
         try {
           const mRes = await fetch(`/api/manual-start?eventId=${eventId}`);
@@ -925,7 +923,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       const res = await fetch(`/api/timing?eventId=${eventId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cutoffMs, categoryStartTimes: catStart, hideStartTime }),
+        body: JSON.stringify({ cutoffMs, categoryStartTimes: catStart }),
       });
 
       if (!res.ok) {
@@ -1191,7 +1189,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           className={`detail-tab whitespace-nowrap ${activeTab === 'checkpoints' ? 'active' : ''}`}
           onClick={() => setActiveTab('checkpoints')}
         >
-          Decoder Management
+          Checkpoints
         </button>
         <button
           className={`detail-tab whitespace-nowrap ${activeTab === 'timing' ? 'active' : ''}`}
@@ -1890,27 +1888,6 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                 />
               </div>
               <div className="subtle text-sm mt-2">Jika kosong / 0 → cut off nonaktif.</div>
-            </div>
-          </div>
-
-          {/* Hide Start Time Setting */}
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-gray-700">Hide Start Time</h3>
-                <div className="text-sm text-gray-500">
-                  Sembunyikan informasi Start Time di leaderboard publik
-                </div>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  checked={hideStartTime}
-                  onChange={(e) => setHideStartTime(e.target.checked)}
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
             </div>
           </div>
 

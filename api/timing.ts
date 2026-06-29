@@ -10,7 +10,7 @@ export default async function handler(event: any) {
 
     if (event.httpMethod === 'GET') {
       const events: any = await query(
-        'SELECT id, cutoffMs, categoryStartTimes, hideStartTime FROM Event WHERE id = ? LIMIT 1',
+        'SELECT id, cutoffMs, categoryStartTimes FROM Event WHERE id = ? LIMIT 1',
         [eventId]
       );
       if (events.length === 0) return errorResponse('Event not found', 404);
@@ -21,14 +21,14 @@ export default async function handler(event: any) {
         try { categoryStartTimes = JSON.parse(categoryStartTimes); } catch {}
       }
 
-      return successResponse({ cutoffMs: record.cutoffMs, categoryStartTimes, hideStartTime: !!record.hideStartTime });
+      return successResponse({ cutoffMs: record.cutoffMs, categoryStartTimes });
     }
 
     if (event.httpMethod === 'POST' || event.httpMethod === 'PUT') {
       const body = parseBody(event);
       if (!body) return errorResponse('Missing request body', 400);
 
-      const { cutoffMs, categoryStartTimes, hideStartTime } = body;
+      const { cutoffMs, categoryStartTimes } = body;
 
       if (cutoffMs !== null && cutoffMs !== undefined && (typeof cutoffMs !== 'number' || cutoffMs < 0)) {
         return errorResponse('cutoffMs must be a positive number or null', 400);
@@ -42,12 +42,12 @@ export default async function handler(event: any) {
       if (existing.length === 0) return errorResponse('Event not found', 404);
 
       await query(
-        'UPDATE Event SET cutoffMs = ?, categoryStartTimes = ?, hideStartTime = ?, updatedAt = NOW() WHERE id = ?',
-        [cutoffMs ?? null, categoryStartTimes ? JSON.stringify(categoryStartTimes) : null, hideStartTime ?? false, eventId]
+        'UPDATE Event SET cutoffMs = ?, categoryStartTimes = ?, updatedAt = NOW() WHERE id = ?',
+        [cutoffMs ?? null, categoryStartTimes ? JSON.stringify(categoryStartTimes) : null, eventId]
       );
 
       const updated: any = await query(
-        'SELECT id, cutoffMs, categoryStartTimes, hideStartTime FROM Event WHERE id = ? LIMIT 1',
+        'SELECT id, cutoffMs, categoryStartTimes FROM Event WHERE id = ? LIMIT 1',
         [eventId]
       );
 
@@ -56,7 +56,7 @@ export default async function handler(event: any) {
         try { parsedCST = JSON.parse(parsedCST); } catch {}
       }
 
-      return successResponse({ cutoffMs: updated[0].cutoffMs, categoryStartTimes: parsedCST, hideStartTime: !!updated[0].hideStartTime });
+      return successResponse({ cutoffMs: updated[0].cutoffMs, categoryStartTimes: parsedCST });
     }
 
     return errorResponse('Method not allowed', 405);

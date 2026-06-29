@@ -43,7 +43,6 @@ function formatEvent(event: any) {
     cutoffMs: event.cutoffMs,
     categoryStartTimes,
     manualStartTime: event.manualStartTime instanceof Date ? event.manualStartTime.toISOString() : event.manualStartTime || null,
-    hideStartTime: !!event.hideStartTime,
   };
 }
 
@@ -129,7 +128,7 @@ export default async function handler(req: any) {
     }
 
     if (req.httpMethod === 'POST') {
-      const { name, description, eventDate, location, latitude, longitude, isActive, isDraft, publishAt, categories, isLoopMode, minLapTimeMs, hideStartTime } = parseBody(req);
+      const { name, description, eventDate, location, latitude, longitude, isActive, isDraft, publishAt, categories, isLoopMode, minLapTimeMs } = parseBody(req);
       if (!name || !eventDate) return errorResponse('Name and eventDate are required', 400);
 
       const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -143,8 +142,8 @@ export default async function handler(req: any) {
 
       const eventIdNew = crypto.randomUUID();
       await query(
-        'INSERT INTO Event (id, name, slug, description, eventDate, location, latitude, longitude, isActive, isDraft, publishAt, status, logoUrl, bannerUrl, createdAt, updatedAt, isLoopMode, minLapTimeMs, hideStartTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?, ?, ?)',
-        [eventIdNew, name, slug, description || null, new Date(eventDate), location || null, latitude || null, longitude || null, isActive ?? true, isDraft ?? false, publishAt ? new Date(publishAt) : null, 'upcoming', null, null, isLoopMode ?? false, minLapTimeMs != null ? minLapTimeMs : 300000, hideStartTime ?? false]
+        'INSERT INTO Event (id, name, slug, description, eventDate, location, latitude, longitude, isActive, isDraft, publishAt, status, logoUrl, bannerUrl, createdAt, updatedAt, isLoopMode, minLapTimeMs) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?, ?)',
+        [eventIdNew, name, slug, description || null, new Date(eventDate), location || null, latitude || null, longitude || null, isActive ?? true, isDraft ?? false, publishAt ? new Date(publishAt) : null, 'upcoming', null, null, isLoopMode ?? false, minLapTimeMs != null ? minLapTimeMs : 300000]
       );
 
       const defaultCategories = categories || [];
@@ -210,7 +209,6 @@ export default async function handler(req: any) {
       if (body.tshirtSizes !== undefined) { fields.push('tshirtSizes = ?'); values.push(body.tshirtSizes); }
       if (body.bibCustomPrice !== undefined) { fields.push('bibCustomPrice = ?'); values.push(body.bibCustomPrice); }
       if (body.content !== undefined) { fields.push('content = ?'); values.push(JSON.stringify(body.content)); }
-      if (body.hideStartTime !== undefined) { fields.push('hideStartTime = ?'); values.push(body.hideStartTime); }
 
       fields.push('updatedAt = NOW()');
       values.push(eventId);

@@ -4,8 +4,11 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import { runMigrations } from './src/lib/migrations';
+import { fileURLToPath, pathToFileURL } from 'url';
+import { createServer } from 'http';
+import fs from 'fs';
+import { runMigrations } from './src/lib/migrations.js';
+import { initSocket } from './src/lib/socket.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -57,7 +60,11 @@ const apiHandler = async (req: any, res: any) => {
   const apiFilePath = path.join(apiDir, `${apiPath}${ext}`);
 
   try {
-    const apiModule = await import(apiFilePath);
+    if (!fs.existsSync(apiFilePath)) {
+      return res.status(404).json({ error: `Endpoint not found: ${req.path}` });
+    }
+    const fileUrl = pathToFileURL(apiFilePath).href;
+    const apiModule = await import(fileUrl);
     const handler = apiModule.default;
 
     if (!handler) throw new Error(`No default export found in ${apiFilePath}`);
@@ -98,7 +105,10 @@ app.use((_req, res) => {
   res.sendFile(path.join(PROJECT_ROOT, 'dist', 'index.html'));
 });
 
-app.listen(PORT, async () => {
+const httpServer = createServer(app);
+initSocket(httpServer);
+
+httpServer.listen(PORT, async () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log(`Upload directory: ${UPLOAD_DIR}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);

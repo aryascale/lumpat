@@ -7,7 +7,7 @@ interface ManualStartBibPageProps {
   allRows: LeaderRow[];
   onDataVersionBump: () => void;
   eventId: string;
-  globalManualStartTime?: string | null;
+  globalManualStartTime?: string;
 }
 
 interface ManualStartRecord {

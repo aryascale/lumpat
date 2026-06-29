@@ -6,8 +6,8 @@ import { createBackup } from '../src/lib/backup';
 import { assignAutoBibsIfEnabled } from '../src/lib/bib-generator';
 import crypto from 'crypto';
 
-const MIDTRANS_SERVER_KEY = (process.env.MIDTRANS_SERVER_KEY || '').trim();
-const MIDTRANS_MERCHANT_ID = (process.env.MIDTRANS_MERCHANT_ID || '').trim();
+const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY || '';
+const MIDTRANS_MERCHANT_ID = process.env.MIDTRANS_MERCHANT_ID || '';
 
 function verifySignature(orderId: string, statusCode: string, grossAmount: string, signatureKey: string): boolean {
   const payload = orderId + statusCode + grossAmount + MIDTRANS_SERVER_KEY;
@@ -76,9 +76,7 @@ export default async function handler(event: any) {
     };
 
     const grossAmountStr = String(gross_amount);
-    const isVerified = verify(grossAmountStr) || 
-                       verify(grossAmountStr.split('.')[0]) ||
-                       verify(grossAmountStr.includes('.') ? grossAmountStr : grossAmountStr + '.00');
+    const isVerified = verify(grossAmountStr) || verify(grossAmountStr.split('.')[0]);
 
     if (MIDTRANS_SERVER_KEY && !isVerified) {
       console.error('[WEBHOOK-MIDTRANS] Signature verification failed for order:', order_id);

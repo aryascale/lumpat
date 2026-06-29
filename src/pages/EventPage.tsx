@@ -74,7 +74,6 @@ interface EventData {
   bibCustomPrice?: number;
   categories?: any[];
   content?: any;
-  hideStartTime?: boolean;
 }
 
 interface CategoryDetail {
@@ -1471,7 +1470,7 @@ export default function EventPage() {
         </div>
 
         {/* Tab Content Area */}
-        <div className={`${activeTab === 'Home' ? 'w-full' : 'max-w-7xl mx-auto px-4 sm:px-6 py-0 md:py-8'}`}>
+        <div className={`${activeTab === 'Home' ? 'w-full' : 'max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-0 md:py-8'}`}>
           {activeTab === "Home" && (
             <div className="animate-in fade-in duration-700">
               {/* Event Hero Banner (Original Ratio) */}
@@ -1573,7 +1572,6 @@ export default function EventPage() {
                     eventName={event?.name}
                     rows={overall}
                     onSelect={onSelectParticipant}
-                    hideStartTime={event?.hideStartTime}
                   />
                 </>
               ) : (
@@ -1598,7 +1596,6 @@ export default function EventPage() {
                 onSelect={onSelectParticipant}
                 showTop10Badge={true}
                 hidePodium={true}
-                hideStartTime={event?.hideStartTime}
               />
             </div>
           )}
@@ -1843,7 +1840,6 @@ export default function EventPage() {
                 categoryKey={activeTab}
                 rows={(byCategory as any)[activeTab] || []}
                 onSelect={onSelectParticipant}
-                hideStartTime={event?.hideStartTime}
               />
             </div>
           )}
@@ -2711,8 +2707,6 @@ export default function EventPage() {
           onClose={() => setModalOpen(false)}
           data={modalData}
           eventId={event?.id}
-          eventName={event?.name}
-          hideStartTime={event?.hideStartTime}
         />
 
         <style>{`

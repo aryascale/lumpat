@@ -29,7 +29,6 @@ export default function LeaderboardTable({
   showTop10Badge = false,
   hideTable = false,
   hidePodium = false,
-  hideStartTime = false,
   onSelect,
 }: {
   title: string;
@@ -39,7 +38,6 @@ export default function LeaderboardTable({
   showTop10Badge?: boolean;
   hideTable?: boolean;
   hidePodium?: boolean;
-  hideStartTime?: boolean;
   onSelect?: (row: LeaderRow) => void;
 }) {
   const [q, setQ] = useState("");
@@ -467,11 +465,11 @@ export default function LeaderboardTable({
           <div className="flex flex-col gap-2.5 overflow-x-auto pb-4 pt-1">
             <div className="w-full md:min-w-[800px] flex flex-col gap-2.5">
               {/* Column Header */}
-              <div className={`hidden md:grid ${hideStartTime ? 'grid-cols-[44px_1fr_90px_90px_110px_80px_28px]' : 'grid-cols-[44px_1fr_90px_90px_90px_110px_80px_28px]'} gap-2 px-4 py-2.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-0.5`}>
+              <div className="hidden md:grid grid-cols-[44px_1fr_90px_90px_90px_110px_80px_28px] gap-2 px-4 py-2.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-0.5">
                 <div>#</div>
                 <div>Name</div>
                 <div>Category</div>
-                {!hideStartTime && <div>Start</div>}
+                <div>Start</div>
                 <div>Finish</div>
                 <div>Race Time</div>
                 <div>Avg Pace</div>
@@ -495,7 +493,7 @@ export default function LeaderboardTable({
                     }`}
                   >
                     {/* Desktop row */}
-                    <div className={`hidden md:grid ${hideStartTime ? 'grid-cols-[44px_1fr_90px_90px_110px_80px_28px]' : 'grid-cols-[44px_1fr_90px_90px_90px_110px_80px_28px]'} gap-2 items-center px-4 py-3`}>
+                    <div className="hidden md:grid grid-cols-[44px_1fr_90px_90px_90px_110px_80px_28px] gap-2 items-center px-4 py-3">
                       {/* Rank */}
                       <div className={`font-black text-base ${
                         r.rank === 1 ? 'text-amber-500' :
@@ -534,11 +532,7 @@ export default function LeaderboardTable({
                       <div className="text-xs font-medium text-slate-500">{r.category || "-"}</div>
 
                       {/* Start */}
-                      {!hideStartTime && (
-                        <div className="font-mono text-[11px] text-emerald-500 font-medium">
-                          {r.startTimeRaw || "-"}
-                        </div>
-                      )}
+                      <div className="font-mono text-[11px] text-emerald-500 font-medium">{r.startTimeRaw || "-"}</div>
 
                       {/* Finish */}
                       <div className="font-mono text-[11px] text-rose-400 font-medium">{r.finishTimeRaw || "-"}</div>
@@ -607,14 +601,10 @@ export default function LeaderboardTable({
                           </div>
 
                           <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1.5 text-[10px]">
-                            {!hideStartTime && (
-                              <div className="whitespace-nowrap">
-                                <span className="text-slate-400">Start </span>
-                                <span className="font-mono font-medium text-emerald-500">
-                                  {r.startTimeRaw || "-"}
-                                </span>
-                              </div>
-                            )}
+                            <div className="whitespace-nowrap">
+                              <span className="text-slate-400">Start </span>
+                              <span className="font-mono font-medium text-emerald-500">{r.startTimeRaw || "-"}</span>
+                            </div>
                             <div className="whitespace-nowrap">
                               <span className="text-slate-400">Finish </span>
                               <span className="font-mono font-medium text-rose-400">{r.finishTimeRaw || "-"}</span>
