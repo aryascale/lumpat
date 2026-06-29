@@ -23,6 +23,7 @@ model Event {
   cutoffMs           Int?
   categoryStartTimes Json?
   manualStartTime    DateTime?
+  hideStartTime      Boolean             @default(false)
   logoUrl            String?
   bannerUrl          String?
   homeImageUrl        String?
