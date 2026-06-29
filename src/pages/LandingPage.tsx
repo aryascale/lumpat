@@ -46,12 +46,12 @@ export default function LandingPage() {
   ];
 
   // Rotate hero image every 5 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setHeroIndex((prev) => (prev + 1) % heroImages.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [heroImages.length]);
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     setHeroIndex((prev: any) => (prev + 1) % heroImages.length);
+  //   }, 5000);
+  //   return () => clearInterval(interval);
+  // }, [heroImages.length]);
 
   // Rotate ecosystem carousel every 3.5 seconds
   useEffect(() => {
