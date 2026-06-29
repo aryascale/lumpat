@@ -55,22 +55,22 @@ export default function OverviewPage({ eventId, onConfigChanged }: OverviewPageP
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
-          <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 group">
-            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 group-hover:text-slate-700 transition-colors">Total Revenue</div>
-            <div className="text-3xl font-black text-slate-900 tracking-tight">Rp {(dashboardData?.totalRevenue || 0).toLocaleString('id-ID')}</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+          <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+            <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total Revenue</div>
+            <div className="text-2xl font-black text-gray-900">Rp {(dashboardData?.totalRevenue || 0).toLocaleString('id-ID')}</div>
           </div>
-          <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 group">
-            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 group-hover:text-slate-700 transition-colors">Peserta (Paid)</div>
-            <div className="text-3xl font-black text-slate-900 tracking-tight">{dashboardData?.totalParticipants || 0}</div>
+          <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+            <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Peserta (Paid)</div>
+            <div className="text-2xl font-black text-gray-900">{dashboardData?.totalParticipants || 0}</div>
           </div>
-          <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 group">
-            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 group-hover:text-slate-700 transition-colors">Pending</div>
-            <div className="text-3xl font-black text-slate-900 tracking-tight">{dashboardData?.paymentStatus?.pending || 0}</div>
+          <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+            <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Pending</div>
+            <div className="text-2xl font-black text-gray-900">{dashboardData?.paymentStatus?.pending || 0}</div>
           </div>
-          <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 group">
-            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 group-hover:text-slate-700 transition-colors">Total Events</div>
-            <div className="text-3xl font-black text-slate-900 tracking-tight">{dashboardData?.totalEvents || events.length}</div>
+          <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+            <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total Events</div>
+            <div className="text-2xl font-black text-gray-900">{dashboardData?.totalEvents || events.length}</div>
           </div>
         </div>
       </div>
@@ -93,25 +93,25 @@ export default function OverviewPage({ eventId, onConfigChanged }: OverviewPageP
               </thead>
               <tbody>
                 {(dashboardData?.recentRegistrations || []).map((reg: any) => (
-                  <tr key={reg.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                    <td className="py-4">
-                      <div className="font-bold text-slate-900">{reg.name}</div>
-                      <div className="text-xs text-slate-500 font-medium">{reg.email}</div>
+                  <tr key={reg.id} className="border-b border-gray-50 hover:bg-gray-50/50">
+                    <td className="py-3">
+                      <div className="font-medium text-gray-900">{reg.name}</div>
+                      <div className="text-xs text-gray-500">{reg.email}</div>
                     </td>
-                    <td className="py-4 text-slate-700">
+                    <td className="py-3 text-gray-700">
                       <div className="font-medium">{reg.eventName}</div>
-                      <div className="text-xs text-slate-500">{reg.categoryName}</div>
+                      <div className="text-xs text-gray-500">{reg.categoryName}</div>
                     </td>
-                    <td className="py-4">
-                      <span className={`px-3 py-1 text-[10px] font-bold uppercase rounded-full tracking-wide ${
-                        reg.paymentStatus === 'settlement' ? 'bg-emerald-100 text-emerald-700' :
-                        reg.paymentStatus === 'pending' ? 'bg-amber-100 text-amber-700' :
-                        'bg-slate-100 text-slate-500'
+                    <td className="py-3">
+                      <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-full ${
+                        reg.paymentStatus === 'settlement' ? 'bg-gray-900 text-white' :
+                        reg.paymentStatus === 'pending' ? 'bg-gray-200 text-gray-700' :
+                        'bg-gray-100 text-gray-400'
                       }`}>
                         {reg.paymentStatus}
                       </span>
                     </td>
-                    <td className="py-4 text-xs text-slate-500 font-medium">
+                    <td className="py-3 text-xs text-gray-500">
                       {new Date(reg.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </td>
                   </tr>
@@ -137,10 +137,10 @@ export default function OverviewPage({ eventId, onConfigChanged }: OverviewPageP
                       <div className="font-bold text-gray-900 text-sm">{reg.name}</div>
                       <div className="text-xs text-gray-500">{reg.email}</div>
                     </div>
-                    <span className={`px-2 py-1 text-[9px] font-bold uppercase rounded-full whitespace-nowrap tracking-wide ${
-                      reg.paymentStatus === 'settlement' ? 'bg-emerald-100 text-emerald-700' :
-                      reg.paymentStatus === 'pending' ? 'bg-amber-100 text-amber-700' :
-                      'bg-slate-100 text-slate-500'
+                    <span className={`px-2 py-1 text-[9px] font-bold uppercase rounded-full whitespace-nowrap ${
+                      reg.paymentStatus === 'settlement' ? 'bg-gray-900 text-white' :
+                      reg.paymentStatus === 'pending' ? 'bg-gray-200 text-gray-700' :
+                      'bg-gray-100 text-gray-400'
                     }`}>
                       {reg.paymentStatus}
                     </span>
@@ -164,9 +164,9 @@ export default function OverviewPage({ eventId, onConfigChanged }: OverviewPageP
           </div>
           <div className="space-y-4">
             {[
-              { label: 'Settlement (Lunas)', count: dashboardData?.paymentStatus?.settlement || 0, color: 'bg-emerald-500' },
-              { label: 'Pending (Belum Bayar)', count: dashboardData?.paymentStatus?.pending || 0, color: 'bg-amber-400' },
-              { label: 'Expire / Cancel', count: (dashboardData?.paymentStatus?.expire || 0) + (dashboardData?.paymentStatus?.cancel || 0), color: 'bg-slate-300' },
+              { label: 'Settlement (Lunas)', count: dashboardData?.paymentStatus?.settlement || 0, color: 'bg-gray-900' },
+              { label: 'Pending (Belum Bayar)', count: dashboardData?.paymentStatus?.pending || 0, color: 'bg-gray-400' },
+              { label: 'Expire / Cancel', count: (dashboardData?.paymentStatus?.expire || 0) + (dashboardData?.paymentStatus?.cancel || 0), color: 'bg-gray-200' },
             ].map(stat => {
               const total = Object.values(dashboardData?.paymentStatus || {}).reduce((a: any, b: any) => a + b, 0) as number;
               const percent = total > 0 ? Math.round((stat.count / total) * 100) : 0;

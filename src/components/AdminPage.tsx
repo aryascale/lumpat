@@ -423,33 +423,29 @@ export default function AdminPage({
   // Login form
   if (!authed) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 relative overflow-hidden">
-        {/* Decorative background blur */}
-        <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-rose-500/20 rounded-full blur-[100px] pointer-events-none"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-indigo-500/20 rounded-full blur-[100px] pointer-events-none"></div>
-        
-        <div className="bg-white/80 backdrop-blur-xl border border-white/60 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-10 w-full max-w-md relative z-10">
-          <div className="text-center mb-10">
-            <div className="w-16 h-16 bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-rose-500/30">
+      <div className="min-h-screen bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <span className="text-white font-bold text-3xl">B</span>
             </div>
-            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Welcome Back</h2>
-            <p className="text-slate-500 mt-2 font-medium">BIP Runner Dashboard</p>
+            <h2 className="text-2xl font-bold text-gray-900">Admin Login</h2>
+            <p className="text-gray-600 mt-2">BIP Runner Dashboard</p>
           </div>
 
-          <div className="space-y-5">
+          <div className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Email</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
               <input
                 type="text"
                 value={user}
                 onChange={(e) => setUser(e.target.value)}
-                className="w-full px-5 py-3.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 focus:bg-white transition-all outline-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                 placeholder="admin@biprunner.com"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Password</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
               <input
                 type="password"
                 value={pass}
@@ -462,7 +458,7 @@ export default function AdminPage({
                     alert("Email atau password salah!");
                   }
                 })()}
-                className="w-full px-5 py-3.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 focus:bg-white transition-all outline-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                 placeholder="••••••••"
               />
             </div>
@@ -475,7 +471,7 @@ export default function AdminPage({
                   alert("Email atau password salah!");
                 }
               }}
-              className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors"
             >
               Sign In
             </button>
