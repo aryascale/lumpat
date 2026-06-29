@@ -619,21 +619,32 @@ export default function LeaderboardTable({
                     </div>
 
                     {/* Laps (if any) */}
-                    {r.laps && r.laps.length > 0 && (
-                      <div className="flex gap-2 px-3 pb-2.5 overflow-x-auto">
-                        {r.laps.map((lap, i) => (
-                          <div key={i} className="flex-shrink-0 bg-slate-50 border border-slate-100 rounded px-2 py-1">
-                            <div className="flex justify-between items-start gap-3 mb-0.5">
-                              <span className="text-[9px] font-bold text-slate-400 uppercase leading-none">{lap.label}</span>
-                              <span className="text-[7px] font-bold text-slate-300 bg-slate-100/50 px-1 rounded-sm leading-none pt-[1px]" title={lap.isDuration ? "Duration from Start" : "Time of Day"}>
-                                {lap.isDuration ? "DUR" : "JAM"}
-                              </span>
+                    {(() => {
+                      const visibleLaps = r.laps?.filter(lap => {
+                        const l = lap.label.toUpperCase().trim();
+                        // For loop mode, lap label is like "L1 - FINISH", which doesn't match exactly.
+                        // We only want to filter out exact "START" or "FINISH" checkpoints in regular mode.
+                        return l !== "START" && l !== "FINISH" && l !== "START/FINISH" && l !== "START / FINISH";
+                      }) || [];
+                      
+                      if (visibleLaps.length === 0) return null;
+                      
+                      return (
+                        <div className="flex gap-2 px-3 pb-2.5 overflow-x-auto">
+                          {visibleLaps.map((lap, i) => (
+                            <div key={i} className="flex-shrink-0 bg-slate-50 border border-slate-100 rounded px-2 py-1">
+                              <div className="flex justify-between items-start gap-3 mb-0.5">
+                                <span className="text-[9px] font-bold text-slate-400 uppercase leading-none">{lap.label}</span>
+                                <span className="text-[7px] font-bold text-slate-300 bg-slate-100/50 px-1 rounded-sm leading-none pt-[1px]" title={lap.isDuration ? "Duration from Start" : "Time of Day"}>
+                                  {lap.isDuration ? "DUR" : "JAM"}
+                                </span>
+                              </div>
+                              <span className="font-mono text-xs font-bold text-slate-600 block">{lap.timeDisplay}</span>
                             </div>
-                            <span className="font-mono text-xs font-bold text-slate-600 block">{lap.timeDisplay}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })}
