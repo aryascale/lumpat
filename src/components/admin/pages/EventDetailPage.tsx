@@ -13,6 +13,7 @@ import ManualStartBibPage from "./ManualStartBibPage";
 import ManualFinishBibPage from "./ManualFinishBibPage";
 import CheckpointsPage from "./CheckpointsPage";
 import AdminLiveTrackingTab from '../tabs/AdminLiveTrackingTab';
+import { Eye, EyeOff, Lock, Unlock, ArrowUp, ArrowDown, ChevronsUp, Trash2 } from 'lucide-react';
 
 interface EventDetailPageProps {
   eventId: string;
@@ -1767,48 +1768,48 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                         <div className="flex gap-2 text-xl items-center">
                           <button
                             title={cat.isHidden ? "Show in public pages" : "Hide from public pages"}
-                            className="btn ghost text-xl px-2 py-1"
+                            className="btn ghost p-1 text-gray-500 hover:text-gray-900"
                             onClick={() => toggleCategoryHidden(cat.name)}
                           >
-                            {cat.isHidden ? '👁️' : '👁️‍🗨️'}
+                            {cat.isHidden ? <EyeOff size={18} /> : <Eye size={18} />}
                           </button>
                           <button
                             title={cat.isClosed ? "Open category for registration" : "Close category for registration"}
-                            className="btn ghost text-xl px-2 py-1"
+                            className="btn ghost p-1 text-gray-500 hover:text-gray-900"
                             onClick={() => toggleCategoryClosed(cat.name)}
                           >
-                            {cat.isClosed ? '🔒' : '🔓'}
+                            {cat.isClosed ? <Lock size={18} /> : <Unlock size={18} />}
                           </button>
-                          <div className="flex flex-col gap-0 border-l border-r px-2 border-gray-200">
+                          <div className="flex flex-col gap-1 border-l border-r px-2 border-gray-200">
                             <button
-                              className="btn ghost text-sm px-1 py-0 leading-none text-gray-500 hover:text-blue-600 disabled:opacity-20"
+                              className="btn ghost p-0 leading-none text-gray-500 hover:text-blue-600 disabled:opacity-20"
                               disabled={index === 0}
                               onClick={() => handleMoveUp(index)}
                             >
-                              ↑
+                              <ArrowUp size={14} strokeWidth={3} />
                             </button>
                             <button
-                              className="btn ghost text-sm px-1 py-0 leading-none text-gray-500 hover:text-blue-600 disabled:opacity-20"
+                              className="btn ghost p-0 leading-none text-gray-500 hover:text-blue-600 disabled:opacity-20"
                               disabled={index === categories.length - 1}
                               onClick={() => handleMoveDown(index)}
                             >
-                              ↓
+                              <ArrowDown size={14} strokeWidth={3} />
                             </button>
                           </div>
                           <button
                             title="Move to top"
-                            className="btn ghost text-sm px-1 py-0 disabled:opacity-20"
+                            className="btn ghost p-1 text-gray-500 hover:text-blue-600 disabled:opacity-20"
                             disabled={index === 0}
                             onClick={() => handleMoveToTop(index)}
                           >
-                            ⏫
+                            <ChevronsUp size={18} />
                           </button>
                           <button
                             title="Remove Category"
-                            className="btn ghost text-xl px-2 py-1 ml-auto"
+                            className="btn ghost p-1 ml-auto text-red-500 hover:text-red-700"
                             onClick={() => removeCategory(cat.name)}
                           >
-                            🗑
+                            <Trash2 size={18} />
                           </button>
                         </div>
                       </td>
@@ -1831,47 +1832,51 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                       <span className="font-medium text-gray-900">{cat.name}</span>
                       <span className="text-xs text-gray-400 ml-2">#{index + 1}</span>
                     </div>
-                    <div className="flex gap-1 text-lg">
+                    <div className="flex gap-2 text-lg items-center">
                       <button
                         title={cat.isHidden ? "Show in public pages" : "Hide from public pages"}
-                        className="btn ghost px-1 py-1"
+                        className="btn ghost p-1 text-gray-500"
                         onClick={() => toggleCategoryHidden(cat.name)}
                       >
-                        {cat.isHidden ? '👁️' : '👁️‍🗨️'}
+                        {cat.isHidden ? <EyeOff size={18} /> : <Eye size={18} />}
                       </button>
                       <button
                         title={cat.isClosed ? "Open category for registration" : "Close category for registration"}
-                        className="btn ghost px-1 py-1"
+                        className="btn ghost p-1 text-gray-500"
                         onClick={() => toggleCategoryClosed(cat.name)}
                       >
-                        {cat.isClosed ? '🔒' : '🔓'}
+                        {cat.isClosed ? <Lock size={18} /> : <Unlock size={18} />}
                       </button>
+                      
+                      <div className="flex flex-col gap-1 border-l border-r px-2 border-gray-200">
+                        <button
+                          className="btn ghost p-0 disabled:opacity-20 text-gray-500"
+                          disabled={index === 0}
+                          onClick={() => handleMoveUp(index)}
+                        >
+                          <ArrowUp size={14} strokeWidth={3} />
+                        </button>
+                        <button
+                          className="btn ghost p-0 disabled:opacity-20 text-gray-500"
+                          disabled={index === categories.length - 1}
+                          onClick={() => handleMoveDown(index)}
+                        >
+                          <ArrowDown size={14} strokeWidth={3} />
+                        </button>
+                      </div>
+
                       <button
-                        className="btn ghost px-1 py-1 disabled:opacity-20"
-                        disabled={index === 0}
-                        onClick={() => handleMoveUp(index)}
-                      >
-                        ↑
-                      </button>
-                      <button
-                        className="btn ghost px-1 py-1 disabled:opacity-20"
-                        disabled={index === categories.length - 1}
-                        onClick={() => handleMoveDown(index)}
-                      >
-                        ↓
-                      </button>
-                      <button
-                        className="btn ghost px-1 py-1 disabled:opacity-20"
+                        className="btn ghost p-1 disabled:opacity-20 text-gray-500"
                         disabled={index === 0}
                         onClick={() => handleMoveToTop(index)}
                       >
-                        ⏫
+                        <ChevronsUp size={18} />
                       </button>
                       <button
-                        className="btn ghost px-1 py-1"
+                        className="btn ghost p-1 text-red-500 ml-auto"
                         onClick={() => removeCategory(cat.name)}
                       >
-                        🗑
+                        <Trash2 size={18} />
                       </button>
                     </div>
                   </div>
