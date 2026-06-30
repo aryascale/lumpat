@@ -54,7 +54,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   const [participants, setParticipants] = useState<any[]>([]);
   const [csvMeta, setCsvMeta] = useState<Array<{ key: CsvKind; filename: string; updatedAt: number; rows: number }>>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
-  const [categories, setCategories] = useState<Array<{ id?: string; name: string; price: number; quota: number; isHidden?: boolean; sold?: number }>>([]);
+  const [categories, setCategories] = useState<Array<{ id?: string; name: string; price: number; quota: number; isHidden?: boolean; isClosed?: boolean; sold?: number }>>([]);
   const [loading, setLoading] = useState(true);
 
   const [bannerFile, setBannerFile] = useState<File | null>(null);
@@ -675,7 +675,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
 
     const price = parseInt(newCategoryPrice) || 0;
     const quota = parseInt(newCategoryQuota) || 0;
-    const updated = [...categories, { name: trimmed, price, quota, isHidden: false }];
+    const updated = [...categories, { name: trimmed, price, quota, isHidden: false, isClosed: false }];
     await saveCategories(updated);
     setNewCategory('');
     setNewCategoryPrice('');
@@ -700,6 +700,37 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
 
   const toggleCategoryHidden = async (catName: string) => {
     const updated = categories.map(c => c.name === catName ? { ...c, isHidden: !c.isHidden } : c);
+    setCategories(updated);
+    await saveCategories(updated);
+  };
+
+  const toggleCategoryClosed = async (catName: string) => {
+    const updated = categories.map(c => c.name === catName ? { ...c, isClosed: !c.isClosed } : c);
+    setCategories(updated);
+    await saveCategories(updated);
+  };
+
+  const handleMoveUp = async (index: number) => {
+    if (index === 0) return;
+    const updated = [...categories];
+    [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
+    setCategories(updated);
+    await saveCategories(updated);
+  };
+
+  const handleMoveDown = async (index: number) => {
+    if (index === categories.length - 1) return;
+    const updated = [...categories];
+    [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
+    setCategories(updated);
+    await saveCategories(updated);
+  };
+
+  const handleMoveToTop = async (index: number) => {
+    if (index === 0) return;
+    const updated = [...categories];
+    const item = updated.splice(index, 1)[0];
+    updated.unshift(item);
     setCategories(updated);
     await saveCategories(updated);
   };
@@ -792,7 +823,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
     }
   };
 
-  const saveCategories = async (cats: Array<{ name: string; price: number; quota: number; isHidden?: boolean }>) => {
+  const saveCategories = async (cats: Array<{ name: string; price: number; quota: number; isHidden?: boolean; isClosed?: boolean }>) => {
     setSavingCategories(true);
     try {
       const res = await fetch(`/api/categories?eventId=${eventId}`, {
@@ -1733,20 +1764,51 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                         {(cat as any).sold || 0}
                       </td>
                       <td>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 text-xl items-center">
                           <button
-                            className="btn ghost text-sm px-2 py-1"
-                            style={{ color: cat.isHidden ? '#10b981' : '#f59e0b' }}
+                            title={cat.isHidden ? "Show in public pages" : "Hide from public pages"}
+                            className="btn ghost text-xl px-2 py-1"
                             onClick={() => toggleCategoryHidden(cat.name)}
                           >
-                            {cat.isHidden ? 'Show' : 'Hide'}
+                            {cat.isHidden ? '👁️' : '👁️‍🗨️'}
                           </button>
                           <button
-                            className="btn ghost text-sm px-2 py-1"
-                            style={{ color: '#dc2626' }}
+                            title={cat.isClosed ? "Open category for registration" : "Close category for registration"}
+                            className="btn ghost text-xl px-2 py-1"
+                            onClick={() => toggleCategoryClosed(cat.name)}
+                          >
+                            {cat.isClosed ? '🔒' : '🔓'}
+                          </button>
+                          <div className="flex flex-col gap-0 border-l border-r px-2 border-gray-200">
+                            <button
+                              className="btn ghost text-sm px-1 py-0 leading-none text-gray-500 hover:text-blue-600 disabled:opacity-20"
+                              disabled={index === 0}
+                              onClick={() => handleMoveUp(index)}
+                            >
+                              ↑
+                            </button>
+                            <button
+                              className="btn ghost text-sm px-1 py-0 leading-none text-gray-500 hover:text-blue-600 disabled:opacity-20"
+                              disabled={index === categories.length - 1}
+                              onClick={() => handleMoveDown(index)}
+                            >
+                              ↓
+                            </button>
+                          </div>
+                          <button
+                            title="Move to top"
+                            className="btn ghost text-sm px-1 py-0 disabled:opacity-20"
+                            disabled={index === 0}
+                            onClick={() => handleMoveToTop(index)}
+                          >
+                            ⏫
+                          </button>
+                          <button
+                            title="Remove Category"
+                            className="btn ghost text-xl px-2 py-1 ml-auto"
                             onClick={() => removeCategory(cat.name)}
                           >
-                            Remove
+                            🗑
                           </button>
                         </div>
                       </td>
@@ -1769,20 +1831,47 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                       <span className="font-medium text-gray-900">{cat.name}</span>
                       <span className="text-xs text-gray-400 ml-2">#{index + 1}</span>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1 text-lg">
                       <button
-                        className="btn ghost text-sm"
-                        style={{ color: cat.isHidden ? '#10b981' : '#f59e0b' }}
+                        title={cat.isHidden ? "Show in public pages" : "Hide from public pages"}
+                        className="btn ghost px-1 py-1"
                         onClick={() => toggleCategoryHidden(cat.name)}
                       >
-                        {cat.isHidden ? 'Show' : 'Hide'}
+                        {cat.isHidden ? '👁️' : '👁️‍🗨️'}
                       </button>
                       <button
-                        className="btn ghost text-sm"
-                        style={{ color: '#dc2626' }}
+                        title={cat.isClosed ? "Open category for registration" : "Close category for registration"}
+                        className="btn ghost px-1 py-1"
+                        onClick={() => toggleCategoryClosed(cat.name)}
+                      >
+                        {cat.isClosed ? '🔒' : '🔓'}
+                      </button>
+                      <button
+                        className="btn ghost px-1 py-1 disabled:opacity-20"
+                        disabled={index === 0}
+                        onClick={() => handleMoveUp(index)}
+                      >
+                        ↑
+                      </button>
+                      <button
+                        className="btn ghost px-1 py-1 disabled:opacity-20"
+                        disabled={index === categories.length - 1}
+                        onClick={() => handleMoveDown(index)}
+                      >
+                        ↓
+                      </button>
+                      <button
+                        className="btn ghost px-1 py-1 disabled:opacity-20"
+                        disabled={index === 0}
+                        onClick={() => handleMoveToTop(index)}
+                      >
+                        ⏫
+                      </button>
+                      <button
+                        className="btn ghost px-1 py-1"
                         onClick={() => removeCategory(cat.name)}
                       >
-                        Remove
+                        🗑
                       </button>
                     </div>
                   </div>
