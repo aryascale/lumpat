@@ -21,6 +21,7 @@ model Event {
   status             String              @default("upcoming")
   isActive           Boolean             @default(true)
   cutoffMs           Int?
+  timezoneOffset     Int                 @default(7)
   categoryStartTimes Json?
   manualStartTime    DateTime?
   logoUrl            String?

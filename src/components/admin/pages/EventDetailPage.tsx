@@ -2829,6 +2829,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                         location: eventData.location,
                         isLoopMode: eventData.isLoopMode,
                         minLapTimeMs: eventData.minLapTimeMs,
+                        timezoneOffset: eventData.timezoneOffset,
                         content: {
                           ...(eventData.content || {}),
                           about: homeContent.about || eventData.content?.about || '',
@@ -2923,6 +2924,15 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                     className="search w-full"
                     value={eventData?.location || ''}
                     onChange={(e) => setEventData({ ...eventData, location: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">GMT Timezone Offset (Hours)</label>
+                  <input
+                    type="number"
+                    className="search w-full"
+                    value={eventData?.timezoneOffset ?? 7}
+                    onChange={(e) => setEventData({ ...eventData, timezoneOffset: parseInt(e.target.value) || 0 })}
                   />
                 </div>
               </div>

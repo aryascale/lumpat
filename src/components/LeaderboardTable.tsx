@@ -92,11 +92,11 @@ export default function LeaderboardTable({
     }
 
     const finishers = currentRows.filter(
-      (r) => r.totalTimeDisplay !== "DNF" && r.totalTimeDisplay !== "DSQ" && r.totalTimeDisplay !== "ACTIVE"
+      (r) => r.totalTimeDisplay !== "DNF" && r.totalTimeDisplay !== "DSQ" && r.totalTimeDisplay !== "ACTIVE" && r.totalTimeDisplay !== "RUNNER"
     );
     const dnfs = currentRows.filter((r) => r.totalTimeDisplay === "DNF").sort((a, b) => a.totalTimeMs - b.totalTimeMs);
     const dsqs = currentRows.filter((r) => r.totalTimeDisplay === "DSQ");
-    const actives = currentRows.filter((r) => r.totalTimeDisplay === "ACTIVE");
+    const actives = currentRows.filter((r) => r.totalTimeDisplay === "ACTIVE" || r.totalTimeDisplay === "RUNNER");
 
     const rankedFinishers = [...finishers]
       .sort((a, b) => {
@@ -133,7 +133,7 @@ export default function LeaderboardTable({
     if (q) return [];
 
     const buildTop3 = (list: LeaderRow[]) => {
-      const finishers = list.filter(r => r.totalTimeDisplay !== 'DNF' && r.totalTimeDisplay !== 'DSQ' && r.totalTimeDisplay !== 'ACTIVE');
+      const finishers = list.filter(r => r.totalTimeDisplay !== 'DNF' && r.totalTimeDisplay !== 'DSQ' && r.totalTimeDisplay !== 'ACTIVE' && r.totalTimeDisplay !== 'RUNNER');
       const sorted = [...finishers].sort((a, b) => {
         const aLaps = a.laps?.length || 0;
         const bLaps = b.laps?.length || 0;
@@ -479,7 +479,7 @@ export default function LeaderboardTable({
               {filtered.map((r) => {
                 const pos = r.rank ?? "-";
                 const isSpecial = r.totalTimeDisplay === "DNF" || r.totalTimeDisplay === "DSQ";
-                const isActive = r.totalTimeDisplay === "ACTIVE";
+                const isActive = r.totalTimeDisplay === "ACTIVE" || r.totalTimeDisplay === "RUNNER";
                 const isTop3 = r.rank != null && r.rank <= 3;
 
                 return (

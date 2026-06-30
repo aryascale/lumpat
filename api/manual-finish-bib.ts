@@ -21,10 +21,33 @@ export default async function handler(event: any) {
       const body = parseBody(event);
       if (!body) return errorResponse('Missing request body', 400);
 
-      const { bib, epc, timeStr } = body;
+      let { bib, epc, timeStr, clickTimestamp } = body;
 
-      if (!bib || !epc || !timeStr) {
-        return errorResponse('bib, epc, and timeStr are required', 400);
+      if (!bib || !epc) {
+        return errorResponse('bib and epc are required', 400);
+      }
+
+      if (clickTimestamp) {
+        const ev: any = await query('SELECT timezoneOffset FROM Event WHERE id = ? LIMIT 1', [eventId]);
+        const tz = ev[0]?.timezoneOffset ?? 7;
+        
+        const d = new Date(clickTimestamp);
+        d.setUTCHours(d.getUTCHours() + tz);
+        
+        const pad = (n: number, len = 2) => String(n).padStart(len, "0");
+        const DD = pad(d.getUTCDate());
+        const MM = pad(d.getUTCMonth() + 1);
+        const YYYY = d.getUTCFullYear();
+        const HH = pad(d.getUTCHours());
+        const mm = pad(d.getUTCMinutes());
+        const ss = pad(d.getUTCSeconds());
+        const SSS = pad(d.getUTCMilliseconds(), 3);
+        
+        timeStr = `${DD}:${MM}:${YYYY} ${HH}:${mm}:${ss}:${SSS}`;
+      }
+
+      if (!timeStr) {
+        return errorResponse('timeStr or clickTimestamp is required', 400);
       }
 
       // Upsert: insert or update if exists

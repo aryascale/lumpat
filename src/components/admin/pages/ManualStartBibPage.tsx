@@ -42,6 +42,17 @@ export default function ManualStartBibPage({ allRows, onDataVersionBump, eventId
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
+  // Network time sync
+  const [timeOffset, setTimeOffset] = useState(0);
+  useEffect(() => {
+    fetch('/api/time')
+      .then(r => r.json())
+      .then(d => {
+        if (d.serverTime) setTimeOffset(d.serverTime - Date.now());
+      })
+      .catch(() => {});
+  }, []);
+
   const msByBib = useMemo(() => {
     const map = new Map<string, ManualStartRecord>();
     manualStarts.forEach(m => map.set(m.bib, m));
@@ -157,18 +168,7 @@ export default function ManualStartBibPage({ allRows, onDataVersionBump, eventId
   };
 
   const assignCurrentBrowserTime = async (row: MasterRow) => {
-    const d = new Date();
-    const pad = (n: number, len = 2) => String(n).padStart(len, "0");
-    const DD = pad(d.getDate());
-    const MM = pad(d.getMonth() + 1);
-    const YYYY = d.getFullYear();
-    const HH = pad(d.getHours());
-    const mm = pad(d.getMinutes());
-    const ss = pad(d.getSeconds());
-    const SSS = pad(d.getMilliseconds(), 3);
-    
-    // DD:MM:YYYY HH:MM:SS:SSS
-    const finalTime = `${DD}:${MM}:${YYYY} ${HH}:${mm}:${ss}:${SSS}`;
+    const networkTime = Date.now() + timeOffset;
 
     setSaving(true);
     try {
@@ -178,7 +178,7 @@ export default function ManualStartBibPage({ allRows, onDataVersionBump, eventId
         body: JSON.stringify({
           bib: row.bib,
           epc: row.epc,
-          timeStr: finalTime,
+          clickTimestamp: networkTime,
         }),
       });
 

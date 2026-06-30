@@ -41,6 +41,7 @@ function formatEvent(event: any) {
     isDeleted: !!event.isDeleted,
     createdAt: event.createdAt instanceof Date ? event.createdAt.getTime() : event.createdAt,
     cutoffMs: event.cutoffMs,
+    timezoneOffset: event.timezoneOffset,
     categoryStartTimes,
     manualStartTime: event.manualStartTime instanceof Date ? event.manualStartTime.toISOString() : event.manualStartTime || null,
   };
@@ -205,6 +206,7 @@ export default async function handler(req: any) {
       if (body.bannerUrl !== undefined) { fields.push('bannerUrl = ?'); values.push(body.bannerUrl); }
       if (body.homeImageUrl !== undefined) { fields.push('homeImageUrl = ?'); values.push(body.homeImageUrl); }
       if (body.cutoffMs !== undefined) { fields.push('cutoffMs = ?'); values.push(body.cutoffMs); }
+      if (body.timezoneOffset !== undefined) { fields.push('timezoneOffset = ?'); values.push(body.timezoneOffset); }
       if (body.categoryStartTimes !== undefined) { fields.push('categoryStartTimes = ?'); values.push(JSON.stringify(body.categoryStartTimes)); }
       if (body.tshirtSizes !== undefined) { fields.push('tshirtSizes = ?'); values.push(body.tshirtSizes); }
       if (body.bibCustomPrice !== undefined) { fields.push('bibCustomPrice = ?'); values.push(body.bibCustomPrice); }
