@@ -33,9 +33,11 @@ export function useLeaderboardData(eventId: string) {
     loading: liveLoading,
   } = useLiveTiming(eventId);
 
+  const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(new Set());
+
   const eventCategories: string[] = useMemo(() => {
-    return currentEvent?.categories || [];
-  }, [currentEvent?.categories]);
+    return (currentEvent?.categories || []).filter(c => !hiddenCategories.has(c));
+  }, [currentEvent?.categories, hiddenCategories]);
 
   const normCat = (s: string) =>
     String(s || "")
@@ -107,6 +109,21 @@ export function useLeaderboardData(eventId: string) {
         } catch {}
         const catStartRaw: Record<string, string> =
           (currentEvent?.categoryStartTimes as Record<string, string>) ?? {};
+
+        // Load hidden categories from API
+        try {
+          const catRes = await fetch(`/api/categories?eventId=${eventId}`);
+          if (catRes.ok) {
+            const catData = await catRes.json();
+            if (catData.categories) {
+              const hiddenNames = new Set<string>();
+              catData.categories.forEach((c: any) => {
+                if (c.isHidden) hiddenNames.add(c.name);
+              });
+              setHiddenCategories(hiddenNames);
+            }
+          }
+        } catch {}
 
         // Load penalty map from API
         const penaltyMap = new Map<string, number>();

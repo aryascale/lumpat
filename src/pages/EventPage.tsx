@@ -81,6 +81,8 @@ interface CategoryDetail {
   price: number;
   quota: number;
   sold: number;
+  isHidden?: boolean;
+  isClosed?: boolean;
 }
 
 interface RegistrationField {
@@ -187,6 +189,16 @@ export default function EventPage() {
     [],
   );
   const [categoryDetails, setCategoryDetails] = useState<CategoryDetail[]>([]);
+
+  const visibleEventCategories = useMemo(() => {
+    const hiddenNames = new Set(
+      categoryDetails.filter((c) => c.isHidden).map((c) => c.name)
+    );
+    return (event?.categories || []).filter(
+      (catName) => !hiddenNames.has(catName)
+    );
+  }, [event?.categories, categoryDetails]);
+
   const [customFields, setCustomFields] = useState<RegistrationField[]>([]);
   const [tshirtInventory, setTshirtInventory] = useState<TshirtStock[]>([]);
   const [bulkQty, setBulkQty] = useState(1);
@@ -956,7 +968,7 @@ export default function EventPage() {
               });
             });
         } else {
-          const adminCategories = event.categories || [];
+          const adminCategories = visibleEventCategories;
 
           const resolveAdminCategory = (cat: string, gender: string) => {
             const normCatStr = normCat(cat);
@@ -1414,7 +1426,7 @@ export default function EventPage() {
         const genderRankByEpc = new Map<string, number>();
         const ageRankByEpc = new Map<string, number>();
 
-        const eventCategories = event.categories || [];
+        const eventCategories = visibleEventCategories;
         const eventCategoriesToLoop =
           eventCategories.length > 0
             ? eventCategories
@@ -1475,7 +1487,7 @@ export default function EventPage() {
         ];
 
         const catMap: Record<string, LeaderRow[]> = {};
-        (event.categories || []).forEach((catKey) => {
+        visibleEventCategories.forEach((catKey) => {
           const list = overallFinal.filter(
             (r) => normCat(r.sourceCategoryKey) === normCat(catKey),
           );
@@ -1504,7 +1516,7 @@ export default function EventPage() {
   }, [
     recalcTick,
     event?.id,
-    event?.categories,
+    visibleEventCategories,
     registeredParticipants,
     recordsByEpc,
     checkpoints,
@@ -1555,9 +1567,9 @@ export default function EventPage() {
     baseTabs.push("Results");
 
     // Append categories
-    return [...baseTabs, ...(event?.categories || [])];
+    return [...baseTabs, ...visibleEventCategories];
   }, [
-    event?.categories,
+    visibleEventCategories,
     event?.gpxFile,
     event?.content?.routeGpxFiles,
     event?.latitude,
@@ -1943,7 +1955,7 @@ export default function EventPage() {
                 title="Overall Result Rankings"
                 eventName={event?.name}
                 rows={overallWithLatestCp}
-                categories={event?.categories || []}
+                categories={visibleEventCategories}
                 onSelect={onSelectParticipant}
                 showTop10Badge={true}
                 hidePodium={true}
@@ -2711,6 +2723,7 @@ export default function EventPage() {
                     }}
                     options={categoryDetails
                       .filter((c) => c.quota === 0 || c.sold < c.quota)
+                      .filter((c) => !c.isHidden && !c.isClosed)
                       .map((c) => ({
                         label: `${c.name} - Rp ${c.price.toLocaleString("id-ID")}${c.quota > 0 ? ` (${c.quota - c.sold} slot)` : ""}`,
                         value: c.id,

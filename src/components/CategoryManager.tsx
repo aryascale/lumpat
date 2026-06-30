@@ -4,6 +4,7 @@ import { DEFAULT_CATEGORIES } from "../lib/config";
 interface CategoryItem {
   name: string;
   isHidden?: boolean;
+  isClosed?: boolean;
 }
 
 interface CategoryManagerProps {
@@ -16,7 +17,7 @@ export default function CategoryManager({
   onCategoriesChange,
 }: CategoryManagerProps) {
   const [categories, setCategories] = useState<CategoryItem[]>(
-    DEFAULT_CATEGORIES.map((c) => ({ name: c, isHidden: false })),
+    DEFAULT_CATEGORIES.map((c) => ({ name: c, isHidden: false, isClosed: false })),
   );
   const [newCategory, setNewCategory] = useState("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -43,22 +44,22 @@ export default function CategoryManager({
         const data = await response.json();
         if (data.categories && data.categories.length > 0) {
           const mapped = data.categories.map((c: any) =>
-            typeof c === "string" ? { name: c, isHidden: false } : c,
+            typeof c === "string" ? { name: c, isHidden: false, isClosed: false } : c,
           );
           setCategories(mapped);
         } else {
           setCategories(
-            DEFAULT_CATEGORIES.map((c) => ({ name: c, isHidden: false })),
+            DEFAULT_CATEGORIES.map((c) => ({ name: c, isHidden: false, isClosed: false })),
           );
         }
       } else {
         setCategories(
-          DEFAULT_CATEGORIES.map((c) => ({ name: c, isHidden: false })),
+          DEFAULT_CATEGORIES.map((c) => ({ name: c, isHidden: false, isClosed: false })),
         );
       }
     } catch (error) {
       setCategories(
-        DEFAULT_CATEGORIES.map((c) => ({ name: c, isHidden: false })),
+        DEFAULT_CATEGORIES.map((c) => ({ name: c, isHidden: false, isClosed: false })),
       );
     } finally {
       setLoading(false);
@@ -112,7 +113,7 @@ export default function CategoryManager({
       return;
     }
 
-    const updated = [...categories, { name: trimmed, isHidden: false }];
+    const updated = [...categories, { name: trimmed, isHidden: false, isClosed: false }];
     setCategories(updated);
     setNewCategory("");
     onCategoriesChange?.(updated.map((c) => c.name));
@@ -165,7 +166,21 @@ export default function CategoryManager({
     const updated = [...categories];
     updated[index] = { ...updated[index], isHidden: !updated[index].isHidden };
     setCategories(updated);
-    // Don't auto-save immediately to let user confirm with Save Changes button
+  }
+
+  function handleToggleClose(index: number) {
+    const updated = [...categories];
+    updated[index] = { ...updated[index], isClosed: !updated[index].isClosed };
+    setCategories(updated);
+  }
+
+  function handleMoveToTop(index: number) {
+    if (index === 0) return;
+    const updated = [...categories];
+    const item = updated.splice(index, 1)[0];
+    updated.unshift(item);
+    setCategories(updated);
+    onCategoriesChange?.(updated.map((c) => c.name));
   }
 
   function handleMoveUp(index: number) {
@@ -183,6 +198,7 @@ export default function CategoryManager({
     setCategories(updated);
     onCategoriesChange?.(updated.map((c) => c.name));
   }
+
   if (loading) {
     return (
       <div className="card">
@@ -253,7 +269,7 @@ export default function CategoryManager({
             <tr>
               <th style={{ width: "60px" }}>Order</th>
               <th>Category Name</th>
-              <th style={{ width: "150px" }}>Actions</th>
+              <th style={{ width: "200px" }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -357,6 +373,11 @@ export default function CategoryManager({
                             Hidden
                           </span>
                         )}
+                        {category.isClosed && !category.isHidden && (
+                          <span className="text-[10px] bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-sm font-semibold tracking-wide uppercase">
+                            Closed
+                          </span>
+                        )}
                       </div>
                     )}
                   </td>
@@ -382,8 +403,31 @@ export default function CategoryManager({
                       ) : (
                         <>
                           <button
+                            onClick={() => handleMoveToTop(index)}
+                            className="btn ghost px-1.5"
+                            title="Move to Top"
+                            disabled={index === 0}
+                            style={{ color: index === 0 ? "#d1d5db" : "#3b82f6" }}
+                          >
+                            ⏫
+                          </button>
+                          <button
+                            onClick={() => handleToggleClose(index)}
+                            className="btn ghost px-1.5"
+                            title={
+                              category.isClosed
+                                ? "Open Registration"
+                                : "Close Registration"
+                            }
+                            style={{
+                              color: category.isClosed ? "#9ca3af" : "#d97706",
+                            }}
+                          >
+                            {category.isClosed ? "🔒" : "🔓"}
+                          </button>
+                          <button
                             onClick={() => handleToggleHide(index)}
-                            className="btn ghost"
+                            className="btn ghost px-1.5"
                             title={
                               category.isHidden
                                 ? "Unhide Category"
@@ -429,14 +473,14 @@ export default function CategoryManager({
                           </button>
                           <button
                             onClick={() => handleStartEdit(index)}
-                            className="btn ghost"
+                            className="btn ghost px-1.5"
                             title="Edit"
                           >
                             ✎
                           </button>
                           <button
                             onClick={() => handleDeleteCategory(index)}
-                            className="btn ghost"
+                            className="btn ghost px-1.5"
                             title="Delete"
                             style={{ color: "#dc2626" }}
                           >
@@ -518,7 +562,7 @@ export default function CategoryManager({
                       </button>
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span
                           className={`font-medium ${category.isHidden ? "text-gray-500 line-through" : "text-gray-900"}`}
                         >
@@ -529,29 +573,55 @@ export default function CategoryManager({
                             Hidden
                           </span>
                         )}
+                        {category.isClosed && !category.isHidden && (
+                          <span className="text-[10px] bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-sm font-semibold tracking-wide uppercase">
+                            Closed
+                          </span>
+                        )}
                       </div>
                       <div className="text-xs text-gray-400">#{index + 1}</div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap justify-end gap-1 mt-2">
+                    <button
+                      onClick={() => handleMoveToTop(index)}
+                      className="btn ghost text-sm px-1.5"
+                      title="Move to Top"
+                      disabled={index === 0}
+                    >
+                      ⏫
+                    </button>
+                    <button
+                      onClick={() => handleToggleClose(index)}
+                      className="btn ghost text-sm px-1.5"
+                      title={
+                        category.isClosed
+                          ? "Open Registration"
+                          : "Close Registration"
+                      }
+                    >
+                      {category.isClosed ? "🔒" : "🔓"}
+                    </button>
                     <button
                       onClick={() => handleToggleHide(index)}
-                      className="btn ghost text-sm px-2"
+                      className="btn ghost text-sm px-1.5"
                       title={
-                        category.isHidden ? "Unhide Category" : "Hide Category"
+                        category.isHidden
+                          ? "Unhide Category"
+                          : "Hide Category"
                       }
                     >
                       {category.isHidden ? "👁️‍🗨️" : "👁️"}
                     </button>
                     <button
                       onClick={() => handleStartEdit(index)}
-                      className="btn ghost text-sm px-2"
+                      className="btn ghost text-sm px-1.5"
                     >
                       ✎
                     </button>
                     <button
                       onClick={() => handleDeleteCategory(index)}
-                      className="btn ghost text-sm px-2"
+                      className="btn ghost text-sm px-1.5"
                       style={{ color: "#dc2626" }}
                     >
                       🗑

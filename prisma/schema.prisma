@@ -55,6 +55,7 @@ model Category {
   price         Int                 @default(0)
   quota         Int                 @default(0)
   isHidden      Boolean             @default(false)
+  isClosed      Boolean             @default(false)
   event         Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
   registrations EventRegistration[]
 
