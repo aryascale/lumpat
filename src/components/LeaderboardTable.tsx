@@ -784,14 +784,14 @@ export default function LeaderboardTable({
 
                       {/* Race Time */}
                       <div
-                        className={`font-mono font-bold text-xs px-2.5 py-1 rounded inline-flex items-center justify-center ${
+                        className={`font-mono font-bold text-xs inline-flex items-center justify-center ${
                           isSpecial
-                            ? "bg-red-100 text-red-600"
+                            ? "px-2.5 py-1 rounded bg-red-100 text-red-600"
                             : isActive
-                              ? "bg-emerald-100 text-emerald-600"
+                              ? "text-emerald-500"
                               : isTop3
-                                ? "bg-slate-800 text-white"
-                                : "bg-slate-100 text-slate-700"
+                                ? "px-2.5 py-1 rounded bg-slate-800 text-white"
+                                : "px-2.5 py-1 rounded bg-slate-100 text-slate-700"
                         }`}
                       >
                         {r.totalTimeDisplay}
@@ -874,14 +874,14 @@ export default function LeaderboardTable({
                               </div>
                             </div>
                             <div
-                              className={`flex-shrink-0 font-mono font-bold text-[11px] px-2 py-1 rounded ${
+                              className={`flex-shrink-0 font-mono font-bold text-[11px] ${
                                 isSpecial
-                                  ? "bg-red-100 text-red-600"
+                                  ? "px-2 py-1 rounded bg-red-100 text-red-600"
                                   : isActive
-                                    ? "bg-emerald-100 text-emerald-600"
+                                    ? "text-emerald-500"
                                     : isTop3
-                                      ? "bg-slate-800 text-white"
-                                      : "bg-slate-100 text-slate-700"
+                                      ? "px-2 py-1 rounded bg-slate-800 text-white"
+                                      : "px-2 py-1 rounded bg-slate-100 text-slate-700"
                               }`}
                             >
                               {r.totalTimeDisplay}
