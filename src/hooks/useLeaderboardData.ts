@@ -568,7 +568,9 @@ export function useLeaderboardData(eventId: string) {
               : isDNF
                 ? "DNF"
                 : isLiveActive
-                  ? "RUNNER"
+                  ? startMs
+                    ? "RUNNER"
+                    : "-"
                   : formatDuration(total!),
             penaltyMs: penMs,
             epc: p.epc,
@@ -586,7 +588,8 @@ export function useLeaderboardData(eventId: string) {
             r.totalTimeDisplay !== "DNF" &&
             r.totalTimeDisplay !== "DSQ" &&
             r.totalTimeDisplay !== "RUNNER" &&
-            r.totalTimeDisplay !== "ACTIVE",
+            r.totalTimeDisplay !== "ACTIVE" &&
+            r.totalTimeDisplay !== "-",
         );
         const finisherSorted = [...finishers]
           .sort((a, b) => a.totalTimeMs - b.totalTimeMs)
@@ -600,12 +603,14 @@ export function useLeaderboardData(eventId: string) {
           .filter((r) => r.totalTimeDisplay === "DNF")
           .sort((a, b) => a.totalTimeMs - b.totalTimeMs);
         const dsqs = uniqueRows.filter((r) => r.totalTimeDisplay === "DSQ");
+        const notStarted = uniqueRows.filter((r) => r.totalTimeDisplay === "-");
 
         const overallFinal: LeaderRow[] = [
           ...finisherSorted,
           ...dnfs.map((r) => ({ ...r, rank: null })),
           ...dsqs.map((r) => ({ ...r, rank: null })),
           ...actives.map((r) => ({ ...r, rank: null })),
+          ...notStarted.map((r) => ({ ...r, rank: null })),
         ];
 
         const catMap: Record<string, LeaderRow[]> = {};
