@@ -506,10 +506,6 @@ export function useLeaderboardData(eventId: string) {
             latestCpStr = `${latest.checkpointName} (${cpTimeStr})`;
           }
 
-          if (total == null && epsRecords && epsRecords.length > 0 && startMs) {
-            const latest = epsRecords[epsRecords.length - 1];
-            total = new Date(latest.time).getTime() - startMs;
-          }
 
           let isLiveActive = false;
           if (!Number.isFinite(total) || total == null || total === 0) {

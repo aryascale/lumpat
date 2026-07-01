@@ -990,8 +990,18 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         finalStr = `${today} ${t}.000`;
       }
 
-      // Convert local datetime string to proper ISO string with browser's timezone
-      const isoString = finalStr ? new Date(finalStr.replace(' ', 'T')).toISOString() : null;
+      // Parse local time explicitly to avoid UTC-shifting bugs in browsers
+      let isoString = null;
+      if (finalStr) {
+        const [datePart, timePart] = finalStr.split(' ');
+        const [YYYY, MM, DD] = datePart.split('-');
+        const [hh, mm, ss] = timePart.split(':');
+        const [sec, ms] = ss.split('.');
+        
+        // This creates a Date in the browser's local timezone
+        const d = new Date(Number(YYYY), Number(MM) - 1, Number(DD), Number(hh), Number(mm), Number(sec), Number(ms || 0));
+        isoString = d.toISOString();
+      }
 
       const manualRes = await fetch(`/api/manual-start?eventId=${eventId}`, {
         method: "POST",
