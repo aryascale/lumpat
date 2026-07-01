@@ -9,6 +9,18 @@ import {
 import parseTimeToMs, { extractTimeOfDay, formatDuration } from "../lib/time";
 import { useLiveTiming } from "./useLiveTiming";
 
+function formatLocalTime(ms: number, tzOffset: number, includeMs = true): string {
+  const d = new Date(ms + tzOffset * 60 * 60 * 1000);
+  const hh = String(d.getUTCHours()).padStart(2, '0');
+  const mm = String(d.getUTCMinutes()).padStart(2, '0');
+  const ss = String(d.getUTCSeconds()).padStart(2, '0');
+  if (includeMs) {
+    const msec = String(d.getUTCMilliseconds()).padStart(3, '0');
+    return `${hh}:${mm}:${ss}.${msec}`;
+  }
+  return `${hh}:${mm}:${ss}`;
+}
+
 export type LoadState =
   | { status: "loading"; msg: string }
   | { status: "error"; msg: string }
@@ -242,6 +254,8 @@ export function useLeaderboardData(eventId: string) {
           }
         });
 
+        const tzOffset = (currentEvent as any)?.timezoneOffset ?? 7;
+
         localMasterAll.forEach((p) => {
           if (hiddenMap[p.epc]) return;
           let finishEntry = finishMap.get(p.epc);
@@ -273,17 +287,10 @@ export function useLeaderboardData(eventId: string) {
                   .includes("finish"),
             );
             if (finishRecord) {
-              const finishRawLocal = new Date(
-                finishRecord.time,
-              ).toLocaleTimeString("en-US", {
-                hour12: false,
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                fractionalSecondDigits: 3,
-              } as any);
+              const finishMs = new Date(finishRecord.time).getTime();
+              const finishRawLocal = formatLocalTime(finishMs, tzOffset);
               finishEntry = {
-                ms: new Date(finishRecord.time).getTime(),
+                ms: finishMs,
                 raw: finishRawLocal,
               };
             }
@@ -327,15 +334,7 @@ export function useLeaderboardData(eventId: string) {
               if (!baseStartTime) {
                 baseStartTime = new Date(sortedRecords[0].time).getTime();
                 startMs = baseStartTime;
-                rawStartStrForDisplay = new Date(
-                  baseStartTime,
-                ).toLocaleTimeString("en-US", {
-                  hour12: false,
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                  fractionalSecondDigits: 3,
-                } as any);
+                rawStartStrForDisplay = formatLocalTime(baseStartTime, tzOffset);
               }
 
               const lastTimeByCp: Record<string, number> = {};
@@ -374,9 +373,7 @@ export function useLeaderboardData(eventId: string) {
                 total = lastCrossing - baseStartTime;
                 finishEntry = {
                   ms: lastCrossing,
-                  raw: new Date(lastCrossing).toLocaleTimeString("en-US", {
-                    hour12: false,
-                  }),
+                  raw: formatLocalTime(lastCrossing, tzOffset, false),
                 };
 
                 validLaps.forEach((lap) => {
@@ -406,15 +403,7 @@ export function useLeaderboardData(eventId: string) {
               );
               if (startRecord) {
                 startMs = new Date(startRecord.time).getTime();
-                rawStartStrForDisplay = new Date(
-                  startRecord.time,
-                ).toLocaleTimeString("en-US", {
-                  hour12: false,
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                  fractionalSecondDigits: 3,
-                } as any);
+                rawStartStrForDisplay = formatLocalTime(startMs, tzOffset);
               }
             }
 
@@ -434,13 +423,7 @@ export function useLeaderboardData(eventId: string) {
 
             if (absMs != null && Number.isFinite(absMs)) {
               if (!finishEntry?.ms) return;
-              const startStr = new Date(absMs).toLocaleTimeString("en-US", {
-                hour12: false,
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                fractionalSecondDigits: 3,
-              } as any);
+              const startStr = formatLocalTime(absMs, tzOffset);
               const startNormalized = buildOverrideFromFinishDate(
                 finishEntry.ms,
                 startStr,
@@ -467,13 +450,7 @@ export function useLeaderboardData(eventId: string) {
               }
             } else {
               if (startMs && finishEntry?.ms) {
-                const startStr = new Date(startMs).toLocaleTimeString("en-US", {
-                  hour12: false,
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                  fractionalSecondDigits: 3,
-                } as any);
+                const startStr = formatLocalTime(startMs, tzOffset);
                 const startNormalized = buildOverrideFromFinishDate(
                   finishEntry.ms,
                   startStr,
@@ -497,12 +474,7 @@ export function useLeaderboardData(eventId: string) {
           if (epsRecords && epsRecords.length > 0) {
             const latest = epsRecords[epsRecords.length - 1];
             const cpTime = new Date(latest.time);
-            const cpTimeStr = cpTime.toLocaleTimeString("en-US", {
-              hour12: false,
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-            });
+            const cpTimeStr = formatLocalTime(cpTime.getTime(), tzOffset, false);
             latestCpStr = `${latest.checkpointName} (${cpTimeStr})`;
           }
 
@@ -546,12 +518,7 @@ export function useLeaderboardData(eventId: string) {
               }
             }
 
-            const cpTimeStr = cpTime.toLocaleTimeString("en-US", {
-              hour12: false,
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-            });
+            const cpTimeStr = formatLocalTime(cpTime.getTime(), tzOffset, false);
             return { label, timeDisplay: cpTimeStr, isDuration: false };
           });
 
@@ -566,13 +533,7 @@ export function useLeaderboardData(eventId: string) {
             startTimeRaw: rawStartStrForDisplay
               ? extractTimeOfDay(rawStartStrForDisplay)
               : startMs
-                ? new Date(startMs).toLocaleTimeString("en-US", {
-                    hour12: false,
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                    fractionalSecondDigits: 3,
-                  } as any)
+                ? formatLocalTime(startMs, tzOffset)
                 : "-",
             finishTimeRaw: extractTimeOfDay(finishEntry?.raw || ""),
             totalTimeMs: total ?? 0,
