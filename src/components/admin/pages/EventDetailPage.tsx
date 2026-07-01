@@ -3020,7 +3020,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                     onChange={(e) => setEventData({ ...eventData, location: e.target.value })}
                   />
                 </div>
-                <div>
+                {/* <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">GMT Timezone Offset (Hours)</label>
                   <input
                     type="number"
@@ -3028,7 +3028,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                     value={eventData?.timezoneOffset ?? 7}
                     onChange={(e) => setEventData({ ...eventData, timezoneOffset: parseInt(e.target.value) || 0 })}
                   />
-                </div>
+                </div> */}
               </div>
             </div>
 

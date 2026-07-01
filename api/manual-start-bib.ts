@@ -28,7 +28,11 @@ export default async function handler(event: any) {
       }
 
       if (clickTimestamp) {
+        const ev: any = await query('SELECT timezoneOffset FROM Event WHERE id = ? LIMIT 1', [eventId]);
+        const tz = ev[0]?.timezoneOffset ?? 7;
+        
         const d = new Date(clickTimestamp);
+        d.setUTCHours(d.getUTCHours() + tz);
         
         const pad = (n: number, len = 2) => String(n).padStart(len, "0");
         const DD = pad(d.getUTCDate());
