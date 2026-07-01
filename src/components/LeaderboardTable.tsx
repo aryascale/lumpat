@@ -164,7 +164,8 @@ export default function LeaderboardTable({
           r.totalTimeDisplay !== "DNF" &&
           r.totalTimeDisplay !== "DSQ" &&
           r.totalTimeDisplay !== "ACTIVE" &&
-          r.totalTimeDisplay !== "RUNNER",
+          r.totalTimeDisplay !== "RUNNER" &&
+          r.totalTimeDisplay !== "-",
       );
       const sorted = [...finishers]
         .sort((a, b) => {

@@ -2723,7 +2723,7 @@ export default function EventPage() {
                     }}
                     options={categoryDetails
                       .filter((c) => c.quota === 0 || c.sold < c.quota)
-                      .filter((c) => !c.isHidden && !c.isClosed)
+                      .filter((c) => !c.isClosed)
                       .map((c) => ({
                         label: `${c.name} - Rp ${c.price.toLocaleString("id-ID")}${c.quota > 0 ? ` (${c.quota - c.sold} slot)` : ""}`,
                         value: c.id,
