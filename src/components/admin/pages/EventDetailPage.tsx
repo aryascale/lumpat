@@ -990,10 +990,13 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         finalStr = `${today} ${t}.000`;
       }
 
+      // Convert local datetime string to proper ISO string with browser's timezone
+      const isoString = finalStr ? new Date(finalStr.replace(' ', 'T')).toISOString() : null;
+
       const manualRes = await fetch(`/api/manual-start?eventId=${eventId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ manualStartTime: finalStr || null }),
+        body: JSON.stringify({ manualStartTime: isoString }),
       });
       if (!manualRes.ok) throw new Error("Gagal menyimpan waktu start.");
       setManualStartTime(finalStr);
