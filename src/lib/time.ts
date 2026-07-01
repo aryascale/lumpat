@@ -145,14 +145,23 @@ export function buildOverrideFromFinishDate(finishMs: number, timeStr: string): 
 }
 
 export function calculatePace(totalMs: number | null, category: string | undefined): string {
-  if (totalMs == null || totalMs < 0 || !Number.isFinite(totalMs)) return "--:--";
+  if (totalMs == null || totalMs <= 0 || !Number.isFinite(totalMs)) return "--:--";
   
   let distance = 0;
   const catLower = category?.toLowerCase() || "";
-  if (catLower.includes("5")) distance = 5;
-  if (catLower.includes("10")) distance = 10;
-  if (catLower.includes("21")) distance = 21.0975;
-  if (catLower.includes("42")) distance = 42.195;
+  
+  // Extract number from category (e.g., "2 km", "5k", "10k", "21 km")
+  const match = catLower.match(/(\d+(?:\.\d+)?)/);
+  if (match) {
+    const num = parseFloat(match[1]);
+    if (Math.abs(num - 21) < 0.2) {
+      distance = 21.0975; // Half Marathon standard
+    } else if (Math.abs(num - 42) < 0.2) {
+      distance = 42.195;  // Full Marathon standard
+    } else {
+      distance = num;
+    }
+  }
   
   if (distance === 0) return "--:--"; 
   
