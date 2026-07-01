@@ -22,6 +22,18 @@ import { useLiveTiming } from "../hooks/useLiveTiming";
 import getUnicodeFlagIcon from "country-flag-icons/unicode";
 import { getData } from "country-list";
 
+function formatLocalTime(ms: number, tzOffset: number, includeMs = true): string {
+  const d = new Date(ms + tzOffset * 60 * 60 * 1000);
+  const hh = String(d.getUTCHours()).padStart(2, '0');
+  const mm = String(d.getUTCMinutes()).padStart(2, '0');
+  const ss = String(d.getUTCSeconds()).padStart(2, '0');
+  if (includeMs) {
+    const msec = String(d.getUTCMilliseconds()).padStart(3, '0');
+    return `${hh}:${mm}:${ss}.${msec}`;
+  }
+  return `${hh}:${mm}:${ss}`;
+}
+
 /**
  * Match a registered participant (from DB) to a master CSV participant.
  * Strategy: name+category (most reliable) → name-only fallback.
@@ -145,6 +157,7 @@ function getAgeCategory(age: number | null): string {
 export default function EventPage() {
   const { slug } = useParams<{ slug: string }>();
   const [event, setEvent] = useState<EventData | null>(null);
+  const tzOffset = (event as any)?.timezoneOffset ?? 7;
   const [banners, setBanners] = useState<Banner[]>([]);
   const [state, setState] = useState<LoadState>({
     status: "loading",
@@ -1041,15 +1054,7 @@ export default function EventPage() {
                 );
                 if (!baseStartTime) {
                   baseStartTime = new Date(sortedRecords[0].time).getTime();
-                  rawStartStrForDisplay = new Date(
-                    baseStartTime,
-                  ).toLocaleTimeString("en-US", {
-                    hour12: false,
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                    fractionalSecondDigits: 3,
-                  } as any);
+                  rawStartStrForDisplay = formatLocalTime(baseStartTime, tzOffset);
                 }
 
                 const lastTimeByCp: Record<string, number> = {};
@@ -1088,9 +1093,7 @@ export default function EventPage() {
                   total = lastCrossing - baseStartTime;
                   finishEntryLocal = {
                     ms: lastCrossing,
-                    raw: new Date(lastCrossing).toLocaleTimeString("en-US", {
-                      hour12: false,
-                    }),
+                    raw: formatLocalTime(lastCrossing, tzOffset, false),
                   };
                 }
               }
@@ -1129,13 +1132,7 @@ export default function EventPage() {
                   startTimeRaw: rawStartStrForDisplay
                     ? extractTimeOfDay(rawStartStrForDisplay)
                     : baseStartTime
-                      ? new Date(baseStartTime).toLocaleTimeString("en-US", {
-                          hour12: false,
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          second: "2-digit",
-                          fractionalSecondDigits: 3,
-                        } as any)
+                      ? formatLocalTime(baseStartTime, tzOffset)
                       : "-",
                   finishTimeRaw: extractTimeOfDay(finishEntryLocal?.raw || ""),
                   totalTimeMs: total,
@@ -1177,17 +1174,10 @@ export default function EventPage() {
                     .includes("finish"),
               );
               if (finishRecord) {
-                const finishRawLocal = new Date(
-                  finishRecord.time,
-                ).toLocaleTimeString("en-US", {
-                  hour12: false,
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                  fractionalSecondDigits: 3,
-                } as any);
+                const finishMs = new Date(finishRecord.time).getTime();
+                const finishRawLocal = formatLocalTime(finishMs, tzOffset);
                 finishEntry = {
-                  ms: new Date(finishRecord.time).getTime(),
+                  ms: finishMs,
                   raw: finishRawLocal,
                 };
               }
@@ -1209,13 +1199,7 @@ export default function EventPage() {
                 startTimeRaw: rawStart
                   ? extractTimeOfDay(rawStart)
                   : computedStartMs
-                    ? new Date(computedStartMs).toLocaleTimeString("en-US", {
-                        hour12: false,
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
-                        fractionalSecondDigits: 3,
-                      } as any)
+                    ? formatLocalTime(computedStartMs, tzOffset)
                     : "-",
                 finishTimeRaw: extractTimeOfDay(finishEntry?.raw || "-"),
                 totalTimeMs: 0,
@@ -1253,16 +1237,7 @@ export default function EventPage() {
               );
               if (startRecord) {
                 fallbackStartMs = new Date(startRecord.time).getTime();
-                rawStartStr = new Date(startRecord.time).toLocaleTimeString(
-                  "en-US",
-                  {
-                    hour12: false,
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                    fractionalSecondDigits: 3,
-                  } as any,
-                );
+                rawStartStr = formatLocalTime(fallbackStartMs, tzOffset);
               }
             }
 
@@ -1370,12 +1345,7 @@ export default function EventPage() {
                 }
               }
 
-              const cpTimeStr = cpTime.toLocaleTimeString("en-US", {
-                hour12: false,
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-              });
+              const cpTimeStr = formatLocalTime(cpTime.getTime(), tzOffset, false);
               return { label, timeDisplay: cpTimeStr, isDuration: false };
             });
 
@@ -1390,7 +1360,7 @@ export default function EventPage() {
               startTimeRaw: rawStartStr
                 ? extractTimeOfDay(rawStartStr)
                 : t0Ms
-                  ? extractTimeOfDay(new Date(t0Ms).toISOString())
+                  ? formatLocalTime(t0Ms, tzOffset)
                   : "-",
               finishTimeRaw: extractTimeOfDay(finishEntry.raw),
               totalTimeMs: total,
@@ -1529,12 +1499,7 @@ export default function EventPage() {
       const recs = recordsByEpc[row.epc];
       if (!recs || recs.length === 0) return row;
       const latest = recs[recs.length - 1];
-      const cpTimeStr = new Date(latest.time).toLocaleTimeString("en-US", {
-        hour12: false,
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      });
+      const cpTimeStr = formatLocalTime(new Date(latest.time).getTime(), tzOffset, false);
       return { ...row, latestCp: `${latest.checkpointName} (${cpTimeStr})` };
     });
   }, [overall, recordsByEpc]);
