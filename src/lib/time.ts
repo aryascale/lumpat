@@ -102,14 +102,20 @@ export function extractTimeOfDay(raw: string): string {
   return raw;
 }
 
-export function formatDuration(ms: number | null): string {
+export function formatDuration(ms: number | null, includeMs = true): string {
   if (ms == null || !Number.isFinite(ms)) return "-";
   const isNegative = ms < 0;
-  const total = Math.floor(Math.abs(ms) / 1000);
+  const absMs = Math.abs(ms);
+  const total = Math.floor(absMs / 1000);
   const h = Math.floor(total / 3600);
   const m = Math.floor((total % 3600) / 60);
   const s = total % 60;
   const pad = (n: number) => n.toString().padStart(2, "0");
+  
+  if (includeMs) {
+    const milli = Math.floor(absMs % 1000);
+    return `${isNegative ? "-" : ""}${pad(h)}:${pad(m)}:${pad(s)}.${milli.toString().padStart(3, "0")}`;
+  }
   return `${isNegative ? "-" : ""}${pad(h)}:${pad(m)}:${pad(s)}`;
 }
 
