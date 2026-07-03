@@ -19,6 +19,7 @@ export type LeaderRow = {
   epc: string;
   laps?: { label: string; timeDisplay: string; isDuration?: boolean }[];
   latestCp?: string;
+  distanceKm?: number | null;
 };
 
 export default function LeaderboardTable({
@@ -800,7 +801,7 @@ export default function LeaderboardTable({
 
                       {/* Avg Pace */}
                       <div className="font-mono text-[11px] font-semibold text-slate-500">
-                        {calculatePace(r.totalTimeMs, r.category)}
+                        {calculatePace(r.totalTimeMs, r.category, r.distanceKm)}
                       </div>
 
                       {/* Chevron */}
@@ -905,7 +906,7 @@ export default function LeaderboardTable({
                             <div className="whitespace-nowrap">
                               <span className="text-slate-400">Pace </span>
                               <span className="font-mono font-medium text-slate-500">
-                                {calculatePace(r.totalTimeMs, r.category)}
+                                {calculatePace(r.totalTimeMs, r.category, r.distanceKm)}
                               </span>
                             </div>
                           </div>

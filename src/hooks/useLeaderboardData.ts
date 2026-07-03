@@ -6,7 +6,7 @@ import {
   loadTimesMap,
   loadCheckpointTimesMap,
 } from "../lib/data";
-import parseTimeToMs, { extractTimeOfDay, formatDuration } from "../lib/time";
+import parseTimeToMs, { extractTimeOfDay, formatDuration, buildOverrideFromFinishDate } from "../lib/time";
 import { useLiveTiming } from "./useLiveTiming";
 
 function formatLocalTime(ms: number, tzOffset: number, includeMs = true): string {
@@ -95,8 +95,10 @@ export function useLeaderboardData(eventId: string) {
           });
         }
 
-        const startMap = await loadTimesMap("start", eventId);
-        const finishMap = await loadTimesMap("finish", eventId);
+        const tzOffset = (currentEvent as any)?.timezoneOffset ?? 7;
+
+        const startMap = await loadTimesMap("start", eventId, tzOffset);
+        const finishMap = await loadTimesMap("finish", eventId, tzOffset);
         await loadCheckpointTimesMap(eventId);
 
         // Use timing from event (per-event database) instead of localStorage
@@ -195,7 +197,7 @@ export function useLeaderboardData(eventId: string) {
             return;
           }
           if (/\d{4}-\d{2}-\d{2}/.test(s)) {
-            const parsed = parseTimeToMs(s);
+            const parsed = parseTimeToMs(s, tzOffset);
             absOverrideMs[normKey] = parsed.ms;
             timeOnlyStr[normKey] = null;
           } else {
@@ -203,38 +205,6 @@ export function useLeaderboardData(eventId: string) {
             timeOnlyStr[normKey] = s;
           }
         });
-
-        function buildOverrideFromFinishDate(
-          finishMs: number,
-          timeStr: string,
-        ): number | null {
-          if (!timeStr) return null;
-          if (timeStr.includes(" ") || timeStr.includes("T")) {
-            const parsed = parseTimeToMs(timeStr);
-            if (parsed && parsed.ms) return parsed.ms;
-          }
-          const m = timeStr.match(
-            /(\d{1,2}):(\d{2})(?::(\d{2}))?(?:[:\.](\d{1,3}))?/,
-          );
-          if (!m) return null;
-
-          const h = Number(m[1] || 0);
-          const mi = Number(m[2] || 0);
-          const se = Number(m[3] || 0);
-          const ms = m[4] ? Number(String(m[4]).padEnd(3, "0").slice(0, 3)) : 0;
-
-          const d = new Date(finishMs);
-          const override = new Date(
-            d.getFullYear(),
-            d.getMonth(),
-            d.getDate(),
-            h,
-            mi,
-            se,
-            ms,
-          );
-          return override.getTime();
-        }
 
         const baseRows: LeaderRow[] = [];
 
@@ -254,7 +224,7 @@ export function useLeaderboardData(eventId: string) {
           }
         });
 
-        const tzOffset = (currentEvent as any)?.timezoneOffset ?? 7;
+        // tzOffset already defined above before loadTimesMap calls
 
         localMasterAll.forEach((p) => {
           if (hiddenMap[p.epc]) return;
@@ -266,6 +236,7 @@ export function useLeaderboardData(eventId: string) {
             const mfMs = buildOverrideFromFinishDate(
               Date.now(),
               manualFinishStr,
+              tzOffset
             );
             if (mfMs) {
               finishEntry = { ms: mfMs, raw: manualFinishStr };
@@ -410,8 +381,8 @@ export function useLeaderboardData(eventId: string) {
             const bibManualStartStr = manualStartMap.get(p.epc);
             if (bibManualStartStr) {
               const builtOverride = finishEntry?.ms
-                ? buildOverrideFromFinishDate(finishEntry.ms, bibManualStartStr)
-                : buildOverrideFromFinishDate(Date.now(), bibManualStartStr);
+                ? buildOverrideFromFinishDate(finishEntry.ms, bibManualStartStr, tzOffset)
+                : buildOverrideFromFinishDate(Date.now(), bibManualStartStr, tzOffset);
 
               if (builtOverride != null) {
                 startMs = builtOverride;
@@ -427,6 +398,7 @@ export function useLeaderboardData(eventId: string) {
               const startNormalized = buildOverrideFromFinishDate(
                 finishEntry.ms,
                 startStr,
+                tzOffset
               );
               if (startNormalized != null) {
                 total = finishEntry.ms - startNormalized;
@@ -439,6 +411,7 @@ export function useLeaderboardData(eventId: string) {
               const builtOverride = buildOverrideFromFinishDate(
                 finishEntry.ms,
                 timeOnly,
+                tzOffset
               );
               if (builtOverride != null) {
                 total = finishEntry.ms - builtOverride;
@@ -454,6 +427,7 @@ export function useLeaderboardData(eventId: string) {
                 const startNormalized = buildOverrideFromFinishDate(
                   finishEntry.ms,
                   startStr,
+                  tzOffset
                 );
                 if (startNormalized != null) {
                   total = finishEntry.ms - startNormalized;

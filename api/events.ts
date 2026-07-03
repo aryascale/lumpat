@@ -149,9 +149,12 @@ export default async function handler(req: any) {
 
       const defaultCategories = categories || [];
       for (let i = 0; i < defaultCategories.length; i++) {
+        const cat = defaultCategories[i];
+        const name = typeof cat === 'string' ? cat : cat.name;
+        const distanceKm = typeof cat === 'object' && cat.distanceKm ? cat.distanceKm : null;
         await query(
-          'INSERT INTO Category (id, name, eventId, `order`, createdAt) VALUES (?, ?, ?, ?, NOW())',
-          [crypto.randomUUID(), defaultCategories[i], eventIdNew, i]
+          'INSERT INTO Category (id, name, eventId, `order`, distanceKm, createdAt) VALUES (?, ?, ?, ?, ?, NOW())',
+          [crypto.randomUUID(), name, eventIdNew, i, distanceKm]
         );
       }
 

@@ -16,7 +16,7 @@ import {
   loadCheckpointTimesMap,
 } from "../lib/data";
 import { LS_DATA_VERSION } from "../lib/config";
-import parseTimeToMs, { extractTimeOfDay, formatDuration } from "../lib/time";
+import parseTimeToMs, { extractTimeOfDay, formatDuration, buildOverrideFromFinishDate } from "../lib/time";
 import type { MasterParticipant } from "../lib/data";
 import { useLiveTiming } from "../hooks/useLiveTiming";
 import getUnicodeFlagIcon from "country-flag-icons/unicode";
@@ -95,6 +95,7 @@ interface CategoryDetail {
   sold: number;
   isHidden?: boolean;
   isClosed?: boolean;
+  distanceKm?: number | null;
 }
 
 interface RegistrationField {
@@ -830,8 +831,8 @@ export default function EventPage() {
 
         const master = await loadMasterParticipants(event.id);
         setMasterParticipants(master.all);
-        const startMap = await loadTimesMap("start", event.id);
-        const finishMap = await loadTimesMap("finish", event.id);
+        const startMap = await loadTimesMap("start", event.id, tzOffset);
+        const finishMap = await loadTimesMap("finish", event.id, tzOffset);
         const cpMap = await loadCheckpointTimesMap(event.id);
         setCheckpointMap(cpMap);
 
@@ -922,7 +923,7 @@ export default function EventPage() {
             return;
           }
           if (/\d{4}-\d{2}-\d{2}/.test(s)) {
-            const parsed = parseTimeToMs(s);
+            const parsed = parseTimeToMs(s, tzOffset);
             absOverrideMs[normKey] = parsed.ms;
             timeOnlyStr[normKey] = null;
           } else {
@@ -930,36 +931,6 @@ export default function EventPage() {
             timeOnlyStr[normKey] = s;
           }
         });
-
-        function buildOverrideFromFinishDate(
-          finishMs: number,
-          timeStr: string,
-        ): number | null {
-          if (!timeStr) return null;
-          if (timeStr.includes(" ") || timeStr.includes("T")) {
-            const parsed = parseTimeToMs(timeStr);
-            if (parsed && parsed.ms) return parsed.ms;
-          }
-          const m = timeStr.match(
-            /(\d{1,2}):(\d{2})(?::(\d{2}))?(?:[:\.](\d{1,3}))?/,
-          );
-          if (!m) return null;
-          const h = Number(m[1] || 0);
-          const mi = Number(m[2] || 0);
-          const se = Number(m[3] || 0);
-          const ms = m[4] ? Number(String(m[4]).padEnd(3, "0").slice(0, 3)) : 0;
-          const d = new Date(finishMs);
-          const override = new Date(
-            d.getFullYear(),
-            d.getMonth(),
-            d.getDate(),
-            h,
-            mi,
-            se,
-            ms,
-          );
-          return override.getTime();
-        }
 
         const baseRows: LeaderRow[] = [];
 
@@ -978,6 +949,7 @@ export default function EventPage() {
                 totalTimeMs: 0,
                 totalTimeDisplay: "Registered",
                 epc: p.id,
+                distanceKm: categoryDetails.find((c) => c.name === (p.category?.name || "REG"))?.distanceKm ?? null,
               });
             });
         } else {
@@ -1144,6 +1116,7 @@ export default function EventPage() {
                   penaltyMs: penMs,
                   epc: p.epc,
                   laps: lapsDisplay,
+                  distanceKm: categoryDetails.find((c) => c.name === (p.category || resolvedCategoryKey))?.distanceKm ?? null,
                 });
 
                 return;
@@ -1155,6 +1128,7 @@ export default function EventPage() {
               const mfMs = buildOverrideFromFinishDate(
                 Date.now(),
                 manualFinishStr,
+                tzOffset
               );
               if (mfMs) {
                 finishEntry = { ms: mfMs, raw: manualFinishStr };
@@ -1205,6 +1179,7 @@ export default function EventPage() {
                 totalTimeMs: 0,
                 totalTimeDisplay: isDQ ? "DSQ" : statusText,
                 epc: p.epc,
+                distanceKm: categoryDetails.find((c) => c.name === (p.category || resolvedCategoryKey))?.distanceKm ?? null,
               });
             };
 
@@ -1243,8 +1218,8 @@ export default function EventPage() {
 
             if (bibManualStartStr) {
               const builtOverride = finishEntry?.ms
-                ? buildOverrideFromFinishDate(finishEntry.ms, bibManualStartStr)
-                : buildOverrideFromFinishDate(Date.now(), bibManualStartStr);
+                ? buildOverrideFromFinishDate(finishEntry.ms, bibManualStartStr, tzOffset)
+                : buildOverrideFromFinishDate(Date.now(), bibManualStartStr, tzOffset);
               if (builtOverride != null) {
                 fallbackStartMs = builtOverride;
                 absMs = null;
@@ -1275,6 +1250,7 @@ export default function EventPage() {
               const builtOverride = buildOverrideFromFinishDate(
                 finishEntry.ms,
                 timeOnly,
+                tzOffset
               );
               if (builtOverride != null) {
                 const delta = finishEntry.ms - builtOverride;
@@ -1372,6 +1348,7 @@ export default function EventPage() {
               penaltyMs: penMs,
               epc: p.epc,
               laps: matchedLaps,
+              distanceKm: categoryDetails.find((c) => c.name === (p.category || resolvedCategoryKey))?.distanceKm ?? null,
             });
           });
         }
@@ -1572,6 +1549,7 @@ export default function EventPage() {
       genderRank,
       categoryRank,
       ageRank,
+      distanceKm: selected.distanceKm,
     };
   }, [selected, checkpointMap]);
 

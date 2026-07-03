@@ -55,7 +55,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   const [participants, setParticipants] = useState<any[]>([]);
   const [csvMeta, setCsvMeta] = useState<Array<{ key: CsvKind; filename: string; updatedAt: number; rows: number }>>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
-  const [categories, setCategories] = useState<Array<{ id?: string; name: string; price: number; quota: number; isHidden?: boolean; isClosed?: boolean; sold?: number }>>([]);
+  const [categories, setCategories] = useState<Array<{ id?: string; name: string; price: number; quota: number; isHidden?: boolean; isClosed?: boolean; sold?: number; distanceKm?: number | null }>>([]);
   const [loading, setLoading] = useState(true);
 
   const [bannerFile, setBannerFile] = useState<File | null>(null);
@@ -79,6 +79,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   const [newCategory, setNewCategory] = useState('');
   const [newCategoryPrice, setNewCategoryPrice] = useState('');
   const [newCategoryQuota, setNewCategoryQuota] = useState('');
+  const [newCategoryDistance, setNewCategoryDistance] = useState('');
 
 
 
@@ -151,7 +152,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       const catRes = await fetch(`/api/categories?eventId=${eventId}`);
       if (catRes.ok) {
         const data = await catRes.json();
-        const cats = (data.categories || []).map((c: any) => typeof c === 'string' ? { name: c, price: 0, quota: 0, isHidden: false } : { id: c.id, name: c.name, price: c.price || 0, quota: c.quota || 0, isHidden: !!c.isHidden, sold: c.sold || 0 });
+        const cats = (data.categories || []).map((c: any) => typeof c === 'string' ? { name: c, price: 0, quota: 0, isHidden: false, distanceKm: null } : { id: c.id, name: c.name, price: c.price || 0, quota: c.quota || 0, isHidden: !!c.isHidden, sold: c.sold || 0, distanceKm: c.distanceKm ?? null });
         setCategories(cats);
       }
 
@@ -676,11 +677,13 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
 
     const price = parseInt(newCategoryPrice) || 0;
     const quota = parseInt(newCategoryQuota) || 0;
-    const updated = [...categories, { name: trimmed, price, quota, isHidden: false, isClosed: false }];
+    const distanceKm = parseFloat(newCategoryDistance) || null;
+    const updated = [...categories, { name: trimmed, price, quota, isHidden: false, isClosed: false, distanceKm }];
     await saveCategories(updated);
     setNewCategory('');
     setNewCategoryPrice('');
     setNewCategoryQuota('');
+    setNewCategoryDistance('');
   };
 
   const removeCategory = async (catName: string) => {
@@ -696,6 +699,11 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
 
   const updateCategoryPrice = (catName: string, price: number) => {
     const updated = categories.map(c => c.name === catName ? { ...c, price } : c);
+    setCategories(updated);
+  };
+
+  const updateCategoryDistance = (catName: string, distanceKm: number | null) => {
+    const updated = categories.map(c => c.name === catName ? { ...c, distanceKm } : c);
     setCategories(updated);
   };
 
@@ -824,7 +832,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
     }
   };
 
-  const saveCategories = async (cats: Array<{ name: string; price: number; quota: number; isHidden?: boolean; isClosed?: boolean }>) => {
+  const saveCategories = async (cats: Array<{ name: string; price: number; quota: number; isHidden?: boolean; isClosed?: boolean; distanceKm?: number | null }>) => {
     setSavingCategories(true);
     try {
       const res = await fetch(`/api/categories?eventId=${eventId}`, {
@@ -1727,6 +1735,16 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
               onChange={(e) => setNewCategoryQuota(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && addCategory()}
             />
+            <div className="flex-1">
+              <input
+                type="number"
+                step="0.001"
+                className="search w-full"
+                placeholder="Jarak (km) opsional"
+                value={newCategoryDistance}
+                onChange={(e) => setNewCategoryDistance(e.target.value)}
+              />
+            </div>
             <button className="btn w-full sm:w-auto" onClick={addCategory} disabled={!newCategory.trim()}>
               + Add Category
             </button>
@@ -1741,6 +1759,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                   <th>Category Name</th>
                   <th style={{ width: 140 }}>Harga (Rp)</th>
                   <th style={{ width: 100 }}>Kuota</th>
+                  <th style={{ width: 100 }}>Jarak (km)</th>
                   <th style={{ width: 80 }}>Sold</th>
                   <th style={{ width: 100 }}>Actions</th>
                 </tr>
@@ -1772,6 +1791,17 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                           value={cat.quota}
                           placeholder="0=∞"
                           onChange={(e) => updateCategoryQuota(cat.name, parseInt(e.target.value) || 0)}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          className="search text-right"
+                          style={{ width: 90 }}
+                          type="number"
+                          step="0.001"
+                          value={cat.distanceKm || ''}
+                          placeholder="Auto"
+                          onChange={(e) => updateCategoryDistance(cat.name, parseFloat(e.target.value) || null)}
                         />
                       </td>
                       <td className="text-center font-bold text-red-600">
