@@ -1011,7 +1011,7 @@ export default function EventPage() {
 
               const startEntry = startMap.get(p.epc);
               let baseStartTime = (event as any)?.manualStartTime
-                ? new Date((event as any).manualStartTime).getTime()
+                ? parseTimeToMs((event as any).manualStartTime, tzOffset).ms
                 : startEntry?.ms || null;
               let rawStartStrForDisplay = startEntry?.raw || null;
 
@@ -1189,7 +1189,7 @@ export default function EventPage() {
 
             // Global T0 priority: manualStartMs > startEntry.ms
             const manualStartMs = (event as any)?.manualStartTime
-              ? new Date((event as any).manualStartTime).getTime()
+              ? parseTimeToMs((event as any).manualStartTime, tzOffset).ms
               : null;
             const startEntry = startMap.get(p.epc);
             let fallbackStartMs = manualStartMs || startEntry?.ms || null;
