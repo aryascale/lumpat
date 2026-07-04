@@ -35,15 +35,11 @@ export default async function handler(event: any) {
         d.setUTCHours(d.getUTCHours() + tz);
         
         const pad = (n: number, len = 2) => String(n).padStart(len, "0");
-        const DD = pad(d.getUTCDate());
-        const MM = pad(d.getUTCMonth() + 1);
-        const YYYY = d.getUTCFullYear();
         const HH = pad(d.getUTCHours());
         const mm = pad(d.getUTCMinutes());
         const ss = pad(d.getUTCSeconds());
-        const SSS = pad(d.getUTCMilliseconds(), 3);
         
-        timeStr = `${DD}:${MM}:${YYYY} ${HH}:${mm}:${ss}:${SSS}`;
+        timeStr = `${HH}:${mm}:${ss}`;
       }
 
       if (!timeStr) {
