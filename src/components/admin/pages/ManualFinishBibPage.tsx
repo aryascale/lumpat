@@ -169,6 +169,11 @@ export default function ManualFinishBibPage({ allRows, onDataVersionBump, eventI
   const assignCurrentBrowserTime = async (row: MasterRow) => {
     const networkTime = Date.now() + timeOffset;
 
+    // Convert to local HH:MM:SS on client side (uses browser's timezone)
+    const d = new Date(networkTime);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const localTimeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+
     setSaving(true);
     try {
       const res = await fetch(`/api/manual-finish-bib?eventId=${eventId}`, {
@@ -177,7 +182,7 @@ export default function ManualFinishBibPage({ allRows, onDataVersionBump, eventI
         body: JSON.stringify({
           bib: row.bib,
           epc: row.epc,
-          clickTimestamp: networkTime,
+          timeStr: localTimeStr,
         }),
       });
 
