@@ -299,49 +299,43 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
 
       master.all.forEach((p) => {
         const finishEntry = finishMap.get(p.epc);
-        if (!finishEntry?.ms) return;
-
         const catKey = p.sourceCategoryKey;
         const absMs = absOverrideMs[catKey] ?? null;
         const timeOnly = timeOnlyStr[catKey] ?? null;
 
         let total: number | null = null;
 
-        if (absMs != null && Number.isFinite(absMs)) {
-          const delta = finishEntry.ms - absMs;
-          if (Number.isFinite(delta) && delta >= 0) {
-            total = delta;
-          } else {
-            const startEntry = startMap.get(p.epc);
-            if (!startEntry?.ms) return;
-            total = finishEntry.ms - startEntry.ms;
-          }
-        } else if (timeOnly) {
-          const builtOverride = buildOverrideFromFinishDate(finishEntry.ms, timeOnly);
-          if (builtOverride != null) {
-            const delta = finishEntry.ms - builtOverride;
+        if (finishEntry?.ms) {
+          if (absMs != null && Number.isFinite(absMs)) {
+            const delta = finishEntry.ms - absMs;
             if (Number.isFinite(delta) && delta >= 0) {
               total = delta;
             } else {
               const startEntry = startMap.get(p.epc);
-              if (!startEntry?.ms) return;
-              total = finishEntry.ms - startEntry.ms;
+              if (startEntry?.ms) total = finishEntry.ms - startEntry.ms;
+            }
+          } else if (timeOnly) {
+            const builtOverride = buildOverrideFromFinishDate(finishEntry.ms, timeOnly);
+            if (builtOverride != null) {
+              const delta = finishEntry.ms - builtOverride;
+              if (Number.isFinite(delta) && delta >= 0) {
+                total = delta;
+              } else {
+                const startEntry = startMap.get(p.epc);
+                if (startEntry?.ms) total = finishEntry.ms - startEntry.ms;
+              }
+            } else {
+              const startEntry = startMap.get(p.epc);
+              if (startEntry?.ms) total = finishEntry.ms - startEntry.ms;
             }
           } else {
             const startEntry = startMap.get(p.epc);
-            if (!startEntry?.ms) return;
-            total = finishEntry.ms - startEntry.ms;
+            if (startEntry?.ms) total = finishEntry.ms - startEntry.ms;
           }
-        } else {
-          const startEntry = startMap.get(p.epc);
-          if (!startEntry?.ms) return;
-          total = finishEntry.ms - startEntry.ms;
         }
 
-        if (!Number.isFinite(total) || total == null || total < 0) return;
-
         const isDQ = !!dqData[p.epc];
-        const isDNF = cutoffMs != null && total > cutoffMs;
+        const isDNF = cutoffMs != null && total != null && total > cutoffMs;
 
         baseRows.push({
           rank: null,
@@ -350,9 +344,9 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           gender: p.gender,
           category: p.category || p.sourceCategoryKey,
           sourceCategoryKey: p.sourceCategoryKey,
-          finishTimeRaw: extractTimeOfDay(finishEntry.raw),
+          finishTimeRaw: finishEntry?.raw ? extractTimeOfDay(finishEntry.raw) : "-",
           totalTimeMs: total,
-          totalTimeDisplay: isDQ ? "DSQ" : isDNF ? "DNF" : formatDuration(total),
+          totalTimeDisplay: isDQ ? "DSQ" : isDNF ? "DNF" : (total != null ? formatDuration(total) : "--:--"),
           epc: p.epc,
         });
       });
