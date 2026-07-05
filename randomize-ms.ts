@@ -34,6 +34,21 @@ async function run() {
       }
     }
     
+    // Update ManualFinish
+    const finishes = await query(`SELECT id, timeStr FROM ManualFinish`);
+    for (const f of finishes) {
+      if (f.timeStr.length === 8) { // format HH:MM:SS
+        const newTime = `${f.timeStr}.${getRandomMs()}`;
+        await query(`UPDATE ManualFinish SET timeStr = ? WHERE id = ?`, [newTime, f.id]);
+        console.log(`Updated finish ${f.id}: ${f.timeStr} -> ${newTime}`);
+        count++;
+      } else if (f.timeStr.endsWith(".000")) {
+        const newTime = `${f.timeStr.slice(0, 8)}.${getRandomMs()}`;
+        await query(`UPDATE ManualFinish SET timeStr = ? WHERE id = ?`, [newTime, f.id]);
+        console.log(`Updated finish ${f.id}: ${f.timeStr} -> ${newTime}`);
+        count++;
+      }
+    }
     
     console.log(`Done. Updated ${count} records with random milliseconds.`);
   } catch (err) {
