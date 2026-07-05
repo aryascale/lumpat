@@ -2175,9 +2175,9 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
               <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="time"
-                  step="1"
+                  step="0.001"
                   className="search flex-1 text-center font-bold text-xl py-3 px-4"
-                  value={manualStartTime ? extractTimeOfDay(manualStartTime).split('.')[0] : ""}
+                  value={manualStartTime ? extractTimeOfDay(manualStartTime) : ""}
                   onChange={(e) => setManualStartTime(e.target.value)}
                 />
                 <button

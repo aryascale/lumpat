@@ -133,10 +133,12 @@ export default function ManualFinishBibPage({ allRows, onDataVersionBump, eventI
       return;
     }
     
-    // Normalize format HH:MM to HH:MM:00 if seconds are missing
+    // Normalize format HH:MM to HH:MM:00.000 if seconds are missing
     let finalTime = timeStr;
     if (finalTime.split(':').length === 2) {
-      finalTime += ":00";
+      finalTime += ":00.000";
+    } else if (!finalTime.includes('.')) {
+      finalTime += ".000";
     }
 
     setSaving(true);
@@ -169,10 +171,11 @@ export default function ManualFinishBibPage({ allRows, onDataVersionBump, eventI
   const assignCurrentBrowserTime = async (row: MasterRow) => {
     const networkTime = Date.now() + timeOffset;
 
-    // Convert to local HH:MM:SS on client side (uses browser's timezone)
+    // Convert to local HH:MM:SS.SSS on client side (uses browser's timezone)
     const d = new Date(networkTime);
     const pad = (n: number) => String(n).padStart(2, "0");
-    const localTimeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    const padMs = (n: number) => String(n).padStart(3, "0");
+    const localTimeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${padMs(d.getMilliseconds())}`;
 
     setSaving(true);
     try {
@@ -287,8 +290,8 @@ export default function ManualFinishBibPage({ allRows, onDataVersionBump, eventI
                             <div className="flex items-center gap-1">
                               <input
                                 type="time"
-                                step="1"
-                                className="search w-28 text-center text-xs py-1 px-1"
+                                step="0.001"
+                                className="search w-32 text-center text-xs py-1 px-1"
                                 value={timeStr}
                                 onChange={(e) => setTimeStr(e.target.value)}
                               />
@@ -372,7 +375,7 @@ export default function ManualFinishBibPage({ allRows, onDataVersionBump, eventI
                       <div className="flex items-center gap-1 justify-center">
                          <input
                            type="time"
-                           step="1"
+                           step="0.001"
                            className="search flex-1 text-center text-sm py-1.5"
                            value={timeStr}
                            onChange={(e) => setTimeStr(e.target.value)}
