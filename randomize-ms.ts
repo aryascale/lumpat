@@ -1,8 +1,17 @@
 import { query, pool } from './src/lib/db.js';
 
 function getRandomMs() {
-  const ms = Math.floor(Math.random() * 999) + 1; // 1 to 999
-  return String(ms).padStart(3, "0");
+  let msStr;
+  while (true) {
+    const ms = Math.floor(Math.random() * 999) + 1; // 1 to 999
+    msStr = String(ms).padStart(3, "0");
+    // Hindari angka urut/kembar supaya tidak terlihat aneh
+    const badPatterns = ["123", "234", "345", "456", "567", "678", "789", "321", "432", "543", "654", "765", "876", "987", "111", "222", "333", "444", "555", "666", "777", "888", "999", "000"];
+    if (!badPatterns.includes(msStr)) {
+      break;
+    }
+  }
+  return msStr;
 }
 
 async function run() {
