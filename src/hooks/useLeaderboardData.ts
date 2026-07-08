@@ -106,6 +106,8 @@ export function useLeaderboardData(eventId: string) {
 
         // Load runner status map from API
         const dqMap: Record<string, boolean> = {};
+        const dnsMap: Record<string, boolean> = {};
+        const dnfMap: Record<string, boolean> = {};
         const hiddenMap: Record<string, boolean> = {};
         try {
           const statusRes = await fetch(
@@ -116,6 +118,8 @@ export function useLeaderboardData(eventId: string) {
             if (Array.isArray(statusData)) {
               statusData.forEach((s: any) => {
                 if (s.isDQ) dqMap[s.epc] = true;
+                if (s.isDNS) dnsMap[s.epc] = true;
+                if (s.isDNF) dnfMap[s.epc] = true;
                 if (s.isHidden) hiddenMap[s.epc] = true;
               });
             }
@@ -463,7 +467,9 @@ export function useLeaderboardData(eventId: string) {
           total! += penMs;
 
           const isDQ = !!dqMap[p.epc];
-          const isDNF = cutoffMs != null && total! > cutoffMs && !isLiveActive;
+          const isDNS = !!dnsMap[p.epc];
+          const manualDNF = !!dnfMap[p.epc];
+          const finalIsDNF = manualDNF || (cutoffMs != null && total! > cutoffMs && !isLiveActive);
 
           // Laps mapping from Live RunnerRecords
           const matchedLaps = checkpoints.map((cpDef: any) => {
@@ -513,13 +519,15 @@ export function useLeaderboardData(eventId: string) {
             totalTimeMs: total ?? 0,
             totalTimeDisplay: isDQ
               ? "DSQ"
-              : isDNF
-                ? "DNF"
-                : isLiveActive
-                  ? startMs
-                    ? "RUNNER"
-                    : "-"
-                  : formatDuration(total!),
+              : isDNS
+                ? "DNS"
+                : finalIsDNF
+                  ? "DNF"
+                  : isLiveActive
+                    ? startMs
+                      ? "RUNNER"
+                      : "-"
+                    : formatDuration(total!),
             penaltyMs: penMs,
             epc: p.epc,
             latestCp: latestCpStr,

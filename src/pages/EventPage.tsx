@@ -841,6 +841,8 @@ export default function EventPage() {
 
         // Load runner status map from API
         const dqMap: Record<string, boolean> = {};
+        const dnsMap: Record<string, boolean> = {};
+        const dnfMap: Record<string, boolean> = {};
         const hiddenMap: Record<string, boolean> = {};
         try {
           const statusRes = await fetch(
@@ -851,6 +853,8 @@ export default function EventPage() {
             if (Array.isArray(statusData)) {
               statusData.forEach((s: any) => {
                 if (s.isDQ) dqMap[s.epc] = true;
+                if (s.isDNS) dnsMap[s.epc] = true;
+                if (s.isDNF) dnfMap[s.epc] = true;
                 if (s.isHidden) hiddenMap[s.epc] = true;
               });
             }
@@ -987,6 +991,8 @@ export default function EventPage() {
             );
 
             const isDQ = !!dqMap[p.epc];
+            const isDNS = !!dnsMap[p.epc];
+            const manualDNF = !!dnfMap[p.epc];
             if (hiddenMap[p.epc]) return;
             let finishEntry = finishMap.get(p.epc);
 
@@ -1107,12 +1113,8 @@ export default function EventPage() {
                       ? formatLocalTime(baseStartTime, tzOffset)
                       : "-",
                   finishTimeRaw: extractTimeOfDay(finishEntryLocal?.raw || ""),
-                  totalTimeMs: total,
-                  totalTimeDisplay: isDQ
-                    ? "DSQ"
-                    : isDNF
-                      ? "DNF"
-                      : formatDuration(total),
+                  totalTimeMs: total ?? 0,
+                  totalTimeDisplay: isDQ ? "DSQ" : isDNS ? "DNS" : manualDNF ? "DNF" : isDNF ? "DNF" : formatDuration(total),
                   penaltyMs: penMs,
                   epc: p.epc,
                   laps: lapsDisplay,
@@ -1177,7 +1179,7 @@ export default function EventPage() {
                     : "-",
                 finishTimeRaw: extractTimeOfDay(finishEntry?.raw || "-"),
                 totalTimeMs: 0,
-                totalTimeDisplay: isDQ ? "DSQ" : statusText,
+                totalTimeDisplay: isDQ ? "DSQ" : isDNS ? "DNS" : manualDNF ? "DNF" : statusText,
                 epc: p.epc,
                 distanceKm: categoryDetails.find((c) => c.name === (p.category || resolvedCategoryKey))?.distanceKm ?? null,
               });
@@ -1342,9 +1344,11 @@ export default function EventPage() {
               totalTimeMs: total,
               totalTimeDisplay: isDQ
                 ? "DSQ"
-                : isDNF
-                  ? "DNF"
-                  : formatDuration(total),
+                : isDNS
+                  ? "DNS"
+                  : (manualDNF || isDNF)
+                    ? "DNF"
+                    : formatDuration(total),
               penaltyMs: penMs,
               epc: p.epc,
               laps: matchedLaps,
