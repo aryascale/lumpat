@@ -111,7 +111,7 @@ export default function LeaderboardTable({
         r.totalTimeDisplay !== "DNF" &&
         r.totalTimeDisplay !== "DSQ" &&
         r.totalTimeDisplay !== "ACTIVE" &&
-        r.totalTimeDisplay !== "RUNNER" &&
+        r.totalTimeDisplay !== "Active" &&
         r.totalTimeDisplay !== "-",
     );
     const dnfs = currentRows
@@ -119,7 +119,7 @@ export default function LeaderboardTable({
       .sort((a, b) => a.totalTimeMs - b.totalTimeMs);
     const dsqs = currentRows.filter((r) => r.totalTimeDisplay === "DSQ");
     const actives = currentRows.filter(
-      (r) => r.totalTimeDisplay === "ACTIVE" || r.totalTimeDisplay === "RUNNER",
+      (r) => r.totalTimeDisplay === "ACTIVE" || r.totalTimeDisplay === "Active",
     );
     const notStarted = currentRows.filter((r) => r.totalTimeDisplay === "-");
 
@@ -165,7 +165,7 @@ export default function LeaderboardTable({
           r.totalTimeDisplay !== "DNF" &&
           r.totalTimeDisplay !== "DSQ" &&
           r.totalTimeDisplay !== "ACTIVE" &&
-          r.totalTimeDisplay !== "RUNNER" &&
+          r.totalTimeDisplay !== "Active" &&
           r.totalTimeDisplay !== "-",
       );
       const sorted = [...finishers]
@@ -702,7 +702,7 @@ export default function LeaderboardTable({
                   r.totalTimeDisplay === "DNF" || r.totalTimeDisplay === "DSQ";
                 const isActive =
                   r.totalTimeDisplay === "ACTIVE" ||
-                  r.totalTimeDisplay === "RUNNER";
+                  r.totalTimeDisplay === "Active";
                 const isTop3 = r.rank != null && r.rank <= 3;
 
                 return (

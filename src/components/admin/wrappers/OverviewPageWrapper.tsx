@@ -128,7 +128,7 @@ export default function OverviewPageWrapper() {
                   finishTimeRaw: "-",
                   startTimeRaw: startTimeStr,
                   totalTimeMs: 0,
-                  totalTimeDisplay: "RUNNER",
+                  totalTimeDisplay: "Active",
                   epc: p.epc,
                   penaltyMs: penaltyMap.get(p.epc) || 0,
                });

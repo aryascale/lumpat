@@ -525,7 +525,7 @@ export function useLeaderboardData(eventId: string) {
                   ? "DNF"
                   : isLiveActive
                     ? startMs
-                      ? "RUNNER"
+                      ? "Active"
                       : "-"
                     : formatDuration(total!),
             penaltyMs: penMs,
@@ -543,7 +543,7 @@ export function useLeaderboardData(eventId: string) {
           (r) =>
             r.totalTimeDisplay !== "DNF" &&
             r.totalTimeDisplay !== "DSQ" &&
-            r.totalTimeDisplay !== "RUNNER" &&
+            r.totalTimeDisplay !== "Active" &&
             r.totalTimeDisplay !== "ACTIVE" &&
             r.totalTimeDisplay !== "-",
         );
@@ -553,7 +553,7 @@ export function useLeaderboardData(eventId: string) {
 
         const actives = uniqueRows.filter(
           (r) =>
-            r.totalTimeDisplay === "RUNNER" || r.totalTimeDisplay === "ACTIVE",
+            r.totalTimeDisplay === "Active" || r.totalTimeDisplay === "ACTIVE",
         );
         const dnfs = uniqueRows
           .filter((r) => r.totalTimeDisplay === "DNF")

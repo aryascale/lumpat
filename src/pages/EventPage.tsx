@@ -1232,7 +1232,7 @@ export default function EventPage() {
 
             if (!finishEntry?.ms) {
               pushIncompleteRow(
-                fallbackStartMs ? "RUNNER" : "-",
+                fallbackStartMs ? "Active" : "-",
                 fallbackStartMs,
                 rawStartStr,
               );
@@ -1362,6 +1362,8 @@ export default function EventPage() {
             r.totalTimeDisplay !== "DNF" &&
             r.totalTimeDisplay !== "DSQ" &&
             r.totalTimeDisplay !== "ACTIVE" &&
+            r.totalTimeDisplay !== "Active" &&
+            r.totalTimeDisplay !== "RUNNER" &&
             r.totalTimeDisplay !== "NO START TIME" &&
             r.totalTimeDisplay !== "Registered",
         );
@@ -1420,7 +1422,9 @@ export default function EventPage() {
           .filter((r) => r.totalTimeDisplay === "DNF")
           .sort((a, b) => a.totalTimeMs - b.totalTimeMs);
         const dsqs = baseRows.filter((r) => r.totalTimeDisplay === "DSQ");
-        const actives = baseRows.filter((r) => r.totalTimeDisplay === "ACTIVE");
+        const actives = baseRows.filter(
+          (r) => r.totalTimeDisplay === "ACTIVE" || r.totalTimeDisplay === "Active" || r.totalTimeDisplay === "RUNNER"
+        );
         const registereds = baseRows.filter(
           (r) => r.totalTimeDisplay === "Registered",
         );
