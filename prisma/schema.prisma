@@ -228,6 +228,8 @@ model RunnerStatus {
   epc       String
   bib       String?
   isDQ      Boolean  @default(false)
+  isDNS     Boolean  @default(false)
+  isDNF     Boolean  @default(false)
   isHidden  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

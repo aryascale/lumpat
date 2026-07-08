@@ -45,7 +45,7 @@ function formatNowAsTimestamp(): string {
 }
 
 export default function EventDetailPage({ eventId, eventSlug, eventName, onBack }: EventDetailPageProps) {
-  const [activeTab, setActiveTab] = useState<'homepage' | 'data' | 'live_data' | 'banners' | 'gallery' | 'categories' | 'route' | 'timing' | 'manual_start' | 'manual_finish' | 'dq' | 'penalty' | 'certified' | 'settings' | 'registration' | 'inventory' | 'checkpoints'>(() => {
+  const [activeTab, setActiveTab] = useState<'homepage' | 'data' | 'live_data' | 'banners' | 'gallery' | 'categories' | 'route' | 'timing' | 'manual_start' | 'manual_finish' | 'dq' | 'dns' | 'dnf' | 'penalty' | 'certified' | 'settings' | 'registration' | 'inventory' | 'checkpoints'>(() => {
     return (localStorage.getItem(`admin_tab_${eventId}`) as any) || 'homepage';
   });
 
@@ -111,6 +111,10 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   const [allRows, setAllRows] = useState<LeaderRow[]>([]);
   const [dqSearch, setDqSearch] = useState("");
   const [dqMap, setDqMap] = useState<Record<string, boolean>>({});
+  const [dnsSearch, setDnsSearch] = useState("");
+  const [dnsMap, setDnsMap] = useState<Record<string, boolean>>({});
+  const [dnfSearch, setDnfSearch] = useState("");
+  const [dnfMap, setDnfMap] = useState<Record<string, boolean>>({});
   const [hiddenMap, setHiddenMap] = useState<Record<string, boolean>>({});
   const [eventData, setEventData] = useState<any>(null);
 
@@ -126,7 +130,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
 
   // Load DQ data when switching to DQ tab
   useEffect(() => {
-    if (activeTab === 'dq' || activeTab === 'penalty') {
+    if (activeTab === 'dq' || activeTab === 'penalty' || activeTab === 'dns' || activeTab === 'dnf') {
       loadDQData();
     }
     if (activeTab === 'certified') {
@@ -238,6 +242,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
 
       // Load runner status map from API
       let dqData: Record<string, boolean> = {};
+      let dnsData: Record<string, boolean> = {};
+      let dnfData: Record<string, boolean> = {};
       let hiddenData: Record<string, boolean> = {};
       try {
         const res = await fetch(`/api/runner-status?eventId=${eventId}`);
@@ -246,6 +252,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           if (Array.isArray(data)) {
             data.forEach((s: any) => {
               if (s.isDQ) dqData[s.epc] = true;
+              if (s.isDNS) dnsData[s.epc] = true;
+              if (s.isDNF) dnfData[s.epc] = true;
               if (s.isHidden) hiddenData[s.epc] = true;
             });
           }
@@ -254,6 +262,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         console.error("Failed to load runner status:", e);
       }
       setDqMap(dqData);
+      setDnsMap(dnsData);
+      setDnfMap(dnfData);
       setHiddenMap(hiddenData);
 
       const absOverrideMs: Record<string, number | null> = {};
@@ -335,7 +345,10 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         }
 
         const isDQ = !!dqData[p.epc];
-        const isDNF = cutoffMs != null && total != null && total > cutoffMs;
+        const isDNS = !!dnsData[p.epc];
+        const isManualDNF = !!dnfData[p.epc];
+        const isCalculatedDNF = cutoffMs != null && total != null && total > cutoffMs;
+        const finalIsDNF = isManualDNF || isCalculatedDNF;
 
         baseRows.push({
           rank: null,
@@ -345,8 +358,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           category: p.category || p.sourceCategoryKey,
           sourceCategoryKey: p.sourceCategoryKey,
           finishTimeRaw: finishEntry?.raw ? extractTimeOfDay(finishEntry.raw) : "-",
-          totalTimeMs: total,
-          totalTimeDisplay: isDQ ? "DSQ" : isDNF ? "DNF" : (total != null ? formatDuration(total) : "--:--"),
+          totalTimeMs: total ?? 0,
+          totalTimeDisplay: isDQ ? "DSQ" : isDNS ? "DNS" : finalIsDNF ? "DNF" : (total != null ? formatDuration(total) : "--:--"),
           epc: p.epc,
         });
       });
@@ -1032,7 +1045,43 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       await fetch('/api/runner-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId, epc, bib, isDQ: nextVal, isHidden: !!hiddenMap[epc] })
+        body: JSON.stringify({ eventId, epc, bib, isDQ: nextVal, isDNS: !!dnsMap[epc], isDNF: !!dnfMap[epc], isHidden: !!hiddenMap[epc] })
+      });
+    } catch (e) { console.error(e); }
+
+    bumpDataVersion();
+  };
+
+  // Toggle DNS
+  const toggleDNS = async (epc: string, bib: string) => {
+    const nextVal = !dnsMap[epc];
+    const next = { ...dnsMap, [epc]: nextVal };
+    if (!nextVal) delete next[epc];
+    setDnsMap(next);
+
+    try {
+      await fetch('/api/runner-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId, epc, bib, isDQ: !!dqMap[epc], isDNS: nextVal, isDNF: !!dnfMap[epc], isHidden: !!hiddenMap[epc] })
+      });
+    } catch (e) { console.error(e); }
+
+    bumpDataVersion();
+  };
+
+  // Toggle DNF
+  const toggleDNF = async (epc: string, bib: string) => {
+    const nextVal = !dnfMap[epc];
+    const next = { ...dnfMap, [epc]: nextVal };
+    if (!nextVal) delete next[epc];
+    setDnfMap(next);
+
+    try {
+      await fetch('/api/runner-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId, epc, bib, isDQ: !!dqMap[epc], isDNS: !!dnsMap[epc], isDNF: nextVal, isHidden: !!hiddenMap[epc] })
       });
     } catch (e) { console.error(e); }
 
@@ -1049,7 +1098,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       await fetch('/api/runner-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId, epc, bib, isDQ: !!dqMap[epc], isHidden: nextVal })
+        body: JSON.stringify({ eventId, epc, bib, isDQ: !!dqMap[epc], isDNS: !!dnsMap[epc], isDNF: !!dnfMap[epc], isHidden: nextVal })
       });
     } catch (e) { console.error(e); }
 
@@ -1141,6 +1190,28 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         (r.name || "").toLowerCase().includes(query)
     );
   }, [dqSearch, allRows]);
+
+  // Filter rows for DNS tab
+  const filteredDnsRows = useMemo(() => {
+    const query = dnsSearch.trim().toLowerCase();
+    if (!query) return allRows;
+    return allRows.filter(
+      (r) =>
+        (r.bib || "").toLowerCase().includes(query) ||
+        (r.name || "").toLowerCase().includes(query)
+    );
+  }, [dnsSearch, allRows]);
+
+  // Filter rows for DNF tab
+  const filteredDnfRows = useMemo(() => {
+    const query = dnfSearch.trim().toLowerCase();
+    if (!query) return allRows;
+    return allRows.filter(
+      (r) =>
+        (r.bib || "").toLowerCase().includes(query) ||
+        (r.name || "").toLowerCase().includes(query)
+    );
+  }, [dnfSearch, allRows]);
 
   const metaByKind: Partial<Record<CsvKind, { filename: string; updatedAt: number; rows: number }>> = {};
   csvMeta.forEach((x) => {
@@ -1260,7 +1331,19 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           className={`detail-tab whitespace-nowrap ${activeTab === 'dq' ? 'active' : ''}`}
           onClick={() => setActiveTab('dq')}
         >
-          DQ / DNF
+          DSQ
+        </button>
+        <button
+          className={`detail-tab whitespace-nowrap ${activeTab === 'dns' ? 'active' : ''}`}
+          onClick={() => setActiveTab('dns')}
+        >
+          DNS
+        </button>
+        <button
+          className={`detail-tab whitespace-nowrap ${activeTab === 'dnf' ? 'active' : ''}`}
+          onClick={() => setActiveTab('dnf')}
+        >
+          DNF
         </button>
         <button
           className={`detail-tab whitespace-nowrap ${activeTab === 'penalty' ? 'active' : ''}`}
@@ -2365,6 +2448,256 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
 
           <div className="mt-4 p-3 bg-blue-50 border border-blue-400 rounded-lg text-blue-900 text-sm">
             <strong>Info:</strong> Total {Object.values(dqMap).filter(Boolean).length} peserta di-DSQ.
+          </div>
+        </div>
+      )}
+
+      {/* DNS Tab */}
+      {activeTab === 'dns' && (
+        <div className="card">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+            <div>
+              <h2 className="section-title">Did Not Start (Manual)</h2>
+              <div className="subtle text-sm">
+                Toggle DNS per runner (by EPC). DNS tampil di tabel tapi tanpa rank.
+              </div>
+            </div>
+            <input
+              className="search w-full sm:w-64"
+              placeholder="Search BIB / Name…"
+              value={dnsSearch}
+              onChange={(e) => setDnsSearch(e.target.value)}
+            />
+          </div>
+
+          <div className="hidden md:block table-wrap">
+            <table className="f1-table">
+              <thead>
+                <tr>
+                  <th className="col-bib">BIB</th>
+                  <th>NAME</th>
+                  <th className="col-gender">GENDER</th>
+                  <th className="col-cat">CATEGORY</th>
+                  <th style={{ width: 120 }}>STATUS</th>
+                  <th style={{ width: 120 }}>ACTION</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredDnsRows.map((r) => {
+                  const isDNS = !!dnsMap[r.epc];
+                  return (
+                    <tr key={r.epc} className="row-hover">
+                      <td className="mono">{r.bib}</td>
+                      <td className="name-cell">{r.name}</td>
+                      <td>{r.gender}</td>
+                      <td>
+                        <div>{r.category}</div>
+                        {r.ageCategory && (
+                          <div className="text-[10px] font-bold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded mt-1 inline-block">
+                            {r.ageCategory}
+                          </div>
+                        )}
+                      </td>
+                      <td className="mono strong">{isDNS ? "DNS" : "OK"}</td>
+                      <td>
+                        <div className="flex gap-1">
+                          <button
+                            className="btn ghost sm"
+                            onClick={() => toggleDNS(r.epc, r.bib || '')}
+                          >
+                            {isDNS ? "Undo DNS" : "Mark DNS"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {filteredDnsRows.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="empty">
+                      {allRows.length === 0
+                        ? "Upload data CSV terlebih dahulu di tab Data Upload."
+                        : "Tidak ada peserta yang cocok."}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="md:hidden space-y-3">
+            {filteredDnsRows.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">
+                {allRows.length === 0
+                  ? "Upload data CSV terlebih dahulu di tab Data Upload."
+                  : "Tidak ada peserta yang cocok."}
+              </div>
+            ) : (
+              filteredDnsRows.map((r) => {
+                const isDNS = !!dnsMap[r.epc];
+                return (
+                  <div key={r.epc} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <div className="font-semibold text-gray-900">{r.name}</div>
+                        <div className="text-sm text-gray-500">
+                          <span className="mono">BIB: {r.bib}</span>
+                          <span className="mx-2">·</span>
+                          <span>{r.gender}</span>
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {r.category}
+                        </div>
+                      </div>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-bold ${isDNS
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-green-100 text-green-700'
+                          }`}
+                      >
+                        {isDNS ? "DNS" : "OK"}
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        className={`btn w-full text-xs font-bold uppercase ${isDNS ? '' : 'ghost'}`}
+                        onClick={() => toggleDNS(r.epc, r.bib || '')}
+                      >
+                        {isDNS ? "Undo DNS" : "Mark DNS"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-400 rounded-lg text-blue-900 text-sm">
+            <strong>Info:</strong> Total {Object.values(dnsMap).filter(Boolean).length} peserta di-DNS.
+          </div>
+        </div>
+      )}
+
+      {/* DNF Tab */}
+      {activeTab === 'dnf' && (
+        <div className="card">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+            <div>
+              <h2 className="section-title">Did Not Finish (Manual)</h2>
+              <div className="subtle text-sm">
+                Toggle DNF per runner (by EPC). DNF tampil di tabel tapi tanpa rank.
+              </div>
+            </div>
+            <input
+              className="search w-full sm:w-64"
+              placeholder="Search BIB / Name…"
+              value={dnfSearch}
+              onChange={(e) => setDnfSearch(e.target.value)}
+            />
+          </div>
+
+          <div className="hidden md:block table-wrap">
+            <table className="f1-table">
+              <thead>
+                <tr>
+                  <th className="col-bib">BIB</th>
+                  <th>NAME</th>
+                  <th className="col-gender">GENDER</th>
+                  <th className="col-cat">CATEGORY</th>
+                  <th style={{ width: 120 }}>STATUS</th>
+                  <th style={{ width: 120 }}>ACTION</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredDnfRows.map((r) => {
+                  const isDNF = !!dnfMap[r.epc];
+                  return (
+                    <tr key={r.epc} className="row-hover">
+                      <td className="mono">{r.bib}</td>
+                      <td className="name-cell">{r.name}</td>
+                      <td>{r.gender}</td>
+                      <td>
+                        <div>{r.category}</div>
+                        {r.ageCategory && (
+                          <div className="text-[10px] font-bold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded mt-1 inline-block">
+                            {r.ageCategory}
+                          </div>
+                        )}
+                      </td>
+                      <td className="mono strong">{isDNF ? "DNF" : "OK"}</td>
+                      <td>
+                        <div className="flex gap-1">
+                          <button
+                            className="btn ghost sm"
+                            onClick={() => toggleDNF(r.epc, r.bib || '')}
+                          >
+                            {isDNF ? "Undo DNF" : "Mark DNF"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {filteredDnfRows.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="empty">
+                      {allRows.length === 0
+                        ? "Upload data CSV terlebih dahulu di tab Data Upload."
+                        : "Tidak ada peserta yang cocok."}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="md:hidden space-y-3">
+            {filteredDnfRows.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">
+                {allRows.length === 0
+                  ? "Upload data CSV terlebih dahulu di tab Data Upload."
+                  : "Tidak ada peserta yang cocok."}
+              </div>
+            ) : (
+              filteredDnfRows.map((r) => {
+                const isDNF = !!dnfMap[r.epc];
+                return (
+                  <div key={r.epc} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <div className="font-semibold text-gray-900">{r.name}</div>
+                        <div className="text-sm text-gray-500">
+                          <span className="mono">BIB: {r.bib}</span>
+                          <span className="mx-2">·</span>
+                          <span>{r.gender}</span>
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {r.category}
+                        </div>
+                      </div>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-bold ${isDNF
+                          ? 'bg-orange-100 text-orange-800'
+                          : 'bg-green-100 text-green-700'
+                          }`}
+                      >
+                        {isDNF ? "DNF" : "OK"}
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        className={`btn w-full text-xs font-bold uppercase ${isDNF ? '' : 'ghost'}`}
+                        onClick={() => toggleDNF(r.epc, r.bib || '')}
+                      >
+                        {isDNF ? "Undo DNF" : "Mark DNF"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-400 rounded-lg text-blue-900 text-sm">
+            <strong>Info:</strong> Total {Object.values(dnfMap).filter(Boolean).length} peserta di-DNF.
           </div>
         </div>
       )}
