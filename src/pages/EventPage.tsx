@@ -1813,13 +1813,19 @@ export default function EventPage() {
                                 doc.body.addEventListener("click", (ev) => {
                                   const target = ev.target as HTMLElement;
                                   const btn = target.closest(
-                                    'a[href="#tickets"], a[href="#participants"], button[data-ticket], .btn-buy, .btn-fun',
+                                    'a[href="#tickets"], a[href="#participants"], button[data-ticket], .btn-buy, .btn-fun, .rp-badge, .rp-coming, .rp-submit-btn',
                                   );
                                   if (
                                     btn &&
                                     (btn as HTMLElement).id !== "backToTop"
                                   ) {
                                     ev.preventDefault();
+                                    
+                                    if (btn.classList.contains('rp-badge') || btn.classList.contains('rp-coming') || btn.classList.contains('rp-submit-btn')) {
+                                      setRegisterModalOpen(true);
+                                      return;
+                                    }
+
                                     const participantsTab =
                                       document.querySelector(
                                         'button[data-tab="Participants"]',
@@ -1844,6 +1850,16 @@ export default function EventPage() {
                           className="w-full overflow-hidden"
                           dangerouslySetInnerHTML={{
                             __html: event.content.about,
+                          }}
+                          onClick={(ev) => {
+                            const target = ev.target as HTMLElement;
+                            const btn = target.closest(
+                              '.rp-badge, .rp-coming, .rp-submit-btn'
+                            );
+                            if (btn) {
+                              ev.preventDefault();
+                              setRegisterModalOpen(true);
+                            }
                           }}
                         />
                       )
