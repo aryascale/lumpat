@@ -74,11 +74,14 @@ export default function AdminLayout() {
     e.preventDefault();
     if (pass === ADMIN_PASS || pass === "lumpat123") {
       let currentRole = "admin";
-      if (user === "event_manager") currentRole = "event_manager";
-      else if (user === "stock_manager") currentRole = "stock_manager";
-      else if (user === "event_time_setter") currentRole = "event_time_setter";
-      else if (user === "rpc_validator") currentRole = "rpc_validator";
-      else if (user !== ADMIN_USER) {
+      // Allow user to type either just the role, or role@... (e.g. event_manager@domain.com)
+      const username = user.split("@")[0].toLowerCase();
+
+      if (username === "event_manager") currentRole = "event_manager";
+      else if (username === "stock_manager") currentRole = "stock_manager";
+      else if (username === "event_time_setter") currentRole = "event_time_setter";
+      else if (username === "rpc_validator") currentRole = "rpc_validator";
+      else if (user !== ADMIN_USER && username !== ADMIN_USER.split("@")[0]) {
         setError("Username tidak dikenal!");
         return;
       }
@@ -125,13 +128,13 @@ export default function AdminLayout() {
 
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label htmlFor="admin-email" className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <label htmlFor="admin-email" className="block text-sm font-medium text-gray-700 mb-2">Username / Email</label>
                 <Input
                   id="admin-email"
-                  type="email"
+                  type="text"
                   value={user}
                   onChange={(e) => setUser(e.target.value)}
-                  placeholder="admin@example.com"
+                  placeholder="admin@example.com atau event_manager"
                   size="large"
                   required
                 />
