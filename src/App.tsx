@@ -11,7 +11,7 @@ import EventPage from "./pages/EventPage";
 import SupportTicketPage from "./pages/SupportTicketPage";
 import CheckTicketPage from "./pages/CheckTicketPage";
 import RpcPage from "./pages/RpcPage";
-
+import ParticipantDetailPage from "./pages/ParticipantDetailPage";
 import CheckpointLayout from "./components/checkpoint/CheckpointLayout";
 import CheckpointDashboard from "./pages/checkpoint/CheckpointDashboard";
 
@@ -57,6 +57,7 @@ export default function App() {
         <Route path="/admin/home" element={<HomePage />} />
         <Route path="/admin/create-event" element={<CreateEventPage />} />
         <Route path="/event/:slug" element={<EventPage />} />
+        <Route path="/participant/:name" element={<ParticipantDetailPage />} />
         <Route path="/rpc/:slug" element={<RpcPage />} />
 
         {/* New Admin Routes with Layout */}

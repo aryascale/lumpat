@@ -512,7 +512,7 @@ export default function EventPage() {
         return;
       }
 
-      if (data.snapToken && (window as any).snap) {
+      if (data.snapToken) {
         const pollPaymentStatus = async (oid: string, maxRetries = 10) => {
           console.log(`[POLL] Starting payment polling for orderId: ${oid}`);
           if (!oid) {
@@ -552,29 +552,45 @@ export default function EventPage() {
           console.log(`[POLL] Max retries reached for ${oid}`);
         };
 
-        (window as any).snap.pay(data.snapToken, {
-          onSuccess: () => {
-            message.success("Pembayaran berhasil! Kamu terdaftar.");
-            setRegisterModalOpen(false);
-            if (event?.id) fetchRegisteredParticipants(event.id);
-            pollPaymentStatus(data.orderId);
-          },
-          onPending: () => {
-            message.info("Menunggu pembayaran...");
-            setRegisterModalOpen(false);
-            if (event?.id) fetchRegisteredParticipants(event.id);
-            pollPaymentStatus(data.orderId);
-          },
-          onError: () => {
-            message.error("Pembayaran gagal");
-            if (event?.id) fetchRegisteredParticipants(event.id);
-          },
-          onClose: () => {
-            message.info("Popup pembayaran ditutup");
-            if (event?.id) fetchRegisteredParticipants(event.id);
-            pollPaymentStatus(data.orderId);
-          },
-        });
+        if ((window as any).snap) {
+          try {
+            (window as any).snap.pay(data.snapToken, {
+              onSuccess: () => {
+                message.success("Pembayaran berhasil! Kamu terdaftar.");
+                setRegisterModalOpen(false);
+                if (event?.id) fetchRegisteredParticipants(event.id);
+                pollPaymentStatus(data.orderId);
+              },
+              onPending: () => {
+                message.info("Menunggu pembayaran...");
+                setRegisterModalOpen(false);
+                if (event?.id) fetchRegisteredParticipants(event.id);
+                pollPaymentStatus(data.orderId);
+              },
+              onError: () => {
+                message.error("Pembayaran gagal");
+                if (event?.id) fetchRegisteredParticipants(event.id);
+              },
+              onClose: () => {
+                message.info("Popup pembayaran ditutup");
+                if (event?.id) fetchRegisteredParticipants(event.id);
+                pollPaymentStatus(data.orderId);
+              },
+            });
+          } catch (err) {
+            if (data.snapUrl) {
+              window.location.href = data.snapUrl;
+            } else {
+              message.error("Gagal membuka halaman pembayaran Midtrans.");
+            }
+          }
+        } else {
+          if (data.snapUrl) {
+            window.location.href = data.snapUrl;
+          } else {
+            message.error("Midtrans snap.js gagal dimuat.");
+          }
+        }
       } else {
         message.success(
           "Registrasi berhasil disimpan (Midtrans belum dikonfigurasi)",
@@ -2071,6 +2087,9 @@ export default function EventPage() {
                               /[\uD83C][\uDDE6-\uDDFF][\uD83C][\uDDE6-\uDDFF]/,
                             );
                           const flag = flagMatch ? flagMatch[0] : "";
+                          const cleanName = nationalityStr.replace(/[\uD83C][\uDDE6-\uDDFF][\uD83C][\uDDE6-\uDDFF]/g, '').trim();
+                          const countryMatch = getData().find((c) => c.name.toLowerCase() === cleanName.toLowerCase());
+                          const countryCode = countryMatch ? countryMatch.code.toLowerCase() : null;
 
                           return (
                             <tr
@@ -2084,12 +2103,14 @@ export default function EventPage() {
                               <td className="py-3 px-2 font-mono text-stone-400">
                                 {idx + 1}
                               </td>
-                              <td className="py-3 px-2 font-bold text-stone-900">
-                                {flag && (
+                              <td className="py-3 px-2 font-bold text-stone-900 flex items-center">
+                                {countryCode ? (
+                                  <img src={`https://flagcdn.com/w20/${countryCode}.png`} className="w-5 h-auto mr-2 rounded-sm" alt={countryCode} title={nationalityStr} />
+                                ) : flag ? (
                                   <span className="mr-2" title={nationalityStr}>
                                     {flag}
                                   </span>
-                                )}
+                                ) : null}
                                 {(() => {
                                   if (p.customData) {
                                     const entries = Object.entries(
@@ -2990,7 +3011,12 @@ export default function EventPage() {
                                 })
                               }
                               options={getData().map((c) => ({
-                                label: `${getUnicodeFlagIcon(c.code)} ${c.name}`,
+                                label: (
+                                  <div className="flex items-center gap-2">
+                                    <img src={`https://flagcdn.com/w20/${c.code.toLowerCase()}.png`} alt={c.code} className="w-4 h-auto" />
+                                    <span>{c.name}</span>
+                                  </div>
+                                ),
                                 value: `${getUnicodeFlagIcon(c.code)} ${c.name}`,
                               }))}
                             />

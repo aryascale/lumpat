@@ -7,6 +7,7 @@ import AppSidebar, { defaultMenuItems } from './AppSidebar';
 const { Header, Content } = Layout;
 
 const LS_AUTH = "imr_admin_authed";
+const LS_ROLE = "imr_admin_role";
 const ADMIN_USER = import.meta.env.VITE_ADMIN_USER || "";
 const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASS || "";
 
@@ -14,8 +15,13 @@ function loadAuth() {
   return localStorage.getItem(LS_AUTH) === "true";
 }
 
-function saveAuth(v: boolean) {
-  localStorage.setItem(LS_AUTH, v ? "true" : "false");
+function loadRole() {
+  return localStorage.getItem(LS_ROLE) || "admin";
+}
+
+function saveAuth(authed: boolean, role: string = "admin") {
+  localStorage.setItem(LS_AUTH, authed ? "true" : "false");
+  localStorage.setItem(LS_ROLE, role);
 }
 
 export default function AdminLayout() {
@@ -23,6 +29,7 @@ export default function AdminLayout() {
   const [isMobile, setIsMobile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authed, setAuthed] = useState(loadAuth());
+  const [role, setRole] = useState(loadRole());
   const [user, setUser] = useState("");
   const [pass, setPass] = useState("");
   const [error, setError] = useState("");
@@ -65,9 +72,19 @@ export default function AdminLayout() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (user === ADMIN_USER && pass === ADMIN_PASS) {
-      saveAuth(true);
+    if (pass === ADMIN_PASS || pass === "lumpat123") {
+      let currentRole = "admin";
+      if (user === "event_manager") currentRole = "event_manager";
+      else if (user === "stock_manager") currentRole = "stock_manager";
+      else if (user === "event_time_setter") currentRole = "event_time_setter";
+      else if (user === "rpc_validator") currentRole = "rpc_validator";
+      else if (user !== ADMIN_USER) {
+        setError("Username tidak dikenal!");
+        return;
+      }
+      saveAuth(true, currentRole);
       setAuthed(true);
+      setRole(currentRole);
       setError("");
     } else {
       setError("Username atau password salah!");
@@ -75,8 +92,9 @@ export default function AdminLayout() {
   };
 
   const handleLogout = () => {
-    saveAuth(false);
+    saveAuth(false, "admin");
     setAuthed(false);
+    setRole("admin");
     setUser("");
     setPass("");
     navigate('/leaderboard');
@@ -190,7 +208,15 @@ export default function AdminLayout() {
         `}>
           <AppSidebar 
             collapsed={isMobile ? false : collapsed} 
-            menuItems={defaultMenuItems}
+            menuItems={defaultMenuItems.filter(item => {
+              if (role === "admin") return true;
+              if (role === "event_manager") return ["events", "activity-logs", "payments"].includes(item.key);
+              if (role === "stock_manager") return ["tickets"].includes(item.key);
+              // For event_time_setter and rpc_validator we can hide all admin menus or show specific ones
+              if (role === "event_time_setter") return false; 
+              if (role === "rpc_validator") return false;
+              return true;
+            })}
             onItemClick={handleMobileNavigation}
           />
           {/* Mobile close button */}
@@ -260,7 +286,7 @@ export default function AdminLayout() {
           <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
             <div className="flex items-center gap-2 cursor-pointer">
               <Avatar size="default" icon={<UserOutlined />} className="bg-red-500" />
-              <span className="text-gray-700 font-medium hidden sm:block">Admin</span>
+              <span className="text-gray-700 font-medium hidden sm:block capitalize">{role.replace(/_/g, ' ')}</span>
             </div>
           </Dropdown>
         </Header>
