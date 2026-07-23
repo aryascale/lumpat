@@ -45,8 +45,25 @@ function formatNowAsTimestamp(): string {
 }
 
 export default function EventDetailPage({ eventId, eventSlug, eventName, onBack }: EventDetailPageProps) {
+  const userRole = localStorage.getItem("imr_admin_role") || "admin";
+
+  const getRoleDefaultTab = () => {
+    if (userRole === "event_time_setter") return "timing";
+    if (userRole === "rpc_validator") return "data";
+    return "homepage";
+  };
+
   const [activeTab, setActiveTab] = useState<'homepage' | 'data' | 'live_data' | 'banners' | 'gallery' | 'categories' | 'route' | 'timing' | 'manual_start' | 'manual_finish' | 'dq' | 'dns' | 'dnf' | 'penalty' | 'certified' | 'settings' | 'registration' | 'inventory' | 'checkpoints'>(() => {
-    return (localStorage.getItem(`admin_tab_${eventId}`) as any) || 'homepage';
+    const saved = localStorage.getItem(`admin_tab_${eventId}`) as any;
+    if (saved) {
+      const timeSetterTabs = ['timing', 'manual_start', 'manual_finish', 'dq', 'dns', 'dnf', 'penalty', 'certified'];
+      const rpcTabs = ['data', 'live_data', 'checkpoints'];
+      if (userRole === "event_time_setter" && !timeSetterTabs.includes(saved)) return "timing";
+      if (userRole === "rpc_validator" && !rpcTabs.includes(saved)) return "data";
+      if (userRole === "event_manager" && (timeSetterTabs.includes(saved) || rpcTabs.includes(saved))) return "homepage";
+      return saved;
+    }
+    return getRoleDefaultTab() as any;
   });
 
   useEffect(() => {
@@ -1246,124 +1263,148 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         </button>
       </div>
 
-      {/* Tabs - scrollable on mobile */}
-      <div className="flex gap-1 mb-4 overflow-x-auto pb-2 border-b-2 border-gray-200 -mx-3 px-3 md:mx-0 md:px-0">
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'homepage' ? 'active' : ''}`}
-          onClick={() => setActiveTab('homepage')}
-        >
-          Homepage
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'registration' ? 'active' : ''}`}
-          onClick={() => setActiveTab('registration')}
-        >
-          Registration ({regFields.length})
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'inventory' ? 'active' : ''}`}
-          onClick={() => setActiveTab('inventory')}
-        >
-          Inventory ({tshirtInventory.length})
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'banners' ? 'active' : ''}`}
-          onClick={() => setActiveTab('banners')}
-        >
-          Banners & Media
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'gallery' ? 'active' : ''}`}
-          onClick={() => setActiveTab('gallery')}
-        >
-          Gallery
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'categories' ? 'active' : ''}`}
-          onClick={() => setActiveTab('categories')}
-        >
-          Categories ({categories.length})
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'route' ? 'active' : ''}`}
-          onClick={() => setActiveTab('route')}
-        >
-          Route {currentGpxPath ? '(1)' : '(0)'}
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'data' ? 'active' : ''}`}
-          onClick={() => setActiveTab('data')}
-        >
-          Data Upload
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'live_data' ? 'active' : ''}`}
-          onClick={() => setActiveTab('live_data')}
-        >
-          Current Data
-        </button>
+      {/* Tabs */}
+      {(() => {
+        const isTimeSetter = userRole === "event_time_setter" || userRole === "admin";
+        const isRpcValidator = userRole === "rpc_validator" || userRole === "admin";
+        const isEventManager = userRole === "event_manager" || userRole === "admin";
+        
+        return (
+          <div className="flex gap-1 mb-4 overflow-x-auto pb-2 border-b-2 border-gray-200 -mx-3 px-3 md:mx-0 md:px-0">
+            {isEventManager && (
+              <>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'homepage' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('homepage')}
+                >
+                  Homepage
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'registration' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('registration')}
+                >
+                  Registration ({regFields.length})
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'inventory' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('inventory')}
+                >
+                  Inventory ({tshirtInventory.length})
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'banners' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('banners')}
+                >
+                  Banners & Media
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'gallery' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('gallery')}
+                >
+                  Gallery
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'categories' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('categories')}
+                >
+                  Categories ({categories.length})
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'route' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('route')}
+                >
+                  Route {currentGpxPath ? '(1)' : '(0)'}
+                </button>
+              </>
+            )}
 
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'checkpoints' ? 'active' : ''}`}
-          onClick={() => setActiveTab('checkpoints')}
-        >
-          Checkpoints
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'timing' ? 'active' : ''}`}
-          onClick={() => setActiveTab('timing')}
-        >
-          Timing Rules
-        </button>
-        <button
-          onClick={() => setActiveTab('manual_start')}
-          className={`detail-tab whitespace-nowrap ${activeTab === 'manual_start' ? 'active' : ''}`}
-        >
-          Manual Start
-        </button>
-        <button
-          onClick={() => setActiveTab('manual_finish')}
-          className={`detail-tab whitespace-nowrap ${activeTab === 'manual_finish' ? 'active' : ''}`}
-        >
-          Manual Finish
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'dq' ? 'active' : ''}`}
-          onClick={() => setActiveTab('dq')}
-        >
-          DSQ
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'dns' ? 'active' : ''}`}
-          onClick={() => setActiveTab('dns')}
-        >
-          DNS
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'dnf' ? 'active' : ''}`}
-          onClick={() => setActiveTab('dnf')}
-        >
-          DNF
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'penalty' ? 'active' : ''}`}
-          onClick={() => setActiveTab('penalty')}
-        >
-          Penalty
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'certified' ? 'active' : ''}`}
-          onClick={() => setActiveTab('certified')}
-        >
-          Certified {certData.hasCertificate ? '✓' : ''}
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'settings' ? 'active' : ''}`}
-          onClick={() => setActiveTab('settings')}
-        >
-          Settings
-        </button>
-      </div>
+            {isRpcValidator && (
+              <>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'data' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('data')}
+                >
+                  Data Upload
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'live_data' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('live_data')}
+                >
+                  Current Data
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'checkpoints' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('checkpoints')}
+                >
+                  Checkpoints
+                </button>
+              </>
+            )}
+
+            {isTimeSetter && (
+              <>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'timing' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('timing')}
+                >
+                  Timing Rules
+                </button>
+                <button
+                  onClick={() => setActiveTab('manual_start')}
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'manual_start' ? 'active' : ''}`}
+                >
+                  Manual Start
+                </button>
+                <button
+                  onClick={() => setActiveTab('manual_finish')}
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'manual_finish' ? 'active' : ''}`}
+                >
+                  Manual Finish
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'dq' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('dq')}
+                >
+                  DSQ
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'dns' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('dns')}
+                >
+                  DNS
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'dnf' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('dnf')}
+                >
+                  DNF
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'penalty' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('penalty')}
+                >
+                  Penalty
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'certified' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('certified')}
+                >
+                  Certified
+                </button>
+              </>
+            )}
+
+            {isEventManager && (
+              <button
+                className={`detail-tab whitespace-nowrap ${activeTab === 'settings' ? 'active' : ''}`}
+                onClick={() => setActiveTab('settings')}
+              >
+                Settings
+              </button>
+            )}
+          </div>
+        );
+      })()}
 
 
       {/* Data Upload Tab */}
