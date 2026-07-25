@@ -14,6 +14,54 @@
   --bronze: #d6a26a;
 }
 
+/* ========== Lumpat Floating Capsule Scrollbar ========== */
+*, html, body {
+  scrollbar-width: thin !important;
+  scrollbar-color: #FF383C transparent !important;
+}
+
+::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+  background: transparent !important;
+}
+
+/* Hide top/bottom arrow buttons */
+::-webkit-scrollbar-button,
+*::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* 100% Transparent Track */
+::-webkit-scrollbar-track,
+*::-webkit-scrollbar-track,
+::-webkit-scrollbar-track-piece,
+*::-webkit-scrollbar-track-piece {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Pure Floating Red Capsule */
+::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #FF383C 0%, #E11D48 100%) !important;
+  border-radius: 100px !important;
+}
+
+::-webkit-scrollbar-thumb:hover,
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #E11D48 0%, #BE123C 100%) !important;
+}
+
+::-webkit-scrollbar-corner,
+*::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+
 body {
   margin: 0;
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
@@ -2703,3 +2751,53 @@ body {
   overflow: hidden;
 }
 @plugin "@tailwindcss/typography";
+
+/* ========== Lumpat Floating Capsule Scrollbar ========== */
+*, html, body {
+  scrollbar-width: thin !important;
+  scrollbar-color: #FF383C transparent !important;
+}
+
+::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+  background: transparent !important;
+}
+
+/* Hide top/bottom arrow buttons */
+::-webkit-scrollbar-button,
+*::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* 100% Transparent Track */
+::-webkit-scrollbar-track,
+*::-webkit-scrollbar-track,
+::-webkit-scrollbar-track-piece,
+*::-webkit-scrollbar-track-piece {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Pure Floating Red Capsule */
+::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #FF383C 0%, #E11D48 100%) !important;
+  border-radius: 100px !important;
+}
+
+::-webkit-scrollbar-thumb:hover,
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #E11D48 0%, #BE123C 100%) !important;
+}
+
+::-webkit-scrollbar-corner,
+*::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+
+

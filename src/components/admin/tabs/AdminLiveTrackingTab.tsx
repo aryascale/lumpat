@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLeaderboardData } from '../../../hooks/useLeaderboardData';
-import LeaderboardTable, { LeaderRow } from '../../LeaderboardTable';
-import ParticipantModal from '../../ParticipantModal';
+import { useEvent } from '../../../contexts/EventContext';
+import LeaderboardTable from '../../LeaderboardTable';
 
 interface AdminLiveTrackingTabProps {
   eventId: string;
@@ -9,10 +10,10 @@ interface AdminLiveTrackingTabProps {
 
 export default function AdminLiveTrackingTab({ eventId }: AdminLiveTrackingTabProps) {
   const { state, overall, byCategory, eventCategories, forceRecalc } = useLeaderboardData(eventId);
+  const { events } = useEvent();
+  const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState<string>("Overall");
-  const [selected, setSelected] = useState<LeaderRow | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
 
   if (state.status === 'loading') {
     return (
@@ -80,37 +81,57 @@ export default function AdminLiveTrackingTab({ eventId }: AdminLiveTrackingTabPr
         categories={eventCategories}
         showTop10Badge={activeTab !== "Overall"}
         rows={rowsToDisplay}
-        onSelect={(r) => {
-          setSelected(r);
-          setModalOpen(true);
+        onSelect={(row) => {
+          const event = events.find(e => e.id === eventId);
+          if (!event) return;
+
+          // Calculate ranks
+          const finishers = overall.filter(
+            (r) =>
+              r.totalTimeDisplay !== "DNF" &&
+              r.totalTimeDisplay !== "DSQ" &&
+              r.totalTimeDisplay !== "Active" &&
+              r.totalTimeDisplay !== "-",
+          );
+          const overallIndex = finishers.findIndex((r) => r.epc === row.epc);
+          const overallRank = overallIndex !== -1 ? overallIndex + 1 : null;
+
+          const genderFiltered = finishers.filter((r) => r.gender === row.gender);
+          const genderIndex = genderFiltered.findIndex((r) => r.epc === row.epc);
+          const genderRank = genderIndex !== -1 ? genderIndex + 1 : null;
+
+          const categoryFiltered = finishers.filter((r) => r.category === row.category);
+          const categoryIndex = categoryFiltered.findIndex((r) => r.epc === row.epc);
+          const categoryRank = categoryIndex !== -1 ? categoryIndex + 1 : null;
+
+          const ageFiltered = finishers.filter((r) => r.ageCategory === row.ageCategory);
+          const ageIndex = ageFiltered.findIndex((r) => r.epc === row.epc);
+          const ageRank = ageIndex !== -1 ? ageIndex + 1 : null;
+
+          const data = {
+            name: row.name,
+            bib: row.bib,
+            gender: row.gender,
+            category: row.category,
+            ageCategory: row.ageCategory,
+            startTimeRaw: row.startTimeRaw ?? "-",
+            finishTimeRaw: row.finishTimeRaw,
+            totalTimeDisplay: row.totalTimeDisplay,
+            checkpointTimes: row.laps?.map(l => l.timeDisplay) || [],
+            penaltyMs: row.penaltyMs || 0,
+            totalTimeMs: row.totalTimeMs,
+            overallRank,
+            genderRank,
+            categoryRank,
+            ageRank,
+            distanceKm: row.distanceKm,
+          };
+
+          navigate(`/event/${event.slug}/participant/${row.epc}`, {
+            state: { modalData: data, eventId: event.id, eventName: event.name }
+          });
         }}
       />
-
-      {/* Detail Modal */}
-      {selected && (
-        <ParticipantModal
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          eventId={eventId}
-          data={{
-            name: selected.name,
-            bib: selected.bib,
-            gender: selected.gender,
-            category: selected.category,
-            ageCategory: selected.ageCategory,
-            startTimeRaw: selected.startTimeRaw,
-            finishTimeRaw: selected.finishTimeRaw,
-            totalTimeDisplay: selected.totalTimeDisplay,
-            checkpointTimes: selected.laps?.map(l => l.timeDisplay) || [],
-            penaltyMs: selected.penaltyMs || 0,
-            totalTimeMs: selected.totalTimeMs,
-            overallRank: selected.rank,
-            genderRank: null,
-            categoryRank: null,
-            ageRank: null,
-          }}
-        />
-      )}
     </div>
   );
 }

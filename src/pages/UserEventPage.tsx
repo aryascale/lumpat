@@ -7,13 +7,9 @@ import {
   Clock,
   ArrowLeft,
   ArrowRight,
-  Mail,
-  Phone,
   ChevronRight,
   Search,
-  Users,
-  Activity,
-  Heart
+  Activity
 } from "lucide-react";
 
 interface Event {
@@ -32,8 +28,6 @@ interface Event {
   participantCount?: number;
 }
 
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-
 // Formatter to match "16. Jan - 2026" premium style
 function formatPremiumDate(dateStr?: string) {
   if (!dateStr) return 'TBD';
@@ -45,15 +39,6 @@ function formatPremiumDate(dateStr?: string) {
   return `${day}. ${month} - ${year}`;
 }
 
-function formatDate(dateStr?: string, isTBA?: boolean) {
-  if (!dateStr) return 'TBD';
-  const d = new Date(dateStr);
-  if (isTBA) {
-    return d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
-  }
-  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
 // Generate typical event times based on type
 function getEventTime(event: Event) {
   const categories = event.categories || [];
@@ -62,12 +47,6 @@ function getEventTime(event: Event) {
   }
   return '07:00 AM - 10:00 AM';
 }
-
-const MOCK_AVATARS = [
-  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&fit=crop&q=80"
-];
 
 export default function UserEventPage() {
   const navigate = useNavigate();
@@ -392,14 +371,6 @@ export default function UserEventPage() {
               paginatedEvents.map((event) => {
                 const dateStr = formatPremiumDate(event.eventDate);
                 const isUpcoming = event.status === "upcoming";
-
-                // Determine mock runners label prefix
-                const catLower = (event.categories || []).map(c => c.toLowerCase());
-                const runnerLabel = catLower.some(c => c.includes('cycle') || c.includes('bike'))
-                  ? 'Cyclists'
-                  : catLower.some(c => c.includes('run') || c.includes('marathon'))
-                    ? 'Runners'
-                    : 'Partners';
 
                 return (
                   <div

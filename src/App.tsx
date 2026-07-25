@@ -11,6 +11,7 @@ import EventPage from "./pages/EventPage";
 import SupportTicketPage from "./pages/SupportTicketPage";
 import CheckTicketPage from "./pages/CheckTicketPage";
 import RpcPage from "./pages/RpcPage";
+import ParticipantResultPage from "./pages/ParticipantResultPage";
 
 import CheckpointLayout from "./components/checkpoint/CheckpointLayout";
 import CheckpointDashboard from "./pages/checkpoint/CheckpointDashboard";
@@ -25,10 +26,6 @@ import PaymentsPage from "./components/admin/pages/PaymentsPage";
 import ActivityLogsPage from "./components/admin/pages/ActivityLogsPage";
 import TicketsPage from "./components/admin/pages/TicketsPage";
 import { EventProvider } from "./contexts/EventContext";
-import SplashScreen from "./components/SplashScreen";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Profile from "./pages/Profile";
 import VerifyPage from "./pages/VerifyPage";
 import DevicePage from "./pages/DevicePage";
 
@@ -57,6 +54,7 @@ export default function App() {
         <Route path="/admin/home" element={<HomePage />} />
         <Route path="/admin/create-event" element={<CreateEventPage />} />
         <Route path="/event/:slug" element={<EventPage />} />
+        <Route path="/event/:slug/participant/:epc" element={<ParticipantResultPage />} />
         <Route path="/rpc/:slug" element={<RpcPage />} />
 
         {/* New Admin Routes with Layout */}
