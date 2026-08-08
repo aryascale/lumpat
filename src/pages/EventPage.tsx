@@ -2,11 +2,10 @@
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import { Html5Qrcode } from "html5-qrcode";
-import { useParams, Link, useSearchParams } from "react-router-dom";
+import { useParams, Link, useSearchParams, useNavigate } from "react-router-dom";
 import RaceClock from "../components/RaceClock";
 import CategorySection from "../components/CategorySection";
 import LeaderboardTable, { LeaderRow } from "../components/LeaderboardTable";
-import ParticipantModal from "../components/ParticipantModal";
 import InteractiveRouteMap from "../components/InteractiveRouteMap";
 import Navbar from "../components/Navbar";
 import { message, Modal, Select, Button, Input } from "antd";
@@ -157,6 +156,7 @@ function getAgeCategory(age: number | null): string {
 
 export default function EventPage() {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [event, setEvent] = useState<EventData | null>(null);
   const tzOffset = (event as any)?.timezoneOffset ?? 7;
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -189,8 +189,6 @@ export default function EventPage() {
   const [checkpointMap, setCheckpointMap] = useState<Map<string, string[]>>(
     new Map(),
   );
-  const [selected, setSelected] = useState<LeaderRow | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
   const [recalcTick, setRecalcTick] = useState(0);
   const { recordsByEpc, checkpoints } = useLiveTiming(event?.id || "default");
   const [gpxTrackPoints, setGpxTrackPoints] = useState<Array<[number, number]>>(
@@ -512,7 +510,7 @@ export default function EventPage() {
         return;
       }
 
-      if (data.snapToken) {
+      if (data.snapToken && (window as any).snap) {
         const pollPaymentStatus = async (oid: string, maxRetries = 10) => {
           console.log(`[POLL] Starting payment polling for orderId: ${oid}`);
           if (!oid) {
@@ -552,45 +550,29 @@ export default function EventPage() {
           console.log(`[POLL] Max retries reached for ${oid}`);
         };
 
-        if ((window as any).snap) {
-          try {
-            (window as any).snap.pay(data.snapToken, {
-              onSuccess: () => {
-                message.success("Pembayaran berhasil! Kamu terdaftar.");
-                setRegisterModalOpen(false);
-                if (event?.id) fetchRegisteredParticipants(event.id);
-                pollPaymentStatus(data.orderId);
-              },
-              onPending: () => {
-                message.info("Menunggu pembayaran...");
-                setRegisterModalOpen(false);
-                if (event?.id) fetchRegisteredParticipants(event.id);
-                pollPaymentStatus(data.orderId);
-              },
-              onError: () => {
-                message.error("Pembayaran gagal");
-                if (event?.id) fetchRegisteredParticipants(event.id);
-              },
-              onClose: () => {
-                message.info("Popup pembayaran ditutup");
-                if (event?.id) fetchRegisteredParticipants(event.id);
-                pollPaymentStatus(data.orderId);
-              },
-            });
-          } catch (err) {
-            if (data.snapUrl) {
-              window.location.href = data.snapUrl;
-            } else {
-              message.error("Gagal membuka halaman pembayaran Midtrans.");
-            }
-          }
-        } else {
-          if (data.snapUrl) {
-            window.location.href = data.snapUrl;
-          } else {
-            message.error("Midtrans snap.js gagal dimuat.");
-          }
-        }
+        (window as any).snap.pay(data.snapToken, {
+          onSuccess: () => {
+            message.success("Pembayaran berhasil! Kamu terdaftar.");
+            setRegisterModalOpen(false);
+            if (event?.id) fetchRegisteredParticipants(event.id);
+            pollPaymentStatus(data.orderId);
+          },
+          onPending: () => {
+            message.info("Menunggu pembayaran...");
+            setRegisterModalOpen(false);
+            if (event?.id) fetchRegisteredParticipants(event.id);
+            pollPaymentStatus(data.orderId);
+          },
+          onError: () => {
+            message.error("Pembayaran gagal");
+            if (event?.id) fetchRegisteredParticipants(event.id);
+          },
+          onClose: () => {
+            message.info("Popup pembayaran ditutup");
+            if (event?.id) fetchRegisteredParticipants(event.id);
+            pollPaymentStatus(data.orderId);
+          },
+        });
       } else {
         message.success(
           "Registrasi berhasil disimpan (Midtrans belum dikonfigurasi)",
@@ -1381,11 +1363,18 @@ export default function EventPage() {
             r.totalTimeDisplay !== "Active" &&
             r.totalTimeDisplay !== "RUNNER" &&
             r.totalTimeDisplay !== "NO START TIME" &&
-            r.totalTimeDisplay !== "Registered",
+            r.totalTimeDisplay !== "Registered" &&
+            r.totalTimeDisplay !== "DNS" &&
+            r.totalTimeDisplay !== "-",
         );
 
         const finisherSorted = [...finishers]
-          .sort((a, b) => a.totalTimeMs - b.totalTimeMs)
+          .sort((a, b) => {
+            const aLaps = a.laps?.length || 0;
+            const bLaps = b.laps?.length || 0;
+            if (aLaps !== bLaps) return bLaps - aLaps;
+            return a.totalTimeMs - b.totalTimeMs;
+          })
           .map((r, i) => ({ ...r, rank: i + 1 }));
 
         const finisherRankByEpc = new Map(
@@ -1544,38 +1533,76 @@ export default function EventPage() {
   ]);
 
   const onSelectParticipant = (row: LeaderRow) => {
-    setSelected(row);
-    setModalOpen(true);
-  };
+    // Exclude unranked status values to compute correct finisher ranks
+    const finishers = overall.filter(
+      (r) =>
+        r.totalTimeDisplay !== "DNF" &&
+        r.totalTimeDisplay !== "DSQ" &&
+        r.totalTimeDisplay !== "ACTIVE" &&
+        r.totalTimeDisplay !== "Active" &&
+        r.totalTimeDisplay !== "RUNNER" &&
+        r.totalTimeDisplay !== "NO START TIME" &&
+        r.totalTimeDisplay !== "Registered" &&
+        r.totalTimeDisplay !== "DNS" &&
+        r.totalTimeDisplay !== "-"
+    );
 
-  const modalData = useMemo(() => {
-    if (!selected) return null;
-    const maps = (EventPage as any)._rankMaps;
-    const overallRank = maps?.finisherRankByEpc?.get(selected.epc) ?? null;
-    const genderRank = maps?.genderRankByEpc?.get(selected.epc) ?? null;
-    const categoryRank = maps?.categoryRankByEpc?.get(selected.epc) ?? null;
+    // Sort by laps completed (descending) and time (ascending)
+    const sortedOverall = [...finishers].sort((a, b) => {
+      const aLaps = a.laps?.length || 0;
+      const bLaps = b.laps?.length || 0;
+      if (aLaps !== bLaps) return bLaps - aLaps;
+      return a.totalTimeMs - b.totalTimeMs;
+    });
 
-    const ageRank = maps?.ageRankByEpc?.get(selected.epc) ?? null;
+    const overallIndex = sortedOverall.findIndex((r) => r.epc === row.epc);
+    const overallRank = overallIndex !== -1 ? overallIndex + 1 : null;
 
-    return {
-      name: selected.name,
-      bib: selected.bib,
-      gender: selected.gender,
-      category: selected.category,
-      ageCategory: selected.ageCategory,
-      startTimeRaw: selected.startTimeRaw ?? "-",
-      finishTimeRaw: selected.finishTimeRaw,
-      totalTimeDisplay: selected.totalTimeDisplay,
-      checkpointTimes: checkpointMap.get(selected.epc) || [],
-      penaltyMs: selected.penaltyMs || 0,
-      totalTimeMs: selected.totalTimeMs,
+    // Category Rank (scoped by distance / category)
+    const sortedCategory = sortedOverall.filter((r) => r.category === row.category);
+    const categoryIndex = sortedCategory.findIndex((r) => r.epc === row.epc);
+    const categoryRank = categoryIndex !== -1 ? categoryIndex + 1 : null;
+
+    // Gender Rank (scoped by category + gender)
+    const sortedGender = sortedCategory.filter(
+      (r) => (r.gender || "").toLowerCase() === (row.gender || "").toLowerCase()
+    );
+    const genderIndex = sortedGender.findIndex((r) => r.epc === row.epc);
+    const genderRank = genderIndex !== -1 ? genderIndex + 1 : null;
+
+    // Age Category Rank (scoped by category + gender + ageCategory)
+    const rowAge = (row.ageCategory || "").trim();
+    const sortedAge = rowAge && rowAge !== "-" 
+      ? sortedGender.filter((r) => (r.ageCategory || "").trim() === rowAge)
+      : [];
+    const ageIndex = sortedAge.findIndex((r) => r.epc === row.epc);
+    const ageRank = ageIndex !== -1 ? ageIndex + 1 : null;
+
+    const data = {
+      name: row.name,
+      bib: row.bib,
+      gender: row.gender,
+      category: row.category,
+      ageCategory: row.ageCategory,
+      startTimeRaw: row.startTimeRaw ?? "-",
+      finishTimeRaw: row.finishTimeRaw,
+      totalTimeDisplay: row.totalTimeDisplay,
+      checkpointTimes: checkpointMap.get(row.epc) || [],
+      penaltyMs: row.penaltyMs || 0,
+      totalTimeMs: row.totalTimeMs,
       overallRank,
       genderRank,
       categoryRank,
       ageRank,
-      distanceKm: selected.distanceKm,
+      distanceKm: row.distanceKm,
     };
-  }, [selected, checkpointMap]);
+
+    navigate(`/event/${slug}/participant/${row.epc}`, {
+      state: { modalData: data, eventId: event?.id, eventName: event?.name }
+    });
+  };
+
+
 
   if (!event) {
     return (
@@ -2087,9 +2114,6 @@ export default function EventPage() {
                               /[\uD83C][\uDDE6-\uDDFF][\uD83C][\uDDE6-\uDDFF]/,
                             );
                           const flag = flagMatch ? flagMatch[0] : "";
-                          const cleanName = nationalityStr.replace(/[\uD83C][\uDDE6-\uDDFF][\uD83C][\uDDE6-\uDDFF]/g, '').trim();
-                          const countryMatch = getData().find((c) => c.name.toLowerCase() === cleanName.toLowerCase());
-                          const countryCode = countryMatch ? countryMatch.code.toLowerCase() : null;
 
                           return (
                             <tr
@@ -2103,14 +2127,12 @@ export default function EventPage() {
                               <td className="py-3 px-2 font-mono text-stone-400">
                                 {idx + 1}
                               </td>
-                              <td className="py-3 px-2 font-bold text-stone-900 flex items-center">
-                                {countryCode ? (
-                                  <img src={`https://flagcdn.com/w20/${countryCode}.png`} className="w-5 h-auto mr-2 rounded-sm" alt={countryCode} title={nationalityStr} />
-                                ) : flag ? (
+                              <td className="py-3 px-2 font-bold text-stone-900">
+                                {flag && (
                                   <span className="mr-2" title={nationalityStr}>
                                     {flag}
                                   </span>
-                                ) : null}
+                                )}
                                 {(() => {
                                   if (p.customData) {
                                     const entries = Object.entries(
@@ -3011,12 +3033,7 @@ export default function EventPage() {
                                 })
                               }
                               options={getData().map((c) => ({
-                                label: (
-                                  <div className="flex items-center gap-2">
-                                    <img src={`https://flagcdn.com/w20/${c.code.toLowerCase()}.png`} alt={c.code} className="w-4 h-auto" />
-                                    <span>{c.name}</span>
-                                  </div>
-                                ),
+                                label: `${getUnicodeFlagIcon(c.code)} ${c.name}`,
                                 value: `${getUnicodeFlagIcon(c.code)} ${c.name}`,
                               }))}
                             />
@@ -3614,12 +3631,7 @@ export default function EventPage() {
           </div>
         </Modal>
 
-        <ParticipantModal
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          data={modalData}
-          eventId={event?.id}
-        />
+
 
         <style>{`
           .event-page {
