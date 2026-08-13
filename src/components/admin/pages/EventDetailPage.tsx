@@ -13,7 +13,7 @@ import ManualStartBibPage from "./ManualStartBibPage";
 import ManualFinishBibPage from "./ManualFinishBibPage";
 import CheckpointsPage from "./CheckpointsPage";
 import AdminLiveTrackingTab from '../tabs/AdminLiveTrackingTab';
-import { Eye, EyeOff, Lock, Unlock, ArrowUp, ArrowDown, ChevronsUp, Trash2 } from 'lucide-react';
+import { Eye, EyeOff, Lock, Unlock, ArrowUp, ArrowDown, ChevronsUp, ChevronDown, Trash2 } from 'lucide-react';
 
 interface EventDetailPageProps {
   eventId: string;
