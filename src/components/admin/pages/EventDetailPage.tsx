@@ -44,6 +44,29 @@ function formatNowAsTimestamp(): string {
   return `${Y}-${M}-${D} ${h}:${m}:${s}.${ms}`;
 }
 
+function formatDateForInput(dateVal: any): string {
+  if (!dateVal) return '';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '';
+    return d.toISOString().split('T')[0];
+  } catch {
+    return '';
+  }
+}
+
+function formatDatetimeLocalForInput(dateVal: any): string {
+  if (!dateVal) return '';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '';
+    const localMs = d.getTime() - (d.getTimezoneOffset() * 60000);
+    return new Date(localMs).toISOString().slice(0, 16);
+  } catch {
+    return '';
+  }
+}
+
 export default function EventDetailPage({ eventId, eventSlug, eventName, onBack }: EventDetailPageProps) {
   const userRole = localStorage.getItem("imr_admin_role") || "admin";
 
@@ -3323,20 +3346,21 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
               <button
                 className="btn"
                 onClick={async () => {
+                  if (!eventData) return;
                   try {
                     const res = await fetch(`/api/events?eventId=${eventId}`, {
                       method: 'PUT',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
-                        isDraft: eventData.isDraft,
-                        publishAt: eventData.publishAt,
-                        name: eventData.name,
+                        isDraft: !!eventData.isDraft,
+                        publishAt: eventData.publishAt || null,
+                        name: eventData.name || '',
                         eventType: eventData.eventType || 'Running',
-                        eventDate: eventData.eventDate,
-                        location: eventData.location,
-                        isLoopMode: eventData.isLoopMode,
-                        minLapTimeMs: eventData.minLapTimeMs,
-                        timezoneOffset: eventData.timezoneOffset,
+                        eventDate: eventData.eventDate || null,
+                        location: eventData.location || '',
+                        isLoopMode: !!eventData.isLoopMode,
+                        minLapTimeMs: eventData.minLapTimeMs || 0,
+                        timezoneOffset: eventData.timezoneOffset || 7,
                         content: {
                           ...(eventData.content || {}),
                           about: homeContent.about || eventData.content?.about || '',
@@ -3358,8 +3382,9 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                       alert('Settings saved!');
                       await loadAllData();
                     } else alert('Failed to save settings');
-                  } catch {
-                    alert('Failed to save settings');
+                  } catch (err: any) {
+                    console.error('Error saving settings:', err);
+                    alert('Failed to save settings: ' + (err?.message || 'Unknown error'));
                   }
                 }}
               >
@@ -3408,7 +3433,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                   <input
                     type="date"
                     className="search w-full"
-                    value={eventData?.eventDate ? new Date(eventData.eventDate).toISOString().split('T')[0] : ''}
+                    value={formatDateForInput(eventData?.eventDate)}
                     onChange={(e) => setEventData({ ...eventData, eventDate: e.target.value })}
                   />
                   <label className="flex items-center gap-2 mt-2 cursor-pointer">
@@ -3571,7 +3596,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                   <input
                     type="datetime-local"
                     className="search w-full"
-                    value={eventData?.publishAt ? new Date(new Date(eventData.publishAt).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16) : ''}
+                    value={formatDatetimeLocalForInput(eventData?.publishAt)}
                     onChange={(e) => setEventData({ ...eventData, publishAt: e.target.value || null })}
                   />
                   <div className="text-xs text-gray-500 mt-2">
@@ -3634,34 +3659,37 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                     {categories.length === 0 ? (
                       <div className="text-xs text-stone-500 italic">Belum ada kategori yang ditambahkan.</div>
                     ) : (
-                      categories.map(cat => (
-                        <div key={cat.id} className="flex flex-col sm:flex-row sm:items-center gap-2">
-                          <div className="text-xs font-bold w-1/3">{cat.name}</div>
-                          <input
-                            type="text"
-                            placeholder="Contoh: 5001"
-                            className="search flex-1 text-sm"
-                            value={eventData?.content?.autoGenerateBibs?.categories?.[cat.id!] || ''}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              const catId = cat.id!;
-                              setEventData((prev: any) => ({
-                                ...prev,
-                                content: {
-                                  ...(prev?.content || {}),
-                                  autoGenerateBibs: {
-                                    ...(prev?.content?.autoGenerateBibs || {}),
-                                    categories: {
-                                      ...(prev?.content?.autoGenerateBibs?.categories || {}),
-                                      [catId]: val
+                      categories.map((cat, idx) => {
+                        const catId = (typeof cat === 'object' && cat && cat.id) ? cat.id : `cat_${idx}`;
+                        const catName = typeof cat === 'object' && cat ? cat.name : String(cat || '');
+                        return (
+                          <div key={catId} className="flex flex-col sm:flex-row sm:items-center gap-2">
+                            <div className="text-xs font-bold w-1/3">{catName}</div>
+                            <input
+                              type="text"
+                              placeholder="Contoh: 5001"
+                              className="search flex-1 text-sm"
+                              value={eventData?.content?.autoGenerateBibs?.categories?.[catId] || ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setEventData((prev: any) => ({
+                                  ...prev,
+                                  content: {
+                                    ...(prev?.content || {}),
+                                    autoGenerateBibs: {
+                                      ...(prev?.content?.autoGenerateBibs || {}),
+                                      categories: {
+                                        ...(prev?.content?.autoGenerateBibs?.categories || {}),
+                                        [catId]: val
+                                      }
                                     }
                                   }
-                                }
-                              }));
-                            }}
-                          />
-                        </div>
-                      ))
+                                }));
+                              }}
+                            />
+                          </div>
+                        );
+                      })
                     )}
                   </div>
                 )}
@@ -3694,7 +3722,10 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                 <div className="mb-4">
                   <div className="text-sm font-bold text-gray-700 mb-1">Dokumen T&C (Khusus PDF, Maks 5)</div>
                   {(() => {
-                    const tncUrls = eventData?.content?.tncUrls || (eventData?.content?.tncUrl ? [eventData.content.tncUrl] : []);
+                    const rawTncUrls = eventData?.content?.tncUrls;
+                    const tncUrls = Array.isArray(rawTncUrls)
+                      ? rawTncUrls
+                      : (eventData?.content?.tncUrl ? [eventData.content.tncUrl] : []);
                     return (
                       <div className="space-y-2 mb-2">
                         {tncUrls.map((url: string, idx: number) => (
