@@ -805,7 +805,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
             about: homeContent.about || eventData?.content?.about || '',
             schedule: homeContent.schedule || eventData?.content?.schedule || '',
             rules: homeContent.rules || eventData?.content?.rules || '',
-            allowBulkNoOtp: eventData?.content?.allowBulkNoOtp || false
+            allowBulkNoOtp: eventData?.content?.allowBulkNoOtp || false,
+            bulkMaxQty: eventData?.content?.bulkMaxQty || 10
           }
         }),
       });
@@ -3368,6 +3369,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                           rules: homeContent.rules || eventData.content?.rules || '',
                           maxLaps: eventData.content?.maxLaps || null,
                           allowBulkNoOtp: eventData.content?.allowBulkNoOtp || false,
+                          bulkMaxQty: eventData.content?.bulkMaxQty || 10,
                           enableRegisteredScan: eventData.content?.enableRegisteredScan !== false,
                           rpcBgUrl: eventData.content?.rpcBgUrl || '',
                           rpcBgUrlMobile: eventData.content?.rpcBgUrlMobile || '',
@@ -3626,6 +3628,63 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                     </span>
                   </div>
                 </label>
+
+                {/* Sub-setting: batas maks tiket — hanya tampil jika bulk diaktifkan */}
+                {eventData?.content?.allowBulkNoOtp && (
+                  <div className="mt-4 ml-8 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-sm font-semibold text-gray-700">Batas Maksimal Tiket per Transaksi (Bulk Max Qty)</span>
+                      <span className="text-xs text-gray-500">
+                        Tentukan berapa maksimal tiket yang bisa dibeli sekaligus dalam satu transaksi.
+                      </span>
+                      {/* Preset buttons */}
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        {[5, 10, 20].map((preset) => (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => setEventData({
+                              ...eventData,
+                              content: { ...(eventData?.content || {}), bulkMaxQty: preset }
+                            })}
+                            className={`px-4 py-1.5 rounded-lg text-sm font-bold border transition-all ${
+                              (eventData?.content?.bulkMaxQty || 10) === preset
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:text-blue-600'
+                            }`}
+                          >
+                            {preset}
+                          </button>
+                        ))}
+                        <span className="text-xs text-gray-400 mx-1">atau kustom:</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={100}
+                          value={
+                            [5, 10, 20].includes(eventData?.content?.bulkMaxQty || 10)
+                              ? ''
+                              : (eventData?.content?.bulkMaxQty || '')
+                          }
+                          placeholder="Angka..."
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value, 10);
+                            if (!isNaN(val) && val >= 1) {
+                              setEventData({
+                                ...eventData,
+                                content: { ...(eventData?.content || {}), bulkMaxQty: val }
+                              });
+                            }
+                          }}
+                          className="w-24 px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        />
+                      </div>
+                      <p className="text-xs text-blue-600 mt-1">
+                        ✦ Saat ini: maks <strong>{eventData?.content?.bulkMaxQty || 10}</strong> tiket per transaksi
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

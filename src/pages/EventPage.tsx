@@ -2898,44 +2898,51 @@ export default function EventPage() {
                       </div>
                     </div>
                     {event?.content?.allowBulkNoOtp && (
-                      <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-lg border border-stone-200">
-                        <span className="font-bold text-xs text-stone-500 uppercase">
-                          Qty
-                        </span>
-                        <Select
-                          size="small"
-                          bordered={false}
-                          virtual={false}
-                          getPopupContainer={(triggerNode) =>
-                            triggerNode.parentNode
-                          }
-                          value={bulkQty}
-                          onChange={(val) => {
-                            setBulkQty(val);
-                            setBulkParticipants((prev) => {
-                              const updated = [...prev];
-                              while (updated.length < val) updated.push({});
-                              return updated;
-                            });
-                            if (activeTabIdx >= val) setActiveTabIdx(val - 1);
-                          }}
-                          options={(() => {
+                      <div className="w-full mt-4 mb-2">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">Jumlah Tiket</span>
+                          <span className="text-xs text-stone-400">— pilih berapa tiket yang ingin dibeli</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {(() => {
                             const selectedCat = categoryDetails.find(
                               (c) => c.id === regForm.categoryId,
                             );
+                            const adminMax = event?.content?.bulkMaxQty || 10;
                             const available = selectedCat
                               ? selectedCat.quota > 0
                                 ? selectedCat.quota - selectedCat.sold
-                                : 10
-                              : 10;
-                            const max = Math.min(10, available);
-                            return Array.from(
-                              { length: max },
-                              (_, i) => i + 1,
-                            ).map((v) => ({ label: v.toString(), value: v }));
+                                : adminMax
+                              : adminMax;
+                            const max = Math.min(adminMax, available);
+                            return Array.from({ length: max }, (_, i) => i + 1).map((v) => (
+                              <button
+                                key={v}
+                                type="button"
+                                onClick={() => {
+                                  setBulkQty(v);
+                                  setBulkParticipants((prev) => {
+                                    const updated = [...prev];
+                                    while (updated.length < v) updated.push({});
+                                    return updated;
+                                  });
+                                  if (activeTabIdx >= v) setActiveTabIdx(v - 1);
+                                }}
+                                className={`min-w-[44px] h-11 px-3 rounded-xl text-sm font-bold border-2 transition-all duration-150 select-none
+                                  ${bulkQty === v
+                                    ? 'bg-blue-500 text-white border-blue-500 shadow-md scale-105'
+                                    : 'bg-white text-stone-600 border-stone-200 hover:border-blue-400 hover:text-blue-600 active:scale-95'
+                                  }`}
+                              >
+                                {v}
+                              </button>
+                            ));
                           })()}
-                          className="w-16"
-                        />
+                        </div>
+                        <p className="text-xs text-stone-400 mt-2">
+                          Kamu memilih <span className="font-bold text-blue-600">{bulkQty} tiket</span>
+                          {bulkQty > 1 && <> — isi data tiap peserta di tab di bawah</>}
+                        </p>
                       </div>
                     )}
                   </div>
