@@ -99,7 +99,7 @@ export default function AdminLayout() {
           <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
             {/* Logo */}
             <div className="flex justify-center mb-8">
-              <img src="/Assets/logo2.gif" alt="Logo" className="h-20 w-auto object-contain" />
+              <img src="/Assets/logo2.webp" alt="Logo" className="h-20 w-auto object-contain" />
             </div>
 
             <h2 className="text-2xl font-bold text-center text-gray-900 mb-2">Admin Login</h2>
@@ -248,7 +248,7 @@ export default function AdminLayout() {
           {isMobile && (
             <div className="flex items-center gap-2">
               <img
-                src="/Assets/logo.png"
+                src="/Assets/logo.webp"
                 alt="Logo"
                 className="h-8 w-auto object-contain"
               />

@@ -31,7 +31,7 @@ const SHOWCASE_DATA = [
     desc: "Publish race results instantly as athletes cross with ",
     descHighlight: "sub-second",
     descEnd: " latency and precision.",
-    image: "/Assets/landing2/result.png",
+    image: "/Assets/landing2/result.webp",
     name: "Live Timing",
     role: "Real-Time Engine"
   },
@@ -47,7 +47,7 @@ const SHOWCASE_DATA = [
     desc: "Design and share detailed 3D route maps with ",
     descHighlight: "elevation profiles",
     descEnd: " and checkpoint locations.",
-    image: "/Assets/landing2/map start and finish.png",
+    image: "/Assets/landing2/map start and finish.webp",
     name: "Route Builder",
     role: "Map Designer"
   },
@@ -63,7 +63,7 @@ const SHOWCASE_DATA = [
     desc: "Handle complex transition zones for ",
     descHighlight: "Triathlons",
     descEnd: " and Duathlons effortlessly.",
-    image: "/Assets/About/bct3.jpg",
+    image: "/Assets/About/bct3.webp",
     name: "Bogor City Trail",
     role: "Official Event"
   },
@@ -79,7 +79,7 @@ const SHOWCASE_DATA = [
     desc: "Build a stunning portfolio page for all your ",
     descHighlight: "past and upcoming",
     descEnd: " races and events.",
-    image: "/Assets/landing2/Event.png",
+    image: "/Assets/landing2/Event.webp",
     name: "Event Portfolio",
     role: "Brand Showcase"
   }

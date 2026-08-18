@@ -40,8 +40,8 @@ const DEVICES: Record<string, DeviceInfo> = {
     name: "Pro Time Decoder",
     heroSubtitle:
       "The professional timing hub that decrypts transponder reads with industry-leading precision. Dual-frequency sync. Continuous direct power. Zero compromise.",
-    image: "/Assets/landing2/Decoder1.png",
-    image2: "/Assets/landing2/Decoder2.png",
+    image: "/Assets/landing2/Decoder1.webp",
+    image2: "/Assets/landing2/Decoder2.webp",
     videoMp4: "/Assets/Device/DecoderAsset1.mp4",
     specs: [
       { value: "0.02s", label: "Timing Accuracy" },
@@ -91,8 +91,8 @@ const DEVICES: Record<string, DeviceInfo> = {
     name: "Magic Antenna",
     heroSubtitle:
       "Advanced high-gain UHF antenna system ensuring maximum transponder detection density even in packed start and finish zones.",
-    image: "/Assets/landing2/Antene1.png",
-    image2: "/Assets/landing2/Antene2.png",
+    image: "/Assets/landing2/Antene1.webp",
+    image2: "/Assets/landing2/Antene2.webp",
     videoMp4: "/Assets/Device/AnteneAsset1.mp4",
     specs: [
       { value: "99.9%", label: "Detection Rate" },
@@ -142,8 +142,8 @@ const DEVICES: Record<string, DeviceInfo> = {
     name: "Active Chip",
     heroSubtitle:
       "Sub-millisecond precision transponder designed for high-speed cycling, triathlons, and professional sports requiring active power backup.",
-    image: "/Assets/landing2/ActiveChip1.png",
-    image2: "/Assets/landing2/ActiveChip2.png",
+    image: "/Assets/landing2/ActiveChip1.webp",
+    image2: "/Assets/landing2/ActiveChip2.webp",
     videoMp4: "/Assets/Device/ActiveAsset1.mp4",
     specs: [
       { value: "<1ms", label: "Response Time" },
@@ -193,8 +193,8 @@ const DEVICES: Record<string, DeviceInfo> = {
     name: "Running Chip",
     heroSubtitle:
       "Ultra-lightweight passive UHF tags optimized for mass-participation marathons. Attach to bibs. Deliver reliable start and split times effortlessly.",
-    image: "/Assets/landing2/RunningChip2.png",
-    image2: "/Assets/landing2/RunningChip1.png",
+    image: "/Assets/landing2/RunningChip2.webp",
+    image2: "/Assets/landing2/RunningChip1.webp",
     videoMp4: "/Assets/Device/RunningAsset1.mp4",
     specs: [
       { value: "3g", label: "Ultra-Light Weight" },

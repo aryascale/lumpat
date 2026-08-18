@@ -20,7 +20,7 @@ export default function SplashScreen() {
   return (
     <div className={`splash-screen ${hidden ? 'splash-screen--hidden' : ''}`}>
       <img
-        src="/Assets/logo2.gif"
+        src="/Assets/logo2.webp"
         alt="IJT Logo"
         className="splash-screen__logo"
       />

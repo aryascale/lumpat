@@ -612,9 +612,9 @@ export default function UserEventPage() {
               <div className="flex flex-col items-start md:items-end gap-3 mt-4 md:mt-0">
                 <span className="text-gray-400 text-[10px] uppercase tracking-widest font-extrabold">Owned by IZT Race Technology</span>
                 <div className="flex items-center gap-4">
-                  <img src="/Assets/landing2/IJT LOGO.PNG" alt="IJT Logo" className="h-6 md:h-7 object-contain grayscale hover:grayscale-0 transition-all duration-500 opacity-60 hover:opacity-100" />
+                  <img src="/Assets/landing2/IJT LOGO.webp" alt="IJT Logo" className="h-6 md:h-7 object-contain grayscale hover:grayscale-0 transition-all duration-500 opacity-60 hover:opacity-100" />
                   <div className="w-px h-4 bg-gray-200"></div>
-                  <img src="/Assets/landing2/arraz.jpeg" alt="Arraz Logo" className="h-6 md:h-7 object-contain rounded-sm grayscale hover:grayscale-0 transition-all duration-500 opacity-60 hover:opacity-100" />
+                  <img src="/Assets/landing2/arraz.webp" alt="Arraz Logo" className="h-6 md:h-7 object-contain rounded-sm grayscale hover:grayscale-0 transition-all duration-500 opacity-60 hover:opacity-100" />
                 </div>
               </div>
             </div>
@@ -624,7 +624,7 @@ export default function UserEventPage() {
         {/* Loading overlay transition screen */}
         {navigatingTo && (
           <div className="fixed inset-0 z-50 bg-[#070b13] flex flex-col items-center justify-center">
-            <img src="/Assets/logo2.gif" alt="Loading" className="w-20 h-20 mb-4 opacity-80" />
+            <img src="/Assets/logo2.webp" alt="Loading" className="w-20 h-20 mb-4 opacity-80" />
             <div className="w-10 h-10 border-4 border-slate-800 border-t-[#DC2626] rounded-full animate-spin mb-3" />
             <p className="text-xs font-black text-slate-500 tracking-widest uppercase animate-pulse">Navigating...</p>
           </div>

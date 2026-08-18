@@ -170,7 +170,7 @@ export default function LandingPage() {
           {/* We repeat the items 16 times so it's wide enough. -50% translateX will loop exactly halfway. */}
           {[...Array(16)].map((_, i) => (
             <div key={i} className="flex items-center justify-center px-10 sm:px-20 opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300 cursor-default">
-              <img src="/Assets/landing2/IJT LOGO.PNG" alt="Logo" className="h-10 sm:h-16 object-contain" />
+              <img src="/Assets/landing2/IJT LOGO.webp" alt="Logo" className="h-10 sm:h-16 object-contain" />
             </div>
           ))}
         </div>
@@ -566,9 +566,9 @@ export default function LandingPage() {
             <div className="flex flex-col items-start md:items-end gap-3 mt-4 md:mt-0">
               <span className="text-gray-400 text-[10px] uppercase tracking-widest font-extrabold">Owned by IZT Race Technology</span>
               <div className="flex items-center gap-4">
-                <img src="/Assets/landing2/IJT LOGO.PNG" alt="IJT Logo" className="h-6 md:h-7 object-contain grayscale hover:grayscale-0 transition-all duration-500 opacity-60 hover:opacity-100" />
+                <img src="/Assets/landing2/IJT LOGO.webp" alt="IJT Logo" className="h-6 md:h-7 object-contain grayscale hover:grayscale-0 transition-all duration-500 opacity-60 hover:opacity-100" />
                 <div className="w-px h-4 bg-gray-200"></div>
-                <img src="/Assets/landing2/arraz.jpeg" alt="Arraz Logo" className="h-6 md:h-7 object-contain rounded-sm grayscale hover:grayscale-0 transition-all duration-500 opacity-60 hover:opacity-100" />
+                <img src="/Assets/landing2/arraz.webp" alt="Arraz Logo" className="h-6 md:h-7 object-contain rounded-sm grayscale hover:grayscale-0 transition-all duration-500 opacity-60 hover:opacity-100" />
               </div>
             </div>
           </div>

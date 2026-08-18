@@ -8,9 +8,9 @@ export default function AboutPage() {
   const [heroIndex, setHeroIndex] = useState(0);
 
   const heroImages = [
-    "/Assets/About/bct1.JPG",
-    "/Assets/About/bct2.JPG",
-    "/Assets/About/bct3.jpg"
+    "/Assets/About/bct1.webp",
+    "/Assets/About/bct2.webp",
+    "/Assets/About/bct3.webp"
   ];
 
   // Rotate hero images
@@ -31,19 +31,19 @@ export default function AboutPage() {
       badge: "Registration",
       title: "Online Registration & Payments",
       desc: "Fully custom branding registration portals with multi-payment verification, group checkout, and real-time racer database management.",
-      image: "/Assets/landing2/Registrasi.png"
+      image: "/Assets/landing2/Registrasi.webp"
     },
     {
       badge: "Timing Hardware",
       title: "Professional Timing Lineup",
       desc: "High-performance UHF active and passive transponders, decoder units, and high-gain antenna grids designed for 100% mat coverage.",
-      image: "/Assets/landing2/Decoder2.png"
+      image: "/Assets/landing2/Decoder2.webp"
     },
     {
       badge: "Live Results",
       title: "Real-Time Leaderboard Tracking",
       desc: "Live results display with automated category splitting, speed pace calculations, and instant digital certificates downloadable by participants.",
-      image: "/Assets/landing2/result.png"
+      image: "/Assets/landing2/result.webp"
     }
   ];
 
@@ -136,7 +136,7 @@ export default function AboutPage() {
             <div className="flex items-center gap-3">
               <div className="flex -space-x-3">
                 <img
-                  src="/Assets/landing2/arraz.jpeg"
+                  src="/Assets/landing2/arraz.webp"
                   alt="Timing Crew avatar"
                   className="w-8 h-8 rounded-full object-cover border-2 border-slate-900 shadow-md"
                 />
@@ -238,7 +238,7 @@ export default function AboutPage() {
             {/* Background image container */}
             <div className="absolute inset-0 z-0 overflow-hidden">
               <img
-                src="/Assets/About/bct3.jpg"
+                src="/Assets/About/bct3.webp"
                 alt="Trail running timing"
                 className="w-full h-full object-cover scale-100 group-hover:scale-105 transition-transform duration-700"
               />
@@ -427,7 +427,7 @@ export default function AboutPage() {
           className="flex flex-col items-center"
         >
           <img
-            src="/Assets/logoletter.png"
+            src="/Assets/logoletter.webp"
             alt="Lumpat Logo"
             className="h-20 md:h-24 w-auto object-contain mb-8"
           />
