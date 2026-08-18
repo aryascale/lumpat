@@ -2914,33 +2914,24 @@ export default function EventPage() {
                             : adminMax;
                           const max = Math.min(adminMax, available);
                           return (
-                            <div className="relative inline-flex items-center">
-                              <select
-                                value={bulkQty}
-                                onChange={(e) => {
-                                  const v = Number(e.target.value);
-                                  setBulkQty(v);
-                                  setBulkParticipants((prev) => {
-                                    const updated = [...prev];
-                                    while (updated.length < v) updated.push({});
-                                    return updated;
-                                  });
-                                  if (activeTabIdx >= v) setActiveTabIdx(v - 1);
-                                }}
-                                className="appearance-none pl-4 pr-10 py-2.5 rounded-xl border-2 border-stone-200 bg-white text-sm font-bold text-stone-700 cursor-pointer focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all min-w-[140px]"
-                              >
-                                {Array.from({ length: max }, (_, i) => i + 1).map((v) => (
-                                  <option key={v} value={v}>
-                                    {v} Tiket{v > 1 ? '' : ''}
-                                  </option>
-                                ))}
-                              </select>
-                              <span className="pointer-events-none absolute right-3 text-stone-400">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                  <polyline points="6 9 12 15 18 9" />
-                                </svg>
-                              </span>
-                            </div>
+                            <Select
+                              value={bulkQty}
+                              onChange={(v) => {
+                                setBulkQty(v);
+                                setBulkParticipants((prev) => {
+                                  const updated = [...prev];
+                                  while (updated.length < v) updated.push({});
+                                  return updated;
+                                });
+                                if (activeTabIdx >= v) setActiveTabIdx(v - 1);
+                              }}
+                              options={Array.from({ length: max }, (_, i) => i + 1).map((v) => ({
+                                label: `${v} Tiket`,
+                                value: v,
+                              }))}
+                              className="w-36"
+                              size="middle"
+                            />
                           );
                         })()}
                         <p className="text-xs text-stone-400 mt-2">
