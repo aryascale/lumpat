@@ -13,7 +13,6 @@ import { useLenis } from "lenis/react";
 export default function LandingPage() {
   const navigate = useNavigate();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [scrollY, setScrollY] = useState(0);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showComingSoon, setShowComingSoon] = useState(false);
   const [activeEcosystem, setActiveEcosystem] = useState(0);
@@ -67,11 +66,6 @@ export default function LandingPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Parallax scroll handler using Lenis
-  useLenis((lenis) => {
-    setScrollY(lenis.scroll);
-  });
-
   // Scroll reveal observer
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -119,25 +113,6 @@ export default function LandingPage() {
         "Absolutely. Our timing system supports running races, cycling events, obstacle courses, relay races, and any multi-sport event that requires accurate split timing and live results.",
     },
   ];
-
-  // Calculate safe parallax to prevent bleeding
-  const getParallaxStyle = (desktopOffset: number, mobileOffset: number) => {
-    // Add shift because ReferenceShowcase section pushes the journey section down
-    const showcaseHeight = isMobile ? 650 : 950;
-    const offset = (isMobile ? mobileOffset : desktopOffset) + showcaseHeight;
-    const speed = isMobile ? 0.08 : 0.2;
-    // Mobile needs clamped shift because container is portrait (no slack)
-    const maxShift = isMobile ? 60 : 250;
-
-    let shift = (scrollY - offset) * speed;
-    if (shift > maxShift) shift = maxShift;
-    if (shift < -maxShift) shift = -maxShift;
-
-    return {
-      backgroundPositionY: `calc(50% + ${shift}px)`,
-      backgroundSize: isMobile ? "auto 130%" : "cover",
-    };
-  };
 
   return (
     <div className="w-full overflow-hidden relative bg-[#F1F3F6]">
@@ -199,7 +174,7 @@ export default function LandingPage() {
           style={{ transitionDelay: '200ms' }}
         >
           {/* Atmospheric glows */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(220,38,38,0.07) 0%, transparent 70%)', filter: 'blur(60px)' }} />
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(220,38,38,0.12) 0%, transparent 70%)', transform: 'translateZ(0)' }} />
 
           <ImageSlider3D
             images={[
@@ -222,7 +197,7 @@ export default function LandingPage() {
             perspective={isMobile ? "65rem" : isTablet ? "100rem" : "120rem"}
             withMask={true}
             containerClassName="w-full h-full !min-h-0"
-            imageClassName="border border-stone-200/20 shadow-[0_20px_50px_rgba(0,0,0,0.15)] select-none pointer-events-none brightness-[1.02] saturate-[1.05]"
+            imageClassName="border border-stone-200/20 select-none pointer-events-none"
           />
         </div>
 
@@ -281,64 +256,7 @@ export default function LandingPage() {
       */}
 
       {/* ===================== SECTION 3: PARALLAX JOURNEY ===================== */}
-      <section id="journey">
-        {/* SWIM */}
-        <div
-          className="landing-parallax-block"
-          style={{
-            backgroundImage: "url('/Assets/landing/swim.webp')",
-            ...getParallaxStyle(800, 1300),
-          }}
-        >
-          <div className="landing-parallax-block__overlay landing-parallax-block__overlay--dark" />
-          <div className="landing-parallax-block__content scroll-reveal">
-            <span className="landing-parallax-block__phase">01 — SWIM</span>
-            <h3 className="landing-parallax-block__title">WATERPROOF. FAILPROOF.</h3>
-            <p className="landing-parallax-block__text">
-              100% waterproof transponders that stay active underwater. Accurately
-              tracks swim splits in open water and pool environments.
-            </p>
-          </div>
-        </div>
-
-        {/* BIKE */}
-        <div
-          className="landing-parallax-block"
-          style={{
-            backgroundImage: "url('/Assets/landing/bike.webp')",
-            ...getParallaxStyle(1400, 1800),
-          }}
-        >
-          <div className="landing-parallax-block__overlay" />
-          <div className="landing-parallax-block__content landing-parallax-block__content--right scroll-reveal">
-            <span className="landing-parallax-block__phase">02 — BIKE</span>
-            <h3 className="landing-parallax-block__title">BUILT FOR EVERY TERRAIN</h3>
-            <p className="landing-parallax-block__text">
-              Aerodynamic, shock-resistant design. Records every checkpoint without
-              interruption across any distance.
-            </p>
-          </div>
-        </div>
-
-        {/* RUN */}
-        <div
-          className="landing-parallax-block"
-          style={{
-            backgroundImage: "url('/Assets/landing/run.webp')",
-            ...getParallaxStyle(2000, 2300),
-          }}
-        >
-          <div className="landing-parallax-block__overlay landing-parallax-block__overlay--red" />
-          <div className="landing-parallax-block__content scroll-reveal">
-            <span className="landing-parallax-block__phase">03 — RUN</span>
-            <h3 className="landing-parallax-block__title">0.2-SECOND ACCURACY</h3>
-            <p className="landing-parallax-block__text">
-              Captures the finish line with precision. Results go live on the
-              leaderboard in real-time.
-            </p>
-          </div>
-        </div>
-      </section>
+      <JourneyParallax isMobile={isMobile} />
 
       {/* ===================== SECTION 4: PRODUCT SHOWCASE ===================== */}
       {/* ===================== SECTION 4: PRODUCT SHOWCASE — APPLE STYLE ===================== */}
@@ -580,3 +498,89 @@ export default function LandingPage() {
     </div>
   );
 }
+
+function JourneyParallax({ isMobile }: { isMobile: boolean }) {
+  const [scrollY, setScrollY] = useState(0);
+
+  useLenis((lenis) => {
+    setScrollY(lenis.scroll);
+  });
+
+  const getParallaxStyle = (desktopOffset: number, mobileOffset: number) => {
+    const showcaseHeight = isMobile ? 650 : 950;
+    const offset = (isMobile ? mobileOffset : desktopOffset) + showcaseHeight;
+    const speed = isMobile ? 0.08 : 0.2;
+    const maxShift = isMobile ? 60 : 250;
+
+    let shift = (scrollY - offset) * speed;
+    if (shift > maxShift) shift = maxShift;
+    if (shift < -maxShift) shift = -maxShift;
+
+    return {
+      backgroundPositionY: `calc(50% + ${shift}px)`,
+      backgroundSize: isMobile ? "auto 130%" : "cover",
+    };
+  };
+
+  return (
+    <section id="journey">
+      {/* SWIM */}
+      <div
+        className="landing-parallax-block"
+        style={{
+          backgroundImage: "url('/Assets/landing/swim.webp')",
+          ...getParallaxStyle(800, 1300),
+        }}
+      >
+        <div className="landing-parallax-block__overlay landing-parallax-block__overlay--dark" />
+        <div className="landing-parallax-block__content scroll-reveal">
+          <span className="landing-parallax-block__phase">01 — SWIM</span>
+          <h3 className="landing-parallax-block__title">WATERPROOF. FAILPROOF.</h3>
+          <p className="landing-parallax-block__text">
+            100% waterproof transponders that stay active underwater. Accurately
+            tracks swim splits in open water and pool environments.
+          </p>
+        </div>
+      </div>
+
+      {/* BIKE */}
+      <div
+        className="landing-parallax-block"
+        style={{
+          backgroundImage: "url('/Assets/landing/bike.webp')",
+          ...getParallaxStyle(1400, 1800),
+        }}
+      >
+        <div className="landing-parallax-block__overlay" />
+        <div className="landing-parallax-block__content landing-parallax-block__content--right scroll-reveal">
+          <span className="landing-parallax-block__phase">02 — BIKE</span>
+          <h3 className="landing-parallax-block__title">BUILT FOR EVERY TERRAIN</h3>
+          <p className="landing-parallax-block__text">
+            Aerodynamic, shock-resistant design. Records every checkpoint without
+            interruption across any distance.
+          </p>
+        </div>
+      </div>
+
+      {/* RUN */}
+      <div
+        className="landing-parallax-block"
+        style={{
+          backgroundImage: "url('/Assets/landing/run.webp')",
+          ...getParallaxStyle(2000, 2300),
+        }}
+      >
+        <div className="landing-parallax-block__overlay landing-parallax-block__overlay--red" />
+        <div className="landing-parallax-block__content scroll-reveal">
+          <span className="landing-parallax-block__phase">03 — RUN</span>
+          <h3 className="landing-parallax-block__title">0.2-SECOND ACCURACY</h3>
+          <p className="landing-parallax-block__text">
+            Captures the finish line with precision. Results go live on the
+            leaderboard in real-time.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+

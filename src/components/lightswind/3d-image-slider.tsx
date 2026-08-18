@@ -78,6 +78,7 @@ export default function ImageSlider3D({
         className="grid place-self-center pointer-events-auto"
         style={{
           transformStyle: "preserve-3d",
+          willChange: "transform",
         }}
         animate={{
           rotateY: rotationValues,
@@ -93,6 +94,8 @@ export default function ImageSlider3D({
             key={i}
             src={src}
             alt={`Slide ${i}`}
+            loading="lazy"
+            decoding="async"
             className={`col-start-1 row-start-1 object-cover rounded-[1.5em] ${imageClassName}`}
             style={{
               width: cardWidth,
