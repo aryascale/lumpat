@@ -2885,17 +2885,17 @@ export default function EventPage() {
                     <div className="flex flex-col">
                       <h3 className="text-lg font-black">Data Peserta</h3>
                       <div className="flex items-center gap-2 mt-2">
-                        <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2.5 py-1 rounded-md border border-blue-200">
-                          {categoryDetails.find(
-                            (c) => c.id === regForm.categoryId,
-                          )?.name || ""}
-                        </span>
-                        {bulkParticipants[activeTabIdx]?.["Age Category"] && (
-                          <span className="text-xs font-bold bg-purple-100 text-purple-700 px-2.5 py-1 rounded-md border border-purple-200 shadow-sm animate-in zoom-in duration-300">
-                            {bulkParticipants[activeTabIdx]["Age Category"]}
-                          </span>
-                        )}
-                      </div>
+                         <span className="text-xs font-bold text-stone-900">
+                           {categoryDetails.find(
+                             (c) => c.id === regForm.categoryId,
+                           )?.name || ""}
+                         </span>
+                         {bulkParticipants[activeTabIdx]?.["Age Category"] && (
+                           <span className="text-xs font-bold text-stone-700">
+                             · {bulkParticipants[activeTabIdx]["Age Category"]}
+                           </span>
+                         )}
+                       </div>
                     </div>
                     {event?.content?.allowBulkNoOtp && (
                       <div className="w-full mt-4 mb-2">
@@ -2916,6 +2916,8 @@ export default function EventPage() {
                           return (
                             <Select
                               value={bulkQty}
+                              virtual={false}
+                              getPopupContainer={(t) => t.parentNode as HTMLElement}
                               onChange={(v) => {
                                 setBulkQty(v);
                                 setBulkParticipants((prev) => {
