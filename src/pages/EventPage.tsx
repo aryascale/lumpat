@@ -2920,6 +2920,10 @@ export default function EventPage() {
                             <Select
                               value={bulkQty}
                               virtual={false}
+                              getPopupContainer={() =>
+                                document.querySelector('.registration-wizard .ant-modal-body') as HTMLElement
+                                ?? document.body
+                              }
                               onChange={(v) => {
                                 setBulkQty(v);
                                 setBulkParticipants((prev) => {
