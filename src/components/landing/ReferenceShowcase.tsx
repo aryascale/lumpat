@@ -15,7 +15,7 @@ const SHOWCASE_DATA = [
     desc: "Join Thousands Who Rely on Our Program—Built with ",
     descHighlight: "Experience,",
     descEnd: " Backed by Results, and Trusted by Many",
-    image: "/Assets/carousel/p1.webp",
+    image: "/Assets/carousel/p5.webp",
     name: "Lumpat Platform",
     role: "Event Management"
   },
@@ -31,7 +31,7 @@ const SHOWCASE_DATA = [
     desc: "Publish race results instantly as athletes cross with ",
     descHighlight: "sub-second",
     descEnd: " latency and precision.",
-    image: "/Assets/carousel/p2.webp",
+    image: "/Assets/landing2/result.png",
     name: "Live Timing",
     role: "Real-Time Engine"
   },
@@ -47,7 +47,7 @@ const SHOWCASE_DATA = [
     desc: "Design and share detailed 3D route maps with ",
     descHighlight: "elevation profiles",
     descEnd: " and checkpoint locations.",
-    image: "/Assets/carousel/p3.webp",
+    image: "/Assets/landing2/map start and finish.png",
     name: "Route Builder",
     role: "Map Designer"
   },
@@ -63,9 +63,9 @@ const SHOWCASE_DATA = [
     desc: "Handle complex transition zones for ",
     descHighlight: "Triathlons",
     descEnd: " and Duathlons effortlessly.",
-    image: "/Assets/carousel/p4.webp",
-    name: "Multisport Hub",
-    role: "Transition Manager"
+    image: "/Assets/About/bct3.jpg",
+    name: "Bogor City Trail",
+    role: "Official Event"
   },
   {
     tag: "05",
@@ -79,7 +79,7 @@ const SHOWCASE_DATA = [
     desc: "Build a stunning portfolio page for all your ",
     descHighlight: "past and upcoming",
     descEnd: " races and events.",
-    image: "/Assets/carousel/p5.webp",
+    image: "/Assets/landing2/Event.png",
     name: "Event Portfolio",
     role: "Brand Showcase"
   }
@@ -181,6 +181,13 @@ export default function ReferenceShowcase() {
     >
       <SteppedImageClipDef />
 
+      {/* Hidden preloader for carousel images to ensure fast rendering */}
+      <div style={{ position: "absolute", width: 0, height: 0, overflow: "hidden", opacity: 0, pointerEvents: "none", zIndex: -1 }}>
+        {SHOWCASE_DATA.map((item) => (
+          <img key={`preload-${item.tag}`} src={item.image} alt="preload" />
+        ))}
+      </div>
+
       {/* ========== BACKGROUND TYPOGRAPHY ========== */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none z-0 overflow-hidden">
         <AnimatePresence mode="wait">
@@ -240,7 +247,7 @@ export default function ReferenceShowcase() {
               style={{
                 boxShadow: isMobile ? undefined : "0 12px 50px rgba(0,0,0,0.06)",
                 y: diffScroll * -0.05,
-                ...(isMobile ? { left: "-16px", top: "98px" } : {})
+                ...(isMobile ? { left: "-16px", top: "106px" } : {})
               }}
             >
               <span className={`${isMobile ? 'text-xl' : 'text-3xl md:text-[42px]'} font-black text-stone-900 leading-none tracking-tight`}>{current.stat}</span>
@@ -329,7 +336,31 @@ export default function ReferenceShowcase() {
         {/* ---- CENTER: Stepped Blue Shape + Image ---- */}
         <div className="relative flex items-center justify-center w-full flex-1 py-8 md:py-12 -mt-16 md:-mt-24" style={{ minHeight: "620px" }}>
 
-          {/* Image — custom shape from SVG, NO shape behind it */}
+          {/* Background Landscape Photo (Borderless) */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`bg-img-${activeIndex}`}
+              initial={{ opacity: 0, scale: 0.94, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: -20, transition: { duration: 0.2, ease: "easeIn" } }}
+              transition={{ type: "spring", stiffness: 120, damping: 20 }}
+              className="absolute z-0 w-screen left-1/2 -translate-x-1/2 lg:left-auto lg:translate-x-0 lg:w-[90%] max-w-none lg:max-w-[860px] h-[520px] sm:h-[580px] md:h-[720px] lg:h-[480px] rounded-none lg:rounded-[32px] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.15)]"
+              style={{
+                y: diffScroll * -0.015,
+              }}
+            >
+              <img
+                src={current.image}
+                alt={current.title}
+                className="w-full h-full object-cover object-center filter brightness-[0.9] contrast-[1.02]"
+              />
+              {/* Soft Gradient & Vignette */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-stone-950/45 via-transparent to-white/15 pointer-events-none" />
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Glassmorphism Foreground Stepped Card Badge */}
           <AnimatePresence mode="wait">
             <motion.div
               key={`img-${activeIndex}`}
@@ -337,9 +368,9 @@ export default function ReferenceShowcase() {
               animate={{ opacity: 1, scale: 1, rotate: -5 }}
               exit={{ opacity: 0, scale: 0.8, rotate: -10, transition: { duration: 0.18, ease: "easeIn" } }}
               transition={{ type: "spring", stiffness: 130, damping: 18 }}
-              className="relative z-10 w-[330px] h-[450px] sm:w-[380px] sm:h-[515px] md:w-[560px] md:h-[760px]"
+              className="relative z-10 w-[290px] h-[395px] sm:w-[360px] sm:h-[490px] md:w-[540px] md:h-[730px] lg:w-[560px] lg:h-[760px]"
               style={{
-                filter: "drop-shadow(0 25px 50px rgba(0,0,0,0.15))",
+                filter: "drop-shadow(0 30px 60px rgba(0,0,0,0.18))",
                 y: diffScroll * -0.03,
               }}
             >
@@ -353,32 +384,64 @@ export default function ReferenceShowcase() {
                   <clipPath id="custom-photo-clip">
                     <path d="M71.9838 6934.2L2190.54 302.751C2248.58 121.089 2439.46 17.4273 2623.43 67.6615L4966.41 707.421C5070.62 735.876 5156.27 810.107 5199.25 909.214L5432.4 1446.86C5470.4 1534.49 5542.02 1603.18 5631.17 1637.48L7019.52 2171.67C7194.19 2238.88 7287 2429.85 7231.91 2608.71L5073.84 9616.13C5016.62 9801.94 4820.9 9907.48 4634.21 9853.19L2290.85 9171.83C2191.65 9142.98 2109.88 9072.48 2066.75 8978.61L1595.36 7952.64C1555.14 7865.11 1481.17 7797.61 1390.33 7765.56L292.645 7378.25C111.153 7314.21 13.4152 7117.53 71.9838 6934.2Z" />
                   </clipPath>
+                  <linearGradient id="glass-sheen-grad" x1="0" y1="0" x2="0" y2="9923" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.35" />
+                    <stop offset="25%" stopColor="#FFFFFF" stopOpacity="0.05" />
+                    <stop offset="70%" stopColor="#000000" stopOpacity="0" />
+                    <stop offset="100%" stopColor="#000000" stopOpacity="0.75" />
+                  </linearGradient>
                 </defs>
 
-                <foreignObject
-                  x="0" y="0" width="7303" height="9923"
-                  clipPath="url(#custom-photo-clip)"
-                >
-                  <div style={{ width: "7303px", height: "9923px", position: "relative" }}>
-                    <img
-                      src={current.image}
-                      alt={current.title}
-                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                {/* Frosted Glass Frame Base */}
+                <path
+                  d="M71.9838 6934.2L2190.54 302.751C2248.58 121.089 2439.46 17.4273 2623.43 67.6615L4966.41 707.421C5070.62 735.876 5156.27 810.107 5199.25 909.214L5432.4 1446.86C5470.4 1534.49 5542.02 1603.18 5631.17 1637.48L7019.52 2171.67C7194.19 2238.88 7287 2429.85 7231.91 2608.71L5073.84 9616.13C5016.62 9801.94 4820.9 9907.48 4634.21 9853.19L2290.85 9171.83C2191.65 9142.98 2109.88 9072.48 2066.75 8978.61L1595.36 7952.64C1555.14 7865.11 1481.17 7797.61 1390.33 7765.56L292.645 7378.25C111.153 7314.21 13.4152 7117.53 71.9838 6934.2Z"
+                  fill="rgba(255, 255, 255, 0.95)"
+                  stroke="rgba(255, 255, 255, 0.9)"
+                  strokeWidth="110"
+                  strokeLinejoin="round"
+                />
+
+                <g clipPath="url(#custom-photo-clip)">
+                  <g transform="rotate(17.8, 3651.5, 4961.5)">
+                    <image
+                      href={current.image}
+                      x="740"
+                      y="510"
+                      width="5760"
+                      height="8885"
+                      preserveAspectRatio="xMidYMid slice"
                     />
-                    {/* Name overlay */}
-                    <div style={{
-                      position: "absolute",
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      padding: "300px 400px",
-                      background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%)",
-                    }}>
-                      <p style={{ color: "white", fontWeight: 700, fontSize: "280px", lineHeight: 1.3, margin: 0 }}>{current.name}</p>
-                      <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "200px", fontWeight: 500, margin: 0 }}>{current.role}</p>
-                    </div>
-                  </div>
-                </foreignObject>
+
+                    {/* Glass Specular Sheen Layer */}
+                    <rect
+                      x="740"
+                      y="510"
+                      width="5760"
+                      height="8885"
+                      fill="url(#glass-sheen-grad)"
+                      style={{ mixBlendMode: "overlay" }}
+                    />
+
+                    <foreignObject
+                      x="740" y="510" width="5760" height="8885"
+                    >
+                      <div style={{ width: "5760px", height: "8885px", position: "relative" }}>
+                        {/* Name overlay */}
+                        <div style={{
+                          position: "absolute",
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          padding: "300px 400px 350px 400px",
+                          background: "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.3) 60%, transparent 100%)",
+                        }}>
+                          <p style={{ color: "white", fontWeight: 700, fontSize: "280px", lineHeight: 1.3, margin: 0 }}>{current.name}</p>
+                          <p style={{ color: "rgba(255,255,255,0.75)", fontSize: "200px", fontWeight: 500, margin: 0 }}>{current.role}</p>
+                        </div>
+                      </div>
+                    </foreignObject>
+                  </g>
+                </g>
               </svg>
             </motion.div>
           </AnimatePresence>

@@ -7,13 +7,9 @@ import {
   Clock,
   ArrowLeft,
   ArrowRight,
-  Mail,
-  Phone,
   ChevronRight,
   Search,
-  Users,
-  Activity,
-  Heart
+  Activity
 } from "lucide-react";
 
 interface Event {
@@ -24,14 +20,13 @@ interface Event {
   eventDate?: string;
   location?: string;
   categories?: string[];
+  eventType?: string;
   status?: "upcoming" | "ongoing" | "completed";
   isActive?: boolean;
   bannerUrl?: string;
   content?: any;
   participantCount?: number;
 }
-
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 // Formatter to match "16. Jan - 2026" premium style
 function formatPremiumDate(dateStr?: string) {
@@ -44,15 +39,6 @@ function formatPremiumDate(dateStr?: string) {
   return `${day}. ${month} - ${year}`;
 }
 
-function formatDate(dateStr?: string, isTBA?: boolean) {
-  if (!dateStr) return 'TBD';
-  const d = new Date(dateStr);
-  if (isTBA) {
-    return d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
-  }
-  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
 // Generate typical event times based on type
 function getEventTime(event: Event) {
   const categories = event.categories || [];
@@ -61,12 +47,6 @@ function getEventTime(event: Event) {
   }
   return '07:00 AM - 10:00 AM';
 }
-
-const MOCK_AVATARS = [
-  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&fit=crop&q=80"
-];
 
 export default function UserEventPage() {
   const navigate = useNavigate();
@@ -109,18 +89,19 @@ export default function UserEventPage() {
       e.name.toLowerCase().includes(search.toLowerCase()) ||
       (e.location || "").toLowerCase().includes(search.toLowerCase());
 
-    const matchesCategory =
-      activeCategory === "All Events" ||
-      (e.categories && e.categories.includes(activeCategory));
+    let matchesCategory = false;
+    if (activeCategory === "All Events") {
+      matchesCategory = true;
+    } else {
+      matchesCategory = e.eventType === activeCategory;
+    }
 
     return matchesSearch && matchesCategory;
   });
 
-  // Extract unique categories dynamically
-  const categoriesList = [
-    "All Events",
-    ...Array.from(new Set(events.flatMap((e) => e.categories || [])))
-  ];
+  // Dynamic Event Types based on existing data
+  const dynamicCategories = Array.from(new Set(events.map(e => e.eventType).filter(Boolean))) as string[];
+  const categoriesList = ["All Events", ...dynamicCategories];
 
   // Upcoming events for the slider
   const upcomingEvents = events.filter((e) => e.status === "upcoming");
@@ -167,7 +148,7 @@ export default function UserEventPage() {
 
   return (
     <>
-      <LandingNavbar customLinks={customNavLinks} />
+      <LandingNavbar customLinks={customNavLinks} isDarkBg={true} />
       <div className="min-h-screen bg-[#F1F3F6]">
 
         {/* ================= HERO HEADER BANNER ================= */}
@@ -391,14 +372,6 @@ export default function UserEventPage() {
                 const dateStr = formatPremiumDate(event.eventDate);
                 const isUpcoming = event.status === "upcoming";
 
-                // Determine mock runners label prefix
-                const catLower = (event.categories || []).map(c => c.toLowerCase());
-                const runnerLabel = catLower.some(c => c.includes('cycle') || c.includes('bike'))
-                  ? 'Cyclists'
-                  : catLower.some(c => c.includes('run') || c.includes('marathon'))
-                    ? 'Runners'
-                    : 'Partners';
-
                 return (
                   <div
                     key={event.id}
@@ -537,7 +510,7 @@ export default function UserEventPage() {
         {/* ===================== EVENT STATS BANNER ================ */}
         {/* ======================================================== */}
         <div className="relative -mb-16 md:-mb-14 z-10 max-w-6xl mx-auto px-4 mt-20 md:mt-28">
-          <div className="rounded-[28px] md:rounded-[36px] bg-gradient-to-r from-slate-950 via-[#0B1220] to-slate-950 p-6 md:p-10 shadow-2xl border border-slate-800/60 flex flex-col md:flex-row gap-6 justify-around items-center text-center">
+          <div className="rounded-[28px] md:rounded-[36px] bg-gradient-to-r from-slate-950 via-[#0B1220] to-slate-950 p-6 md:p-10 shadow-2xl border border-slate-800/60 grid grid-cols-2 md:flex md:flex-row gap-8 md:gap-6 justify-around items-center text-center">
 
             {/* Stat 1: Total Events */}
             <div className="flex flex-col items-center gap-1">
@@ -625,7 +598,7 @@ export default function UserEventPage() {
 
             <div className="border-t border-gray-200 pt-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
               <div className="flex flex-col gap-2">
-                <p className="text-gray-400">Hak cipta © {new Date().getFullYear()} IJT — Indonesia Timing System. Seluruh hak cipta dilindungi undang-undang.</p>
+                <p className="text-gray-400">Hak cipta © {new Date().getFullYear()} IZT Race Technology — Indonesia Timing System. Seluruh hak cipta dilindungi undang-undang.</p>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-gray-500">
                   <a href="/#privacy" className="hover:text-gray-900 hover:underline transition-colors">Kebijakan Privasi</a>
                   <span className="hidden md:inline text-gray-300">|</span>

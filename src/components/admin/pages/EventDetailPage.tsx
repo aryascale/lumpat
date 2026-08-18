@@ -13,7 +13,7 @@ import ManualStartBibPage from "./ManualStartBibPage";
 import ManualFinishBibPage from "./ManualFinishBibPage";
 import CheckpointsPage from "./CheckpointsPage";
 import AdminLiveTrackingTab from '../tabs/AdminLiveTrackingTab';
-import { Eye, EyeOff, Lock, Unlock, ArrowUp, ArrowDown, ChevronsUp, Trash2 } from 'lucide-react';
+import { Eye, EyeOff, Lock, Unlock, ArrowUp, ArrowDown, ChevronsUp, ChevronDown, Trash2 } from 'lucide-react';
 
 interface EventDetailPageProps {
   eventId: string;
@@ -44,9 +44,49 @@ function formatNowAsTimestamp(): string {
   return `${Y}-${M}-${D} ${h}:${m}:${s}.${ms}`;
 }
 
+function formatDateForInput(dateVal: any): string {
+  if (!dateVal) return '';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '';
+    return d.toISOString().split('T')[0];
+  } catch {
+    return '';
+  }
+}
+
+function formatDatetimeLocalForInput(dateVal: any): string {
+  if (!dateVal) return '';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '';
+    const localMs = d.getTime() - (d.getTimezoneOffset() * 60000);
+    return new Date(localMs).toISOString().slice(0, 16);
+  } catch {
+    return '';
+  }
+}
+
 export default function EventDetailPage({ eventId, eventSlug, eventName, onBack }: EventDetailPageProps) {
+  const userRole = localStorage.getItem("imr_admin_role") || "admin";
+
+  const getRoleDefaultTab = () => {
+    if (userRole === "event_time_setter") return "timing";
+    if (userRole === "rpc_validator") return "data";
+    return "homepage";
+  };
+
   const [activeTab, setActiveTab] = useState<'homepage' | 'data' | 'live_data' | 'banners' | 'gallery' | 'categories' | 'route' | 'timing' | 'manual_start' | 'manual_finish' | 'dq' | 'dns' | 'dnf' | 'penalty' | 'certified' | 'settings' | 'registration' | 'inventory' | 'checkpoints'>(() => {
-    return (localStorage.getItem(`admin_tab_${eventId}`) as any) || 'homepage';
+    const saved = localStorage.getItem(`admin_tab_${eventId}`) as any;
+    if (saved) {
+      const timeSetterTabs = ['timing', 'manual_start', 'manual_finish', 'dq', 'dns', 'dnf', 'penalty', 'certified'];
+      const rpcTabs = ['data', 'live_data', 'checkpoints'];
+      if (userRole === "event_time_setter" && !timeSetterTabs.includes(saved)) return "timing";
+      if (userRole === "rpc_validator" && !rpcTabs.includes(saved)) return "data";
+      if (userRole === "event_manager" && (timeSetterTabs.includes(saved) || rpcTabs.includes(saved))) return "homepage";
+      return saved;
+    }
+    return getRoleDefaultTab() as any;
   });
 
   useEffect(() => {
@@ -117,6 +157,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   const [dnfMap, setDnfMap] = useState<Record<string, boolean>>({});
   const [hiddenMap, setHiddenMap] = useState<Record<string, boolean>>({});
   const [eventData, setEventData] = useState<any>(null);
+  const [catDropOpen, setCatDropOpen] = useState(false);
 
   // Certificate state
   const [certFile, setCertFile] = useState<File | null>(null);
@@ -764,7 +805,8 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
             about: homeContent.about || eventData?.content?.about || '',
             schedule: homeContent.schedule || eventData?.content?.schedule || '',
             rules: homeContent.rules || eventData?.content?.rules || '',
-            allowBulkNoOtp: eventData?.content?.allowBulkNoOtp || false
+            allowBulkNoOtp: eventData?.content?.allowBulkNoOtp || false,
+            bulkMaxQty: eventData?.content?.bulkMaxQty || 10
           }
         }),
       });
@@ -1246,124 +1288,148 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
         </button>
       </div>
 
-      {/* Tabs - scrollable on mobile */}
-      <div className="flex gap-1 mb-4 overflow-x-auto pb-2 border-b-2 border-gray-200 -mx-3 px-3 md:mx-0 md:px-0">
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'homepage' ? 'active' : ''}`}
-          onClick={() => setActiveTab('homepage')}
-        >
-          Homepage
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'registration' ? 'active' : ''}`}
-          onClick={() => setActiveTab('registration')}
-        >
-          Registration ({regFields.length})
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'inventory' ? 'active' : ''}`}
-          onClick={() => setActiveTab('inventory')}
-        >
-          Inventory ({tshirtInventory.length})
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'banners' ? 'active' : ''}`}
-          onClick={() => setActiveTab('banners')}
-        >
-          Banners & Media
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'gallery' ? 'active' : ''}`}
-          onClick={() => setActiveTab('gallery')}
-        >
-          Gallery
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'categories' ? 'active' : ''}`}
-          onClick={() => setActiveTab('categories')}
-        >
-          Categories ({categories.length})
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'route' ? 'active' : ''}`}
-          onClick={() => setActiveTab('route')}
-        >
-          Route {currentGpxPath ? '(1)' : '(0)'}
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'data' ? 'active' : ''}`}
-          onClick={() => setActiveTab('data')}
-        >
-          Data Upload
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'live_data' ? 'active' : ''}`}
-          onClick={() => setActiveTab('live_data')}
-        >
-          Current Data
-        </button>
+      {/* Tabs */}
+      {(() => {
+        const isTimeSetter = userRole === "event_time_setter" || userRole === "admin";
+        const isRpcValidator = userRole === "rpc_validator" || userRole === "admin";
+        const isEventManager = userRole === "event_manager" || userRole === "admin";
+        
+        return (
+          <div className="flex gap-1 mb-4 overflow-x-auto pb-2 border-b-2 border-gray-200 -mx-3 px-3 md:mx-0 md:px-0">
+            {isEventManager && (
+              <>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'homepage' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('homepage')}
+                >
+                  Homepage
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'registration' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('registration')}
+                >
+                  Registration ({regFields.length})
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'inventory' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('inventory')}
+                >
+                  Inventory ({tshirtInventory.length})
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'banners' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('banners')}
+                >
+                  Banners & Media
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'gallery' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('gallery')}
+                >
+                  Gallery
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'categories' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('categories')}
+                >
+                  Categories ({categories.length})
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'route' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('route')}
+                >
+                  Route {currentGpxPath ? '(1)' : '(0)'}
+                </button>
+              </>
+            )}
 
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'checkpoints' ? 'active' : ''}`}
-          onClick={() => setActiveTab('checkpoints')}
-        >
-          Checkpoints
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'timing' ? 'active' : ''}`}
-          onClick={() => setActiveTab('timing')}
-        >
-          Timing Rules
-        </button>
-        <button
-          onClick={() => setActiveTab('manual_start')}
-          className={`detail-tab whitespace-nowrap ${activeTab === 'manual_start' ? 'active' : ''}`}
-        >
-          Manual Start
-        </button>
-        <button
-          onClick={() => setActiveTab('manual_finish')}
-          className={`detail-tab whitespace-nowrap ${activeTab === 'manual_finish' ? 'active' : ''}`}
-        >
-          Manual Finish
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'dq' ? 'active' : ''}`}
-          onClick={() => setActiveTab('dq')}
-        >
-          DSQ
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'dns' ? 'active' : ''}`}
-          onClick={() => setActiveTab('dns')}
-        >
-          DNS
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'dnf' ? 'active' : ''}`}
-          onClick={() => setActiveTab('dnf')}
-        >
-          DNF
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'penalty' ? 'active' : ''}`}
-          onClick={() => setActiveTab('penalty')}
-        >
-          Penalty
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'certified' ? 'active' : ''}`}
-          onClick={() => setActiveTab('certified')}
-        >
-          Certified {certData.hasCertificate ? '✓' : ''}
-        </button>
-        <button
-          className={`detail-tab whitespace-nowrap ${activeTab === 'settings' ? 'active' : ''}`}
-          onClick={() => setActiveTab('settings')}
-        >
-          Settings
-        </button>
-      </div>
+            {isRpcValidator && (
+              <>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'data' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('data')}
+                >
+                  Data Upload
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'live_data' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('live_data')}
+                >
+                  Current Data
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'checkpoints' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('checkpoints')}
+                >
+                  Checkpoints
+                </button>
+              </>
+            )}
+
+            {isTimeSetter && (
+              <>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'timing' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('timing')}
+                >
+                  Timing Rules
+                </button>
+                <button
+                  onClick={() => setActiveTab('manual_start')}
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'manual_start' ? 'active' : ''}`}
+                >
+                  Manual Start
+                </button>
+                <button
+                  onClick={() => setActiveTab('manual_finish')}
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'manual_finish' ? 'active' : ''}`}
+                >
+                  Manual Finish
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'dq' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('dq')}
+                >
+                  DSQ
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'dns' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('dns')}
+                >
+                  DNS
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'dnf' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('dnf')}
+                >
+                  DNF
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'penalty' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('penalty')}
+                >
+                  Penalty
+                </button>
+                <button
+                  className={`detail-tab whitespace-nowrap ${activeTab === 'certified' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('certified')}
+                >
+                  Certified
+                </button>
+              </>
+            )}
+
+            {isEventManager && (
+              <button
+                className={`detail-tab whitespace-nowrap ${activeTab === 'settings' ? 'active' : ''}`}
+                onClick={() => setActiveTab('settings')}
+              >
+                Settings
+              </button>
+            )}
+          </div>
+        );
+      })()}
 
 
       {/* Data Upload Tab */}
@@ -3281,19 +3347,21 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
               <button
                 className="btn"
                 onClick={async () => {
+                  if (!eventData) return;
                   try {
                     const res = await fetch(`/api/events?eventId=${eventId}`, {
                       method: 'PUT',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
-                        isDraft: eventData.isDraft,
-                        publishAt: eventData.publishAt,
-                        name: eventData.name,
-                        eventDate: eventData.eventDate,
-                        location: eventData.location,
-                        isLoopMode: eventData.isLoopMode,
-                        minLapTimeMs: eventData.minLapTimeMs,
-                        timezoneOffset: eventData.timezoneOffset,
+                        isDraft: !!eventData.isDraft,
+                        publishAt: eventData.publishAt || null,
+                        name: eventData.name || '',
+                        eventType: eventData.eventType || 'Running',
+                        eventDate: eventData.eventDate || null,
+                        location: eventData.location || '',
+                        isLoopMode: !!eventData.isLoopMode,
+                        minLapTimeMs: eventData.minLapTimeMs || 0,
+                        timezoneOffset: eventData.timezoneOffset || 7,
                         content: {
                           ...(eventData.content || {}),
                           about: homeContent.about || eventData.content?.about || '',
@@ -3301,6 +3369,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                           rules: homeContent.rules || eventData.content?.rules || '',
                           maxLaps: eventData.content?.maxLaps || null,
                           allowBulkNoOtp: eventData.content?.allowBulkNoOtp || false,
+                          bulkMaxQty: eventData.content?.bulkMaxQty || 10,
                           enableRegisteredScan: eventData.content?.enableRegisteredScan !== false,
                           rpcBgUrl: eventData.content?.rpcBgUrl || '',
                           rpcBgUrlMobile: eventData.content?.rpcBgUrlMobile || '',
@@ -3315,8 +3384,9 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                       alert('Settings saved!');
                       await loadAllData();
                     } else alert('Failed to save settings');
-                  } catch {
-                    alert('Failed to save settings');
+                  } catch (err: any) {
+                    console.error('Error saving settings:', err);
+                    alert('Failed to save settings: ' + (err?.message || 'Unknown error'));
                   }
                 }}
               >
@@ -3365,7 +3435,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                   <input
                     type="date"
                     className="search w-full"
-                    value={eventData?.eventDate ? new Date(eventData.eventDate).toISOString().split('T')[0] : ''}
+                    value={formatDateForInput(eventData?.eventDate)}
                     onChange={(e) => setEventData({ ...eventData, eventDate: e.target.value })}
                   />
                   <label className="flex items-center gap-2 mt-2 cursor-pointer">
@@ -3380,6 +3450,37 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                     />
                     <span className="text-sm font-medium text-gray-700">Tanggal Belum Fix (Tampilkan Bulan & Tahun Saja)</span>
                   </label>
+                </div>
+                <div className="relative">
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Event Category</label>
+                  <div
+                    className="search w-full flex items-center justify-between cursor-pointer"
+                    onClick={() => setCatDropOpen(!catDropOpen)}
+                  >
+                    <span>{eventData?.eventType || 'Running'}</span>
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${catDropOpen ? 'rotate-180 text-red-500' : 'text-gray-400'}`} />
+                  </div>
+                  
+                  {catDropOpen && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setCatDropOpen(false)} />
+                      <div className="absolute z-20 w-full mt-2 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden py-1">
+                        {["Running", "Cycling", "Triathlon", "Obstacle Course", "Walking", "Swimming", "Other"].map((cat) => (
+                          <div
+                            key={cat}
+                            onClick={() => { setEventData({ ...eventData, eventType: cat }); setCatDropOpen(false); }}
+                            className={`w-full text-left px-4 py-2.5 text-sm font-semibold transition-colors duration-150 cursor-pointer ${
+                              eventData?.eventType === cat
+                                ? 'bg-red-50 text-red-600'
+                                : 'text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            {cat}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">Location</label>
@@ -3497,7 +3598,7 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                   <input
                     type="datetime-local"
                     className="search w-full"
-                    value={eventData?.publishAt ? new Date(new Date(eventData.publishAt).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16) : ''}
+                    value={formatDatetimeLocalForInput(eventData?.publishAt)}
                     onChange={(e) => setEventData({ ...eventData, publishAt: e.target.value || null })}
                   />
                   <div className="text-xs text-gray-500 mt-2">
@@ -3527,6 +3628,63 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                     </span>
                   </div>
                 </label>
+
+                {/* Sub-setting: batas maks tiket — hanya tampil jika bulk diaktifkan */}
+                {eventData?.content?.allowBulkNoOtp && (
+                  <div className="mt-4 ml-8 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-sm font-semibold text-gray-700">Batas Maksimal Tiket per Transaksi (Bulk Max Qty)</span>
+                      <span className="text-xs text-gray-500">
+                        Tentukan berapa maksimal tiket yang bisa dibeli sekaligus dalam satu transaksi.
+                      </span>
+                      {/* Preset buttons */}
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        {[5, 10, 20].map((preset) => (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => setEventData({
+                              ...eventData,
+                              content: { ...(eventData?.content || {}), bulkMaxQty: preset }
+                            })}
+                            className={`px-4 py-1.5 rounded-lg text-sm font-bold border transition-all ${
+                              (eventData?.content?.bulkMaxQty || 10) === preset
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:text-blue-600'
+                            }`}
+                          >
+                            {preset}
+                          </button>
+                        ))}
+                        <span className="text-xs text-gray-400 mx-1">atau kustom:</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={100}
+                          value={
+                            [5, 10, 20].includes(eventData?.content?.bulkMaxQty || 10)
+                              ? ''
+                              : (eventData?.content?.bulkMaxQty || '')
+                          }
+                          placeholder="Angka..."
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value, 10);
+                            if (!isNaN(val) && val >= 1) {
+                              setEventData({
+                                ...eventData,
+                                content: { ...(eventData?.content || {}), bulkMaxQty: val }
+                              });
+                            }
+                          }}
+                          className="w-24 px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        />
+                      </div>
+                      <p className="text-xs text-blue-600 mt-1">
+                        ✦ Saat ini: maks <strong>{eventData?.content?.bulkMaxQty || 10}</strong> tiket per transaksi
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -3560,34 +3718,37 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                     {categories.length === 0 ? (
                       <div className="text-xs text-stone-500 italic">Belum ada kategori yang ditambahkan.</div>
                     ) : (
-                      categories.map(cat => (
-                        <div key={cat.id} className="flex flex-col sm:flex-row sm:items-center gap-2">
-                          <div className="text-xs font-bold w-1/3">{cat.name}</div>
-                          <input
-                            type="text"
-                            placeholder="Contoh: 5001"
-                            className="search flex-1 text-sm"
-                            value={eventData?.content?.autoGenerateBibs?.categories?.[cat.id!] || ''}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              const catId = cat.id!;
-                              setEventData((prev: any) => ({
-                                ...prev,
-                                content: {
-                                  ...(prev?.content || {}),
-                                  autoGenerateBibs: {
-                                    ...(prev?.content?.autoGenerateBibs || {}),
-                                    categories: {
-                                      ...(prev?.content?.autoGenerateBibs?.categories || {}),
-                                      [catId]: val
+                      categories.map((cat, idx) => {
+                        const catId = (typeof cat === 'object' && cat && cat.id) ? cat.id : `cat_${idx}`;
+                        const catName = typeof cat === 'object' && cat ? cat.name : String(cat || '');
+                        return (
+                          <div key={catId} className="flex flex-col sm:flex-row sm:items-center gap-2">
+                            <div className="text-xs font-bold w-1/3">{catName}</div>
+                            <input
+                              type="text"
+                              placeholder="Contoh: 5001"
+                              className="search flex-1 text-sm"
+                              value={eventData?.content?.autoGenerateBibs?.categories?.[catId] || ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setEventData((prev: any) => ({
+                                  ...prev,
+                                  content: {
+                                    ...(prev?.content || {}),
+                                    autoGenerateBibs: {
+                                      ...(prev?.content?.autoGenerateBibs || {}),
+                                      categories: {
+                                        ...(prev?.content?.autoGenerateBibs?.categories || {}),
+                                        [catId]: val
+                                      }
                                     }
                                   }
-                                }
-                              }));
-                            }}
-                          />
-                        </div>
-                      ))
+                                }));
+                              }}
+                            />
+                          </div>
+                        );
+                      })
                     )}
                   </div>
                 )}
@@ -3620,7 +3781,10 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                 <div className="mb-4">
                   <div className="text-sm font-bold text-gray-700 mb-1">Dokumen T&C (Khusus PDF, Maks 5)</div>
                   {(() => {
-                    const tncUrls = eventData?.content?.tncUrls || (eventData?.content?.tncUrl ? [eventData.content.tncUrl] : []);
+                    const rawTncUrls = eventData?.content?.tncUrls;
+                    const tncUrls = Array.isArray(rawTncUrls)
+                      ? rawTncUrls
+                      : (eventData?.content?.tncUrl ? [eventData.content.tncUrl] : []);
                     return (
                       <div className="space-y-2 mb-2">
                         {tncUrls.map((url: string, idx: number) => (

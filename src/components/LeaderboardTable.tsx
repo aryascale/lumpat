@@ -27,7 +27,7 @@ export default function LeaderboardTable({
   eventName,
   rows,
   categories,
-  showTop10Badge = false,
+  showTop10Badge: _showTop10Badge = false,
   hideTable = false,
   hidePodium = false,
   onSelect,
@@ -247,11 +247,10 @@ export default function LeaderboardTable({
       {!hidePodium && podiums.length > 0 && (
         <div
           ref={podiumRef}
-          className={`bg-stone-50 relative overflow-x-hidden overflow-y-auto flex flex-col items-center shadow-sm ${
-            isPodiumFullscreen
-              ? "w-screen h-screen justify-center p-4 sm:p-8"
-              : "mb-12 mt-4 border-2 border-stone-200 border-b-[8px] rounded-3xl p-6 sm:p-12 w-full max-h-[80vh]"
-          }`}
+          className={`bg-stone-50 relative overflow-x-hidden overflow-y-auto flex flex-col items-center shadow-sm ${isPodiumFullscreen
+            ? "w-screen h-screen justify-center p-4 sm:p-8"
+            : "mb-12 mt-4 border-2 border-stone-200 border-b-[8px] rounded-3xl p-6 sm:p-12 w-full max-h-[80vh]"
+            }`}
         >
           {/* Fullscreen Toggle Button */}
           <button
@@ -399,7 +398,7 @@ export default function LeaderboardTable({
                         {podium.top3[1].name}
                       </div>
                       <div
-                        className={`font-mono font-bold text-stone-500 mt-0.5 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm ${isPodiumFullscreen ? "text-sm md:text-lg mt-2" : "text-[9px] sm:text-xs"}`}
+                        className={`font-mono font-bold text-stone-500 mt-0.5 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm ${isPodiumFullscreen ? "text-sm md:text-lg mt-2" : "text-[9px] sm:text-xs text-center"}`}
                       >
                         BIB {podium.top3[1].bib}
                         {podium.top3[1].ageCategory
@@ -482,7 +481,7 @@ export default function LeaderboardTable({
                         {podium.top3[0].name}
                       </div>
                       <div
-                        className={`font-mono font-bold text-stone-500 mt-0.5 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm ${isPodiumFullscreen ? "text-base md:text-xl mt-2" : "text-[10px] sm:text-sm"}`}
+                        className={`font-mono font-bold text-stone-500 mt-0.5 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm ${isPodiumFullscreen ? "text-base md:text-xl mt-2" : "text-[10px] sm:text-sm text-center"}`}
                       >
                         BIB {podium.top3[0].bib}
                         {podium.top3[0].ageCategory
@@ -572,7 +571,7 @@ export default function LeaderboardTable({
                         {podium.top3[2].name}
                       </div>
                       <div
-                        className={`font-mono font-bold text-stone-500 mt-0.5 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm ${isPodiumFullscreen ? "text-sm md:text-lg mt-2" : "text-[9px] sm:text-xs"}`}
+                        className={`font-mono font-bold text-stone-500 mt-0.5 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm ${isPodiumFullscreen ? "text-sm md:text-lg mt-2" : "text-[9px] sm:text-xs text-center"}`}
                       >
                         BIB {podium.top3[2].bib}
                         {podium.top3[2].ageCategory
@@ -709,27 +708,25 @@ export default function LeaderboardTable({
                   <div
                     key={r.epc}
                     onClick={() => onSelect?.(r)}
-                    className={`group cursor-pointer transition-all duration-300 hover:-translate-y-0.5 rounded-xl ${getRowBorder(r.rank)} ${
-                      isSpecial
-                        ? "bg-red-50/50"
-                        : isActive
-                          ? "bg-emerald-50/30"
-                          : "bg-white"
-                    }`}
+                    className={`group cursor-pointer transition-all duration-300 hover:-translate-y-0.5 rounded-xl ${getRowBorder(r.rank)} ${isSpecial
+                      ? "bg-red-50/50"
+                      : isActive
+                        ? "bg-emerald-50/30"
+                        : "bg-white"
+                      }`}
                   >
                     {/* Desktop row */}
                     <div className="hidden md:grid grid-cols-[44px_1fr_90px_90px_90px_110px_80px_28px] gap-2 items-center px-4 py-3">
                       {/* Rank */}
                       <div
-                        className={`font-black text-base ${
-                          r.rank === 1
-                            ? "text-amber-500"
-                            : r.rank === 2
-                              ? "text-slate-400"
-                              : r.rank === 3
-                                ? "text-orange-400"
-                                : "text-slate-300"
-                        }`}
+                        className={`font-black text-base ${r.rank === 1
+                          ? "text-amber-500"
+                          : r.rank === 2
+                            ? "text-slate-400"
+                            : r.rank === 3
+                              ? "text-orange-400"
+                              : "text-slate-300"
+                          }`}
                       >
                         {pos}
                       </div>
@@ -737,15 +734,14 @@ export default function LeaderboardTable({
                       {/* Name + Avatar + BIB */}
                       <div className="flex items-center gap-3 min-w-0">
                         <div
-                          className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                            r.rank === 1
-                              ? "bg-amber-100 text-amber-700"
-                              : r.rank === 2
-                                ? "bg-slate-100 text-slate-600"
-                                : r.rank === 3
-                                  ? "bg-orange-100 text-orange-700"
-                                  : "bg-slate-50 text-slate-400"
-                          }`}
+                          className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${r.rank === 1
+                            ? "bg-amber-100 text-amber-700"
+                            : r.rank === 2
+                              ? "bg-slate-100 text-slate-600"
+                              : r.rank === 3
+                                ? "bg-orange-100 text-orange-700"
+                                : "bg-slate-50 text-slate-400"
+                            }`}
                         >
                           {(r.name || "?").charAt(0).toUpperCase()}
                         </div>
@@ -786,15 +782,14 @@ export default function LeaderboardTable({
 
                       {/* Race Time */}
                       <div
-                        className={`font-mono font-bold text-xs inline-flex items-center justify-center ${
-                          isSpecial
-                            ? "px-2.5 py-1 rounded bg-red-100 text-red-600"
-                            : isActive
-                              ? "text-emerald-500"
-                              : isTop3
-                                ? "px-2.5 py-1 rounded bg-slate-800 text-white"
-                                : "px-2.5 py-1 rounded bg-slate-100 text-slate-700"
-                        }`}
+                        className={`font-mono font-bold text-xs inline-flex items-center justify-center ${isSpecial
+                          ? "px-2.5 py-1 rounded bg-red-100 text-red-600"
+                          : isActive
+                            ? "text-emerald-500"
+                            : isTop3
+                              ? "px-2.5 py-1 rounded bg-slate-800 text-white"
+                              : "px-2.5 py-1 rounded bg-slate-100 text-slate-700"
+                          }`}
                       >
                         {r.totalTimeDisplay}
                       </div>
@@ -828,28 +823,26 @@ export default function LeaderboardTable({
                       <div className="flex items-start gap-2.5">
                         <div className="flex flex-col items-center gap-1 flex-shrink-0">
                           <span
-                            className={`font-black text-sm ${
-                              r.rank === 1
-                                ? "text-amber-500"
-                                : r.rank === 2
-                                  ? "text-slate-400"
-                                  : r.rank === 3
-                                    ? "text-orange-400"
-                                    : "text-slate-300"
-                            }`}
+                            className={`font-black text-sm ${r.rank === 1
+                              ? "text-amber-500"
+                              : r.rank === 2
+                                ? "text-slate-400"
+                                : r.rank === 3
+                                  ? "text-orange-400"
+                                  : "text-slate-300"
+                              }`}
                           >
                             {pos}
                           </span>
                           <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                              r.rank === 1
-                                ? "bg-amber-100 text-amber-700"
-                                : r.rank === 2
-                                  ? "bg-slate-100 text-slate-600"
-                                  : r.rank === 3
-                                    ? "bg-orange-100 text-orange-700"
-                                    : "bg-slate-50 text-slate-400"
-                            }`}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${r.rank === 1
+                              ? "bg-amber-100 text-amber-700"
+                              : r.rank === 2
+                                ? "bg-slate-100 text-slate-600"
+                                : r.rank === 3
+                                  ? "bg-orange-100 text-orange-700"
+                                  : "bg-slate-50 text-slate-400"
+                              }`}
                           >
                             {(r.name || "?").charAt(0).toUpperCase()}
                           </div>
@@ -876,15 +869,14 @@ export default function LeaderboardTable({
                               </div>
                             </div>
                             <div
-                              className={`flex-shrink-0 font-mono font-bold text-[11px] ${
-                                isSpecial
-                                  ? "px-2 py-1 rounded bg-red-100 text-red-600"
-                                  : isActive
-                                    ? "text-emerald-500"
-                                    : isTop3
-                                      ? "px-2 py-1 rounded bg-slate-800 text-white"
-                                      : "px-2 py-1 rounded bg-slate-100 text-slate-700"
-                              }`}
+                              className={`flex-shrink-0 font-mono font-bold text-[11px] ${isSpecial
+                                ? "px-2 py-1 rounded bg-red-100 text-red-600"
+                                : isActive
+                                  ? "text-emerald-500"
+                                  : isTop3
+                                    ? "px-2 py-1 rounded bg-slate-800 text-white"
+                                    : "px-2 py-1 rounded bg-slate-100 text-slate-700"
+                                }`}
                             >
                               {r.totalTimeDisplay}
                             </div>

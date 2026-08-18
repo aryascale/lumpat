@@ -1,29 +1,13 @@
 
 import { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import RaceClock from "../components/RaceClock";
 import CategorySection from "../components/CategorySection";
 import LeaderboardTable, { LeaderRow } from "../components/LeaderboardTable";
-import ParticipantModal from "../components/ParticipantModal";
 import Navbar from "../components/Navbar";
 import { useEvent } from "../contexts/EventContext";
-import {
-  loadMasterParticipants,
-  loadTimesMap,
-  loadCheckpointTimesMap,
-} from "../lib/data";
 import { DEFAULT_EVENT_TITLE, LS_EVENT_TITLE, LS_DATA_VERSION } from "../lib/config";
-import parseTimeToMs, { extractTimeOfDay, formatDuration } from "../lib/time";
 import { useLeaderboardData } from "../hooks/useLeaderboardData";
-
-
-
-
-
-type LoadState =
-  | { status: "loading"; msg: string }
-  | { status: "error"; msg: string }
-  | { status: "ready" };
 
 export default function LeaderboardPage() {
   const { currentEvent, events, setCurrentEvent, loading: eventLoading } = useEvent();
@@ -44,9 +28,8 @@ export default function LeaderboardPage() {
   }, [searchParams, events, eventLoading]);
 
   const { state, overall, byCategory, eventCategories, forceRecalc, hasLoadedOnce } = useLeaderboardData(currentEvent?.id || "");
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<string>("Overall");
-  const [selected, setSelected] = useState<LeaderRow | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
   const [mobileEventSelectorOpen, setMobileEventSelectorOpen] = useState(false);
 
   // Refresh when Admin uploads CSV / changes title (cross-tab)
@@ -78,36 +61,54 @@ export default function LeaderboardPage() {
   }, [hasLoadedOnce, state.status]);
   
   const onSelectParticipant = (row: LeaderRow) => {
-    setSelected(row);
-    setModalOpen(true);
-  };
+    if (!currentEvent) return;
 
-  const modalData = useMemo(() => {
-    if (!selected) return null;
-    const maps = (LeaderboardPage as any)._rankMaps;
-    const overallRank = maps?.finisherRankByEpc?.get(selected.epc) ?? null;
-    const genderRank = maps?.genderRankByEpc?.get(selected.epc) ?? null;
-    const categoryRank = maps?.categoryRankByEpc?.get(selected.epc) ?? null;
-    const ageRank = maps?.ageRankByEpc?.get(selected.epc) ?? null;
+    // Calculate ranks
+    const finishers = overall.filter(
+      (r) =>
+        r.totalTimeDisplay !== "DNF" &&
+        r.totalTimeDisplay !== "DSQ" &&
+        r.totalTimeDisplay !== "Active" &&
+        r.totalTimeDisplay !== "-",
+    );
+    const overallIndex = finishers.findIndex((r) => r.epc === row.epc);
+    const overallRank = overallIndex !== -1 ? overallIndex + 1 : null;
 
-    return {
-      name: selected.name,
-      bib: selected.bib,
-      gender: selected.gender,
-      category: selected.category,
-      ageCategory: selected.ageCategory,
-      startTimeRaw: selected.startTimeRaw,
-      finishTimeRaw: selected.finishTimeRaw,
-      totalTimeDisplay: selected.totalTimeDisplay,
-      checkpointTimes: selected.laps?.map(l => l.timeDisplay) || [],
-      penaltyMs: selected.penaltyMs || 0,
-      totalTimeMs: selected.totalTimeMs,
+    const genderFiltered = finishers.filter((r) => r.gender === row.gender);
+    const genderIndex = genderFiltered.findIndex((r) => r.epc === row.epc);
+    const genderRank = genderIndex !== -1 ? genderIndex + 1 : null;
+
+    const categoryFiltered = finishers.filter((r) => r.category === row.category);
+    const categoryIndex = categoryFiltered.findIndex((r) => r.epc === row.epc);
+    const categoryRank = categoryIndex !== -1 ? categoryIndex + 1 : null;
+
+    const ageFiltered = finishers.filter((r) => r.ageCategory === row.ageCategory);
+    const ageIndex = ageFiltered.findIndex((r) => r.epc === row.epc);
+    const ageRank = ageIndex !== -1 ? ageIndex + 1 : null;
+
+    const data = {
+      name: row.name,
+      bib: row.bib,
+      gender: row.gender,
+      category: row.category,
+      ageCategory: row.ageCategory,
+      startTimeRaw: row.startTimeRaw ?? "-",
+      finishTimeRaw: row.finishTimeRaw,
+      totalTimeDisplay: row.totalTimeDisplay,
+      checkpointTimes: row.laps?.map(l => l.timeDisplay) || [],
+      penaltyMs: row.penaltyMs || 0,
+      totalTimeMs: row.totalTimeMs,
       overallRank,
       genderRank,
       categoryRank,
       ageRank,
+      distanceKm: row.distanceKm,
     };
-  }, [selected, overall]);
+
+    navigate(`/event/${currentEvent.slug}/participant/${row.epc}`, {
+      state: { modalData: data, eventId: currentEvent.id, eventName: eventTitle }
+    });
+  };
 
   // Jangan memblokir UI ketika data belum ada:
   // Admin harus tetap bisa diakses untuk upload CSV pertama kali.
@@ -317,13 +318,6 @@ export default function LeaderboardPage() {
               </>
             )}
 
-            <ParticipantModal
-              open={modalOpen}
-              onClose={() => setModalOpen(false)}
-              eventId={currentEvent?.id || ""}
-              eventName={eventTitle}
-              data={modalData}
-            />
           </div>
         </div>
       </div>

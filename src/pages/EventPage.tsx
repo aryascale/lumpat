@@ -2,11 +2,10 @@
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import { Html5Qrcode } from "html5-qrcode";
-import { useParams, Link, useSearchParams } from "react-router-dom";
+import { useParams, Link, useSearchParams, useNavigate } from "react-router-dom";
 import RaceClock from "../components/RaceClock";
 import CategorySection from "../components/CategorySection";
 import LeaderboardTable, { LeaderRow } from "../components/LeaderboardTable";
-import ParticipantModal from "../components/ParticipantModal";
 import InteractiveRouteMap from "../components/InteractiveRouteMap";
 import Navbar from "../components/Navbar";
 import { message, Modal, Select, Button, Input } from "antd";
@@ -157,6 +156,7 @@ function getAgeCategory(age: number | null): string {
 
 export default function EventPage() {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [event, setEvent] = useState<EventData | null>(null);
   const tzOffset = (event as any)?.timezoneOffset ?? 7;
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -189,8 +189,6 @@ export default function EventPage() {
   const [checkpointMap, setCheckpointMap] = useState<Map<string, string[]>>(
     new Map(),
   );
-  const [selected, setSelected] = useState<LeaderRow | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
   const [recalcTick, setRecalcTick] = useState(0);
   const { recordsByEpc, checkpoints } = useLiveTiming(event?.id || "default");
   const [gpxTrackPoints, setGpxTrackPoints] = useState<Array<[number, number]>>(
@@ -1365,11 +1363,18 @@ export default function EventPage() {
             r.totalTimeDisplay !== "Active" &&
             r.totalTimeDisplay !== "RUNNER" &&
             r.totalTimeDisplay !== "NO START TIME" &&
-            r.totalTimeDisplay !== "Registered",
+            r.totalTimeDisplay !== "Registered" &&
+            r.totalTimeDisplay !== "DNS" &&
+            r.totalTimeDisplay !== "-",
         );
 
         const finisherSorted = [...finishers]
-          .sort((a, b) => a.totalTimeMs - b.totalTimeMs)
+          .sort((a, b) => {
+            const aLaps = a.laps?.length || 0;
+            const bLaps = b.laps?.length || 0;
+            if (aLaps !== bLaps) return bLaps - aLaps;
+            return a.totalTimeMs - b.totalTimeMs;
+          })
           .map((r, i) => ({ ...r, rank: i + 1 }));
 
         const finisherRankByEpc = new Map(
@@ -1528,38 +1533,76 @@ export default function EventPage() {
   ]);
 
   const onSelectParticipant = (row: LeaderRow) => {
-    setSelected(row);
-    setModalOpen(true);
-  };
+    // Exclude unranked status values to compute correct finisher ranks
+    const finishers = overall.filter(
+      (r) =>
+        r.totalTimeDisplay !== "DNF" &&
+        r.totalTimeDisplay !== "DSQ" &&
+        r.totalTimeDisplay !== "ACTIVE" &&
+        r.totalTimeDisplay !== "Active" &&
+        r.totalTimeDisplay !== "RUNNER" &&
+        r.totalTimeDisplay !== "NO START TIME" &&
+        r.totalTimeDisplay !== "Registered" &&
+        r.totalTimeDisplay !== "DNS" &&
+        r.totalTimeDisplay !== "-"
+    );
 
-  const modalData = useMemo(() => {
-    if (!selected) return null;
-    const maps = (EventPage as any)._rankMaps;
-    const overallRank = maps?.finisherRankByEpc?.get(selected.epc) ?? null;
-    const genderRank = maps?.genderRankByEpc?.get(selected.epc) ?? null;
-    const categoryRank = maps?.categoryRankByEpc?.get(selected.epc) ?? null;
+    // Sort by laps completed (descending) and time (ascending)
+    const sortedOverall = [...finishers].sort((a, b) => {
+      const aLaps = a.laps?.length || 0;
+      const bLaps = b.laps?.length || 0;
+      if (aLaps !== bLaps) return bLaps - aLaps;
+      return a.totalTimeMs - b.totalTimeMs;
+    });
 
-    const ageRank = maps?.ageRankByEpc?.get(selected.epc) ?? null;
+    const overallIndex = sortedOverall.findIndex((r) => r.epc === row.epc);
+    const overallRank = overallIndex !== -1 ? overallIndex + 1 : null;
 
-    return {
-      name: selected.name,
-      bib: selected.bib,
-      gender: selected.gender,
-      category: selected.category,
-      ageCategory: selected.ageCategory,
-      startTimeRaw: selected.startTimeRaw ?? "-",
-      finishTimeRaw: selected.finishTimeRaw,
-      totalTimeDisplay: selected.totalTimeDisplay,
-      checkpointTimes: checkpointMap.get(selected.epc) || [],
-      penaltyMs: selected.penaltyMs || 0,
-      totalTimeMs: selected.totalTimeMs,
+    // Category Rank (scoped by distance / category)
+    const sortedCategory = sortedOverall.filter((r) => r.category === row.category);
+    const categoryIndex = sortedCategory.findIndex((r) => r.epc === row.epc);
+    const categoryRank = categoryIndex !== -1 ? categoryIndex + 1 : null;
+
+    // Gender Rank (scoped by category + gender)
+    const sortedGender = sortedCategory.filter(
+      (r) => (r.gender || "").toLowerCase() === (row.gender || "").toLowerCase()
+    );
+    const genderIndex = sortedGender.findIndex((r) => r.epc === row.epc);
+    const genderRank = genderIndex !== -1 ? genderIndex + 1 : null;
+
+    // Age Category Rank (scoped by category + gender + ageCategory)
+    const rowAge = (row.ageCategory || "").trim();
+    const sortedAge = rowAge && rowAge !== "-" 
+      ? sortedGender.filter((r) => (r.ageCategory || "").trim() === rowAge)
+      : [];
+    const ageIndex = sortedAge.findIndex((r) => r.epc === row.epc);
+    const ageRank = ageIndex !== -1 ? ageIndex + 1 : null;
+
+    const data = {
+      name: row.name,
+      bib: row.bib,
+      gender: row.gender,
+      category: row.category,
+      ageCategory: row.ageCategory,
+      startTimeRaw: row.startTimeRaw ?? "-",
+      finishTimeRaw: row.finishTimeRaw,
+      totalTimeDisplay: row.totalTimeDisplay,
+      checkpointTimes: checkpointMap.get(row.epc) || [],
+      penaltyMs: row.penaltyMs || 0,
+      totalTimeMs: row.totalTimeMs,
       overallRank,
       genderRank,
       categoryRank,
       ageRank,
-      distanceKm: selected.distanceKm,
+      distanceKm: row.distanceKm,
     };
-  }, [selected, checkpointMap]);
+
+    navigate(`/event/${slug}/participant/${row.epc}`, {
+      state: { modalData: data, eventId: event?.id, eventName: event?.name }
+    });
+  };
+
+
 
   if (!event) {
     return (
@@ -2841,58 +2884,64 @@ export default function EventPage() {
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                     <div className="flex flex-col">
                       <h3 className="text-lg font-black">Data Peserta</h3>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2.5 py-1 rounded-md border border-blue-200">
-                          {categoryDetails.find(
-                            (c) => c.id === regForm.categoryId,
-                          )?.name || ""}
-                        </span>
-                        {bulkParticipants[activeTabIdx]?.["Age Category"] && (
-                          <span className="text-xs font-bold bg-purple-100 text-purple-700 px-2.5 py-1 rounded-md border border-purple-200 shadow-sm animate-in zoom-in duration-300">
-                            {bulkParticipants[activeTabIdx]["Age Category"]}
-                          </span>
-                        )}
-                      </div>
+                      <div className="inline-flex items-center gap-1.5 mt-2 bg-stone-100 rounded-lg px-3 py-1.5">
+                         <span className="text-xs font-bold text-stone-800">
+                           {categoryDetails.find(
+                             (c) => c.id === regForm.categoryId,
+                           )?.name || ""}
+                         </span>
+                         {bulkParticipants[activeTabIdx]?.["Age Category"] && (
+                           <>
+                             <span className="text-stone-400 text-xs">·</span>
+                             <span className="text-xs font-semibold text-stone-600">
+                               {bulkParticipants[activeTabIdx]["Age Category"]}
+                             </span>
+                           </>
+                         )}
+                       </div>
                     </div>
                     {event?.content?.allowBulkNoOtp && (
-                      <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-lg border border-stone-200">
-                        <span className="font-bold text-xs text-stone-500 uppercase">
-                          Qty
-                        </span>
-                        <Select
-                          size="small"
-                          bordered={false}
-                          virtual={false}
-                          getPopupContainer={(triggerNode) =>
-                            triggerNode.parentNode
-                          }
-                          value={bulkQty}
-                          onChange={(val) => {
-                            setBulkQty(val);
-                            setBulkParticipants((prev) => {
-                              const updated = [...prev];
-                              while (updated.length < val) updated.push({});
-                              return updated;
-                            });
-                            if (activeTabIdx >= val) setActiveTabIdx(val - 1);
-                          }}
-                          options={(() => {
-                            const selectedCat = categoryDetails.find(
-                              (c) => c.id === regForm.categoryId,
-                            );
-                            const available = selectedCat
-                              ? selectedCat.quota > 0
-                                ? selectedCat.quota - selectedCat.sold
-                                : 10
-                              : 10;
-                            const max = Math.min(10, available);
-                            return Array.from(
-                              { length: max },
-                              (_, i) => i + 1,
-                            ).map((v) => ({ label: v.toString(), value: v }));
-                          })()}
-                          className="w-16"
-                        />
+                      <div className="w-full mt-4 mb-2">
+                        <label className="text-xs font-bold text-stone-500 uppercase tracking-wider block mb-1.5">
+                          Jumlah Tiket
+                        </label>
+                        {(() => {
+                          const selectedCat = categoryDetails.find(
+                            (c) => c.id === regForm.categoryId,
+                          );
+                          const adminMax = event?.content?.bulkMaxQty || 10;
+                          const available = selectedCat
+                            ? selectedCat.quota > 0
+                              ? selectedCat.quota - selectedCat.sold
+                              : adminMax
+                            : adminMax;
+                          const max = Math.min(adminMax, available);
+                          return (
+                            <Select
+                              value={bulkQty}
+                              virtual={false}
+                              onChange={(v) => {
+                                setBulkQty(v);
+                                setBulkParticipants((prev) => {
+                                  const updated = [...prev];
+                                  while (updated.length < v) updated.push({});
+                                  return updated;
+                                });
+                                if (activeTabIdx >= v) setActiveTabIdx(v - 1);
+                              }}
+                              options={Array.from({ length: max }, (_, i) => i + 1).map((v) => ({
+                                label: `${v} Tiket`,
+                                value: v,
+                              }))}
+                              className="w-36"
+                              size="middle"
+                            />
+                          );
+                        })()}
+                        <p className="text-xs text-stone-400 mt-2">
+                          Kamu memilih <span className="font-bold text-blue-600">{bulkQty} tiket</span>
+                          {bulkQty > 1 && <> — isi data tiap peserta di tab di bawah</>}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -3588,12 +3637,7 @@ export default function EventPage() {
           </div>
         </Modal>
 
-        <ParticipantModal
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          data={modalData}
-          eventId={event?.id}
-        />
+
 
         <style>{`
           .event-page {
