@@ -2884,16 +2884,19 @@ export default function EventPage() {
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                     <div className="flex flex-col">
                       <h3 className="text-lg font-black">Data Peserta</h3>
-                      <div className="flex items-center gap-2 mt-2">
-                         <span className="text-xs font-bold text-stone-900">
+                      <div className="inline-flex items-center gap-1.5 mt-2 bg-stone-100 rounded-lg px-3 py-1.5">
+                         <span className="text-xs font-bold text-stone-800">
                            {categoryDetails.find(
                              (c) => c.id === regForm.categoryId,
                            )?.name || ""}
                          </span>
                          {bulkParticipants[activeTabIdx]?.["Age Category"] && (
-                           <span className="text-xs font-bold text-stone-700">
-                             · {bulkParticipants[activeTabIdx]["Age Category"]}
-                           </span>
+                           <>
+                             <span className="text-stone-400 text-xs">·</span>
+                             <span className="text-xs font-semibold text-stone-600">
+                               {bulkParticipants[activeTabIdx]["Age Category"]}
+                             </span>
+                           </>
                          )}
                        </div>
                     </div>
@@ -2917,7 +2920,6 @@ export default function EventPage() {
                             <Select
                               value={bulkQty}
                               virtual={false}
-                              getPopupContainer={(t) => t.parentNode as HTMLElement}
                               onChange={(v) => {
                                 setBulkQty(v);
                                 setBulkParticipants((prev) => {
