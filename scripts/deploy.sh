@@ -12,8 +12,9 @@ set -e
 cd "$(dirname "$0")/.."
 
 echo "[1/5] Fetching latest updates from Git repository..."
-git fetch --all
-git reset --hard origin/main
+git fetch origin
+git checkout prod
+git reset --hard origin/prod
 
 echo "[2/5] Navigating to docker directory..."
 cd docker || exit 1
