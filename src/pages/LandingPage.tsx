@@ -8,7 +8,6 @@ import HeroCircularGallery from "../components/landing/HeroCircularGallery";
 import EventSearchModal from "../components/EventSearchModal";
 import ImageSlider3D from "../components/lightswind/3d-image-slider";
 import ReferenceShowcase from "../components/landing/ReferenceShowcase";
-import { useLenis } from "lenis/react";
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -245,7 +244,7 @@ export default function LandingPage() {
       */}
 
       {/* ===================== SECTION 3: PARALLAX JOURNEY ===================== */}
-      <JourneyParallax isMobile={isMobile} />
+      <JourneyParallax />
 
       {/* ===================== SECTION 4: PRODUCT SHOWCASE ===================== */}
       {/* ===================== SECTION 4: PRODUCT SHOWCASE — APPLE STYLE ===================== */}
@@ -449,37 +448,17 @@ export default function LandingPage() {
   );
 }
 
-function JourneyParallax({ isMobile }: { isMobile: boolean }) {
-  const [scrollY, setScrollY] = useState(0);
-
-  useLenis((lenis) => {
-    setScrollY(lenis.scroll);
-  });
-
-  const getParallaxStyle = (desktopOffset: number, mobileOffset: number) => {
-    const showcaseHeight = isMobile ? 650 : 950;
-    const offset = (isMobile ? mobileOffset : desktopOffset) + showcaseHeight;
-    const speed = isMobile ? 0.08 : 0.2;
-    const maxShift = isMobile ? 60 : 250;
-
-    let shift = (scrollY - offset) * speed;
-    if (shift > maxShift) shift = maxShift;
-    if (shift < -maxShift) shift = -maxShift;
-
-    return {
-      backgroundPositionY: `calc(50% + ${shift}px)`,
-      backgroundSize: isMobile ? "auto 130%" : "cover",
-    };
-  };
-
+function JourneyParallax() {
   return (
-    <section id="journey">
+    <section id="journey" className="relative w-full">
       {/* SWIM */}
       <div
         className="landing-parallax-block"
         style={{
           backgroundImage: "url('/Assets/landing/swim.webp')",
-          ...getParallaxStyle(800, 1300),
+          backgroundPosition: "center center",
+          backgroundSize: "cover",
+          backgroundRepeat: "no-repeat",
         }}
       >
         <div className="landing-parallax-block__overlay landing-parallax-block__overlay--dark" />
@@ -498,7 +477,9 @@ function JourneyParallax({ isMobile }: { isMobile: boolean }) {
         className="landing-parallax-block"
         style={{
           backgroundImage: "url('/Assets/landing/bike.webp')",
-          ...getParallaxStyle(1400, 1800),
+          backgroundPosition: "center center",
+          backgroundSize: "cover",
+          backgroundRepeat: "no-repeat",
         }}
       >
         <div className="landing-parallax-block__overlay" />
@@ -517,7 +498,9 @@ function JourneyParallax({ isMobile }: { isMobile: boolean }) {
         className="landing-parallax-block"
         style={{
           backgroundImage: "url('/Assets/landing/run.webp')",
-          ...getParallaxStyle(2000, 2300),
+          backgroundPosition: "center center",
+          backgroundSize: "cover",
+          backgroundRepeat: "no-repeat",
         }}
       >
         <div className="landing-parallax-block__overlay landing-parallax-block__overlay--red" />

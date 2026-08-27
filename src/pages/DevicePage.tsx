@@ -289,17 +289,24 @@ export default function DevicePage() {
 
   useScrollReveal([slug]);
 
-  // Video interpolation loop
+  // Video interpolation loop (optimized for smooth hardware decode)
   useEffect(() => {
+    let isRunning = true;
     const updateVideoTime = () => {
-      if (scrollVideoRef.current && scrollVideoRef.current.readyState >= 2 && scrollVideoRef.current.duration) {
-        // Lerp factor (lower = smoother but more delayed)
-        const lerpFactor = 0.08;
-        currentVideoTime.current += (targetTime.current - currentVideoTime.current) * lerpFactor;
-        
-        // Only update if difference is meaningful to save resources
-        if (Math.abs(targetTime.current - currentVideoTime.current) > 0.001) {
-          scrollVideoRef.current.currentTime = currentVideoTime.current;
+      if (!isRunning) return;
+      if (scrollContainerRef.current) {
+        const rect = scrollContainerRef.current.getBoundingClientRect();
+        // Skip video decoding work if section is off-screen
+        if (rect.bottom >= 0 && rect.top <= window.innerHeight) {
+          if (scrollVideoRef.current && scrollVideoRef.current.readyState >= 2 && scrollVideoRef.current.duration) {
+            const lerpFactor = 0.1;
+            currentVideoTime.current += (targetTime.current - currentVideoTime.current) * lerpFactor;
+            
+            // Only update currentTime if delta is meaningful (> 0.04s) to avoid decoder keyframe thrashing
+            if (Math.abs(targetTime.current - currentVideoTime.current) > 0.04) {
+              scrollVideoRef.current.currentTime = currentVideoTime.current;
+            }
+          }
         }
       }
       rafRef.current = requestAnimationFrame(updateVideoTime);
@@ -307,6 +314,7 @@ export default function DevicePage() {
     
     rafRef.current = requestAnimationFrame(updateVideoTime);
     return () => {
+      isRunning = false;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, []);
