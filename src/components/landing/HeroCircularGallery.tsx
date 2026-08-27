@@ -58,7 +58,6 @@ export default function HeroCircularGallery() {
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("init");
   const [isMobile, setIsMobile] = useState(false);
-  const [masterRotation, setMasterRotation] = useState(0);
   const [isPulledUp, setIsPulledUp] = useState(false);
 
   // ─── Deterministic splash offsets (never re-generated) ───
@@ -118,27 +117,6 @@ export default function HeroCircularGallery() {
     return () => clearInterval(interval);
   }, [phase === "init"]);
 
-  // ─── Master container slow rotation (accumulates over time) ───
-  useEffect(() => {
-    if (phase === "init") return;
-
-    let animFrame: number;
-    let lastTime = performance.now();
-
-    const tick = (now: number) => {
-      const dt = (now - lastTime) / 1000;
-      lastTime = now;
-
-      // Rotate at ~6 deg/sec during circle, pause (0 deg/sec) during splash
-      const speed = phase === "circle" ? 6 : 0;
-      setMasterRotation((prev) => prev + speed * dt);
-      animFrame = requestAnimationFrame(tick);
-    };
-
-    animFrame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(animFrame);
-  }, [phase]);
-
   // ─── Responsive dimensions ───
   const radius = isMobile ? 150 : 340;
   const cardW = isMobile ? 32 : 60;
@@ -183,19 +161,28 @@ export default function HeroCircularGallery() {
           }}
         />
 
-        {/* ─── Rotating Master Container ─── */}
+        {/* ─── Rotating Master Container (GPU Accelerated) ─── */}
         <div
           className="absolute inset-0 flex items-center justify-center pointer-events-none"
-          style={{ willChange: "transform", perspective: "1200px" }}
+          style={{ perspective: "1200px" }}
         >
-          <div
+          <motion.div
+            animate={{
+              rotate: phase === "circle" ? 360 : 0,
+            }}
+            transition={{
+              rotate: {
+                repeat: phase === "circle" ? Infinity : 0,
+                duration: 60,
+                ease: "linear",
+              },
+            }}
             style={{
-              transform: `rotate(${masterRotation}deg)`,
-              willChange: "transform",
               width: 0,
               height: 0,
               position: "relative",
-              transformStyle: "preserve-3d"
+              transformStyle: "preserve-3d",
+              willChange: "transform",
             }}
           >
             {GALLERY_IMAGES.map((src, index) => {
@@ -218,9 +205,6 @@ export default function HeroCircularGallery() {
                 ? splashSeeds[index].rot
                 : tangentialRot);
 
-              // Counter-rotate text/cards so they don't spin with master
-              const counterRotate = isInit ? 0 : (isSplash ? 0 : -masterRotation);
-
               return (
                 <motion.div
                   key={index}
@@ -240,7 +224,7 @@ export default function HeroCircularGallery() {
                     z: isSplash ? splashSeeds[index].z * (isMobile ? 0.5 : 1) : 0,
                     scale: isInit ? (index === 0 ? 1.6 : 0) : 1,
                     opacity: isInit ? (index === 0 ? 1 : 0) : (isSplash ? 0.7 : 1),
-                    rotate: targetRotation + counterRotate,
+                    rotate: targetRotation,
                     rotateX: isSplash ? splashSeeds[index].rotX : 0,
                     rotateY: isSplash ? splashSeeds[index].rotY : 0,
                   }}
@@ -286,7 +270,7 @@ export default function HeroCircularGallery() {
                 </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         </div>
 
         {/* ─── Centered Hero Copy ─── */}
