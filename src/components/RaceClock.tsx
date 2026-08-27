@@ -209,8 +209,3 @@ const rotateStyle: React.CSSProperties = {
   marginTop: 4,
 };
 
-const hintStyle: React.CSSProperties = {
-  fontSize: 14,
-  opacity: 0.85,
-  marginTop: 6,
-};

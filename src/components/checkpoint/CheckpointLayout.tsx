@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Layout, Button, Input } from 'antd';
+import { useState } from 'react';
+import { Button, Input } from 'antd';
 import { LogoutOutlined } from '@ant-design/icons';
 import { Outlet, useNavigate } from 'react-router-dom';
-
-const { Header, Content } = Layout;
 
 const LS_CHECKPOINT_AUTH = "imr_checkpoint_authed";
 const CHECKPOINT_USER = "checkpoint@lumpat.com";

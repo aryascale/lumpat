@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useEvent } from "../../../contexts/EventContext";
-import { CATEGORY_KEYS } from "../../../lib/config";
 import EventDetailPage from "./EventDetailPage";
 import { ChevronDown } from "lucide-react";
 

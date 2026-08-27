@@ -79,22 +79,30 @@ export function useLiveTiming(eventId: string) {
   useEffect(() => {
     if (!eventId || eventId === "default") return;
 
-    // Avoid duplicate loads for same eventId
     lastEventIdRef.current = eventId;
     loadData(eventId);
-
-    // Poll every 10s as fallback
-    const interval = setInterval(() => {
-      if (lastEventIdRef.current) {
-        loadData(lastEventIdRef.current);
-      }
-    }, 10000);
 
     // Setup Socket.IO
     if (socketRef.current) {
       socketRef.current.disconnect();
     }
-    const newSocket = io({ path: "/socket.io/", transports: ['websocket'] });
+    const newSocket = io({ path: "/socket.io/", transports: ['websocket', 'polling'] });
+    let isConnected = false;
+
+    newSocket.on("connect", () => {
+      isConnected = true;
+    });
+
+    newSocket.on("disconnect", () => {
+      isConnected = false;
+    });
+
+    // Only fallback poll if socket is disconnected (every 30s)
+    const fallbackInterval = setInterval(() => {
+      if (lastEventIdRef.current && !isConnected) {
+        loadData(lastEventIdRef.current);
+      }
+    }, 30000);
 
     newSocket.on(`new_record_${eventId}`, (data: any) => {
       setRecordsByEpc(prev => {
@@ -107,9 +115,9 @@ export function useLiveTiming(eventId: string) {
           id: data.id,
           epc,
           time: data.time,
-          identitas: data.checkpoint.identitas,
-          order: data.checkpoint.order,
-          checkpointName: data.checkpoint.name
+          identitas: data.checkpoint?.identitas || '',
+          order: data.checkpoint?.order || 0,
+          checkpointName: data.checkpoint?.name || ''
         };
 
         const newArr = [...currentArr];
@@ -128,7 +136,7 @@ export function useLiveTiming(eventId: string) {
     socketRef.current = newSocket;
 
     return () => {
-      clearInterval(interval);
+      clearInterval(fallbackInterval);
       if (socketRef.current) socketRef.current.disconnect();
     };
   }, [eventId]);

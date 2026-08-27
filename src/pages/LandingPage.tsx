@@ -28,11 +28,6 @@ export default function LandingPage() {
     return () => window.removeEventListener("show-coming-soon", handleComingSoon);
   }, []);
 
-  const triggerComingSoon = (e: React.MouseEvent) => {
-    e.preventDefault();
-    window.dispatchEvent(new Event("show-coming-soon"));
-  };
-
   // Responsive state observer
   useEffect(() => {
     const handleResize = () => {
@@ -43,12 +38,6 @@ export default function LandingPage() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  const heroImages = [
-    "/Assets/landing/hero.webp",
-    "/Assets/landing/hero_2.webp",
-    "/Assets/landing/hero_3.webp"
-  ];
 
   // Rotate hero image every 5 seconds
   // useEffect(() => {
@@ -369,7 +358,7 @@ export default function LandingPage() {
 
 
       {/* ===================== SECTION 8: FAQ ===================== */}
-      <section className="bg-[#f5f5f4] py-20 md:py-32 border-t border-stone-200" id="faq">
+      <section className="bg-white py-20 md:py-32 border-t border-stone-200" id="faq">
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-16 items-start">
 
           {/* Left Side: Header & Context */}
@@ -396,7 +385,7 @@ export default function LandingPage() {
               return (
                 <div
                   key={idx}
-                  className={`rounded-[20px] transition-all duration-500 bg-white border ${isOpen ? 'border-[#DC2626]/20 shadow-[0_8px_30px_rgba(220,38,38,0.06)]' : 'border-stone-200/60 hover:border-stone-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.04)]'}`}
+                  className={`rounded-[20px] transition-all duration-500 bg-[#f5f5f7] border ${isOpen ? 'border-[#DC2626]/20 shadow-[0_8px_30px_rgba(220,38,38,0.06)]' : 'border-transparent hover:border-stone-200 hover:shadow-[0_4px_20px_rgba(0,0,0,0.04)]'}`}
                 >
                   <button
                     onClick={() => setOpenFaq(isOpen ? null : idx)}
@@ -405,7 +394,7 @@ export default function LandingPage() {
                     <span className={`font-bold text-[16px] md:text-[18px] tracking-tight pr-4 transition-colors ${isOpen ? 'text-[#DC2626]' : 'text-[#111] group-hover:text-[#DC2626]'}`}>
                       {faq.question}
                     </span>
-                    <span className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full transition-all duration-300 ${isOpen ? 'bg-[#DC2626] text-white rotate-180' : 'bg-stone-100 text-stone-400 group-hover:bg-[#FEF2F2] group-hover:text-[#DC2626]'}`}>
+                    <span className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full transition-all duration-300 ${isOpen ? 'bg-[#DC2626] text-white rotate-180' : 'bg-white text-stone-400 group-hover:bg-[#FEF2F2] group-hover:text-[#DC2626]'}`}>
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
                       </svg>
@@ -429,46 +418,7 @@ export default function LandingPage() {
       {/* ===================== FOOTER ===================== */}
       <footer className="bg-white border-t border-gray-200 text-xs text-gray-500 py-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-8">
-            <div className="flex flex-col space-y-2.5">
-              <h5 className="font-semibold text-gray-900 mb-1">Platform</h5>
-              <a onClick={() => navigate("/leaderboard")} className="hover:text-gray-900 hover:underline cursor-pointer transition-colors">Leaderboard</a>
-              <a onClick={() => setIsSearchOpen(true)} className="hover:text-gray-900 hover:underline cursor-pointer transition-colors">Search Events</a>
-              <a href="#products" className="hover:text-gray-900 hover:underline transition-colors">Transponders</a>
-              <a href="#features" className="hover:text-gray-900 hover:underline transition-colors">Features</a>
-              <a href="#" onClick={triggerComingSoon} className="hover:text-gray-900 hover:underline transition-colors">Live Results</a>
-            </div>
-            <div className="flex flex-col space-y-2.5">
-              <h5 className="font-semibold text-gray-900 mb-1">Company</h5>
-              <a href="#about" className="hover:text-gray-900 hover:underline transition-colors">About IJT</a>
-              <a href="#organizers" className="hover:text-gray-900 hover:underline transition-colors">For Organizers</a>
-              <a href="#careers" className="hover:text-gray-900 hover:underline transition-colors">Careers</a>
-              <a href="#contact" className="hover:text-gray-900 hover:underline transition-colors">Contact Us</a>
-            </div>
-            <div className="flex flex-col space-y-2.5">
-              <h5 className="font-semibold text-gray-900 mb-1">Support</h5>
-              <a href="#faq" className="hover:text-gray-900 hover:underline transition-colors">FAQ</a>
-              <a href="#help-center" className="hover:text-gray-900 hover:underline transition-colors">Help Center</a>
-              <a href="#timing-guide" className="hover:text-gray-900 hover:underline transition-colors">Timing Guide</a>
-              <a href="#status" className="hover:text-gray-900 hover:underline transition-colors">System Status</a>
-            </div>
-            <div className="flex flex-col space-y-2.5">
-              <h5 className="font-semibold text-gray-900 mb-1">Values</h5>
-              <a href="#accessibility" className="hover:text-gray-900 hover:underline transition-colors">Accessibility</a>
-              <a href="#environment" className="hover:text-gray-900 hover:underline transition-colors">Environment</a>
-              <a href="#privacy" className="hover:text-gray-900 hover:underline transition-colors">Privacy</a>
-              <a href="#responsibility" className="hover:text-gray-900 hover:underline transition-colors">Responsibility</a>
-            </div>
-            <div className="flex flex-col space-y-2.5">
-              <h5 className="font-semibold text-gray-900 mb-1">About IJT</h5>
-              <a href="#news" className="hover:text-gray-900 hover:underline transition-colors">Newsroom</a>
-              <a href="#leadership" className="hover:text-gray-900 hover:underline transition-colors">Leadership</a>
-              <a href="#events" className="hover:text-gray-900 hover:underline transition-colors">Events</a>
-              <a href="#contact" className="hover:text-gray-900 hover:underline transition-colors">Contact IJT</a>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-200 pt-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="flex flex-col gap-2">
               <p className="text-gray-400">Hak cipta © 2026 IZT Race Technology — Indonesia Timing System. Seluruh hak cipta dilindungi undang-undang.</p>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-gray-500">

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useEvent } from '../../../contexts/EventContext';
-import { CATEGORY_KEYS, getCategoriesForEvent, LS_DATA_VERSION } from '../../../lib/config';
+import { getCategoriesForEvent, LS_DATA_VERSION } from '../../../lib/config';
 import TimingPage from '../pages/TimingPage';
 
 export default function TimingPageWrapper() {

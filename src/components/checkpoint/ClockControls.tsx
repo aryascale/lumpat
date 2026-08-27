@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Play, Pause, RotateCcw, Clock, Edit2, Check } from "lucide-react";
+import { useState } from "react";
+import { Play, Pause, RotateCcw, Clock } from "lucide-react";
 import { formatDuration } from "./utils";
 
 interface ClockControlsProps {

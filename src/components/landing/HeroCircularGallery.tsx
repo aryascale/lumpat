@@ -72,6 +72,14 @@ export default function HeroCircularGallery() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // ─── Proactive Asset Preloader (pre-caches all 24 cards in memory) ───
+  useEffect(() => {
+    GALLERY_IMAGES.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, []);
+
   // ─── Intro Sequence: 1.2s delay before transition to splash ───
   useEffect(() => {
     const initTimer = setTimeout(() => {
@@ -270,6 +278,7 @@ export default function HeroCircularGallery() {
                       src={src}
                       alt={`Event photo ${index + 1}`}
                       loading={index < 8 ? "eager" : "lazy"}
+                      decoding="async"
                       className="w-full h-full object-cover"
                       style={{ willChange: "transform" }}
                     />

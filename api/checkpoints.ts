@@ -1,6 +1,14 @@
 import { query } from '../src/lib/db';
 import { successResponse, errorResponse, parseBody, CORS_HEADERS } from '../src/lib/api-utils';
 
+const CP_CACHE_TTL = 15000;
+const cpCache = new Map<string, { data: any; timestamp: number }>();
+
+function invalidateCpCache(eventId?: string) {
+  if (eventId) cpCache.delete(eventId);
+  else cpCache.clear();
+}
+
 export default async function handler(event: any) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
 
@@ -9,11 +17,21 @@ export default async function handler(event: any) {
     if (!eventId) return errorResponse('eventId is required', 400);
 
     if (event.httpMethod === 'GET') {
+      const now = Date.now();
+      const cached = cpCache.get(eventId);
+      if (cached && (now - cached.timestamp < CP_CACHE_TTL)) {
+        return successResponse(cached.data);
+      }
+
       const checkpoints: any = await query(
         'SELECT * FROM Checkpoint WHERE eventId = ? ORDER BY `order` ASC', [eventId]
       );
-      return successResponse({ checkpoints: checkpoints.map((c: any) => ({ id: c.id, name: c.name, identitas: c.identitas, order: c.order })) });
+      const resData = { checkpoints: checkpoints.map((c: any) => ({ id: c.id, name: c.name, identitas: c.identitas, order: c.order })) };
+      cpCache.set(eventId, { data: resData, timestamp: now });
+      return successResponse(resData);
     }
+
+    invalidateCpCache(eventId);
 
     if (event.httpMethod === 'POST' || event.httpMethod === 'PUT') {
       const body = parseBody(event);

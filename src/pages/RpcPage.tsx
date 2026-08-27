@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useParams } from "react-router-dom";
 import { loadMasterParticipants } from "../lib/data";
 import { Html5Qrcode } from "html5-qrcode";
-import { Search, X, CheckCircle, AlertTriangle } from "lucide-react";
+import { Search, X, CheckCircle } from "lucide-react";
 import type { LeaderRow } from "../components/LeaderboardTable";
 import Keyboard from "react-simple-keyboard";
 import "react-simple-keyboard/build/css/index.css";
@@ -10,7 +10,6 @@ import { useMediaQuery } from 'react-responsive';
 
 export default function RpcPage() {
   const { slug } = useParams();
-  const navigate = useNavigate();
   const [eventData, setEventData] = useState<any>(null);
   const [participants, setParticipants] = useState<LeaderRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,7 +67,7 @@ export default function RpcPage() {
             setScanError("QR Code tidak cocok dengan data peserta.");
           }
         },
-        (error) => {
+        () => {
           // Ignore frequent scan errors
         }
       ).catch(err => {

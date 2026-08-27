@@ -91,38 +91,6 @@ const SHOWCASE_DATA = [
  * going inward, then the lower portion continues down.
  * viewBox: 0 0 340 480
  */
-const STEPPED_SHAPE_PATH =
-  "M 40 0 H 300 C 322 0 340 18 340 40 V 440 C 340 462 322 480 300 480 H 140 C 118 480 100 462 100 440 V 310 C 100 288 82 270 60 270 H 40 C 18 270 0 252 0 230 V 40 C 0 18 18 0 40 0 Z";
-
-function SteppedBlueShape({ className, style }: { className?: string; style?: React.CSSProperties }) {
-  return (
-    <svg
-      viewBox="0 0 340 480"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-      style={style}
-      preserveAspectRatio="none"
-    >
-      <defs>
-        <linearGradient id="blue-stepped-grad" x1="0" y1="0" x2="340" y2="480" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#1D4ED8" />
-          <stop offset="45%" stopColor="#3B82F6" />
-          <stop offset="100%" stopColor="#60A5FA" />
-        </linearGradient>
-      </defs>
-      <path d={STEPPED_SHAPE_PATH} fill="url(#blue-stepped-grad)" />
-    </svg>
-  );
-}
-
-/*
- * The image mask — same stepped shape but mirrored/adjusted for the photo.
- * This clips the image into the same compound shape.
- */
-const IMAGE_SHAPE_PATH =
-  "M 40 0 H 260 C 282 0 300 18 300 40 V 440 C 300 462 282 480 260 480 H 140 C 118 480 100 462 100 440 V 290 C 100 268 82 250 60 250 H 40 C 18 250 0 232 0 210 V 40 C 0 18 18 0 40 0 Z";
-
 function SteppedImageClipDef() {
   return (
     <svg width="0" height="0" style={{ position: "absolute" }}>

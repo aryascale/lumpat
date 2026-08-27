@@ -33,5 +33,5 @@ backups/
 /data/
 
 # AI Agent
-.agent
+.agents
 scripts/convert-to-webp.mjs

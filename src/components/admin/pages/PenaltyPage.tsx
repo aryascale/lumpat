@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { loadMasterParticipants, loadTimesMap } from "../../../lib/data";
-import { extractTimeOfDay, formatDuration } from "../../../lib/time";
+import { extractTimeOfDay } from "../../../lib/time";
 import type { LeaderRow } from "../../LeaderboardTable";
 
 interface PenaltyPageProps {

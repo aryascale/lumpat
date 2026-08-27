@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Download, Search, Edit3, Trash2, ArrowUpDown, Filter, Save, X, PlusCircle } from "lucide-react";
+import { useState } from "react";
+import { Download, Search, ArrowUpDown, PlusCircle } from "lucide-react";
 import { TimeRecord } from "./types";
 
 interface ResultsListProps {

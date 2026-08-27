@@ -1,5 +1,5 @@
-import React from "react";
-import { Delete, CornerDownLeft, XCircle } from "lucide-react";
+import { Fragment } from "react";
+import { Delete, CornerDownLeft } from "lucide-react";
 
 interface NumpadProps {
   onKeyPress: (key: string) => void;
@@ -23,7 +23,7 @@ export default function Numpad({ onKeyPress, onBackspace, onClear, onEnter }: Nu
 
       <div className="grid grid-cols-3 gap-2 flex-grow h-[260px] md:h-[300px]">
         {keys.map((row, rIdx) => (
-          <React.Fragment key={rIdx}>
+          <Fragment key={rIdx}>
             {row.map((num) => (
               <button
                 id={`numpad-key-${num}`}
@@ -35,7 +35,7 @@ export default function Numpad({ onKeyPress, onBackspace, onClear, onEnter }: Nu
                 {num}
               </button>
             ))}
-          </React.Fragment>
+          </Fragment>
         ))}
 
         {/* Bottom row: Clear, 0, Backspace */}
