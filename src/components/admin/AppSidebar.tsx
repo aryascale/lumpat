@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Layout } from 'antd';
 import SidebarItem from './SidebarItem';
-import HomeIcon from './icons/HomeIcon';
 import EventsIcon from './icons/EventsIcon';
 
 const { Sider } = Layout;

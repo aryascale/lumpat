@@ -39,13 +39,31 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-app.use(express.static(path.join(PROJECT_ROOT, 'dist'), { maxAge: '1d' }));
+
+// Serve frontend dist with tiered caching
+app.use(express.static(path.join(PROJECT_ROOT, 'dist'), {
+  setHeaders: (res, filePath) => {
+    // Immutable cache for versioned/hashed build chunks (JS, CSS)
+    if (filePath.includes(path.sep + 'assets' + path.sep) || filePath.includes('/assets/')) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    } else if (/\.(webp|png|jpg|jpeg|svg|gif|mp4|webm|woff2|woff|ttf|ico)$/i.test(filePath)) {
+      // 7-day cache with stale-while-revalidate for static media and fonts
+      res.setHeader('Cache-Control', 'public, max-age=604800, stale-while-revalidate=86400');
+    } else if (filePath.endsWith('.html')) {
+      // Never cache index.html so updates deploy immediately
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+  }
+}));
+
+// Serve uploads with caching and inline PDF support
 app.use('/uploads', express.static(UPLOAD_DIR, { 
-  maxAge: '1d',
   setHeaders: (res, filePath) => {
     if (filePath.toLowerCase().endsWith('.pdf')) {
       res.setHeader('Content-Disposition', 'inline');
       res.setHeader('Content-Type', 'application/pdf');
+    } else if (/\.(webp|png|jpg|jpeg|svg|gif|mp4|webm)$/i.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
     }
   }
 }));
@@ -102,6 +120,7 @@ const apiHandler = async (req: any, res: any) => {
 app.use('/api', apiHandler);
 
 app.use((_req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.sendFile(path.join(PROJECT_ROOT, 'dist', 'index.html'));
 });
 

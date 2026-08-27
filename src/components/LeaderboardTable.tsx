@@ -708,7 +708,7 @@ export default function LeaderboardTable({
                   <div
                     key={r.epc}
                     onClick={() => onSelect?.(r)}
-                    className={`group cursor-pointer transition-all duration-300 hover:-translate-y-0.5 rounded-xl ${getRowBorder(r.rank)} ${isSpecial
+                    className={`leaderboard-row-item group cursor-pointer transition-all duration-300 hover:-translate-y-0.5 rounded-xl ${getRowBorder(r.rank)} ${isSpecial
                       ? "bg-red-50/50"
                       : isActive
                         ? "bg-emerald-50/30"

@@ -13,6 +13,7 @@ interface Payment {
   gender: string;
   tshirtSize: string;
   bibName: string;
+  bibNumber?: string;
   grossAmount: number;
   paymentStatus: string;
   paymentMethod: string;

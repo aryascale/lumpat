@@ -48,6 +48,13 @@ function formatEvent(event: any) {
   };
 }
 
+const EVENTS_CACHE_TTL = 10000;
+const eventsCache = new Map<string, { data: any; timestamp: number }>();
+
+function invalidateEventsCache() {
+  eventsCache.clear();
+}
+
 export default async function handler(req: any) {
   if (req.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
 
@@ -55,6 +62,13 @@ export default async function handler(req: any) {
     const eventId = req.queryStringParameters?.eventId;
 
     if (req.httpMethod === 'GET') {
+      const cacheKey = `${eventId || 'all'}_${req.queryStringParameters?.showDrafts || 'false'}_${req.queryStringParameters?.includeDeleted || 'false'}`;
+      const now = Date.now();
+      const cached = eventsCache.get(cacheKey);
+      if (cached && (now - cached.timestamp < EVENTS_CACHE_TTL)) {
+        return successResponse(cached.data);
+      }
+
       if (eventId) {
         const events: any = await query(
           `SELECT e.*, 
@@ -79,8 +93,9 @@ export default async function handler(req: any) {
           `SELECT * FROM Category WHERE eventId = ? ${!showDrafts ? 'AND isHidden = false' : ''} ORDER BY \`order\` ASC`,
           [events[0].id]
         );
-        events[0]._categories = categories.map((c: any) => c.name);
-        return successResponse(formatEvent(events[0]));
+        const formatted = formatEvent(events[0]);
+        eventsCache.set(cacheKey, { data: formatted, timestamp: now });
+        return successResponse(formatted);
       }
 
       const showDrafts = req.queryStringParameters?.showDrafts === 'true';
@@ -126,8 +141,13 @@ export default async function handler(req: any) {
         }
       }
 
-      return successResponse(allEvents.map(formatEvent));
+      const formattedList = allEvents.map(formatEvent);
+      eventsCache.set(cacheKey, { data: formattedList, timestamp: now });
+      return successResponse(formattedList);
     }
+
+    // Mutations invalidate cache
+    invalidateEventsCache();
 
     if (req.httpMethod === 'POST') {
       const { name, description, eventType, eventDate, location, latitude, longitude, isActive, isDraft, publishAt, categories, isLoopMode, minLapTimeMs } = parseBody(req);

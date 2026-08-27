@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import type { LeaderRow } from "../LeaderboardTable";
-import { CATEGORY_KEYS, type CsvKind, getCategoriesForEvent, LS_DATA_VERSION } from "../../lib/config";
+import { type CsvKind, getCategoriesForEvent, LS_DATA_VERSION } from "../../lib/config";
 import { listCsvMeta } from "../../lib/idb";
 import { useEvent } from "../../contexts/EventContext";
 import OverviewPage from "./pages/OverviewPage";

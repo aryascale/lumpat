@@ -1,5 +1,5 @@
-import React, { useState, useRef, DragEvent, ChangeEvent } from "react";
-import { UploadCloud, FileSpreadsheet, Download, Trash2, Users, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useState, useRef, DragEvent, ChangeEvent } from "react";
+import { UploadCloud, Download, Trash2, Users, AlertCircle, CheckCircle2 } from "lucide-react";
 import { parseRunnersCSV, getSampleCSV, downloadFile } from "./utils";
 import { Runner } from "./types";
 

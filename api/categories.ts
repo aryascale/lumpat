@@ -4,6 +4,13 @@ import { successResponse, errorResponse, parseBody, CORS_HEADERS } from '../src/
 import { createBackup } from '../src/lib/backup';
 
 const DEFAULT_CATEGORIES = ['10K Laki-laki', '10K Perempuan', '5K Laki-Laki', '5K Perempuan'];
+const CATS_CACHE_TTL = 10000;
+const catsCache = new Map<string, { data: any; timestamp: number }>();
+
+function invalidateCatsCache(eventId?: string) {
+  if (eventId) catsCache.delete(eventId);
+  else catsCache.clear();
+}
 
 export default async function handler(event: any) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
@@ -13,9 +20,18 @@ export default async function handler(event: any) {
     const isDefault = !eventId || eventId === 'default';
 
     if (event.httpMethod === 'GET') {
+      const cacheKey = isDefault ? 'default' : eventId;
+      const now = Date.now();
+      const cached = catsCache.get(cacheKey);
+      if (cached && (now - cached.timestamp < CATS_CACHE_TTL)) {
+        return successResponse(cached.data);
+      }
+
       if (isDefault) {
         const categories = await getDefaultCategories();
-        return successResponse({ categories });
+        const resData = { categories };
+        catsCache.set(cacheKey, { data: resData, timestamp: now });
+        return successResponse(resData);
       }
 
       const categories: any = await query(
@@ -27,8 +43,12 @@ export default async function handler(event: any) {
         [eventId]
       );
       const soldMap = new Map(soldCounts.map((s: any) => [s.categoryId, Number(s.sold)]));
-      return successResponse({ categories: categories.map((c: any) => ({ id: c.id, name: c.name, price: c.price || 0, quota: c.quota || 0, sold: soldMap.get(c.id) || 0, order: c.order, isHidden: !!c.isHidden, isClosed: !!c.isClosed, distanceKm: c.distanceKm ?? null })) });
+      const resData = { categories: categories.map((c: any) => ({ id: c.id, name: c.name, price: c.price || 0, quota: c.quota || 0, sold: soldMap.get(c.id) || 0, order: c.order, isHidden: !!c.isHidden, isClosed: !!c.isClosed, distanceKm: c.distanceKm ?? null })) };
+      catsCache.set(cacheKey, { data: resData, timestamp: now });
+      return successResponse(resData);
     }
+
+    invalidateCatsCache(eventId);
 
     if (event.httpMethod === 'POST' || event.httpMethod === 'PUT') {
       const body = parseBody(event);

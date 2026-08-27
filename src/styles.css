@@ -1,6 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import 'tailwindcss';
 @plugin 'lightswind/plugin';
+
+/* High-Performance Table Virtualization */
+.leaderboard-row-item {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 56px;
+}
 :root {
   --bg: #f5f6f8;
   --card: #ffffff;
