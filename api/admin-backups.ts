@@ -1,8 +1,12 @@
 import { successResponse, errorResponse, parseBody, CORS_HEADERS } from '../src/lib/api-utils';
 import { createBackup, listBackups, getBackupData, restoreRegistrations } from '../src/lib/backup';
+import { requireRole } from '../src/lib/jwt';
 
 export default async function handler(event: any) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
+
+  const auth = requireRole(event, ['super_admin']);
+  if (!auth.allowed) return errorResponse(auth.message, auth.statusCode);
 
   try {
     // GET - list backups or get one

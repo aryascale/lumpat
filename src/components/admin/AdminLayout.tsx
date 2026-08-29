@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Button, Dropdown, Avatar, Input } from 'antd';
-import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined, LogoutOutlined, CloseOutlined } from '@ant-design/icons';
-import { Outlet, useNavigate } from 'react-router-dom';
-import AppSidebar, { defaultMenuItems } from './AppSidebar';
+import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined, LogoutOutlined, CloseOutlined, SafetyOutlined } from '@ant-design/icons';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import AppSidebar, { buildAdminMenuItems } from './AppSidebar';
+import { useAuth, normalizeUserRole, getRoleLabel } from '../../contexts/AuthContext';
 
 const { Header, Content } = Layout;
 
@@ -27,6 +28,24 @@ export default function AdminLayout() {
   const [pass, setPass] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user: authUser } = useAuth();
+  const activeRole = normalizeUserRole(authUser?.role || 'super_admin');
+  const menuItems = buildAdminMenuItems(activeRole);
+
+  useEffect(() => {
+    if (!menuItems.length) {
+      navigate('/leaderboard', { replace: true });
+      return;
+    }
+
+    const allowedPaths = menuItems.map((item) => item.path).filter(Boolean) as string[];
+    const isAllowed = allowedPaths.some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
+
+    if (!isAllowed && location.pathname.startsWith('/admin')) {
+      navigate(allowedPaths[0], { replace: true });
+    }
+  }, [location.pathname, menuItems, navigate]);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -80,6 +99,16 @@ export default function AdminLayout() {
     setUser("");
     setPass("");
     navigate('/leaderboard');
+  };
+
+  const getRoleColor = (role: string) => {
+    switch(role) {
+      case 'super_admin': return 'bg-purple-500 hover:bg-purple-600';
+      case 'event_admin': return 'bg-blue-500 hover:bg-blue-600';
+      case 'scan_admin': return 'bg-green-500 hover:bg-green-600';
+      case 'payment_admin': return 'bg-amber-500 hover:bg-amber-600';
+      default: return 'bg-gray-500 hover:bg-gray-600';
+    }
   };
 
   const userMenuItems = [
@@ -141,7 +170,11 @@ export default function AdminLayout() {
                 type="primary"
                 htmlType="submit"
                 size="large"
-                className="w-full bg-red-600 hover:bg-red-700"
+                className="w-full"
+                style={{
+                  background: '#7c3aed',
+                  borderColor: '#7c3aed',
+                }}
               >
                 Login
               </Button>
@@ -190,7 +223,7 @@ export default function AdminLayout() {
         `}>
           <AppSidebar
             collapsed={isMobile ? false : collapsed}
-            menuItems={defaultMenuItems}
+            menuItems={menuItems}
             onItemClick={handleMobileNavigation}
           />
           {/* Mobile close button */}
@@ -257,12 +290,25 @@ export default function AdminLayout() {
           )}
 
           {/* User Menu */}
-          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-            <div className="flex items-center gap-2 cursor-pointer">
-              <Avatar size="default" icon={<UserOutlined />} className="bg-red-500" />
-              <span className="text-gray-700 font-medium hidden sm:block">Admin</span>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className={`hidden sm:flex items-center gap-2 rounded-full px-2.5 py-1.5 border font-medium text-xs uppercase tracking-[0.12em] ${
+              activeRole === 'super_admin' ? 'bg-purple-50 border-purple-200 text-purple-700' :
+              activeRole === 'event_admin' ? 'bg-blue-50 border-blue-200 text-blue-700' :
+              activeRole === 'scan_admin' ? 'bg-green-50 border-green-200 text-green-700' :
+              activeRole === 'payment_admin' ? 'bg-amber-50 border-amber-200 text-amber-700' :
+              'bg-gray-100 border-gray-200 text-gray-700'
+            }`}>
+              <SafetyOutlined />
+              <span>{getRoleLabel(activeRole)}</span>
             </div>
-          </Dropdown>
+
+            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+              <div className="flex items-center gap-2 cursor-pointer">
+                <Avatar size="default" icon={<UserOutlined />} className={getRoleColor(activeRole)} />
+                <span className="text-gray-700 font-medium hidden sm:block">Admin</span>
+              </div>
+            </Dropdown>
+          </div>
         </Header>
 
         <Content

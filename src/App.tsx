@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { initFrontendLogger } from "./lib/frontend-logger";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { EventProvider } from "./contexts/EventContext";
+import { useAuth, normalizeUserRole } from "./contexts/AuthContext";
 
 // Immediate load for the primary landing page
 import LandingPage from "./pages/LandingPage";
@@ -42,6 +43,22 @@ function PageLoader() {
   );
 }
 
+function RoleGuard({ children, allowedRoles, redirectTo = "/admin" }: { children: React.ReactNode; allowedRoles: string[]; redirectTo?: string }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <PageLoader />;
+  }
+
+  const role = normalizeUserRole(user?.role || "super_admin");
+
+  if (!allowedRoles.includes(role)) {
+    return <Navigate to={redirectTo} replace />;
+  }
+
+  return <>{children}</>;
+}
+
 export default function App() {
   useEffect(() => {
     initFrontendLogger();
@@ -65,10 +82,24 @@ export default function App() {
             <Route path="/admin/create-event" element={<CreateEventPage />} />
             <Route path="/event/:slug" element={<EventPage />} />
             <Route path="/event/:slug/participant/:epc" element={<ParticipantResultPage />} />
-            <Route path="/rpc/:slug" element={<RpcPage />} />
+            <Route
+              path="/rpc/:slug"
+              element={
+                <RoleGuard allowedRoles={["super_admin", "scan_admin"]} redirectTo="/admin">
+                  <RpcPage />
+                </RoleGuard>
+              }
+            />
 
             {/* Admin Routes with Layout */}
-            <Route path="/admin" element={<AdminLayout />}>
+            <Route
+              path="/admin"
+              element={
+                <RoleGuard allowedRoles={["super_admin", "event_admin", "scan_admin", "payment_admin"]} redirectTo="/leaderboard">
+                  <AdminLayout />
+                </RoleGuard>
+              }
+            >
               <Route index element={<Navigate to="events" replace />} />
               <Route path="overview" element={<OverviewPageWrapper />} />
               <Route path="events" element={<EventsPageWrapper />} />

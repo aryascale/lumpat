@@ -1,6 +1,7 @@
 import { query } from '../src/lib/db';
 import { successResponse, errorResponse, parseBody, CORS_HEADERS } from '../src/lib/api-utils';
 import { logActivity } from '../src/lib/activity-logger';
+import { requireRole } from '../src/lib/jwt';
 import crypto from 'crypto';
 
 function formatEvent(event: any) {
@@ -150,6 +151,8 @@ export default async function handler(req: any) {
     invalidateEventsCache();
 
     if (req.httpMethod === 'POST') {
+      const auth = requireRole(req, ['super_admin', 'event_admin']);
+      if (!auth.allowed) return errorResponse(auth.message, auth.statusCode);
       const { name, description, eventType, eventDate, location, latitude, longitude, isActive, isDraft, publishAt, categories, isLoopMode, minLapTimeMs } = parseBody(req);
       if (!name || !eventDate) return errorResponse('Name and eventDate are required', 400);
 
@@ -208,6 +211,8 @@ export default async function handler(req: any) {
     }
 
     if (req.httpMethod === 'PUT') {
+      const auth = requireRole(req, ['super_admin', 'event_admin']);
+      if (!auth.allowed) return errorResponse(auth.message, auth.statusCode);
       if (!eventId) return errorResponse('eventId is required', 400);
       const body = parseBody(req);
 
@@ -252,6 +257,8 @@ export default async function handler(req: any) {
     }
 
     if (req.httpMethod === 'DELETE') {
+      const auth = requireRole(req, ['super_admin', 'event_admin']);
+      if (!auth.allowed) return errorResponse(auth.message, auth.statusCode);
       if (!eventId) return errorResponse('eventId is required', 400);
       // Auto-backup before event delete
       try {

@@ -1,5 +1,33 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
+export type UserRole = 'super_admin' | 'event_admin' | 'scan_admin' | 'payment_admin' | 'user';
+
+export const normalizeUserRole = (role?: string | null): UserRole => {
+  const value = (role || '').toLowerCase().trim();
+
+  if (!value || value === 'user') return 'user';
+  if (value === 'admin' || value === 'super_admin' || value === 'superadmin') return 'super_admin';
+  if (value.includes('event')) return 'event_admin';
+  if (value.includes('scan') || value.includes('rpc') || value.includes('verify')) return 'scan_admin';
+  if (value.includes('payment')) return 'payment_admin';
+
+  return 'user';
+};
+
+export const getRoleLabel = (role?: string | null) => {
+  const normalized = normalizeUserRole(role);
+
+  const labels: Record<UserRole, string> = {
+    super_admin: 'Super Admin',
+    event_admin: 'Event Admin',
+    scan_admin: 'Scan Admin',
+    payment_admin: 'Payment Admin',
+    user: 'User',
+  };
+
+  return labels[normalized];
+};
+
 export interface User {
   id: string;
   email: string;
@@ -8,7 +36,7 @@ export interface User {
   phoneNumber?: string;
   isPhoneVerified: boolean;
   isEmailVerified: boolean;
-  role: string;
+  role: UserRole | string;
 }
 
 interface AuthContextType {

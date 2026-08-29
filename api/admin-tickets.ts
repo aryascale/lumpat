@@ -1,10 +1,14 @@
 import { PrismaClient } from '@prisma/client';
 import { successResponse, errorResponse, CORS_HEADERS } from '../src/lib/api-utils';
+import { requireRole } from '../src/lib/jwt';
 
 const prisma = new PrismaClient();
 
 export default async function handler(event: any) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
+
+  const auth = requireRole(event, ['super_admin', 'event_admin', 'scan_admin']);
+  if (!auth.allowed) return errorResponse(auth.message, auth.statusCode);
 
   const { httpMethod, queryStringParameters, body } = event;
 

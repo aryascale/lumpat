@@ -34,4 +34,5 @@ backups/
 
 # AI Agent
 .agents
+.github/
 scripts/convert-to-webp.mjs

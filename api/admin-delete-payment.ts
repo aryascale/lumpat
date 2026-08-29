@@ -2,10 +2,14 @@ import { query } from '../src/lib/db';
 import { successResponse, errorResponse, CORS_HEADERS } from '../src/lib/api-utils';
 import { logActivity } from '../src/lib/activity-logger';
 import { createBackup } from '../src/lib/backup';
+import { requireRole } from '../src/lib/jwt';
 
 export default async function handler(event: any) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
   if (event.httpMethod !== 'POST') return errorResponse('Method not allowed', 405);
+
+  const auth = requireRole(event, ['super_admin', 'payment_admin']);
+  if (!auth.allowed) return errorResponse(auth.message, auth.statusCode);
 
   try {
     const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;

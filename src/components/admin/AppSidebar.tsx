@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Layout } from 'antd';
 import SidebarItem from './SidebarItem';
 import EventsIcon from './icons/EventsIcon';
+import { normalizeUserRole } from '../../contexts/AuthContext';
 
 const { Sider } = Layout;
 
@@ -153,13 +154,24 @@ export default function AppSidebar({ collapsed, menuItems, onItemClick }: AppSid
   );
 }
 
-// Export default menu items for use in AdminLayout
-export const defaultMenuItems: MenuItem[] = [
+const fullMenuItems: MenuItem[] = [
+  {
+    key: 'overview',
+    label: 'Overview',
+    icon: <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l9-9 9 9M5 10v10h14V10" /></svg>,
+    path: '/admin/overview',
+  },
   {
     key: 'events',
     label: 'Events',
     icon: <EventsIcon />,
     path: '/admin/events',
+  },
+  {
+    key: 'banners',
+    label: 'Banners',
+    icon: <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-8-8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+    path: '/admin/banners',
   },
   {
     key: 'payments',
@@ -180,3 +192,21 @@ export const defaultMenuItems: MenuItem[] = [
     path: '/admin/activity-logs',
   },
 ];
+
+export const buildAdminMenuItems = (role?: string): MenuItem[] => {
+  const normalizedRole = normalizeUserRole(role || 'super_admin');
+
+  const allowedByRole: Record<string, string[]> = {
+    super_admin: ['overview', 'events', 'banners', 'payments', 'tickets', 'activity-logs'],
+    event_admin: ['overview', 'events', 'banners', 'tickets', 'activity-logs'],
+    scan_admin: ['tickets', 'activity-logs'],
+    payment_admin: ['overview', 'payments', 'activity-logs'],
+    user: [],
+  };
+
+  const allowed = allowedByRole[normalizedRole] || allowedByRole.super_admin;
+
+  return fullMenuItems.filter((item) => allowed.includes(item.key));
+};
+
+export const defaultMenuItems = buildAdminMenuItems('super_admin');
