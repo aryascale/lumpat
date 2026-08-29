@@ -19,6 +19,7 @@ const RpcPage = lazy(() => import("./pages/RpcPage"));
 const ParticipantResultPage = lazy(() => import("./pages/ParticipantResultPage"));
 const VerifyPage = lazy(() => import("./pages/VerifyPage"));
 const DevicePage = lazy(() => import("./pages/DevicePage"));
+const MonitoringPage = lazy(() => import("./pages/monitoring/MonitoringPage"));
 
 // Lazy-loaded Admin and Checkpoint modules
 const CheckpointLayout = lazy(() => import("./components/checkpoint/CheckpointLayout"));
@@ -60,6 +61,7 @@ export default function App() {
             <Route path="/event" element={<UserEventPage />} />
             <Route path="/bantuan" element={<SupportTicketPage />} />
             <Route path="/cek-tiket" element={<CheckTicketPage />} />
+            <Route path="/monitoring" element={<MonitoringPage />} />
 
             <Route path="/admin/home" element={<HomePage />} />
             <Route path="/admin/create-event" element={<CreateEventPage />} />
