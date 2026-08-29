@@ -32,6 +32,7 @@ const BannersPageWrapper = lazy(() => import("./components/admin/wrappers").then
 const PaymentsPage = lazy(() => import("./components/admin/pages/PaymentsPage"));
 const ActivityLogsPage = lazy(() => import("./components/admin/pages/ActivityLogsPage"));
 const TicketsPage = lazy(() => import("./components/admin/pages/TicketsPage"));
+const UsersPage = lazy(() => import("./components/admin/pages/UsersPage"));
 
 function PageLoader() {
   return (
@@ -108,6 +109,14 @@ export default function App() {
               <Route path="banners" element={<BannersPageWrapper />} />
               <Route path="payments" element={<PaymentsPage />} />
               <Route path="tickets" element={<TicketsPage />} />
+              <Route
+                path="users"
+                element={
+                  <RoleGuard allowedRoles={['super_admin']} redirectTo="/admin/events">
+                    <UsersPage />
+                  </RoleGuard>
+                }
+              />
               <Route path="activity-logs" element={<ActivityLogsPage />} />
             </Route>
 
