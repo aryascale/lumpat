@@ -40,6 +40,26 @@ export async function runMigrations() {
       }
     }
 
+    // Migration 4: ScanLog table for RPC verification history
+    try {
+      await query(`CREATE TABLE IF NOT EXISTS ScanLog (
+        id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+        registrationId VARCHAR(36) NULL,
+        eventId VARCHAR(36) NULL,
+        bibNumber VARCHAR(64) NULL,
+        lookup VARCHAR(255) NULL,
+        scannedBy VARCHAR(255) NULL,
+        result VARCHAR(32) NOT NULL DEFAULT 'valid',
+        source VARCHAR(32) NOT NULL DEFAULT 'rpc',
+        createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+        INDEX ScanLog_registrationId_idx (registrationId),
+        INDEX ScanLog_event_created_idx (eventId, createdAt)
+      )`);
+      console.log('[MIGRATIONS] ✅ ScanLog table ready');
+    } catch (e: any) {
+      if (!e.message?.includes('Duplicate')) throw e;
+    }
+
     console.log('[MIGRATIONS] All migrations complete ✅');
   } catch (error: any) {
     console.error('[MIGRATIONS] Error (non-fatal):', error.message);
