@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Button, Dropdown, Avatar, Input } from 'antd';
 import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined, LogoutOutlined, CloseOutlined, SafetyOutlined } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import AppSidebar, { buildAdminMenuItems } from './AppSidebar';
 import { useAuth, normalizeUserRole, getRoleLabel } from '../../contexts/AuthContext';
-
-const { Header, Content } = Layout;
 
 export default function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
@@ -101,15 +98,6 @@ export default function AdminLayout() {
     }
   };
 
-  const userMenuItems = [
-    {
-      key: 'logout',
-      icon: <LogoutOutlined />,
-      label: 'Logout',
-      onClick: handleLogout,
-    },
-  ];
-
   // Show login form if not authenticated
   if (authLoading) {
     return (
@@ -135,26 +123,27 @@ export default function AdminLayout() {
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
                 <label htmlFor="admin-email" className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                <Input
+                <input
                   id="admin-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@lumpat.co.id"
-                  size="large"
                   required
+                  className="input input-bordered w-full h-11"
                 />
               </div>
 
               <div>
                 <label htmlFor="admin-password" className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                <Input.Password
+                <input
                   id="admin-password"
+                  type="password"
                   value={pass}
                   onChange={(e) => setPass(e.target.value)}
                   placeholder="••••••••"
-                  size="large"
                   required
+                  className="input input-bordered w-full h-11"
                 />
               </div>
 
@@ -164,19 +153,13 @@ export default function AdminLayout() {
                 </div>
               )}
 
-              <Button
-                type="primary"
-                htmlType="submit"
-                size="large"
-                className="w-full"
+              <button
+                type="submit"
+                className="btn btn-primary btn-lg w-full text-white"
                 disabled={submitting}
-                style={{
-                  background: '#7c3aed',
-                  borderColor: '#7c3aed',
-                }}
               >
                 {submitting ? 'Memproses...' : 'Login'}
-              </Button>
+              </button>
             </form>
 
             <div className="mt-6 text-center">
@@ -206,7 +189,7 @@ export default function AdminLayout() {
   };
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <div className="min-h-screen">
       {/* Mobile Overlay */}
       {isMobile && mobileMenuOpen && (
         <div
@@ -217,9 +200,7 @@ export default function AdminLayout() {
 
       {/* Sidebar - Only render when: desktop OR (mobile AND menu open) */}
       {(!isMobile || mobileMenuOpen) && (
-        <div className={`
-          ${isMobile ? 'fixed z-50' : ''}
-        `}>
+        <div className={isMobile ? 'relative z-50' : ''}>
           <AppSidebar
             collapsed={isMobile ? false : collapsed}
             menuItems={menuItems}
@@ -227,54 +208,34 @@ export default function AdminLayout() {
           />
           {/* Mobile close button */}
           {isMobile && (
-            <Button
-              type="text"
-              icon={<CloseOutlined />}
+            <button
               onClick={() => setMobileMenuOpen(false)}
-              className="absolute top-4 right-2 z-50"
-              style={{
-                fontSize: '16px',
-                width: 40,
-                height: 40,
-                color: '#666',
-              }}
-            />
+              className="absolute top-4 right-2 z-50 w-10 h-10 flex items-center justify-center text-gray-500 hover:text-gray-800"
+              aria-label="Tutup menu"
+            >
+              <CloseOutlined style={{ fontSize: '16px' }} />
+            </button>
           )}
         </div>
       )}
 
       {/* Main Content */}
-      <Layout
-        style={{
-          marginLeft: isMobile ? 0 : (collapsed ? 80 : 256),
-          transition: 'margin-left 0.2s',
-        }}
+      <div
+        className="transition-[margin-left] duration-200"
+        style={{ marginLeft: isMobile ? 0 : collapsed ? 80 : 256 }}
       >
         {/* Header */}
-        <Header
-          style={{
-            padding: isMobile ? '0 12px' : '0 24px',
-            background: '#fff',
-            borderBottom: '1px solid #f0f0f0',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            position: 'sticky',
-            top: 0,
-            zIndex: 10,
-          }}
+        <header
+          className={`sticky top-0 z-10 flex items-center justify-between h-16 bg-white border-b border-gray-200 ${isMobile ? 'px-3' : 'px-6'}`}
         >
           {/* Menu/Collapse Button */}
-          <Button
-            type="text"
-            icon={isMobile ? <MenuUnfoldOutlined /> : (collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />)}
+          <button
             onClick={isMobile ? toggleMobileMenu : () => setCollapsed(!collapsed)}
-            style={{
-              fontSize: '16px',
-              width: 48,
-              height: 48,
-            }}
-          />
+            className="w-12 h-12 flex items-center justify-center text-gray-600 hover:text-gray-900"
+            aria-label="Toggle sidebar"
+          >
+            {isMobile ? <MenuUnfoldOutlined style={{ fontSize: '16px' }} /> : collapsed ? <MenuUnfoldOutlined style={{ fontSize: '16px' }} /> : <MenuFoldOutlined style={{ fontSize: '16px' }} />}
+          </button>
 
           {/* Mobile: Show logo in header */}
           {isMobile && (
@@ -301,27 +262,31 @@ export default function AdminLayout() {
               <span>{getRoleLabel(activeRole)}</span>
             </div>
 
-            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-              <div className="flex items-center gap-2 cursor-pointer">
-                <Avatar size="default" icon={<UserOutlined />} className={getRoleColor(activeRole)} />
+            <div className="dropdown dropdown-end">
+              <div tabIndex={0} role="button" className="flex items-center gap-2 cursor-pointer">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white ${getRoleColor(activeRole)}`}>
+                  <UserOutlined />
+                </div>
                 <span className="text-gray-700 font-medium hidden sm:block">{authUser?.email || 'Admin'}</span>
               </div>
-            </Dropdown>
+              <ul tabIndex={0} className="dropdown-content menu bg-white rounded-box z-50 w-44 p-2 shadow-lg border border-gray-100 mt-1">
+                <li>
+                  <button onClick={handleLogout} className="text-gray-700 hover:bg-gray-50">
+                    <LogoutOutlined /> Logout
+                  </button>
+                </li>
+              </ul>
+            </div>
           </div>
-        </Header>
+        </header>
 
-        <Content
-          style={{
-            margin: isMobile ? '12px 12px 0' : '24px 24px 0',
-            padding: isMobile ? 12 : 24,
-            minHeight: 280,
-            background: '#f0f2f5',
-            overflowX: 'hidden',
-          }}
+        <main
+          className={`bg-[#f0f2f5] overflow-x-hidden ${isMobile ? 'mt-3 mx-3 px-3 py-3' : 'mt-6 mx-6 px-6 py-6'}`}
+          style={{ minHeight: 280 }}
         >
           <Outlet />
-        </Content>
-      </Layout>
-    </Layout>
+        </main>
+      </div>
+    </div>
   );
 }

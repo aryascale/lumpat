@@ -1,11 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Layout } from 'antd';
 import SidebarItem from './SidebarItem';
 import EventsIcon from './icons/EventsIcon';
 import { normalizeUserRole } from '../../contexts/AuthContext';
-
-const { Sider } = Layout;
 
 interface MenuItem {
   key: string;
@@ -112,22 +109,12 @@ export default function AppSidebar({ collapsed, menuItems, onItemClick }: AppSid
   };
 
   return (
-    <Sider
-      collapsible
-      collapsed={collapsed}
-      width={256}
-      trigger={null}
-      style={{
-        overflow: 'auto',
-        height: '100vh',
-        position: 'fixed',
-        left: 0,
-        top: 0,
-        bottom: 0,
-        background: '#fff',
-        borderRight: '1px solid #f0f0f0',
-      }}
-      className="transition-all duration-300"
+    <aside
+      className={`
+        fixed left-0 top-0 bottom-0 z-30 overflow-auto bg-white
+        border-r border-gray-200 transition-all duration-300
+        ${collapsed ? 'w-20' : 'w-64'}
+      `}
     >
       {/* Logo/Header */}
       <div className="p-4 border-b border-gray-200">
@@ -135,7 +122,7 @@ export default function AppSidebar({ collapsed, menuItems, onItemClick }: AppSid
           <img
             src="/Assets/logo2.webp"
             alt="Lumpat Logo"
-            className={`flex-shrink-0 object-contain ${collapsed ? 'w-10 h-10' : 'w-10 h-10'}`}
+            className="flex-shrink-0 w-10 h-10 object-contain"
           />
           {!collapsed && (
             <div>
@@ -150,7 +137,7 @@ export default function AppSidebar({ collapsed, menuItems, onItemClick }: AppSid
       <div className="p-4 space-y-1">
         {renderMenuItems(menuItems)}
       </div>
-    </Sider>
+    </aside>
   );
 }
 
