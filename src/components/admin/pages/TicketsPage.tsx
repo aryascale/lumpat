@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { Modal, Input } from 'antd';
 import { MessageCircle, Mail } from 'lucide-react';
 import { useEvent } from '../../../contexts/EventContext';
+import { StatCard } from '../ui';
+
+const escapeCsv = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`;
 
 export default function TicketsPage() {
   const { events } = useEvent();
@@ -10,9 +13,11 @@ export default function TicketsPage() {
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
-  
+
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterEvent, setFilterEvent] = useState<string>('');
+  const [filterFrom, setFilterFrom] = useState<string>('');
+  const [filterTo, setFilterTo] = useState<string>('');
   const [searchText, setSearchText] = useState('');
 
   const fetchTickets = async () => {
@@ -71,11 +76,48 @@ export default function TicketsPage() {
     }
   };
 
-  const filteredTickets = tickets.filter(t => 
-    t.ticketNumber.toLowerCase().includes(searchText.toLowerCase()) || 
-    t.name.toLowerCase().includes(searchText.toLowerCase()) ||
-    t.email.toLowerCase().includes(searchText.toLowerCase())
-  );
+  const filteredTickets = tickets.filter(t => {
+    if (searchText) {
+      const q = searchText.toLowerCase();
+      if (!(t.ticketNumber.toLowerCase().includes(q) || t.name.toLowerCase().includes(q) || t.email.toLowerCase().includes(q))) return false;
+    }
+    if (filterFrom && new Date(t.createdAt) < new Date(filterFrom)) return false;
+    if (filterTo && new Date(t.createdAt) > new Date(`${filterTo}T23:59:59`)) return false;
+    return true;
+  });
+
+  const summary = {
+    total: filteredTickets.length,
+    open: filteredTickets.filter(t => t.status === 'open').length,
+    inProgress: filteredTickets.filter(t => t.status === 'in_progress').length,
+    resolved: filteredTickets.filter(t => t.status === 'resolved').length,
+    highPriority: filteredTickets.filter(t => t.priority === 'high' && t.status !== 'resolved').length,
+  };
+
+  const exportCsv = () => {
+    const headers = ['No Tiket', 'Tanggal', 'Pelapor', 'Email', 'No HP', 'Event', 'Kategori', 'Subjek', 'Status', 'Prioritas', 'Catatan Penyelesaian'];
+    const rows = filteredTickets.map(t => [
+      t.ticketNumber,
+      new Date(t.createdAt).toLocaleString('id-ID'),
+      t.name,
+      t.email,
+      t.phoneNumber ? `'${t.phoneNumber}` : '',
+      t.event?.name || '',
+      t.category,
+      t.subject,
+      t.status,
+      t.priority,
+      t.resolutionNotes || '',
+    ].map(escapeCsv));
+    const blob = new Blob([[headers.map(escapeCsv).join(','), ...rows.map(r => r.join(','))].join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `support_tickets_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -86,7 +128,7 @@ export default function TicketsPage() {
   // Reset page when search or filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchText, filterStatus]);
+  }, [searchText, filterStatus, filterFrom, filterTo]);
 
   const handleWhatsApp = (phone: string) => {
     let formatted = phone.replace(/\D/g, '');
@@ -109,6 +151,15 @@ export default function TicketsPage() {
         </div>
       </div>
       
+      {/* Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+        <StatCard label="Total Tiket" value={summary.total} />
+        <StatCard label="Open" value={summary.open} tone={summary.open > 0 ? 'warning' : 'default'} />
+        <StatCard label="In Progress" value={summary.inProgress} tone={summary.inProgress > 0 ? 'warning' : 'default'} />
+        <StatCard label="Resolved" value={summary.resolved} tone="success" />
+        <StatCard label="High Priority (Aktif)" value={summary.highPriority} tone={summary.highPriority > 0 ? 'error' : 'default'} />
+      </div>
+
       {/* Filters */}
       <div className="card mb-4 !p-3 md:!p-4">
         <div className="flex flex-col gap-2 md:gap-3">
@@ -138,12 +189,29 @@ export default function TicketsPage() {
               {events.map(ev => <option key={ev.id} value={ev.id}>{ev.name}</option>)}
             </select>
           </div>
-          <button 
-            className="btn ghost whitespace-nowrap w-full sm:w-auto text-xs"
-            onClick={fetchTickets}
-          >
-            Refresh Data
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2 md:gap-3 items-stretch sm:items-center">
+            <div className="flex items-center gap-2 flex-1">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Dari</span>
+              <input type="date" className="search flex-1" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} />
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">s/d</span>
+              <input type="date" className="search flex-1" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} />
+            </div>
+            <div className="flex gap-2">
+              <button
+                className="btn ghost whitespace-nowrap text-xs"
+                onClick={fetchTickets}
+              >
+                Refresh Data
+              </button>
+              <button
+                className="btn ghost whitespace-nowrap text-xs"
+                onClick={exportCsv}
+                disabled={filteredTickets.length === 0}
+              >
+                Export CSV
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
