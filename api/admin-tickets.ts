@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { query } from '../src/lib/db';
 import { successResponse, errorResponse, CORS_HEADERS } from '../src/lib/api-utils';
 import { requireRole } from '../src/lib/jwt';
-
-const prisma = new PrismaClient();
 
 export default async function handler(event: any) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
@@ -16,29 +14,36 @@ export default async function handler(event: any) {
     try {
       const { id, eventId, status } = queryStringParameters || {};
 
-      // If ID is provided, fetch a single ticket
+      // Single ticket detail
       if (id) {
-        const ticket = await prisma.supportTicket.findUnique({
-          where: { id },
-          include: { event: true },
-        });
-
-        if (!ticket) return errorResponse('Ticket not found', 404);
+        const rows: any = await query(
+          `SELECT st.*, e.name AS eventName
+           FROM SupportTicket st LEFT JOIN Event e ON st.eventId = e.id
+           WHERE st.id = ? LIMIT 1`,
+          [id]
+        );
+        if (rows.length === 0) return errorResponse('Ticket not found', 404);
+        const { eventName, ...ticket } = rows[0];
+        ticket.event = eventName ? { name: eventName } : null;
         return successResponse({ ticket });
       }
 
-      // Fetch list of tickets
-      const where: any = {};
-      if (eventId) where.eventId = eventId;
-      if (status) where.status = status;
+      // List with filters
+      const where: string[] = [];
+      const params: any[] = [];
+      if (eventId) { where.push('st.eventId = ?'); params.push(eventId); }
+      if (status) { where.push('st.status = ?'); params.push(status); }
+      const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
-      const tickets = await prisma.supportTicket.findMany({
-        where,
-        include: { event: { select: { name: true } } },
-        orderBy: { createdAt: 'desc' },
+      const tickets: any = await query(
+        `SELECT st.*, e.name AS eventName
+         FROM SupportTicket st LEFT JOIN Event e ON st.eventId = e.id
+         ${whereSql} ORDER BY st.createdAt DESC`,
+        params
+      );
+      return successResponse({
+        tickets: tickets.map(({ eventName, ...t }: any) => ({ ...t, event: eventName ? { name: eventName } : null })),
       });
-
-      return successResponse({ tickets });
     } catch (error: any) {
       console.error('[ADMIN-TICKETS] Error fetching tickets:', error);
       return errorResponse('Failed to fetch tickets');
@@ -53,18 +58,26 @@ export default async function handler(event: any) {
       const data = typeof body === 'string' ? JSON.parse(body) : body;
       const { status, resolutionNotes, resolvedBy } = data;
 
-      const updateData: any = {};
-      if (status) updateData.status = status;
-      if (resolutionNotes !== undefined) updateData.resolutionNotes = resolutionNotes;
-      if (resolvedBy) updateData.resolvedBy = resolvedBy;
-      if (status === 'resolved') updateData.resolvedAt = new Date();
+      const sets: string[] = [];
+      const params: any[] = [];
+      if (status) { sets.push('status = ?'); params.push(status); }
+      if (resolutionNotes !== undefined) { sets.push('resolutionNotes = ?'); params.push(resolutionNotes); }
+      if (resolvedBy) { sets.push('resolvedBy = ?'); params.push(resolvedBy); }
+      if (status === 'resolved') { sets.push('resolvedAt = NOW()'); sets.push('resolvedBy = ?'); params.push(resolvedBy || auth.user?.email || null); }
+      if (sets.length === 0) return errorResponse('Nothing to update', 400);
+      sets.push('updatedAt = NOW()');
+      params.push(id);
 
-      const ticket = await prisma.supportTicket.update({
-        where: { id },
-        data: updateData,
-        include: { event: true },
-      });
+      await query(`UPDATE SupportTicket SET ${sets.join(', ')} WHERE id = ?`, params);
 
+      const rows: any = await query(
+        `SELECT st.*, e.name AS eventName
+         FROM SupportTicket st LEFT JOIN Event e ON st.eventId = e.id
+         WHERE st.id = ? LIMIT 1`,
+        [id]
+      );
+      const { eventName, ...ticket } = rows[0];
+      ticket.event = eventName ? { name: eventName } : null;
       return successResponse({ ticket });
     } catch (error: any) {
       console.error('[ADMIN-TICKETS] Error updating ticket:', error);

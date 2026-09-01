@@ -18,7 +18,10 @@
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio",
     "db:backup": "bash scripts/db-backup.sh",
-    "db:reset": "bash scripts/db-reset.sh"
+    "db:reset": "bash scripts/db-reset.sh",
+    "docker:dev": "docker compose -f docker/docker-compose.yml up -d --build",
+    "seed:dev": "tsx scripts/seed-dev.ts",
+    "smoke": "node scripts/smoke-test.mjs"
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
