@@ -83,10 +83,31 @@ export default function App() {
             <Route path="/event" element={<UserEventPage />} />
             <Route path="/bantuan" element={<SupportTicketPage />} />
             <Route path="/cek-tiket" element={<CheckTicketPage />} />
-            <Route path="/monitoring" element={<MonitoringPage />} />
+            <Route
+              path="/monitoring"
+              element={
+                <RoleGuard allowedRoles={["super_admin"]} redirectTo="/admin">
+                  <MonitoringPage />
+                </RoleGuard>
+              }
+            />
 
-            <Route path="/admin/home" element={<HomePage />} />
-            <Route path="/admin/create-event" element={<CreateEventPage />} />
+            <Route
+              path="/admin/home"
+              element={
+                <RoleGuard allowedRoles={["super_admin", "event_admin"]} redirectTo="/admin">
+                  <HomePage />
+                </RoleGuard>
+              }
+            />
+            <Route
+              path="/admin/create-event"
+              element={
+                <RoleGuard allowedRoles={["super_admin", "event_admin"]} redirectTo="/admin">
+                  <CreateEventPage />
+                </RoleGuard>
+              }
+            />
             <Route path="/event/:slug" element={<EventPage />} />
             <Route path="/event/:slug/participant/:epc" element={<ParticipantResultPage />} />
             <Route
