@@ -1,5 +1,42 @@
 @import 'tailwindcss';
 @plugin 'lightswind/plugin';
+@plugin "daisyui" {
+  themes: lumpat --default;
+}
+@plugin "daisyui/theme" {
+  name: "lumpat";
+  default: false;
+  prefersdark: false;
+  color-scheme: light;
+  --color-base-100: #ffffff;
+  --color-base-200: #f0f2f5;
+  --color-base-300: #e5e7eb;
+  --color-base-content: #0f172a;
+  --color-primary: #7c3aed;
+  --color-primary-content: #ffffff;
+  --color-secondary: #64748b;
+  --color-secondary-content: #ffffff;
+  --color-accent: #FF383C;
+  --color-accent-content: #ffffff;
+  --color-neutral: #0f172a;
+  --color-neutral-content: #ffffff;
+  --color-info: #3b82f6;
+  --color-info-content: #ffffff;
+  --color-success: #10b981;
+  --color-success-content: #ffffff;
+  --color-warning: #f59e0b;
+  --color-warning-content: #ffffff;
+  --color-error: #ef4444;
+  --color-error-content: #ffffff;
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.75rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
 
 /* High-Performance Table Virtualization */
 .leaderboard-row-item {
