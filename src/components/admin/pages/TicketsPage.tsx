@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Modal, Input } from 'antd';
 import { MessageCircle, Mail } from 'lucide-react';
 import { useEvent } from '../../../contexts/EventContext';
 import { StatCard } from '../ui';
@@ -353,23 +352,31 @@ export default function TicketsPage() {
         )}
       </div>
 
-      <Modal
-        title={
-          <div className="flex items-center gap-3 border-b border-gray-100 pb-2">
-            <span className="text-lg font-black uppercase">Detail Tiket</span>
+      {/* Detail Modal (daisyUI) */}
+      <div
+        className={`modal ${detailModalOpen ? 'modal-open' : ''}`}
+        onClick={() => setDetailModalOpen(false)}
+      >
+        <div
+          className="modal-box max-w-[700px] w-[95vw] p-0"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100">
+            <span className="text-lg font-black uppercase text-gray-900">Detail Tiket</span>
             {selectedTicket && (
               <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase ${getStatusColor(selectedTicket.status)}`}>
                 {selectedTicket.status.replace('_', ' ')}
               </span>
             )}
+            <button
+              className="btn btn-ghost btn-sm btn-circle ml-auto"
+              onClick={() => setDetailModalOpen(false)}
+              aria-label="Tutup"
+            >
+              ✕
+            </button>
           </div>
-        }
-        open={detailModalOpen}
-        onCancel={() => setDetailModalOpen(false)}
-        footer={null}
-        width="95vw"
-        style={{ maxWidth: 700 }}
-      >
+          <div className="px-6 py-5">
         {selectedTicket && (
           <div className="space-y-6 pt-2">
             <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
@@ -436,11 +443,11 @@ export default function TicketsPage() {
                 {selectedTicket.status !== 'resolved' && (
                   <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
                     <p className="text-sm font-bold text-blue-800 mb-2">Tutup Tiket (Resolved)</p>
-                    <Input.TextArea 
+                    <textarea
                       id="resolution-notes"
                       placeholder="Catatan penyelesaian (opsional, akan terlihat oleh pelapor)..."
                       rows={3}
-                      className="mb-3 rounded-lg border-blue-200 focus:border-blue-500 focus:ring-blue-500"
+                      className="textarea textarea-bordered w-full mb-3 border-blue-200 focus:border-blue-500"
                     />
                     <button 
                       className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm transition-colors disabled:opacity-50"
@@ -477,7 +484,9 @@ export default function TicketsPage() {
 
           </div>
         )}
-      </Modal>
+          </div>
+        </div>
+      </div>
 
     </div>
   );
