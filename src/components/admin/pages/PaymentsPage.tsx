@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Modal } from 'antd';
 
 interface Payment {
   id: string;
@@ -472,15 +471,27 @@ export default function PaymentsPage() {
           </>
         )}
       </div>
-      <Modal
-        title="Detail Pendaftaran"
-        open={detailsModalOpen}
-        onCancel={() => setDetailsModalOpen(false)}
-        footer={null}
-        width="95vw"
-        style={{ maxWidth: 600 }}
+      {/* Detail Modal (daisyUI) */}
+      <div
+        className={`modal ${detailsModalOpen ? 'modal-open' : ''}`}
+        onClick={() => setDetailsModalOpen(false)}
       >
-        {selectedPayment && (
+        <div
+          className="modal-box max-w-[600px] w-[95vw] p-0"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <h3 className="text-lg font-black uppercase text-gray-900">Detail Pendaftaran</h3>
+            <button
+              className="btn btn-ghost btn-sm btn-circle"
+              onClick={() => setDetailsModalOpen(false)}
+              aria-label="Tutup"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="px-6 py-5">
+          {selectedPayment && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 pb-4 border-b border-gray-100">
               <div>
@@ -550,7 +561,9 @@ export default function PaymentsPage() {
             </div>
           </div>
         )}
-      </Modal>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
