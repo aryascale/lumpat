@@ -7,33 +7,24 @@ import { useAuth, normalizeUserRole, getRoleLabel } from '../../contexts/AuthCon
 
 const { Header, Content } = Layout;
 
-const LS_AUTH = "imr_admin_authed";
-const ADMIN_USER = import.meta.env.VITE_ADMIN_USER || "";
-const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASS || "";
-
-function loadAuth() {
-  return localStorage.getItem(LS_AUTH) === "true";
-}
-
-function saveAuth(v: boolean) {
-  localStorage.setItem(LS_AUTH, v ? "true" : "false");
-}
-
 export default function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [authed, setAuthed] = useState(loadAuth());
-  const [user, setUser] = useState("");
+  const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user: authUser } = useAuth();
-  const activeRole = normalizeUserRole(authUser?.role || 'super_admin');
-  const menuItems = buildAdminMenuItems(activeRole);
+  const { user: authUser, loading: authLoading, refreshUser, logout } = useAuth();
+  const activeRole = normalizeUserRole(authUser?.role);
+  const isAdmin = !!authUser && activeRole !== 'user';
+  const menuItems = buildAdminMenuItems(authUser?.role);
 
   useEffect(() => {
+    if (!isAdmin) return;
+
     if (!menuItems.length) {
       navigate('/leaderboard', { replace: true });
       return;
@@ -45,14 +36,7 @@ export default function AdminLayout() {
     if (!isAllowed && location.pathname.startsWith('/admin')) {
       navigate(allowedPaths[0], { replace: true });
     }
-  }, [location.pathname, menuItems, navigate]);
-
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!authed) {
-      // Stay on login screen
-    }
-  }, [authed]);
+  }, [location.pathname, menuItems, navigate, isAdmin]);
 
   // Responsive behavior - detect mobile and collapse sidebar
   useEffect(() => {
@@ -82,22 +66,28 @@ export default function AdminLayout() {
     }
   }, [navigate]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (user === ADMIN_USER && pass === ADMIN_PASS) {
-      saveAuth(true);
-      setAuthed(true);
-      setError("");
-    } else {
-      setError("Username atau password salah!");
+    setSubmitting(true);
+    setError("");
+    try {
+      const res = await fetch('/api/auth-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pass }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Login gagal');
+      await refreshUser();
+    } catch (err: any) {
+      setError(err.message || 'Login gagal');
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const handleLogout = () => {
-    saveAuth(false);
-    setAuthed(false);
-    setUser("");
-    setPass("");
+  const handleLogout = async () => {
+    await logout();
     navigate('/leaderboard');
   };
 
@@ -121,7 +111,15 @@ export default function AdminLayout() {
   ];
 
   // Show login form if not authenticated
-  if (!authed) {
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="w-8 h-8 border-3 border-gray-200 border-t-red-600 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <div className="max-w-md w-full">
@@ -140,9 +138,9 @@ export default function AdminLayout() {
                 <Input
                   id="admin-email"
                   type="email"
-                  value={user}
-                  onChange={(e) => setUser(e.target.value)}
-                  placeholder="admin@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@lumpat.co.id"
                   size="large"
                   required
                 />
@@ -171,12 +169,13 @@ export default function AdminLayout() {
                 htmlType="submit"
                 size="large"
                 className="w-full"
+                disabled={submitting}
                 style={{
                   background: '#7c3aed',
                   borderColor: '#7c3aed',
                 }}
               >
-                Login
+                {submitting ? 'Memproses...' : 'Login'}
               </Button>
             </form>
 
@@ -305,7 +304,7 @@ export default function AdminLayout() {
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
               <div className="flex items-center gap-2 cursor-pointer">
                 <Avatar size="default" icon={<UserOutlined />} className={getRoleColor(activeRole)} />
-                <span className="text-gray-700 font-medium hidden sm:block">Admin</span>
+                <span className="text-gray-700 font-medium hidden sm:block">{authUser?.email || 'Admin'}</span>
               </div>
             </Dropdown>
           </div>
