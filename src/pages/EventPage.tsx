@@ -20,6 +20,7 @@ import type { MasterParticipant } from "../lib/data";
 import { useLiveTiming } from "../hooks/useLiveTiming";
 import getUnicodeFlagIcon from "country-flag-icons/unicode";
 import { getData } from "country-list";
+import { useAuth, normalizeUserRole } from "../contexts/AuthContext";
 
 function formatLocalTime(ms: number, tzOffset: number, includeMs = true): string {
   const d = new Date(ms + tzOffset * 60 * 60 * 1000);
@@ -157,6 +158,8 @@ function getAgeCategory(age: number | null): string {
 export default function EventPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { user: authUser } = useAuth();
+  const isStaffUser = !!authUser && normalizeUserRole(authUser.role) !== "user";
   const [event, setEvent] = useState<EventData | null>(null);
   const tzOffset = (event as any)?.timezoneOffset ?? 7;
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -2013,7 +2016,7 @@ export default function EventPage() {
                     onChange={(e) => setRegSearchTerm(e.target.value)}
                   />
                 </div>
-                {String(event?.content?.enableRegisteredScan) !== "false" && (
+                {isStaffUser && String(event?.content?.enableRegisteredScan) !== "false" && (
                   <button
                     onClick={() => setScannerOpen(true)}
                     className="btn primary px-4 py-2 flex items-center gap-2 rounded-xl"

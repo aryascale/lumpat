@@ -4,7 +4,7 @@ import path from 'path';
 import crypto from 'crypto';
 import process from 'process';
 import { query } from '../src/lib/db';
-import { verifyToken } from '../src/lib/jwt';
+import { verifyToken, normalizeUserRole } from '../src/lib/jwt';
 import { getSnapshot, getCpuLoadPercent } from '../src/lib/metrics';
 import { getSocketCount } from '../src/lib/socket';
 import { successResponse, errorResponse, CORS_HEADERS } from '../src/lib/api-utils';
@@ -61,8 +61,8 @@ async function isAdminRequest(event: any): Promise<boolean> {
     const decoded: any = verifyToken(token);
     if (decoded?.id) {
       const users: any = await query('SELECT role FROM User WHERE id = ? LIMIT 1', [decoded.id]);
-      const role = users[0]?.role;
-      if (role === 'admin' || role === 'ADMIN') return true;
+      const role = normalizeUserRole(users[0]?.role);
+      if (['super_admin', 'event_admin', 'scan_admin', 'payment_admin'].includes(role)) return true;
     }
   }
   const key = event.headers?.['x-admin-key'];

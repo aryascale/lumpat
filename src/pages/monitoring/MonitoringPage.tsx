@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Navigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { AreaChart, Donut, BarMeter, LatencyBars, type ChartPoint, type DonutSegment } from './charts';
-
-const LS_AUTH = 'imr_admin_authed';
 
 interface MonitoringData {
   server: {
@@ -35,19 +33,6 @@ interface MonitoringData {
   disk: { bytes: number; files: number };
   meta: { requests: number; errors5xx: number; since: number };
   now: number;
-}
-
-let adminKeyPromise: Promise<string> | null = null;
-
-function getAdminKey(): Promise<string> {
-  if (!adminKeyPromise) {
-    const u = import.meta.env.VITE_ADMIN_USER || '';
-    const p = import.meta.env.VITE_ADMIN_PASS || '';
-    adminKeyPromise = crypto.subtle
-      .digest('SHA-256', new TextEncoder().encode(`${u}:${p}`))
-      .then((buf) => Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join(''));
-  }
-  return adminKeyPromise;
 }
 
 function fmtBytes(b: number): string {
@@ -112,7 +97,6 @@ function StatCard({ title, value, sub, tone = 'default' }: { title: string; valu
 }
 
 export default function MonitoringPage() {
-  const authed = localStorage.getItem(LS_AUTH) === 'true';
   const [data, setData] = useState<MonitoringData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -124,8 +108,7 @@ export default function MonitoringPage() {
 
   const load = useCallback(async (r: number) => {
     try {
-      const key = await getAdminKey();
-      const res = await fetch(`/api/monitoring?range=${r}`, { headers: { 'x-admin-key': key } });
+      const res = await fetch(`/api/monitoring?range=${r}`, { credentials: 'include' });
       if (res.status === 401) {
         setError('unauthorized');
         return;
@@ -143,15 +126,12 @@ export default function MonitoringPage() {
   }, []);
 
   useEffect(() => {
-    if (!authed) return;
     setLoading(true);
     load(range);
     if (intervalMs === 0) return;
     const id = setInterval(() => load(range), intervalMs);
     return () => clearInterval(id);
-  }, [authed, range, intervalMs, load]);
-
-  if (!authed) return <Navigate to="/admin" replace />;
+  }, [range, intervalMs, load]);
 
   if (error === 'unauthorized') {
     return (

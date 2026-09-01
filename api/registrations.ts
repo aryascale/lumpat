@@ -1,11 +1,15 @@
 import { query } from '../src/lib/db';
 import { successResponse, errorResponse, parseBody, CORS_HEADERS } from '../src/lib/api-utils';
+import { requireRole } from '../src/lib/jwt';
 
 export default async function handler(event: any) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
 
   try {
     if (event.httpMethod === 'GET') {
+      const auth = requireRole(event, ['super_admin', 'event_admin', 'scan_admin', 'payment_admin']);
+      if (!auth.allowed) return errorResponse(auth.message, auth.statusCode);
+
       const eventId = event.queryStringParameters?.eventId;
       if (!eventId) return errorResponse('eventId is required', 400);
 

@@ -1,13 +1,15 @@
 import { query } from '../src/lib/db';
 import { successResponse, errorResponse, CORS_HEADERS } from '../src/lib/api-utils';
-import { requireRole } from '../src/lib/jwt';
+import { getRequestUser } from '../src/lib/jwt';
 
 export default async function handler(event: any) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
   if (event.httpMethod !== 'GET') return errorResponse('Method not allowed', 405);
 
-  const auth = requireRole(event, ['super_admin', 'scan_admin', 'event_admin']);
-  if (!auth.allowed) return errorResponse(auth.message, auth.statusCode);
+  // Public endpoint (emailed QR targets /verify/:id for anonymous scanners),
+  // but PII is only returned to authenticated admin roles.
+  const authUser = getRequestUser(event);
+  const isStaff = !!authUser && authUser.role !== 'user';
 
   try {
     const regId = event.queryStringParameters?.id;
@@ -54,22 +56,24 @@ export default async function handler(event: any) {
       participant: {
         id: reg.id,
         name: reg.name,
-        email: reg.email,
-        phoneNumber: reg.phoneNumber,
-        gender: reg.gender,
-        tshirtSize: reg.tshirtSize,
+        gender: isStaff ? reg.gender : undefined,
+        tshirtSize: isStaff ? reg.tshirtSize : undefined,
         bibName: reg.bibName,
         bibNumber: reg.bibNumber,
-        bloodType: reg.bloodType,
-        dateOfBirth: reg.dateOfBirth,
         categoryName: reg.categoryName,
         eventName: reg.eventName,
         eventDate: reg.eventDate,
-        location: reg.location,
         orderId: reg.orderId,
         paymentStatus: reg.paymentStatus,
         paidAt: reg.paidAt,
-        customData: mappedCustomData,
+        ...(isStaff ? {
+          email: reg.email,
+          phoneNumber: reg.phoneNumber,
+          bloodType: reg.bloodType,
+          dateOfBirth: reg.dateOfBirth,
+          location: reg.location,
+          customData: mappedCustomData,
+        } : {}),
       },
     });
   } catch (error: any) {
