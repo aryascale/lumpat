@@ -16,6 +16,7 @@ const CreateEventPage = lazy(() => import("./pages/CreateEventPage"));
 const EventPage = lazy(() => import("./pages/EventPage"));
 const SupportTicketPage = lazy(() => import("./pages/SupportTicketPage"));
 const CheckTicketPage = lazy(() => import("./pages/CheckTicketPage"));
+const MyTicketsPage = lazy(() => import("./pages/MyTicketsPage"));
 const RpcPage = lazy(() => import("./pages/RpcPage"));
 const ParticipantResultPage = lazy(() => import("./pages/ParticipantResultPage"));
 const VerifyPage = lazy(() => import("./pages/VerifyPage"));
@@ -83,6 +84,7 @@ export default function App() {
             <Route path="/event" element={<UserEventPage />} />
             <Route path="/bantuan" element={<SupportTicketPage />} />
             <Route path="/cek-tiket" element={<CheckTicketPage />} />
+            <Route path="/tiket-saya" element={<MyTicketsPage />} />
             <Route
               path="/monitoring"
               element={
