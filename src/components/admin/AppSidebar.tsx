@@ -206,17 +206,17 @@ const fullMenuItems: MenuItem[] = [
 ];
 
 export const buildAdminMenuItems = (role?: string): MenuItem[] => {
-  const normalizedRole = normalizeUserRole(role || 'super_admin');
+  const normalizedRole = normalizeUserRole(role);
 
   const allowedByRole: Record<string, string[]> = {
-    super_admin: ['overview', 'events', 'banners', 'payments', 'tickets', 'users', 'activity-logs'],
+    super_admin: ['overview', 'events', 'banners', 'payments', 'tickets', 'users', 'activity-logs', 'monitoring'],
     event_admin: ['overview', 'events', 'banners', 'tickets', 'activity-logs'],
     scan_admin: ['tickets', 'activity-logs'],
     payment_admin: ['overview', 'payments', 'activity-logs'],
     user: [],
   };
 
-  const allowed = allowedByRole[normalizedRole] || allowedByRole.super_admin;
+  const allowed = allowedByRole[normalizedRole] || [];
 
   return fullMenuItems.filter((item) => allowed.includes(item.key));
 };

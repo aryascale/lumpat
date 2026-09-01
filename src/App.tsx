@@ -52,7 +52,11 @@ function RoleGuard({ children, allowedRoles, redirectTo = "/admin" }: { children
     return <PageLoader />;
   }
 
-  const role = normalizeUserRole(user?.role || "super_admin");
+  if (!user) {
+    return <Navigate to={redirectTo} replace />;
+  }
+
+  const role = normalizeUserRole(user.role);
 
   if (!allowedRoles.includes(role)) {
     return <Navigate to={redirectTo} replace />;
