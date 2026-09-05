@@ -5,10 +5,10 @@ const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-for-dev-only-chan
 export type UserRole = 'super_admin' | 'event_admin' | 'scan_admin' | 'payment_admin' | 'user';
 
 export function normalizeUserRole(role?: string | null): UserRole {
-  const value = (role || '').toLowerCase().trim();
+  const value = (role || '').toLowerCase().trim().replace(/[\s-]+/g, '_');
 
   if (!value || value === 'user') return 'user';
-  if (value === 'admin' || value === 'super_admin' || value === 'superadmin') return 'super_admin';
+  if (value === 'admin' || value === 'super_admin' || value === 'superadmin' || value === 'super') return 'super_admin';
   if (value.includes('event')) return 'event_admin';
   if (value.includes('scan') || value.includes('rpc') || value.includes('verify')) return 'scan_admin';
   if (value.includes('payment')) return 'payment_admin';
