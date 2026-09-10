@@ -193,7 +193,7 @@ export default function SupportTicketPage() {
               Butuh bantuan mendesak?
             </p>
             <a 
-              href="https://wa.me/6281234567890" 
+              href="https://wa.me/6285110513220"
               target="_blank" 
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-green-700 hover:text-green-800 font-bold bg-green-50 px-5 py-3 border-2 border-green-200 transition-colors rounded-none"
