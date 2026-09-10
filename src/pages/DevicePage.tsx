@@ -820,9 +820,9 @@ export default function DevicePage() {
             <p className="text-[#a1a1a6] text-[19px] max-w-2xl mb-8 drop-shadow-lg">
               {device.ctaSubtitle}
             </p>
-            <button className="px-8 py-3 bg-white text-black font-semibold rounded-full hover:bg-gray-200 transition-colors cursor-pointer">
+            <a href="https://wa.me/6285110513220" target="_blank" rel="noopener noreferrer" className="px-8 py-3 inline-block bg-white text-black font-semibold rounded-full hover:bg-gray-200 transition-colors cursor-pointer">
               Call Us Now!
-            </button>
+            </a>
           </div>
 
         </div>
