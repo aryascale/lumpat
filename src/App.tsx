@@ -4,32 +4,48 @@ import { initFrontendLogger } from "./lib/frontend-logger";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { EventProvider } from "./contexts/EventContext";
 
+// A new deploy renames the hashed chunks; a tab still running the old build
+// then fails to lazy-load a route. Reload automatically (throttled to once
+// per 30s) so users land on the fresh build instead of a broken page.
+const CHUNK_RELOAD_KEY = "lumpat_chunk_reload";
+const lazyReload = (loader: () => Promise<{ default: React.ComponentType<any> }>) =>
+  lazy(() =>
+    loader().catch((err) => {
+      const last = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) || 0);
+      if (Date.now() - last > 30000) {
+        sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
+        window.location.reload();
+      }
+      throw err;
+    })
+  );
+
 // Immediate load for the primary landing page
 import LandingPage from "./pages/LandingPage";
 
 // Lazy-loaded routes for performance & code-splitting
-const AboutPage = lazy(() => import("./pages/AboutPage"));
-const UserEventPage = lazy(() => import("./pages/UserEventPage"));
-const HomePage = lazy(() => import("./pages/HomePage"));
-const CreateEventPage = lazy(() => import("./pages/CreateEventPage"));
-const EventPage = lazy(() => import("./pages/EventPage"));
-const SupportTicketPage = lazy(() => import("./pages/SupportTicketPage"));
-const CheckTicketPage = lazy(() => import("./pages/CheckTicketPage"));
-const RpcPage = lazy(() => import("./pages/RpcPage"));
-const ParticipantResultPage = lazy(() => import("./pages/ParticipantResultPage"));
-const VerifyPage = lazy(() => import("./pages/VerifyPage"));
-const DevicePage = lazy(() => import("./pages/DevicePage"));
+const AboutPage = lazyReload(() => import("./pages/AboutPage"));
+const UserEventPage = lazyReload(() => import("./pages/UserEventPage"));
+const HomePage = lazyReload(() => import("./pages/HomePage"));
+const CreateEventPage = lazyReload(() => import("./pages/CreateEventPage"));
+const EventPage = lazyReload(() => import("./pages/EventPage"));
+const SupportTicketPage = lazyReload(() => import("./pages/SupportTicketPage"));
+const CheckTicketPage = lazyReload(() => import("./pages/CheckTicketPage"));
+const RpcPage = lazyReload(() => import("./pages/RpcPage"));
+const ParticipantResultPage = lazyReload(() => import("./pages/ParticipantResultPage"));
+const VerifyPage = lazyReload(() => import("./pages/VerifyPage"));
+const DevicePage = lazyReload(() => import("./pages/DevicePage"));
 
 // Lazy-loaded Admin and Checkpoint modules
-const CheckpointLayout = lazy(() => import("./components/checkpoint/CheckpointLayout"));
-const CheckpointDashboard = lazy(() => import("./pages/checkpoint/CheckpointDashboard"));
-const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
-const OverviewPageWrapper = lazy(() => import("./components/admin/wrappers").then(m => ({ default: m.OverviewPageWrapper })));
-const EventsPageWrapper = lazy(() => import("./components/admin/wrappers").then(m => ({ default: m.EventsPageWrapper })));
-const BannersPageWrapper = lazy(() => import("./components/admin/wrappers").then(m => ({ default: m.BannersPageWrapper })));
-const PaymentsPage = lazy(() => import("./components/admin/pages/PaymentsPage"));
-const ActivityLogsPage = lazy(() => import("./components/admin/pages/ActivityLogsPage"));
-const TicketsPage = lazy(() => import("./components/admin/pages/TicketsPage"));
+const CheckpointLayout = lazyReload(() => import("./components/checkpoint/CheckpointLayout"));
+const CheckpointDashboard = lazyReload(() => import("./pages/checkpoint/CheckpointDashboard"));
+const AdminLayout = lazyReload(() => import("./components/admin/AdminLayout"));
+const OverviewPageWrapper = lazyReload(() => import("./components/admin/wrappers").then(m => ({ default: m.OverviewPageWrapper })));
+const EventsPageWrapper = lazyReload(() => import("./components/admin/wrappers").then(m => ({ default: m.EventsPageWrapper })));
+const BannersPageWrapper = lazyReload(() => import("./components/admin/wrappers").then(m => ({ default: m.BannersPageWrapper })));
+const PaymentsPage = lazyReload(() => import("./components/admin/pages/PaymentsPage"));
+const ActivityLogsPage = lazyReload(() => import("./components/admin/pages/ActivityLogsPage"));
+const TicketsPage = lazyReload(() => import("./components/admin/pages/TicketsPage"));
 
 function PageLoader() {
   return (
