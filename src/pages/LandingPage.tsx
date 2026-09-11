@@ -369,12 +369,15 @@ export default function LandingPage() {
             <p className="text-stone-500 text-[15px] md:text-lg font-medium mb-8 leading-relaxed max-w-sm">
               Find quick solutions and helpful tips for using our timing ecosystem. If you need more details, our technical team is ready to assist.
             </p>
-            <button
+            <a
+              href="https://wa.me/6285110513220"
+              target="_blank"
+              rel="noopener noreferrer"
               className="landing-btn landing-btn--primary px-8"
               style={{ borderRadius: '9999px' }}
             >
               CONTACT SUPPORT
-            </button>
+            </a>
           </div>
 
           {/* Right Side: Accordion */}
