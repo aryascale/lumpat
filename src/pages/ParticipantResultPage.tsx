@@ -172,7 +172,6 @@ function CircularMedalSVG({ rank, status }: { rank: number | null | undefined; s
 
 export default function ParticipantResultPage() {
 
-  const { slug } = useParams<{ slug: string; epc: string }>();
   const location = useLocation();
   const navigate = useNavigate();
   const [downloading, setDownloading] = useState(false);
@@ -186,15 +185,47 @@ export default function ParticipantResultPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const { slug, epc } = useParams<{ slug: string; epc: string }>();
   const state = location.state as {
     modalData: any;
     eventId: string;
     eventName: string;
+    notFound?: boolean;
   };
 
-  if (!state || !state.modalData) {
-    navigate(`/event/${slug}`, { replace: true });
+  // Direct access / refresh has no router state — bounce through the event page
+  // (?participant=<epc>) so it can rebuild the result from the leaderboard data.
+  if (!state || (!state.modalData && !state.notFound)) {
+    navigate(`/event/${slug}?participant=${epc}`, { replace: true });
     return null;
+  }
+
+  if (state.notFound) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen bg-[#eef0f4] flex items-center justify-center px-4">
+          <div className="bg-white rounded-2xl shadow border border-slate-100 px-8 py-10 max-w-md w-full text-center">
+            <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+              <svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <h1 className="text-xl font-black text-slate-800 uppercase tracking-tight mb-2">Participant Not Found</h1>
+            <p className="text-slate-500 text-sm leading-relaxed mb-6">
+              Peserta dengan ID <span className="font-mono font-bold text-slate-700">{epc}</span> tidak ditemukan
+              {state.eventName ? ` di ${state.eventName}` : " di event ini"}.
+            </p>
+            <button
+              onClick={() => navigate(`/event/${slug}`)}
+              className="bg-[#DC2626] hover:bg-red-700 text-white font-black py-2.5 px-6 rounded-xl text-xs uppercase tracking-wider cursor-pointer transition-colors"
+            >
+              Kembali ke Event
+            </button>
+          </div>
+        </div>
+      </>
+    );
   }
 
   const { modalData, eventId, eventName } = state;
