@@ -81,6 +81,10 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
   const [newCategoryQuota, setNewCategoryQuota] = useState('');
   const [newCategoryDistance, setNewCategoryDistance] = useState('');
 
+  // Age brackets (Open/Master/...) stored in event.content.ageCategories
+  const [ageCats, setAgeCats] = useState<Array<{ name: string; min: number; max: number | null }>>([]);
+  const [savingAgeCats, setSavingAgeCats] = useState(false);
+
 
 
   // Homepage content state
@@ -174,6 +178,15 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           });
         }
         setEventData(evtData);
+        const storedAgeCats = evtData.content?.ageCategories;
+        setAgeCats(
+          Array.isArray(storedAgeCats) && storedAgeCats.length > 0
+            ? storedAgeCats
+            : [
+                { name: 'Open', min: 18, max: 39 },
+                { name: 'Master', min: 40, max: null },
+              ],
+        );
       }
 
       // Load registration fields
@@ -750,6 +763,35 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
     updated.unshift(item);
     setCategories(updated);
     await saveCategories(updated);
+  };
+
+  // Age categories save
+  const saveAgeCategories = async () => {
+    setSavingAgeCats(true);
+    try {
+      const cleaned = ageCats
+        .map((b) => ({
+          name: (b.name || '').trim(),
+          min: Number(b.min),
+          max: b.max == null || (b.max as any) === '' ? null : Number(b.max),
+        }))
+        .filter((b) => b.name && Number.isFinite(b.min));
+      const res = await fetch(`/api/events?eventId=${eventId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: { ...(eventData?.content || {}), ageCategories: cleaned },
+        }),
+      });
+      if (res.ok) {
+        alert('Kategori usia tersimpan!');
+        await loadAllData();
+      } else alert('Gagal menyimpan kategori usia');
+    } catch {
+      alert('Gagal menyimpan kategori usia');
+    } finally {
+      setSavingAgeCats(false);
+    }
   };
 
   // Homepage content save
@@ -1784,6 +1826,80 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
             >
               {savingCategories ? 'Saving...' : 'Save Categories'}
             </button>
+          </div>
+
+          {/* Age Categories — DOB-based brackets for Age Rank / certificates */}
+          <div className="border border-gray-200 rounded-lg p-4 mb-4 bg-gray-50">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div>
+                <h3 className="font-bold text-gray-700">Age Categories (Open / Master)</h3>
+                <div className="text-xs text-gray-500">
+                  Pengelompokan usia otomatis dari Tanggal Lahir peserta saat hari
+                  race — dipakai untuk Age Category & Age Rank di hasil dan
+                  sertifikat. Kosongkan Maks untuk tanpa batas atas.
+                </div>
+              </div>
+              <button
+                className="btn"
+                onClick={saveAgeCategories}
+                disabled={savingAgeCats || ageCats.length === 0}
+              >
+                {savingAgeCats ? 'Saving...' : 'Save Age Categories'}
+              </button>
+            </div>
+            <div className="flex flex-col gap-2">
+              {ageCats.map((b, i) => (
+                <div key={i} className="flex flex-wrap items-center gap-2">
+                  <input
+                    className="search flex-1"
+                    style={{ minWidth: 140 }}
+                    placeholder="e.g., Open / Master / Student"
+                    value={b.name}
+                    onChange={(e) =>
+                      setAgeCats(ageCats.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))
+                    }
+                  />
+                  <input
+                    className="search text-right"
+                    style={{ width: 110 }}
+                    type="number"
+                    placeholder="Min usia"
+                    value={b.min}
+                    onChange={(e) =>
+                      setAgeCats(ageCats.map((x, j) => (j === i ? { ...x, min: parseInt(e.target.value) || 0 } : x)))
+                    }
+                  />
+                  <span className="text-gray-400 text-sm">s/d</span>
+                  <input
+                    className="search text-right"
+                    style={{ width: 110 }}
+                    type="number"
+                    placeholder="∞"
+                    value={b.max ?? ''}
+                    onChange={(e) =>
+                      setAgeCats(
+                        ageCats.map((x, j) =>
+                          j === i ? { ...x, max: e.target.value === '' ? null : parseInt(e.target.value) || null } : x,
+                        ),
+                      )
+                    }
+                  />
+                  <button
+                    className="btn ghost p-1 text-red-500 hover:text-red-700"
+                    title="Hapus"
+                    onClick={() => setAgeCats(ageCats.filter((_, j) => j !== i))}
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              ))}
+              <button
+                className="btn ghost mt-1 self-start"
+                onClick={() => setAgeCats([...ageCats, { name: '', min: 18, max: null }])}
+              >
+                + Add Age Category
+              </button>
+            </div>
           </div>
 
           {/* Add Category */}
