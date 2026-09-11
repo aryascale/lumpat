@@ -1532,7 +1532,7 @@ export default function EventPage() {
     event?.content?.galleryUrls,
   ]);
 
-  const onSelectParticipant = (row: LeaderRow) => {
+  const onSelectParticipant = (row: LeaderRow, opts?: { replace?: boolean }) => {
     // Exclude unranked status values to compute correct finisher ranks
     const finishers = overall.filter(
       (r) =>
@@ -1598,9 +1598,29 @@ export default function EventPage() {
     };
 
     navigate(`/event/${slug}/participant/${row.epc}`, {
-      state: { modalData: data, eventId: event?.id, eventName: event?.name }
+      state: { modalData: data, eventId: event?.id, eventName: event?.name },
+      replace: !!opts?.replace,
     });
   };
+
+  // Rehydrate participant deep-links (?participant=<epc|bib>) — direct URL access
+  // and refresh bounce here first because the participant page needs leaderboard
+  // state that only exists in memory. Once rows are ready, forward to the
+  // participant route (with full state), or render its not-found state.
+  const deepLinkEpc = searchParams.get("participant");
+  useEffect(() => {
+    if (!deepLinkEpc || overall.length === 0) return;
+    const row = overall.find((r) => r.epc === deepLinkEpc || r.bib === deepLinkEpc);
+    if (row) {
+      onSelectParticipant(row, { replace: true });
+    } else {
+      navigate(`/event/${slug}/participant/${deepLinkEpc}`, {
+        state: { notFound: true, eventId: event?.id, eventName: event?.name },
+        replace: true,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deepLinkEpc, overall]);
 
 
 
