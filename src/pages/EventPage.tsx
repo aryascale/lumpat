@@ -827,87 +827,80 @@ export default function EventPage() {
     (async () => {
       try {
         if (!hasLoadedOnce) {
-          setState({ status: "loading", msg: "Loading participant data..." });
+          setState({
+            status: "loading",
+            msg: searchParams.get("participant")
+              ? "Menyiapkan hasil peserta..."
+              : "Loading participant data...",
+          });
         }
 
-        const master = await loadMasterParticipants(event.id);
+        // All inputs below are independent — fetch in parallel so the
+        // leaderboard (and participant deep-links) resolve as fast as the
+        // slowest single request instead of the sum of all of them.
+        const fetchJsonArray = (url: string) =>
+          fetch(url)
+            .then((r) => (r.ok ? r.json() : null))
+            .catch(() => null);
+
+        const [
+          master,
+          startMap,
+          finishMap,
+          cpMap,
+          statusData,
+          penData,
+          msData,
+          mfData,
+        ] = await Promise.all([
+          loadMasterParticipants(event.id),
+          loadTimesMap("start", event.id, tzOffset),
+          loadTimesMap("finish", event.id, tzOffset),
+          loadCheckpointTimesMap(event.id),
+          fetchJsonArray(`/api/runner-status?eventId=${event.id}`),
+          fetchJsonArray(`/api/penalty?eventId=${event.id}`),
+          fetchJsonArray(`/api/manual-start-bib?eventId=${event.id}&_t=${Date.now()}`),
+          fetchJsonArray(`/api/manual-finish-bib?eventId=${event.id}&_t=${Date.now()}`),
+        ]);
+
         setMasterParticipants(master.all);
-        const startMap = await loadTimesMap("start", event.id, tzOffset);
-        const finishMap = await loadTimesMap("finish", event.id, tzOffset);
-        const cpMap = await loadCheckpointTimesMap(event.id);
         setCheckpointMap(cpMap);
 
         // Use timing from event (per-event database) instead of localStorage
         const cutoffMs = event.cutoffMs ?? null;
 
-        // Load runner status map from API
+        // Runner status map
         const dqMap: Record<string, boolean> = {};
         const dnsMap: Record<string, boolean> = {};
         const dnfMap: Record<string, boolean> = {};
         const hiddenMap: Record<string, boolean> = {};
-        try {
-          const statusRes = await fetch(
-            `/api/runner-status?eventId=${event.id}`,
-          );
-          if (statusRes.ok) {
-            const statusData = await statusRes.json();
-            if (Array.isArray(statusData)) {
-              statusData.forEach((s: any) => {
-                if (s.isDQ) dqMap[s.epc] = true;
-                if (s.isDNS) dnsMap[s.epc] = true;
-                if (s.isDNF) dnfMap[s.epc] = true;
-                if (s.isHidden) hiddenMap[s.epc] = true;
-              });
-            }
-          }
-        } catch {}
+        if (Array.isArray(statusData)) {
+          statusData.forEach((s: any) => {
+            if (s.isDQ) dqMap[s.epc] = true;
+            if (s.isDNS) dnsMap[s.epc] = true;
+            if (s.isDNF) dnfMap[s.epc] = true;
+            if (s.isHidden) hiddenMap[s.epc] = true;
+          });
+        }
         const catStartRaw = event.categoryStartTimes ?? {};
 
-        // Load penalty map from API
+        // Penalty map
         const penaltyMap = new Map<string, number>();
-        try {
-          const penRes = await fetch(`/api/penalty?eventId=${event.id}`);
-          if (penRes.ok) {
-            const penData = await penRes.json();
-            if (Array.isArray(penData)) {
-              penData.forEach((p: any) =>
-                penaltyMap.set(p.epc, p.penaltyMs || 0),
-              );
-            }
-          }
-        } catch {}
+        if (Array.isArray(penData)) {
+          penData.forEach((p: any) => penaltyMap.set(p.epc, p.penaltyMs || 0));
+        }
 
-        // Load manual start map from API
+        // Manual start map
         const manualStartMap = new Map<string, string>();
-        try {
-          const msRes = await fetch(
-            `/api/manual-start-bib?eventId=${event.id}&_t=${Date.now()}`,
-          );
-          if (msRes.ok) {
-            const msData = await msRes.json();
-            if (Array.isArray(msData)) {
-              msData.forEach((ms: any) =>
-                manualStartMap.set(ms.epc, ms.timeStr),
-              );
-            }
-          }
-        } catch {}
+        if (Array.isArray(msData)) {
+          msData.forEach((ms: any) => manualStartMap.set(ms.epc, ms.timeStr));
+        }
 
-        // Load manual finish map from API
+        // Manual finish map
         const manualFinishMap = new Map<string, string>();
-        try {
-          const mfRes = await fetch(
-            `/api/manual-finish-bib?eventId=${event.id}&_t=${Date.now()}`,
-          );
-          if (mfRes.ok) {
-            const mfData = await mfRes.json();
-            if (Array.isArray(mfData)) {
-              mfData.forEach((mf: any) =>
-                manualFinishMap.set(mf.epc, mf.timeStr),
-              );
-            }
-          }
-        } catch {}
+        if (Array.isArray(mfData)) {
+          mfData.forEach((mf: any) => manualFinishMap.set(mf.epc, mf.timeStr));
+        }
 
         const normCat = (s: string) =>
           String(s || "")
