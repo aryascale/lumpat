@@ -147,12 +147,59 @@ function calculateAgeOnRaceDay(
   return age;
 }
 
-function getAgeCategory(age: number | null): string {
-  if (age === null || age < 8) return "";
-  if (age >= 8 && age < 18) return "Student";
-  if (age >= 18 && age < 40) return "Open";
-  if (age >= 40) return "Master";
-  return "";
+// Age brackets are admin-configurable via event.content.ageCategories
+// (Event Detail → Kategori Usia). Defaults keep the legacy grouping.
+export type AgeBracket = { name: string; min: number; max: number | null };
+
+const DEFAULT_AGE_BRACKETS: AgeBracket[] = [
+  { name: "Student", min: 8, max: 17 },
+  { name: "Open", min: 18, max: 39 },
+  { name: "Master", min: 40, max: null },
+];
+
+export function parseAgeBrackets(raw: any): AgeBracket[] {
+  if (!Array.isArray(raw)) return DEFAULT_AGE_BRACKETS;
+  const parsed = raw
+    .map((b: any) => ({
+      name: String(b?.name || "").trim(),
+      min: Number(b?.min),
+      max: b?.max == null || b?.max === "" ? null : Number(b?.max),
+    }))
+    .filter((b: AgeBracket) => b.name && Number.isFinite(b.min) && b.min >= 0);
+  return parsed.length > 0 ? parsed : DEFAULT_AGE_BRACKETS;
+}
+
+function getAgeCategory(
+  age: number | null,
+  brackets: AgeBracket[] = DEFAULT_AGE_BRACKETS,
+): string {
+  if (age === null) return "";
+  const b = brackets.find(
+    (br) => age >= br.min && (br.max == null || age <= br.max),
+  );
+  return b ? b.name : "";
+}
+
+// Registration DOB lives in the dateOfBirth column, with a customData
+// fallback for events whose form stored it as a custom field.
+function findDobInCustomData(customData: any): string | null {
+  if (!customData) return null;
+  const dobKeys = ["date of birth", "tanggal lahir", "dob"];
+  const entry = Object.entries(customData).find(([k]) =>
+    dobKeys.some((dk) => k.toLowerCase().includes(dk)),
+  );
+  return entry && entry[1] ? String(entry[1]) : null;
+}
+
+function resolveRegistrationAgeCategory(
+  reg: any,
+  raceDateStr: string,
+  brackets: AgeBracket[],
+): string {
+  const dob = reg?.dateOfBirth || findDobInCustomData(reg?.customData);
+  if (!dob) return "";
+  const age = calculateAgeOnRaceDay(String(dob), raceDateStr);
+  return getAgeCategory(age, brackets);
 }
 
 export default function EventPage() {
@@ -162,6 +209,10 @@ export default function EventPage() {
   const isStaffUser = !!authUser && normalizeUserRole(authUser.role) !== "user";
   const [event, setEvent] = useState<EventData | null>(null);
   const tzOffset = (event as any)?.timezoneOffset ?? 7;
+  const ageBrackets = useMemo(
+    () => parseAgeBrackets((event?.content as any)?.ageCategories),
+    [event?.content],
+  );
   const [banners, setBanners] = useState<Banner[]>([]);
   const [state, setState] = useState<LoadState>({
     status: "loading",
@@ -943,6 +994,11 @@ export default function EventPage() {
                 gender: p.gender || "U",
                 category: p.category?.name || "REG",
                 sourceCategoryKey: p.category?.name || "REG",
+                ageCategory: resolveRegistrationAgeCategory(
+                  p,
+                  event?.eventDate || "",
+                  ageBrackets,
+                ),
                 finishTimeRaw: "-",
                 totalTimeMs: 0,
                 totalTimeDisplay: "Registered",
@@ -952,6 +1008,23 @@ export default function EventPage() {
             });
         } else {
           const adminCategories = visibleEventCategories;
+
+          // Map master rows to their registration so age category can be
+          // derived from the participant's date of birth when the CSV master
+          // has no age column.
+          const regByMasterEpc = new Map<string, any>();
+          registeredParticipants.forEach((reg: any) => {
+            const m = matchRegisteredToMaster(reg, master.all);
+            if (m && !regByMasterEpc.has(m.epc)) {
+              regByMasterEpc.set(m.epc, reg);
+            }
+          });
+          const resolveDobAgeCategory = (epc: string) =>
+            resolveRegistrationAgeCategory(
+              regByMasterEpc.get(epc) ?? null,
+              event?.eventDate || "",
+              ageBrackets,
+            );
 
           const resolveAdminCategory = (cat: string, gender: string) => {
             const normCatStr = normCat(cat);
@@ -988,6 +1061,8 @@ export default function EventPage() {
             const isDNS = !!dnsMap[p.epc];
             const manualDNF = !!dnfMap[p.epc];
             if (hiddenMap[p.epc]) return;
+            // CSV age category wins; fall back to DOB-derived bracket
+            const effAgeCategory = p.ageCategory || resolveDobAgeCategory(p.epc);
             let finishEntry = finishMap.get(p.epc);
 
             const manualFinishStr = manualFinishMap.get(p.epc);
@@ -1100,7 +1175,7 @@ export default function EventPage() {
                   gender: p.gender,
                   category: p.category || resolvedCategoryKey,
                   sourceCategoryKey: resolvedCategoryKey,
-                  ageCategory: p.ageCategory,
+                  ageCategory: effAgeCategory,
                   startTimeRaw: rawStartStrForDisplay
                     ? extractTimeOfDay(rawStartStrForDisplay)
                     : baseStartTime
@@ -1165,7 +1240,7 @@ export default function EventPage() {
                 gender: p.gender,
                 category: p.category || resolvedCategoryKey,
                 sourceCategoryKey: resolvedCategoryKey,
-                ageCategory: p.ageCategory,
+                ageCategory: effAgeCategory,
                 startTimeRaw: rawStart
                   ? extractTimeOfDay(rawStart)
                   : computedStartMs
@@ -1328,7 +1403,7 @@ export default function EventPage() {
               gender: p.gender,
               category: p.category || resolvedCategoryKey,
               sourceCategoryKey: resolvedCategoryKey,
-              ageCategory: p.ageCategory,
+              ageCategory: effAgeCategory,
               startTimeRaw: rawStartStr
                 ? extractTimeOfDay(rawStartStr)
                 : t0Ms
@@ -2174,29 +2249,13 @@ export default function EventPage() {
                               </td>
                               <td className="py-3 px-2 text-center">
                                 {(() => {
-                                  let ageCategory =
-                                    p.customData?.["Age Category"];
-                                  if (!ageCategory && p.customData) {
-                                    const dobKeys = [
-                                      "date of birth",
-                                      "tanggal lahir",
-                                      "dob",
-                                    ];
-                                    const dobEntry = Object.entries(
-                                      p.customData,
-                                    ).find(([k]) =>
-                                      dobKeys.some((dk) =>
-                                        k.toLowerCase().includes(dk),
-                                      ),
+                                  const ageCategory =
+                                    p.customData?.["Age Category"] ||
+                                    resolveRegistrationAgeCategory(
+                                      p,
+                                      event?.eventDate || "",
+                                      ageBrackets,
                                     );
-                                    if (dobEntry && dobEntry[1]) {
-                                      const age = calculateAgeOnRaceDay(
-                                        String(dobEntry[1]),
-                                        event?.eventDate || "",
-                                      );
-                                      ageCategory = getAgeCategory(age);
-                                    }
-                                  }
                                   return ageCategory ? (
                                     <span className="inline-block px-4 py-1.5 bg-stone-50 text-stone-600 font-bold text-xs rounded-xl border-2 border-stone-200 whitespace-nowrap">
                                       {ageCategory}
@@ -2325,32 +2384,15 @@ export default function EventPage() {
                           Age Category
                         </span>
                         <span className="text-sm text-stone-700">
-                          {(() => {
-                            let ageCat =
-                              regDetailParticipant.customData?.["Age Category"];
-                            if (!ageCat && regDetailParticipant.customData) {
-                              const dobKeys = [
-                                "date of birth",
-                                "tanggal lahir",
-                                "dob",
-                              ];
-                              const dobEntry = Object.entries(
-                                regDetailParticipant.customData,
-                              ).find(([k]) =>
-                                dobKeys.some((dk) =>
-                                  k.toLowerCase().includes(dk),
-                                ),
-                              );
-                              if (dobEntry && dobEntry[1]) {
-                                const age = calculateAgeOnRaceDay(
-                                  String(dobEntry[1]),
-                                  event?.eventDate || "",
-                                );
-                                ageCat = getAgeCategory(age);
-                              }
-                            }
-                            return ageCat || "-";
-                          })()}
+                          {(() =>
+                            regDetailParticipant.customData?.["Age Category"] ||
+                            resolveRegistrationAgeCategory(
+                              regDetailParticipant,
+                              event?.eventDate || "",
+                              ageBrackets,
+                            ) ||
+                            "-"
+                          )()}
                         </span>
                       </div>
                       <div className="flex justify-between items-start py-2">
@@ -3118,7 +3160,7 @@ export default function EventPage() {
                                         e.target.value,
                                         event?.eventDate || "",
                                       );
-                                      const category = getAgeCategory(age);
+                                      const category = getAgeCategory(age, ageBrackets);
                                       if (category) {
                                         updated[activeTabIdx]["Age Category"] =
                                           category;
