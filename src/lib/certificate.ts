@@ -98,10 +98,7 @@ export type CertData = {
       ctx.fillText(text, centerX, y);
     };
 
-    // Header
-    drawCenter("E-CERTIFICATE FINISHER", 640, 60, "#475569", "800");
-
-    // Participant Name
+    // Participant Name (title "E-CERTIFICATE FINISHER" is part of the uploaded template)
     const nameStr = data.name || "-";
     const maxNameWidth = 960; 
 
