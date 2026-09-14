@@ -36,8 +36,74 @@ function CardBgSVG({ id, variant }: { accentColor?: string; id: string; variant:
   );
 }
 
+// ─── Formatted Time Component with Millisecond Protection ─────────────────────────
+function FormattedTimeDisplay({
+  timeStr,
+  size = "desktop",
+}: {
+  timeStr?: string;
+  size?: "desktop" | "mobile";
+}) {
+  if (!timeStr || timeStr === "-") {
+    return <span className="text-2xl sm:text-3xl md:text-4xl text-white font-mono">-</span>;
+  }
+
+  const isStatus = ["DNF", "DNS", "DSQ", "ACTIVE", "Active", "RUNNER", "Registered"].includes(timeStr);
+  if (isStatus) {
+    return <span className="text-2xl sm:text-3xl md:text-4xl text-red-500 font-black tracking-wider">{timeStr}</span>;
+  }
+
+  if (timeStr.includes(".")) {
+    const [mainTime, ms] = timeStr.split(".");
+    if (size === "mobile") {
+      return (
+        <div className="flex items-baseline justify-center font-mono font-black tracking-tight max-w-full">
+          <span className="text-3xl sm:text-4xl text-white drop-shadow-[0_0_12px_rgba(239,68,68,0.4)]">
+            {mainTime}
+          </span>
+          <span className="text-sm sm:text-base text-red-400 font-bold ml-1 opacity-90">
+            .{ms}
+          </span>
+        </div>
+      );
+    }
+    return (
+      <div className="flex items-baseline justify-center font-mono font-black tracking-tight max-w-full">
+        <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl text-white drop-shadow-[0_0_12px_rgba(239,68,68,0.4)]">
+          {mainTime}
+        </span>
+        <span className="text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl text-red-400 font-bold ml-1 opacity-90">
+          .{ms}
+        </span>
+      </div>
+    );
+  }
+
+  if (size === "mobile") {
+    return (
+      <span className="text-3xl sm:text-4xl text-white drop-shadow-[0_0_12px_rgba(239,68,68,0.4)] font-mono font-black">
+        {timeStr}
+      </span>
+    );
+  }
+
+  return (
+    <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl text-white drop-shadow-[0_0_12px_rgba(239,68,68,0.4)] font-mono font-black">
+      {timeStr}
+    </span>
+  );
+}
+
 // ─── Premium Round Medal Component (No Ribbons) ──────────────────────────────────
-function CircularMedalSVG({ rank, status }: { rank: number | null | undefined; status?: string }) {
+function CircularMedalSVG({
+  rank,
+  status,
+  category,
+}: {
+  rank: number | null | undefined;
+  status?: string;
+  category?: string;
+}) {
   const isDnf = status === "DNF" || status === "DNS" || status === "DSQ";
 
   if (isDnf) {
@@ -120,7 +186,7 @@ function CircularMedalSVG({ rank, status }: { rank: number | null | undefined; s
           <div className="absolute inset-2 rounded-full border border-white/5 opacity-10 pointer-events-none" />
 
           {isPodium && (
-            <div className="absolute top-2 md:top-4 flex gap-1 opacity-70">
+            <div className="absolute top-2 md:top-3.5 flex gap-1 opacity-70">
               <span className={`text-[8px] md:text-[10px] ${config.textColor}`}>★</span>
               <span className={`text-[10px] md:text-[12px] ${config.textColor}`}>★</span>
               <span className={`text-[8px] md:text-[10px] ${config.textColor}`}>★</span>
@@ -128,6 +194,11 @@ function CircularMedalSVG({ rank, status }: { rank: number | null | undefined; s
           )}
 
           <div className="text-center flex flex-col items-center justify-center">
+            {category && (
+              <span className={`text-[8px] md:text-[10px] font-black uppercase tracking-wider opacity-75 ${config.textColor} -mb-0.5 max-w-[90px] md:max-w-[120px] truncate`}>
+                {category}
+              </span>
+            )}
             <span className={`text-3xl md:text-5xl font-black tracking-tight leading-none ${config.textColor} drop-shadow-[0_2px_3px_rgba(0,0,0,0.2)] font-mono`}>
               {rankLabel}
             </span>
@@ -147,10 +218,10 @@ function CircularMedalSVG({ rank, status }: { rank: number | null | undefined; s
         {rank != null ? (
           <div className="flex flex-col items-center gap-1.5">
             <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-md ${config.accentBg}`}>
-              {isPodium ? `Podium Finish` : `Official Finisher`}
+              {category ? `${category} • ` : ""}{isPodium ? `Podium Finish` : `Official Finisher`}
             </span>
             <div className="text-slate-400 text-[10px] uppercase font-bold tracking-widest">
-              Lumpat Event Result
+              {category ? `${category} Category Position` : `Lumpat Event Result`}
             </div>
           </div>
         ) : (
@@ -399,7 +470,11 @@ export default function ParticipantResultPage() {
 
             {/* Medal */}
             <div className="relative z-10 scale-[0.85] transform -translate-y-5">
-              <CircularMedalSVG rank={modalData.overallRank} status={modalData.totalTimeDisplay} />
+              <CircularMedalSVG
+                rank={modalData.categoryRank ?? modalData.overallRank}
+                status={modalData.totalTimeDisplay}
+                category={modalData.category}
+              />
             </div>
 
             {/* Overlapping Avatar */}
@@ -575,11 +650,11 @@ export default function ParticipantResultPage() {
                 className="absolute inset-0 pointer-events-none transition-all duration-500"
                 style={{
                   background:
-                    modalData.overallRank === 1
+                    (modalData.categoryRank ?? modalData.overallRank) === 1
                       ? "radial-gradient(circle at center, rgba(245,158,11,0.22) 0%, rgba(239,68,68,0.08) 45%, transparent 70%)"
-                      : modalData.overallRank === 2
+                      : (modalData.categoryRank ?? modalData.overallRank) === 2
                       ? "radial-gradient(circle at center, rgba(148,163,184,0.20) 0%, transparent 70%)"
-                      : modalData.overallRank === 3
+                      : (modalData.categoryRank ?? modalData.overallRank) === 3
                       ? "radial-gradient(circle at center, rgba(217,119,6,0.20) 0%, transparent 70%)"
                       : "radial-gradient(circle at center, rgba(239,68,68,0.18) 0%, transparent 70%)",
                 }}
@@ -595,13 +670,13 @@ export default function ParticipantResultPage() {
               {/* Large Background Watermark Text */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
                 <span className="text-7xl md:text-9xl font-black italic tracking-tighter uppercase text-white/[0.04] whitespace-nowrap select-none rotate-[-6deg] translate-y-2 font-sans">
-                  {modalData.overallRank === 1
-                    ? "CHAMPION"
-                    : modalData.overallRank === 2
-                    ? "RUNNER UP"
-                    : modalData.overallRank === 3
-                    ? "PODIUM"
-                    : "FINISHER"}
+                  {(modalData.categoryRank ?? modalData.overallRank) === 1
+                    ? (modalData.category ? `${modalData.category} CHAMPION` : "CHAMPION")
+                    : (modalData.categoryRank ?? modalData.overallRank) === 2
+                    ? (modalData.category ? `${modalData.category} RUNNER UP` : "RUNNER UP")
+                    : (modalData.categoryRank ?? modalData.overallRank) === 3
+                    ? (modalData.category ? `${modalData.category} PODIUM` : "PODIUM")
+                    : (modalData.category ? `${modalData.category} FINISHER` : "FINISHER")}
                 </span>
               </div>
 
@@ -625,7 +700,11 @@ export default function ParticipantResultPage() {
               <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-red-500/50 to-transparent" />
 
               <div className="relative z-10 py-6">
-                <CircularMedalSVG rank={modalData.overallRank} status={modalData.totalTimeDisplay} />
+                <CircularMedalSVG
+                  rank={modalData.categoryRank ?? modalData.overallRank}
+                  status={modalData.totalTimeDisplay}
+                  category={modalData.category}
+                />
               </div>
             </motion.div>
 
@@ -643,8 +722,8 @@ export default function ParticipantResultPage() {
           <div className="hidden sm:flex flex-row items-center justify-between w-full">
             <div className="flex flex-row items-center justify-between w-full gap-1.5 md:gap-2.5 lg:gap-4 overflow-visible">
               {/* TOTAL TIME — compact dark card */}
-              <div className="bg-[#16171f] rounded-2xl overflow-hidden shadow-2xl flex flex-col flex-none w-[190px] md:w-[240px] lg:w-[360px] h-[135px] md:h-[180px] lg:h-[248px] justify-center py-3 md:py-5 lg:py-8 px-3 md:px-5 lg:px-7 border border-red-500/10 translate-y-1 md:translate-y-2 lg:translate-y-3">
-                <div className="flex flex-col items-center justify-center">
+              <div className="bg-[#16171f] rounded-2xl overflow-hidden shadow-2xl flex flex-col flex-none w-[190px] md:w-[240px] lg:w-[360px] h-[135px] md:h-[180px] lg:h-[248px] justify-center py-3 md:py-5 lg:py-8 px-2 sm:px-3 md:px-4 lg:px-6 border border-red-500/10 translate-y-1 md:translate-y-2 lg:translate-y-3">
+                <div className="flex flex-col items-center justify-center w-full">
                   {/* Slanted Parallel Badge (UTMB INDEX Style) */}
                   <div className="flex justify-center mb-1.5 md:mb-3 lg:mb-4">
                     <div className="flex text-[9px] sm:text-[10px] md:text-[11px] lg:text-[13px] font-black uppercase tracking-wider font-sans">
@@ -659,11 +738,11 @@ export default function ParticipantResultPage() {
                     </div>
                   </div>
 
-                  <div className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl text-white drop-shadow-[0_0_12px_rgba(239,68,68,0.4)] utmb-font whitespace-nowrap">
-                    {modalData.totalTimeDisplay || "-"}
+                  <div className="w-full flex justify-center items-center px-1">
+                    <FormattedTimeDisplay timeStr={modalData.totalTimeDisplay} />
                   </div>
                   {modalData.totalTimeMs > 0 && (
-                    <div className="mt-2 md:mt-3.5 lg:mt-4 bg-slate-950/60 px-2.5 md:px-4 lg:px-5 py-1 md:py-1.5 lg:py-2.5 rounded-xl border border-slate-900/50 text-[11px] sm:text-xs md:text-sm lg:text-base text-slate-200 font-mono flex items-center justify-center gap-1 md:gap-1.5 lg:gap-2.5">
+                    <div className="mt-2 md:mt-3.5 lg:mt-4 bg-slate-950/60 px-2.5 md:px-4 lg:px-5 py-1 md:py-1.5 lg:py-2.5 rounded-xl border border-slate-900/50 text-[11px] sm:text-xs md:text-sm lg:text-base text-slate-200 font-mono flex items-center justify-center gap-1 md:gap-1.5 lg:gap-2.5 max-w-full">
                       <span className="text-slate-400 font-bold uppercase text-[8px] sm:text-[9px] md:text-[10px] lg:text-[12px] tracking-wider">Avg Pace</span>
                       <span className="text-red-500 text-xs sm:text-sm md:text-base lg:text-xl font-black drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]">
                         {calculatePace(modalData.totalTimeMs, modalData.category, modalData.distanceKm)}
@@ -760,8 +839,8 @@ export default function ParticipantResultPage() {
                   </div>
                 </div>
 
-                <div className="text-4xl text-white drop-shadow-[0_0_12px_rgba(239,68,68,0.4)] utmb-font">
-                  {modalData.totalTimeDisplay || "-"}
+                <div className="w-full flex justify-center items-center">
+                  <FormattedTimeDisplay timeStr={modalData.totalTimeDisplay} size="mobile" />
                 </div>
                 {modalData.totalTimeMs > 0 && (
                   <div className="mt-3.5 bg-slate-950/60 px-4 py-2 rounded-xl border border-slate-900/50 text-sm md:text-base text-slate-200 font-mono flex items-center justify-center gap-2">
