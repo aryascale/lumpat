@@ -62,7 +62,7 @@ function PageLoader() {
   );
 }
 
-function RoleGuard({ children, allowedRoles, redirectTo = "/admin", allowUnauthenticated = false }: { children: React.ReactNode; allowedRoles: string[]; redirectTo?: string; allowUnauthenticated?: boolean }) {
+function RoleGuard({ children, allowedRoles, redirectTo = "/admin" }: { children: React.ReactNode; allowedRoles: string[]; redirectTo?: string }) {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -70,9 +70,6 @@ function RoleGuard({ children, allowedRoles, redirectTo = "/admin", allowUnauthe
   }
 
   if (!user) {
-    // /admin renders its own login form when logged out — don't bounce
-    // visitors to /leaderboard or the login entry point becomes unreachable
-    if (allowUnauthenticated) return <>{children}</>;
     return <Navigate to={redirectTo} replace />;
   }
 
@@ -144,7 +141,7 @@ export default function App() {
             <Route
               path="/admin"
               element={
-                <RoleGuard allowedRoles={["super_admin", "event_admin", "scan_admin", "payment_admin"]} redirectTo="/leaderboard" allowUnauthenticated>
+                <RoleGuard allowedRoles={["super_admin", "event_admin", "scan_admin", "payment_admin"]} redirectTo="/leaderboard">
                   <AdminLayout />
                 </RoleGuard>
               }
