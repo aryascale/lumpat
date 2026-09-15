@@ -2718,6 +2718,7 @@ export default function EventPage() {
           footer={null}
           className="registration-wizard"
           centered
+          styles={{ body: { maxHeight: "70vh", overflowY: "auto" } }}
         >
           <div className="p-2 sm:p-6">
             {/* Progress Header */}
@@ -3617,6 +3618,7 @@ export default function EventPage() {
           title={<div className="font-black text-xl">Syarat dan Ketentuan</div>}
           open={tncModalOpen}
           onCancel={() => setTncModalOpen(false)}
+          styles={{ body: { maxHeight: "70vh", overflowY: "auto" } }}
           footer={
             <div className="flex justify-end pt-4 border-t border-stone-200 mt-4">
               <Button
@@ -4153,7 +4155,8 @@ export default function EventPage() {
           styles={{
             body: {
               padding: 0,
-              overflow: "hidden",
+              maxHeight: "70vh",
+              overflowY: "auto",
               backgroundColor: "transparent",
               boxShadow: "none",
             },
