@@ -474,8 +474,9 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
       const name = `"${(p.name || '').replace(/"/g, '""')}"`;
       const category = `"${(p.category?.name || '').replace(/"/g, '""')}"`;
       const gender = `"${(p.gender || '').replace(/"/g, '""')}"`;
+      const bibNumber = `"${String(p.bibNumber || '').replace(/"/g, '""')}"`;
       const epc = `""`;
-      return [name, category, gender, '""', '""', epc].join(',');
+      return [name, category, gender, bibNumber, '""', epc].join(',');
     });
 
     const csvContent = [headers.join(','), ...rows].join('\n');
