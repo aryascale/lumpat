@@ -206,6 +206,21 @@ model SupportTicket {
   @@index([ticketNumber])
 }
 
+model ScanLog {
+  id             String   @id @default(uuid())
+  registrationId String?
+  eventId        String?
+  bibNumber      String?
+  lookup         String?
+  scannedBy      String?
+  result         String   @default("valid") // valid | unpaid | not_found
+  source         String   @default("rpc")
+  createdAt      DateTime @default(now())
+
+  @@index([registrationId])
+  @@index([eventId, createdAt])
+}
+
 model Penalty {
   id        String   @id @default(uuid())
   eventId   String

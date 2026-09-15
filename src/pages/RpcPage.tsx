@@ -20,9 +20,39 @@ export default function RpcPage() {
   const [isScanning, setIsScanning] = useState(false);
   const [scanError, setScanError] = useState("");
   const qrReaderRef = useRef<HTMLDivElement>(null);
-  
+
   const [countdown, setCountdown] = useState(50);
   const [searchErrorMsg, setSearchErrorMsg] = useState("");
+
+  // Registration verification (EventRegistration lookup via /api/rpc-verify)
+  const [regScan, setRegScan] = useState<{
+    result: "valid" | "unpaid" | "not_found";
+    participant: any;
+    previousScan: any;
+  } | null>(null);
+
+  const handleRegistrationLookup = async (lookupId: string | null, bib: string | null) => {
+    if (!eventData?.id) return false;
+    try {
+      const params = new URLSearchParams({ eventId: eventData.id });
+      if (lookupId) params.set("id", lookupId);
+      else if (bib) params.set("bib", bib);
+      else return false;
+      const res = await fetch(`/api/rpc-verify?${params}`, { credentials: "include" });
+      if (!res.ok) return false;
+      setRegScan(await res.json());
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const timeAgo = (ts: string) => {
+    const s = Math.max(0, Math.floor((Date.now() - new Date(ts).getTime()) / 1000));
+    if (s < 60) return `${s} dtk lalu`;
+    if (s < 3600) return `${Math.floor(s / 60)} mnt lalu`;
+    return `${Math.floor(s / 3600)} jam lalu`;
+  };
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -58,13 +88,22 @@ export default function RpcPage() {
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 300, height: 300 } },
         (decodedText) => {
-          // Find participant
+          // Registration QR (from confirmation email / e-ticket): /verify/<id>
+          const m = decodedText.match(/\/verify\/([0-9a-fA-F-]{36})/);
+          if (m) {
+            handleRegistrationLookup(m[1], null);
+            return;
+          }
+          // Find participant (timing master: EPC or BIB)
           const p = participants.find(p => p.epc === decodedText || String(p.bib) === decodedText);
           if (p) {
             setFoundParticipant(p);
             // Do not auto stop scanning to allow rapid scanning
           } else {
-            setScanError("QR Code tidak cocok dengan data peserta.");
+            // Fall back to registration lookup by BIB before erroring
+            handleRegistrationLookup(null, decodedText).then((handled) => {
+              if (!handled) setScanError("QR Code tidak cocok dengan data peserta.");
+            });
           }
         },
         () => {
@@ -86,13 +125,14 @@ export default function RpcPage() {
   // Auto-hide participant after 50 seconds with countdown
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (foundParticipant) {
+    if (foundParticipant || regScan) {
       setShowKeyboard(false);
       setCountdown(50);
       interval = setInterval(() => {
         setCountdown(prev => {
           if (prev <= 1) {
             setFoundParticipant(null);
+            setRegScan(null);
             setQuery("");
             return 0;
           }
@@ -103,7 +143,7 @@ export default function RpcPage() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [foundParticipant]);
+  }, [foundParticipant, regScan]);
 
   // Auto-hide search error
   useEffect(() => {
@@ -127,10 +167,16 @@ export default function RpcPage() {
     if (p) {
       setFoundParticipant(p);
       setQuery("");
-    } else {
-      setFoundParticipant(null);
-      setSearchErrorMsg("Peserta tidak ditemukan.");
+      return;
     }
+    // Not in timing master data — try registration lookup (BIB or name-ish)
+    handleRegistrationLookup(null, query.trim()).then((handled) => {
+      if (!handled) {
+        setFoundParticipant(null);
+        setSearchErrorMsg("Peserta tidak ditemukan.");
+      }
+      setQuery("");
+    });
   };
 
   const isMobile = useMediaQuery({ maxWidth: 768 });
@@ -219,7 +265,7 @@ export default function RpcPage() {
         )}
 
         {/* Floating Bottom Action Bar (Duolingo Style) */}
-        {!isScanning && !foundParticipant && (
+        {!isScanning && !foundParticipant && !regScan && (
           <div className="absolute bottom-4 sm:bottom-10 lg:bottom-16 left-1/2 -translate-x-1/2 w-[95%] sm:w-[90%] max-w-3xl z-[150] animate-in slide-in-from-bottom-10 fade-in duration-500 flex flex-col justify-end pointer-events-none max-h-[90vh]">
             <div className="bg-white/90 backdrop-blur-xl p-2 sm:p-3 md:p-4 rounded-[2rem] sm:rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-b-[6px] sm:border-b-[8px] border-gray-300 flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 shrink-0 pointer-events-auto">
                
@@ -356,6 +402,82 @@ export default function RpcPage() {
                   </span>
                 </div>
               </div>
+
+              {/* Digital Countdown Timer */}
+              <div className="absolute top-6 right-6 pointer-events-auto">
+                <span className="text-4xl md:text-6xl font-black text-slate-800 drop-shadow-[0_2px_4px_rgba(255,255,255,1)]">
+                  {countdown}
+                </span>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* Registration Verification Display (scanned e-ticket / BIB lookup) */}
+        {regScan && (
+          <div
+            className="absolute inset-0 z-[120] flex items-center justify-center p-4 animate-in fade-in duration-300 pb-20"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setRegScan(null);
+                setQuery("");
+              }
+            }}
+          >
+            <div className="w-full max-w-2xl flex flex-col items-center animate-in zoom-in-95 duration-300 pointer-events-none mt-32">
+
+              <div className="flex flex-col items-center text-center gap-6 mb-8 w-full">
+                <div className="flex flex-col items-center flex-1 pointer-events-auto">
+                  <span className="text-sm font-bold text-slate-800 drop-shadow-md uppercase tracking-widest mb-1">Nama Peserta</span>
+                  <h2 className="text-5xl md:text-7xl font-black text-slate-900 drop-shadow-lg uppercase tracking-tight leading-none text-center">
+                    {regScan.participant?.name || "TIDAK DITEMUKAN"}
+                  </h2>
+                </div>
+
+                {regScan.participant?.bibNumber && (
+                  <div className="border-[3px] border-dashed border-red-500 rounded-3xl px-12 py-6 flex flex-col items-center justify-center shrink-0 bg-transparent pointer-events-auto mt-4">
+                    <span className="text-red-600 font-bold uppercase tracking-widest text-sm mb-2 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">Nomor BIB</span>
+                    <span className="text-7xl md:text-8xl font-black text-red-600 tracking-tighter leading-none drop-shadow-[0_2px_2px_rgba(255,255,255,0.8)]">
+                      {regScan.participant.bibNumber}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-4 w-full pointer-events-auto max-w-xl">
+                {regScan.participant?.category && (
+                  <div className="flex-1 min-w-[130px] bg-white/95 backdrop-blur-md border border-slate-200 shadow-xl rounded-2xl p-4 flex flex-col items-center text-center">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Kategori</span>
+                    <span className="text-xl md:text-2xl font-black text-slate-900">{regScan.participant.category}</span>
+                  </div>
+                )}
+
+                <div className={`flex-1 min-w-[130px] backdrop-blur-md border shadow-xl rounded-2xl p-4 flex flex-col items-center text-center ${
+                  regScan.result === 'valid'
+                    ? 'bg-emerald-50/95 border-emerald-200'
+                    : regScan.result === 'unpaid'
+                      ? 'bg-amber-50/95 border-amber-200'
+                      : 'bg-red-50/95 border-red-200'
+                }`}>
+                  <span className={`text-xs font-bold uppercase tracking-widest mb-1 ${
+                    regScan.result === 'valid' ? 'text-emerald-700' : regScan.result === 'unpaid' ? 'text-amber-700' : 'text-red-700'
+                  }`}>Status</span>
+                  <span className={`text-lg md:text-xl font-black flex items-center gap-2 ${
+                    regScan.result === 'valid' ? 'text-emerald-700' : regScan.result === 'unpaid' ? 'text-amber-700' : 'text-red-700'
+                  }`}>
+                    <CheckCircle className="w-6 h-6 stroke-[3]" />
+                    {regScan.result === 'valid' ? 'Terdaftar & Lunas' : regScan.result === 'unpaid' ? 'Belum Bayar' : 'Tidak Terdaftar'}
+                  </span>
+                </div>
+              </div>
+
+              {regScan.previousScan && (
+                <div className="mt-5 bg-amber-100/95 border border-amber-300 rounded-xl px-5 py-3 text-amber-800 font-bold text-sm shadow-lg pointer-events-auto">
+                  Sudah discan {timeAgo(regScan.previousScan.createdAt)}
+                  {regScan.previousScan.scannedBy ? ` oleh ${regScan.previousScan.scannedBy}` : ''}
+                </div>
+              )}
 
               {/* Digital Countdown Timer */}
               <div className="absolute top-6 right-6 pointer-events-auto">

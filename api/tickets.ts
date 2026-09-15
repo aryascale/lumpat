@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { query } from '../src/lib/db';
 import nodemailer from 'nodemailer';
-
-const prisma = new PrismaClient();
 
 // Configure nodemailer
 const transporter = nodemailer.createTransport({
@@ -73,18 +71,12 @@ export default async function handler(event: any) {
 
       const ticketNumber = generateTicketNumber();
 
-      const ticket = await prisma.supportTicket.create({
-        data: {
-          ticketNumber,
-          name,
-          email,
-          phoneNumber,
-          category,
-          subject,
-          description,
-          eventId: eventId || null,
-        },
-      });
+      const ticketId = crypto.randomUUID();
+      await query(
+        `INSERT INTO SupportTicket (id, eventId, ticketNumber, name, email, phoneNumber, category, subject, description, status, priority, createdAt, updatedAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', 'medium', NOW(), NOW())`,
+        [ticketId, eventId || null, ticketNumber, name, email, phoneNumber, category, subject, description]
+      );
 
       // Send email asynchronously
       sendTicketEmail(email, name, ticketNumber, subject).catch(console.error);
@@ -116,10 +108,14 @@ export default async function handler(event: any) {
         };
       }
 
-      const ticket = await prisma.supportTicket.findUnique({
-        where: { ticketNumber },
-        include: { event: true },
-      });
+      const tickets: any = await query(
+        `SELECT st.*, e.name AS eventName
+         FROM SupportTicket st LEFT JOIN Event e ON st.eventId = e.id
+         WHERE st.ticketNumber = ? LIMIT 1`,
+        [ticketNumber]
+      );
+      const row = tickets[0];
+      const ticket = row ? ({ ...row, event: row.eventName ? { name: row.eventName } : null }) : null;
 
       if (!ticket || ticket.email.toLowerCase() !== email.toLowerCase()) {
         return {

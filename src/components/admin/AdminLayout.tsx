@@ -1,39 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Button, Dropdown, Avatar, Input } from 'antd';
-import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined, LogoutOutlined, CloseOutlined } from '@ant-design/icons';
-import { Outlet, useNavigate } from 'react-router-dom';
-import AppSidebar, { defaultMenuItems } from './AppSidebar';
-
-const { Header, Content } = Layout;
-
-const LS_AUTH = "imr_admin_authed";
-const ADMIN_USER = import.meta.env.VITE_ADMIN_USER || "";
-const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASS || "";
-
-function loadAuth() {
-  return localStorage.getItem(LS_AUTH) === "true";
-}
-
-function saveAuth(v: boolean) {
-  localStorage.setItem(LS_AUTH, v ? "true" : "false");
-}
+import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined, LogoutOutlined, CloseOutlined, SafetyOutlined } from '@ant-design/icons';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import AppSidebar, { buildAdminMenuItems } from './AppSidebar';
+import { useAuth, normalizeUserRole, getRoleLabel } from '../../contexts/AuthContext';
 
 export default function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [authed, setAuthed] = useState(loadAuth());
-  const [user, setUser] = useState("");
+  const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user: authUser, loading: authLoading, refreshUser, logout } = useAuth();
+  const activeRole = normalizeUserRole(authUser?.role);
+  const isAdmin = !!authUser && activeRole !== 'user';
+  const menuItems = buildAdminMenuItems(authUser?.role);
 
-  // Redirect if not authenticated
   useEffect(() => {
-    if (!authed) {
-      // Stay on login screen
+    if (!isAdmin) return;
+
+    if (!menuItems.length) {
+      navigate('/leaderboard', { replace: true });
+      return;
     }
-  }, [authed]);
+
+    const allowedPaths = menuItems.map((item) => item.path).filter(Boolean) as string[];
+    const isAllowed = allowedPaths.some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
+
+    if (!isAllowed && location.pathname.startsWith('/admin')) {
+      navigate(allowedPaths[0], { replace: true });
+    }
+  }, [location.pathname, menuItems, navigate, isAdmin]);
 
   // Responsive behavior - detect mobile and collapse sidebar
   useEffect(() => {
@@ -63,36 +63,51 @@ export default function AdminLayout() {
     }
   }, [navigate]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (user === ADMIN_USER && pass === ADMIN_PASS) {
-      saveAuth(true);
-      setAuthed(true);
-      setError("");
-    } else {
-      setError("Username atau password salah!");
+    setSubmitting(true);
+    setError("");
+    try {
+      const res = await fetch('/api/auth-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pass }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Login gagal');
+      await refreshUser();
+    } catch (err: any) {
+      setError(err.message || 'Login gagal');
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const handleLogout = () => {
-    saveAuth(false);
-    setAuthed(false);
-    setUser("");
-    setPass("");
+  const handleLogout = async () => {
+    await logout();
     navigate('/leaderboard');
   };
 
-  const userMenuItems = [
-    {
-      key: 'logout',
-      icon: <LogoutOutlined />,
-      label: 'Logout',
-      onClick: handleLogout,
-    },
-  ];
+  const getRoleColor = (role: string) => {
+    switch(role) {
+      case 'super_admin': return 'bg-purple-500 hover:bg-purple-600';
+      case 'event_admin': return 'bg-blue-500 hover:bg-blue-600';
+      case 'scan_admin': return 'bg-green-500 hover:bg-green-600';
+      case 'payment_admin': return 'bg-amber-500 hover:bg-amber-600';
+      default: return 'bg-gray-500 hover:bg-gray-600';
+    }
+  };
 
   // Show login form if not authenticated
-  if (!authed) {
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="w-8 h-8 border-3 border-gray-200 border-t-red-600 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <div className="max-w-md w-full">
@@ -108,26 +123,27 @@ export default function AdminLayout() {
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
                 <label htmlFor="admin-email" className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                <Input
+                <input
                   id="admin-email"
                   type="email"
-                  value={user}
-                  onChange={(e) => setUser(e.target.value)}
-                  placeholder="admin@example.com"
-                  size="large"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@lumpat.co.id"
                   required
+                  className="input input-bordered w-full h-11"
                 />
               </div>
 
               <div>
                 <label htmlFor="admin-password" className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                <Input.Password
+                <input
                   id="admin-password"
+                  type="password"
                   value={pass}
                   onChange={(e) => setPass(e.target.value)}
                   placeholder="••••••••"
-                  size="large"
                   required
+                  className="input input-bordered w-full h-11"
                 />
               </div>
 
@@ -137,14 +153,13 @@ export default function AdminLayout() {
                 </div>
               )}
 
-              <Button
-                type="primary"
-                htmlType="submit"
-                size="large"
-                className="w-full bg-red-600 hover:bg-red-700"
+              <button
+                type="submit"
+                className="btn btn-primary btn-lg w-full text-white"
+                disabled={submitting}
               >
-                Login
-              </Button>
+                {submitting ? 'Memproses...' : 'Login'}
+              </button>
             </form>
 
             <div className="mt-6 text-center">
@@ -174,7 +189,7 @@ export default function AdminLayout() {
   };
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <div className="min-h-screen">
       {/* Mobile Overlay */}
       {isMobile && mobileMenuOpen && (
         <div
@@ -185,64 +200,42 @@ export default function AdminLayout() {
 
       {/* Sidebar - Only render when: desktop OR (mobile AND menu open) */}
       {(!isMobile || mobileMenuOpen) && (
-        <div className={`
-          ${isMobile ? 'fixed z-50' : ''}
-        `}>
+        <div className={isMobile ? 'relative z-50' : ''}>
           <AppSidebar
             collapsed={isMobile ? false : collapsed}
-            menuItems={defaultMenuItems}
+            menuItems={menuItems}
             onItemClick={handleMobileNavigation}
           />
           {/* Mobile close button */}
           {isMobile && (
-            <Button
-              type="text"
-              icon={<CloseOutlined />}
+            <button
               onClick={() => setMobileMenuOpen(false)}
-              className="absolute top-4 right-2 z-50"
-              style={{
-                fontSize: '16px',
-                width: 40,
-                height: 40,
-                color: '#666',
-              }}
-            />
+              className="absolute top-4 right-2 z-50 w-10 h-10 flex items-center justify-center text-gray-500 hover:text-gray-800"
+              aria-label="Tutup menu"
+            >
+              <CloseOutlined style={{ fontSize: '16px' }} />
+            </button>
           )}
         </div>
       )}
 
       {/* Main Content */}
-      <Layout
-        style={{
-          marginLeft: isMobile ? 0 : (collapsed ? 80 : 256),
-          transition: 'margin-left 0.2s',
-        }}
+      <div
+        className="transition-[margin-left] duration-200"
+        style={{ marginLeft: isMobile ? 0 : collapsed ? 80 : 256 }}
       >
         {/* Header */}
-        <Header
-          style={{
-            padding: isMobile ? '0 12px' : '0 24px',
-            background: '#fff',
-            borderBottom: '1px solid #f0f0f0',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            position: 'sticky',
-            top: 0,
-            zIndex: 10,
-          }}
+        <header
+          className={`sticky top-0 z-10 flex items-center justify-between h-16 bg-white border-b border-gray-200 ${isMobile ? 'px-3' : 'px-6'}`}
         >
           {/* Menu/Collapse Button */}
-          <Button
-            type="text"
-            icon={isMobile ? <MenuUnfoldOutlined /> : (collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />)}
+          <button
             onClick={isMobile ? toggleMobileMenu : () => setCollapsed(!collapsed)}
-            style={{
-              fontSize: '16px',
-              width: 48,
-              height: 48,
-            }}
-          />
+            className="w-12 h-12 flex items-center justify-center text-gray-600 hover:text-gray-900"
+            aria-label="Toggle sidebar"
+          >
+            {isMobile ? <MenuUnfoldOutlined style={{ fontSize: '16px' }} /> : collapsed ? <MenuUnfoldOutlined style={{ fontSize: '16px' }} /> : <MenuFoldOutlined style={{ fontSize: '16px' }} />}
+          </button>
 
           {/* Mobile: Show logo in header */}
           {isMobile && (
@@ -257,26 +250,43 @@ export default function AdminLayout() {
           )}
 
           {/* User Menu */}
-          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-            <div className="flex items-center gap-2 cursor-pointer">
-              <Avatar size="default" icon={<UserOutlined />} className="bg-red-500" />
-              <span className="text-gray-700 font-medium hidden sm:block">Admin</span>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className={`hidden sm:flex items-center gap-2 rounded-full px-2.5 py-1.5 border font-medium text-xs uppercase tracking-[0.12em] ${
+              activeRole === 'super_admin' ? 'bg-purple-50 border-purple-200 text-purple-700' :
+              activeRole === 'event_admin' ? 'bg-blue-50 border-blue-200 text-blue-700' :
+              activeRole === 'scan_admin' ? 'bg-green-50 border-green-200 text-green-700' :
+              activeRole === 'payment_admin' ? 'bg-amber-50 border-amber-200 text-amber-700' :
+              'bg-gray-100 border-gray-200 text-gray-700'
+            }`}>
+              <SafetyOutlined />
+              <span>{getRoleLabel(activeRole)}</span>
             </div>
-          </Dropdown>
-        </Header>
 
-        <Content
-          style={{
-            margin: isMobile ? '12px 12px 0' : '24px 24px 0',
-            padding: isMobile ? 12 : 24,
-            minHeight: 280,
-            background: '#f0f2f5',
-            overflowX: 'hidden',
-          }}
+            <div className="dropdown dropdown-end">
+              <div tabIndex={0} role="button" className="flex items-center gap-2 cursor-pointer">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white ${getRoleColor(activeRole)}`}>
+                  <UserOutlined />
+                </div>
+                <span className="text-gray-700 font-medium hidden sm:block">{authUser?.email || 'Admin'}</span>
+              </div>
+              <ul tabIndex={0} className="dropdown-content menu bg-white rounded-box z-50 w-44 p-2 shadow-lg border border-gray-100 mt-1">
+                <li>
+                  <button onClick={handleLogout} className="text-gray-700 hover:bg-gray-50">
+                    <LogoutOutlined /> Logout
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </header>
+
+        <main
+          className={`bg-[#f0f2f5] overflow-x-hidden ${isMobile ? 'mt-3 mx-3 px-3 py-3' : 'mt-6 mx-6 px-6 py-6'}`}
+          style={{ minHeight: 280 }}
         >
           <Outlet />
-        </Content>
-      </Layout>
-    </Layout>
+        </main>
+      </div>
+    </div>
   );
 }

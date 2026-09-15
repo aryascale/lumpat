@@ -1,10 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Layout } from 'antd';
 import SidebarItem from './SidebarItem';
 import EventsIcon from './icons/EventsIcon';
-
-const { Sider } = Layout;
+import { normalizeUserRole } from '../../contexts/AuthContext';
 
 interface MenuItem {
   key: string;
@@ -111,22 +109,12 @@ export default function AppSidebar({ collapsed, menuItems, onItemClick }: AppSid
   };
 
   return (
-    <Sider
-      collapsible
-      collapsed={collapsed}
-      width={256}
-      trigger={null}
-      style={{
-        overflow: 'auto',
-        height: '100vh',
-        position: 'fixed',
-        left: 0,
-        top: 0,
-        bottom: 0,
-        background: '#fff',
-        borderRight: '1px solid #f0f0f0',
-      }}
-      className="transition-all duration-300"
+    <aside
+      className={`
+        fixed left-0 top-0 bottom-0 z-30 overflow-auto bg-white
+        border-r border-gray-200 transition-all duration-300
+        ${collapsed ? 'w-20' : 'w-64'}
+      `}
     >
       {/* Logo/Header */}
       <div className="p-4 border-b border-gray-200">
@@ -134,7 +122,7 @@ export default function AppSidebar({ collapsed, menuItems, onItemClick }: AppSid
           <img
             src="/Assets/logo2.webp"
             alt="Lumpat Logo"
-            className={`flex-shrink-0 object-contain ${collapsed ? 'w-10 h-10' : 'w-10 h-10'}`}
+            className="flex-shrink-0 w-10 h-10 object-contain"
           />
           {!collapsed && (
             <div>
@@ -149,17 +137,28 @@ export default function AppSidebar({ collapsed, menuItems, onItemClick }: AppSid
       <div className="p-4 space-y-1">
         {renderMenuItems(menuItems)}
       </div>
-    </Sider>
+    </aside>
   );
 }
 
-// Export default menu items for use in AdminLayout
-export const defaultMenuItems: MenuItem[] = [
+const fullMenuItems: MenuItem[] = [
+  {
+    key: 'overview',
+    label: 'Overview',
+    icon: <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l9-9 9 9M5 10v10h14V10" /></svg>,
+    path: '/admin/overview',
+  },
   {
     key: 'events',
     label: 'Events',
     icon: <EventsIcon />,
     path: '/admin/events',
+  },
+  {
+    key: 'banners',
+    label: 'Banners',
+    icon: <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-8-8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+    path: '/admin/banners',
   },
   {
     key: 'payments',
@@ -174,9 +173,39 @@ export const defaultMenuItems: MenuItem[] = [
     path: '/admin/tickets',
   },
   {
+    key: 'users',
+    label: 'Users',
+    icon: <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5z" /></svg>,
+    path: '/admin/users',
+  },
+  {
     key: 'activity-logs',
     label: 'Activity Logs',
     icon: <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>,
     path: '/admin/activity-logs',
   },
+  {
+    key: 'monitoring',
+    label: 'Monitoring',
+    icon: <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
+    path: '/monitoring',
+  },
 ];
+
+export const buildAdminMenuItems = (role?: string): MenuItem[] => {
+  const normalizedRole = normalizeUserRole(role);
+
+  const allowedByRole: Record<string, string[]> = {
+    super_admin: ['overview', 'events', 'banners', 'payments', 'tickets', 'users', 'activity-logs', 'monitoring'],
+    event_admin: ['overview', 'events', 'banners', 'tickets', 'activity-logs'],
+    scan_admin: ['tickets', 'activity-logs'],
+    payment_admin: ['overview', 'payments', 'activity-logs'],
+    user: [],
+  };
+
+  const allowed = allowedByRole[normalizedRole] || [];
+
+  return fullMenuItems.filter((item) => allowed.includes(item.key));
+};
+
+export const defaultMenuItems = buildAdminMenuItems('super_admin');

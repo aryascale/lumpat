@@ -9,6 +9,12 @@ services:
       - "127.0.0.1:3307:3306"
     volumes:
       - mysql_data_staging:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-plumpat2026_staging"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 20s
 
   phpmyadmin-staging:
     image: phpmyadmin/phpmyadmin
@@ -22,7 +28,8 @@ services:
     ports:
       - "127.0.0.1:8091:80"
     depends_on:
-      - mysql-staging
+      mysql-staging:
+        condition: service_healthy
 
   app-staging:
     build:
@@ -39,7 +46,8 @@ services:
     env_file:
       - ../.env.staging
     depends_on:
-      - mysql-staging
+      mysql-staging:
+        condition: service_healthy
     volumes:
       - ../uploads:/app/uploads
 

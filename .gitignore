@@ -34,4 +34,11 @@ backups/
 
 # AI Agent
 .agents
+.github/
 scripts/convert-to-webp.mjs
+.claude/
+.ag-kit/
+CLAUDE.md
+AGENTS.md
+skills-lock.json
+*-claude-ag-kit*.ps1

@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { initFrontendLogger } from "./lib/frontend-logger";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { EventProvider } from "./contexts/EventContext";
+import { useAuth, normalizeUserRole } from "./contexts/AuthContext";
 
 // A new deploy renames the hashed chunks; a tab still running the old build
 // then fails to lazy-load a route. Reload automatically (throttled to once
@@ -31,10 +32,12 @@ const CreateEventPage = lazyReload(() => import("./pages/CreateEventPage"));
 const EventPage = lazyReload(() => import("./pages/EventPage"));
 const SupportTicketPage = lazyReload(() => import("./pages/SupportTicketPage"));
 const CheckTicketPage = lazyReload(() => import("./pages/CheckTicketPage"));
+const MyTicketsPage = lazyReload(() => import("./pages/MyTicketsPage"));
 const RpcPage = lazyReload(() => import("./pages/RpcPage"));
 const ParticipantResultPage = lazyReload(() => import("./pages/ParticipantResultPage"));
 const VerifyPage = lazyReload(() => import("./pages/VerifyPage"));
 const DevicePage = lazyReload(() => import("./pages/DevicePage"));
+const MonitoringPage = lazyReload(() => import("./pages/monitoring/MonitoringPage"));
 
 // Lazy-loaded Admin and Checkpoint modules
 const CheckpointLayout = lazyReload(() => import("./components/checkpoint/CheckpointLayout"));
@@ -46,6 +49,7 @@ const BannersPageWrapper = lazyReload(() => import("./components/admin/wrappers"
 const PaymentsPage = lazyReload(() => import("./components/admin/pages/PaymentsPage"));
 const ActivityLogsPage = lazyReload(() => import("./components/admin/pages/ActivityLogsPage"));
 const TicketsPage = lazyReload(() => import("./components/admin/pages/TicketsPage"));
+const UsersPage = lazyReload(() => import("./components/admin/pages/UsersPage"));
 
 function PageLoader() {
   return (
@@ -56,6 +60,26 @@ function PageLoader() {
       </div>
     </div>
   );
+}
+
+function RoleGuard({ children, allowedRoles, redirectTo = "/admin" }: { children: React.ReactNode; allowedRoles: string[]; redirectTo?: string }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <PageLoader />;
+  }
+
+  if (!user) {
+    return <Navigate to={redirectTo} replace />;
+  }
+
+  const role = normalizeUserRole(user.role);
+
+  if (!allowedRoles.includes(role)) {
+    return <Navigate to={redirectTo} replace />;
+  }
+
+  return <>{children}</>;
 }
 
 export default function App() {
@@ -76,21 +100,66 @@ export default function App() {
             <Route path="/event" element={<UserEventPage />} />
             <Route path="/bantuan" element={<SupportTicketPage />} />
             <Route path="/cek-tiket" element={<CheckTicketPage />} />
+            <Route path="/tiket-saya" element={<MyTicketsPage />} />
+            <Route
+              path="/monitoring"
+              element={
+                <RoleGuard allowedRoles={["super_admin"]} redirectTo="/admin">
+                  <MonitoringPage />
+                </RoleGuard>
+              }
+            />
 
-            <Route path="/admin/home" element={<HomePage />} />
-            <Route path="/admin/create-event" element={<CreateEventPage />} />
+            <Route
+              path="/admin/home"
+              element={
+                <RoleGuard allowedRoles={["super_admin", "event_admin"]} redirectTo="/admin">
+                  <HomePage />
+                </RoleGuard>
+              }
+            />
+            <Route
+              path="/admin/create-event"
+              element={
+                <RoleGuard allowedRoles={["super_admin", "event_admin"]} redirectTo="/admin">
+                  <CreateEventPage />
+                </RoleGuard>
+              }
+            />
             <Route path="/event/:slug" element={<EventPage />} />
             <Route path="/event/:slug/participant/:epc" element={<ParticipantResultPage />} />
-            <Route path="/rpc/:slug" element={<RpcPage />} />
+            <Route
+              path="/rpc/:slug"
+              element={
+                <RoleGuard allowedRoles={["super_admin", "scan_admin"]} redirectTo="/admin">
+                  <RpcPage />
+                </RoleGuard>
+              }
+            />
 
             {/* Admin Routes with Layout */}
-            <Route path="/admin" element={<AdminLayout />}>
+            <Route
+              path="/admin"
+              element={
+                <RoleGuard allowedRoles={["super_admin", "event_admin", "scan_admin", "payment_admin"]} redirectTo="/leaderboard">
+                  <AdminLayout />
+                </RoleGuard>
+              }
+            >
               <Route index element={<Navigate to="events" replace />} />
               <Route path="overview" element={<OverviewPageWrapper />} />
               <Route path="events" element={<EventsPageWrapper />} />
               <Route path="banners" element={<BannersPageWrapper />} />
               <Route path="payments" element={<PaymentsPage />} />
               <Route path="tickets" element={<TicketsPage />} />
+              <Route
+                path="users"
+                element={
+                  <RoleGuard allowedRoles={['super_admin']} redirectTo="/admin/events">
+                    <UsersPage />
+                  </RoleGuard>
+                }
+              />
               <Route path="activity-logs" element={<ActivityLogsPage />} />
             </Route>
 

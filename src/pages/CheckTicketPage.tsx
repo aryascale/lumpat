@@ -23,7 +23,7 @@ export default function CheckTicketPage() {
     
     try {
       const params = new URLSearchParams(formData);
-      const response = await fetch(`/api/tickets/status?${params}`);
+      const response = await fetch(`/api/tickets?${params}`);
       const data = await response.json();
       
       if (!response.ok) throw new Error(data.error || 'Gagal memuat tiket');

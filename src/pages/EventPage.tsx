@@ -20,6 +20,7 @@ import type { MasterParticipant } from "../lib/data";
 import { useLiveTiming } from "../hooks/useLiveTiming";
 import getUnicodeFlagIcon from "country-flag-icons/unicode";
 import { getData } from "country-list";
+import { useAuth, normalizeUserRole } from "../contexts/AuthContext";
 
 function formatLocalTime(ms: number, tzOffset: number, includeMs = true): string {
   const d = new Date(ms + tzOffset * 60 * 60 * 1000);
@@ -204,6 +205,8 @@ function resolveRegistrationAgeCategory(
 export default function EventPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { user: authUser } = useAuth();
+  const isStaffUser = !!authUser && normalizeUserRole(authUser.role) !== "user";
   const [event, setEvent] = useState<EventData | null>(null);
   const tzOffset = (event as any)?.timezoneOffset ?? 7;
   const ageBrackets = useMemo(
@@ -1058,8 +1061,16 @@ export default function EventPage() {
             const isDNS = !!dnsMap[p.epc];
             const manualDNF = !!dnfMap[p.epc];
             if (hiddenMap[p.epc]) return;
-            // CSV age category wins; fall back to DOB-derived bracket
-            const effAgeCategory = p.ageCategory || resolveDobAgeCategory(p.epc);
+            // CSV age category wins; then CSV DOB, then registration DOB
+            const effAgeCategory =
+              p.ageCategory ||
+              (p.dob
+                ? getAgeCategory(
+                    calculateAgeOnRaceDay(p.dob, event?.eventDate || ""),
+                    ageBrackets,
+                  )
+                : "") ||
+              resolveDobAgeCategory(p.epc);
             let finishEntry = finishMap.get(p.epc);
 
             const manualFinishStr = manualFinishMap.get(p.epc);
@@ -2101,7 +2112,7 @@ export default function EventPage() {
                     onChange={(e) => setRegSearchTerm(e.target.value)}
                   />
                 </div>
-                {String(event?.content?.enableRegisteredScan) !== "false" && (
+                {isStaffUser && String(event?.content?.enableRegisteredScan) !== "false" && (
                   <button
                     onClick={() => setScannerOpen(true)}
                     className="btn primary px-4 py-2 flex items-center gap-2 rounded-xl"
@@ -2383,6 +2394,15 @@ export default function EventPage() {
                         <span className="text-sm text-stone-700">
                           {(() =>
                             regDetailParticipant.customData?.["Age Category"] ||
+                            (leader?.dob
+                              ? getAgeCategory(
+                                  calculateAgeOnRaceDay(
+                                    leader.dob,
+                                    event?.eventDate || "",
+                                  ),
+                                  ageBrackets,
+                                )
+                              : "") ||
                             resolveRegistrationAgeCategory(
                               regDetailParticipant,
                               event?.eventDate || "",
