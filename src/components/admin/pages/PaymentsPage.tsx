@@ -473,7 +473,7 @@ export default function PaymentsPage() {
       </div>
       {/* Detail Modal (daisyUI) */}
       <div
-        className={`modal ${detailsModalOpen ? 'modal-open' : ''}`}
+        className={`modal bg-black/50 ${detailsModalOpen ? 'modal-open' : ''}`}
         onClick={() => setDetailsModalOpen(false)}
       >
         <div
