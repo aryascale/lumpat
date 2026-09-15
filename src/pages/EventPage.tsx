@@ -36,12 +36,21 @@ function formatLocalTime(ms: number, tzOffset: number, includeMs = true): string
 
 /**
  * Match a registered participant (from DB) to a master CSV participant.
- * Strategy: name+category (most reliable) → name-only fallback.
+ * Strategy: BIB (synced from master upload — strongest) → name+category
+ * → name-only fallback.
  */
 function matchRegisteredToMaster(
-  participant: { name?: string; category?: { name?: string } },
+  participant: { name?: string; category?: { name?: string }; bibNumber?: string | null },
   masterList: MasterParticipant[],
 ): MasterParticipant | undefined {
+  const pBib = String(participant.bibNumber || "").trim();
+  if (pBib) {
+    const byBib = masterList.find(
+      (o) => String(o.bib || "").trim() === pBib,
+    );
+    if (byBib) return byBib;
+  }
+
   const pName = (participant.name || "").trim().toLowerCase();
   if (!pName) return undefined;
 
@@ -130,14 +139,50 @@ type LoadState =
   | { status: "ready" };
 
 // Helper functions for Age Category calculation
+// DOB values arrive from master CSVs, registration customData and the DB
+// column — in practice a mix of 1990-05-12, 12/05/1990 (Indonesian
+// day-first) and 12 Mei 1990. new Date() alone reads day-first dates as
+// US month-first and returns NaN for Indonesian month names, silently
+// killing the age category — parse all three shapes explicitly.
+const MONTHS_ID: Record<string, number> = {
+  januari: 0, februari: 1, maret: 2, april: 3, mei: 4, juni: 5, juli: 6,
+  agustus: 7, september: 8, oktober: 9, november: 10, desember: 11,
+  jan: 0, feb: 1, mar: 2, apr: 3, jun: 5, jul: 6, agu: 7, agt: 7,
+  sep: 8, okt: 9, nov: 10, des: 11,
+  january: 0, february: 1, march: 2, may: 4, june: 5, july: 6,
+  august: 7, october: 9, december: 11,
+};
+
+function parseDob(dobStr: string): Date | null {
+  const s = String(dobStr || "").trim();
+  if (!s) return null;
+  // dd/mm/yyyy, dd-mm-yyyy, dd.mm.yyyy — Indonesian day-first
+  const dmy = s.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})$/);
+  if (dmy) {
+    const d = new Date(Number(dmy[3]), Number(dmy[2]) - 1, Number(dmy[1]));
+    return isNaN(d.getTime()) ? null : d;
+  }
+  // 12 Mei 1990 / 12 May 1990
+  const txt = s.match(/^(\d{1,2})\s+([A-Za-z]+)\.?\s+(\d{4})$/);
+  if (txt) {
+    const mo = MONTHS_ID[txt[2].toLowerCase()];
+    if (mo !== undefined) {
+      return new Date(Number(txt[3]), mo, Number(txt[1]));
+    }
+  }
+  // ISO yyyy-mm-dd and anything else JS handles natively
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 function calculateAgeOnRaceDay(
   dobStr: string,
   raceDateStr: string,
 ): number | null {
   if (!dobStr || !raceDateStr) return null;
-  const dob = new Date(dobStr);
+  const dob = parseDob(dobStr);
   const raceDate = new Date(raceDateStr);
-  if (isNaN(dob.getTime()) || isNaN(raceDate.getTime())) return null;
+  if (!dob || isNaN(raceDate.getTime())) return null;
 
   let age = raceDate.getFullYear() - dob.getFullYear();
   const m = raceDate.getMonth() - dob.getMonth();
@@ -184,7 +229,10 @@ function getAgeCategory(
 // fallback for events whose form stored it as a custom field.
 function findDobInCustomData(customData: any): string | null {
   if (!customData) return null;
-  const dobKeys = ["date of birth", "tanggal lahir", "dob"];
+  const dobKeys = [
+    "date of birth", "tanggal lahir", "tgl lahir", "dob",
+    "birth date", "birthdate", "birthday",
+  ];
   const entry = Object.entries(customData).find(([k]) =>
     dobKeys.some((dk) => k.toLowerCase().includes(dk)),
   );
@@ -1011,7 +1059,8 @@ export default function EventPage() {
 
           // Map master rows to their registration so age category can be
           // derived from the participant's date of birth when the CSV master
-          // has no age column.
+          // has no age column. matchRegisteredToMaster tries BIB first
+          // (synced from master upload), then name+category, then name.
           const regByMasterEpc = new Map<string, any>();
           registeredParticipants.forEach((reg: any) => {
             const m = matchRegisteredToMaster(reg, master.all);
