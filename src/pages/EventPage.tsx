@@ -36,12 +36,21 @@ function formatLocalTime(ms: number, tzOffset: number, includeMs = true): string
 
 /**
  * Match a registered participant (from DB) to a master CSV participant.
- * Strategy: name+category (most reliable) → name-only fallback.
+ * Strategy: BIB (synced from master upload — strongest) → name+category
+ * → name-only fallback.
  */
 function matchRegisteredToMaster(
-  participant: { name?: string; category?: { name?: string } },
+  participant: { name?: string; category?: { name?: string }; bibNumber?: string | null },
   masterList: MasterParticipant[],
 ): MasterParticipant | undefined {
+  const pBib = String(participant.bibNumber || "").trim();
+  if (pBib) {
+    const byBib = masterList.find(
+      (o) => String(o.bib || "").trim() === pBib,
+    );
+    if (byBib) return byBib;
+  }
+
   const pName = (participant.name || "").trim().toLowerCase();
   if (!pName) return undefined;
 
@@ -1050,7 +1059,8 @@ export default function EventPage() {
 
           // Map master rows to their registration so age category can be
           // derived from the participant's date of birth when the CSV master
-          // has no age column.
+          // has no age column. matchRegisteredToMaster tries BIB first
+          // (synced from master upload), then name+category, then name.
           const regByMasterEpc = new Map<string, any>();
           registeredParticipants.forEach((reg: any) => {
             const m = matchRegisteredToMaster(reg, master.all);
