@@ -10,6 +10,7 @@ const headerAliases: Record<string, string[]> = {
   gender: ["jenis kelamin", "gender", "sex", "jk", "kelamin"],
   category: ["kategori", "category", "kelas", "class"],
   ageCategory: ["kategori usia", "age category", "kategori umur", "age group", "usia", "umur", "kategori_usia", "age"],
+  dob: ["dob", "date of birth", "tanggal lahir", "tgl lahir", "birth date", "birthdate", "birthday"],
   times: [
     "times",
     "time",
@@ -74,6 +75,7 @@ export type MasterParticipant = {
   category: string;
   sourceCategoryKey: CategoryKey;
   ageCategory?: string;
+  dob?: string;
 };
 
 async function requireCsvText(kind: "master" | "start" | "finish" | "checkpoint", eventId: string = 'default'): Promise<string> {
@@ -115,6 +117,7 @@ export async function loadMasterParticipants(
   const genderIdx = findColIndex(headers, "gender");
   const categoryIdx = findColIndex(headers, "category");
   const ageCategoryIdx = findColIndex(headers, "ageCategory");
+  const dobIdx = findColIndex(headers, "dob");
 
 
   if (epcIdx < 0) {
@@ -134,6 +137,7 @@ export async function loadMasterParticipants(
     const rawGender = genderIdx >= 0 ? String(r[genderIdx] ?? "").trim() : "";
     const rawCategory = categoryIdx >= 0 ? String(r[categoryIdx] ?? "").trim() : "";
     const rawAgeCategory = ageCategoryIdx >= 0 ? String(r[ageCategoryIdx] ?? "").trim() : "";
+    const rawDob = dobIdx >= 0 ? String(r[dobIdx] ?? "").trim() : "";
 
     // Use original category from CSV, not normalized
     const category = rawCategory || "Uncategorized";
@@ -153,6 +157,7 @@ export async function loadMasterParticipants(
       category: category,
       sourceCategoryKey: category as CategoryKey,
       ageCategory: rawAgeCategory,
+      dob: rawDob || undefined,
     };
 
     byEpc.set(epc, p);

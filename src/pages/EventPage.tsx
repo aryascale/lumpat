@@ -1061,8 +1061,16 @@ export default function EventPage() {
             const isDNS = !!dnsMap[p.epc];
             const manualDNF = !!dnfMap[p.epc];
             if (hiddenMap[p.epc]) return;
-            // CSV age category wins; fall back to DOB-derived bracket
-            const effAgeCategory = p.ageCategory || resolveDobAgeCategory(p.epc);
+            // CSV age category wins; then CSV DOB, then registration DOB
+            const effAgeCategory =
+              p.ageCategory ||
+              (p.dob
+                ? getAgeCategory(
+                    calculateAgeOnRaceDay(p.dob, event?.eventDate || ""),
+                    ageBrackets,
+                  )
+                : "") ||
+              resolveDobAgeCategory(p.epc);
             let finishEntry = finishMap.get(p.epc);
 
             const manualFinishStr = manualFinishMap.get(p.epc);
@@ -2386,6 +2394,15 @@ export default function EventPage() {
                         <span className="text-sm text-stone-700">
                           {(() =>
                             regDetailParticipant.customData?.["Age Category"] ||
+                            (leader?.dob
+                              ? getAgeCategory(
+                                  calculateAgeOnRaceDay(
+                                    leader.dob,
+                                    event?.eventDate || "",
+                                  ),
+                                  ageBrackets,
+                                )
+                              : "") ||
                             resolveRegistrationAgeCategory(
                               regDetailParticipant,
                               event?.eventDate || "",
