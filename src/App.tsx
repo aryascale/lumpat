@@ -24,6 +24,39 @@ const lazyReload = (loader: () => Promise<{ default: React.ComponentType<any> }>
 // Immediate load for the primary landing page
 import LandingPage from "./pages/LandingPage";
 
+// The chunk-failure reload above only fires on lazy loads — a tab that
+// already visited every page keeps running the OLD build in memory
+// forever after a deploy. On focus/visibility, compare the served
+// index.html entry chunk against ours and reload when a deploy shipped.
+const BUILD_CHECK_KEY = "lumpat_build_check";
+function useReloadOnDeploy() {
+  useEffect(() => {
+    const entry = document.querySelector<HTMLScriptElement>('script[src*="/assets/index-"]');
+    const current = entry?.getAttribute("src") || "";
+    if (!current) return;
+    const check = async () => {
+      if (Date.now() - Number(sessionStorage.getItem(BUILD_CHECK_KEY) || 0) < 60000) return;
+      sessionStorage.setItem(BUILD_CHECK_KEY, String(Date.now()));
+      try {
+        const res = await fetch("/", { cache: "no-store" });
+        const m = (await res.text()).match(/assets\/index-[^"']+\.js/);
+        if (m && !current.includes(m[0])) window.location.reload();
+      } catch {
+        // offline / error — try again on next focus
+      }
+    };
+    const onWake = () => {
+      if (document.visibilityState === "visible") check();
+    };
+    document.addEventListener("visibilitychange", onWake);
+    window.addEventListener("focus", onWake);
+    return () => {
+      document.removeEventListener("visibilitychange", onWake);
+      window.removeEventListener("focus", onWake);
+    };
+  }, []);
+}
+
 // Lazy-loaded routes for performance & code-splitting
 const AboutPage = lazyReload(() => import("./pages/AboutPage"));
 const UserEventPage = lazyReload(() => import("./pages/UserEventPage"));
@@ -89,6 +122,7 @@ export default function App() {
   useEffect(() => {
     initFrontendLogger();
   }, []);
+  useReloadOnDeploy();
 
   return (
     <ErrorBoundary>
