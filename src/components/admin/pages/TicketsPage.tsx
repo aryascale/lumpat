@@ -354,7 +354,7 @@ export default function TicketsPage() {
 
       {/* Detail Modal (daisyUI) */}
       <div
-        className={`modal bg-black/50 ${detailModalOpen ? 'modal-open' : ''}`}
+        className={`modal bg-white/60 backdrop-blur-sm ${detailModalOpen ? 'modal-open' : ''}`}
         onClick={() => setDetailModalOpen(false)}
       >
         <div
