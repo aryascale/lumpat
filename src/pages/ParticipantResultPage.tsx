@@ -266,8 +266,15 @@ export default function ParticipantResultPage() {
 
   // Direct access / refresh has no router state — bounce through the event page
   // (?participant=<epc>) so it can rebuild the result from the leaderboard data.
-  if (!state || (!state.modalData && !state.notFound)) {
-    navigate(`/event/${slug}?participant=${epc}`, { replace: true });
+  // Must navigate in an effect: react-router v7 ignores navigate() called
+  // during render, which left direct participant links on a blank page.
+  const needsBounce = !state || (!state.modalData && !state.notFound);
+  useEffect(() => {
+    if (needsBounce) {
+      navigate(`/event/${slug}?participant=${epc}`, { replace: true });
+    }
+  }, [needsBounce, slug, epc, navigate]);
+  if (needsBounce) {
     return null;
   }
 
