@@ -446,7 +446,7 @@ export default function ParticipantResultPage() {
         ageRank: modalData.ageRank,
       });
       const slugName = (eventName || "event").replace(/\s+/g, "-").toLowerCase();
-      downloadDataUrl(png, `${slugName}-certif-lumpat.png`);
+      await downloadDataUrl(png, `${slugName}-certif-lumpat.png`);
     } catch (err: any) {
       console.error("Certificate error:", err);
       alert("Terjadi kesalahan saat mengunduh sertifikat.");
