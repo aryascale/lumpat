@@ -326,12 +326,28 @@ export type CertData = {
     });
   }
   
-  export function downloadDataUrl(dataUrl: string, filename: string) {
+  // Safari (desktop & iOS) silently ignores <a download> on large data:
+  // URLs — big canvas PNGs just never download. Convert to a Blob and
+  // use an object URL, which Safari handles correctly. iOS Safari may
+  // still open the image in a new tab instead of saving; that's the
+  // platform's behaviour for programmatic downloads.
+  export async function downloadDataUrl(dataUrl: string, filename: string) {
+    let href = dataUrl;
+    let objectUrl: string | null = null;
+    try {
+      const blob = await (await fetch(dataUrl)).blob();
+      objectUrl = URL.createObjectURL(blob);
+      href = objectUrl;
+    } catch {
+      // fall back to the raw data URL
+    }
     const a = document.createElement("a");
-    a.href = dataUrl;
+    a.href = href;
     a.download = filename;
+    a.rel = "noopener";
     document.body.appendChild(a);
     a.click();
     a.remove();
+    if (objectUrl) setTimeout(() => URL.revokeObjectURL(objectUrl!), 60_000);
   }
   
