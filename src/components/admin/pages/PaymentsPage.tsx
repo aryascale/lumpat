@@ -346,8 +346,8 @@ export default function PaymentsPage() {
                              >
                                Info
                              </button>
-                            {p.paymentStatus === 'pending' && (
-                              <button 
+                            {(p.paymentStatus === 'pending' || p.paymentStatus === 'expire') && (
+                              <button
                                 className="px-2 py-1 bg-black text-white text-[10px] font-bold uppercase rounded hover:bg-stone-800 transition-colors"
                                 onClick={async () => {
                                   if (confirm(`Selesaikan pembayaran untuk ${p.name} secara manual?`)) {
@@ -425,8 +425,11 @@ export default function PaymentsPage() {
                       </div>
                       <div className="flex gap-2 mt-2 pt-2 border-t border-gray-100">
                         <button className="flex-1 px-2 py-1.5 bg-blue-500 text-white text-[10px] font-bold uppercase rounded" onClick={() => { setSelectedPayment(p); setDetailsModalOpen(true); }}>Info</button>
-                        {p.paymentStatus === 'pending' && (
+                        {(p.paymentStatus === 'pending' || p.paymentStatus === 'expire') && (
                           <button className="flex-1 px-2 py-1.5 bg-black text-white text-[10px] font-bold uppercase rounded" onClick={async () => { if(confirm(`Settle pembayaran ${p.name}?`)){try{const r=await fetch('/api/admin-settle-payment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:p.orderId})});if(r.ok){alert('Done');loadPayments();}}catch{alert('Gagal');}} }}>Settle</button>
+                        )}
+                        {p.paymentStatus !== 'deleted' && (
+                          <button className="flex-1 px-2 py-1.5 bg-red-100 text-red-600 border border-red-200 text-[10px] font-bold uppercase rounded" onClick={async () => { if(confirm(`Yakin ingin soft-delete peserta ${p.name}?`)){try{const r=await fetch('/api/admin-delete-payment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:p.orderId})});if(r.ok){alert('Peserta di-soft-delete');loadPayments();}}catch{alert('Gagal');}} }}>Delete</button>
                         )}
                       </div>
                     </div>
