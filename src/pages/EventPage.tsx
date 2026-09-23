@@ -19,6 +19,24 @@ import parseTimeToMs, { extractTimeOfDay, formatDuration, buildOverrideFromFinis
 import type { MasterParticipant } from "../lib/data";
 import { useLiveTiming } from "../hooks/useLiveTiming";
 import getUnicodeFlagIcon from "country-flag-icons/unicode";
+import * as Flags3x2 from "country-flag-icons/react/3x2";
+
+// Windows has no flag emoji font — render SVG flags instead of the unicode ones.
+// Data format stays "🇮🇩 Indonesia" so existing rows keep parsing.
+const emojiToCode = (emoji: string): string | null => {
+  const m = emoji?.match(/^[\uD83C][\uDDE6-\uDDFF][\uD83C][\uDDE6-\uDDFF]/);
+  if (!m) return null;
+  const a = m[0].codePointAt(0)! - 0x1f1e6;
+  const b = m[0].codePointAt(2)! - 0x1f1e6;
+  return String.fromCharCode(65 + a, 65 + b);
+};
+
+const FlagImg = ({ emoji, name }: { emoji?: string; name?: string }) => {
+  const code = emojiToCode(emoji || "");
+  const Flag = code ? (Flags3x2 as any)[code] : null;
+  if (!Flag) return null;
+  return <Flag className="inline-block w-[18px] h-[13px] mr-1.5 align-[-1px] shadow-sm" title={name} />;
+};
 import { getData } from "country-list";
 import { useAuth, normalizeUserRole } from "../contexts/AuthContext";
 
@@ -2321,11 +2339,7 @@ export default function EventPage() {
                                 {idx + 1}
                               </td>
                               <td className="py-3 px-2 font-bold text-stone-900">
-                                {flag && (
-                                  <span className="mr-2" title={nationalityStr}>
-                                    {flag}
-                                  </span>
-                                )}
+                                <FlagImg emoji={flag} name={nationalityStr} />
                                 {(() => {
                                   if (p.customData) {
                                     const entries = Object.entries(
@@ -3187,7 +3201,11 @@ export default function EventPage() {
                                 triggerNode.parentNode
                               }
                               placeholder={`Pilih ${field.label}`}
-                              optionFilterProp="label"
+                              filterOption={(input, option) =>
+                                String(option?.value || "")
+                                  .toLowerCase()
+                                  .includes(input.toLowerCase())
+                              }
                               value={
                                 bulkParticipants[activeTabIdx]?.[field.id] ||
                                 undefined
@@ -3202,10 +3220,18 @@ export default function EventPage() {
                                   return updated;
                                 })
                               }
-                              options={getData().map((c) => ({
-                                label: `${getUnicodeFlagIcon(c.code)} ${c.name}`,
-                                value: `${getUnicodeFlagIcon(c.code)} ${c.name}`,
-                              }))}
+                              options={getData().map((c) => {
+                                const icon = getUnicodeFlagIcon(c.code);
+                                return {
+                                  label: (
+                                    <span>
+                                      <FlagImg emoji={icon} name={c.name} />
+                                      {c.name}
+                                    </span>
+                                  ),
+                                  value: `${icon} ${c.name}`,
+                                };
+                              })}
                             />
                           ) : field.type === "textarea" ? (
                             <Input.TextArea
