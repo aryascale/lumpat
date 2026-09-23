@@ -3499,34 +3499,31 @@ export default function EventPage() {
             {/* Step 3: Summary & Payment */}
             {currentStep === 3 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
-                <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
-                  <h3 className="text-lg font-black mb-4 uppercase tracking-tight text-center">
-                    Ringkasan Pendaftaran
-                  </h3>
+                <div className="bg-white p-6 rounded-lg border border-stone-200">
+                  <h3 className="text-base font-bold mb-4">Ringkasan Pendaftaran</h3>
 
-                  <div className="space-y-3 mb-6 bg-stone-50 p-4 rounded-xl">
-                    <div className="flex justify-between border-b border-gray-200 pb-2">
-                      <span className="text-gray-500 text-sm">Event</span>
-                      <span className="font-bold">{event?.name}</span>
+                  <div className="space-y-3 pb-4 border-b border-stone-200">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Event</span>
+                      <span className="font-medium">{event?.name}</span>
                     </div>
-                    <div className="flex justify-between border-b border-gray-200 pb-2">
-                      <span className="text-gray-500 text-sm">Kategori</span>
-                      <span className="font-bold">
-                        {selectedCategoryDetail?.name}
-                      </span>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Kategori</span>
+                      <span className="font-medium">{selectedCategoryDetail?.name}</span>
                     </div>
-                    <div className="flex justify-between pb-2">
-                      <span className="text-gray-500 text-sm">Email</span>
-                      <span className="font-bold">{regForm.email}</span>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Email</span>
+                      <span className="font-medium">{regForm.email}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Jumlah Peserta</span>
+                      <span className="font-medium">{bulkQty} orang</span>
                     </div>
                   </div>
 
-                  {/* Promotion code */}
+                  {/* Voucher */}
                   {totalPrice > 0 && (
-                    <div className="mb-4 bg-white border border-stone-200 rounded-2xl p-4 space-y-2">
-                      <span className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">
-                        Promotion code
-                      </span>
+                    <div className="py-4 border-b border-stone-200">
                       <div className="flex gap-2">
                         <input
                           value={voucherCode}
@@ -3534,43 +3531,46 @@ export default function EventPage() {
                             setVoucherCode(e.target.value.toUpperCase());
                             setVoucherResult(null);
                           }}
-                          placeholder="ABC123"
-                          className="flex-1 border border-stone-200 rounded-xl px-4 py-3 text-sm font-bold uppercase tracking-wider focus:outline-none focus:border-stone-400"
+                          placeholder="Masukkan kode voucher"
+                          className="flex-1 border border-stone-200 rounded-md px-3 h-10 text-sm uppercase tracking-wide focus:outline-none focus:border-stone-500"
                         />
                         {voucherCode.trim() && (
-                          <Button
-                            size="large"
-                            loading={voucherLoading}
-                            onClick={applyVoucher}
-                            className="shrink-0"
-                          >
-                            Redeem
+                          <Button loading={voucherLoading} onClick={applyVoucher} className="shrink-0">
+                            Terapkan
                           </Button>
                         )}
                       </div>
                       {voucherResult?.valid && (
-                        <p className="text-sm font-bold text-green-700">
-                          Voucher {voucherCode.trim()} diterapkan — hemat Rp {(voucherResult.discountAmount || 0).toLocaleString("id-ID")}
+                        <p className="text-xs text-green-600 mt-2">
+                          Voucher {voucherCode.trim()} berhasil dipakai.
                         </p>
                       )}
                       {voucherResult && !voucherResult.valid && (
-                        <p className="text-sm font-medium text-red-600">{voucherResult.reason}</p>
+                        <p className="text-xs text-red-600 mt-2">{voucherResult.reason}</p>
                       )}
                     </div>
                   )}
 
-                  <div className="p-8 rounded-2xl flex flex-col items-center border border-stone-200 bg-stone-50/50 shadow-sm">
-                    <span className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] mb-2">
-                      Total Pembayaran
-                    </span>
+                  {/* Rincian pembayaran */}
+                  <div className="pt-4">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Subtotal</span>
+                      <span className="font-medium">Rp {totalPrice.toLocaleString("id-ID")}</span>
+                    </div>
                     {voucherResult?.valid && (
-                      <span className="text-lg font-bold text-stone-400 line-through mb-1">
-                        Rp {totalPrice.toLocaleString("id-ID")}
-                      </span>
+                      <div className="flex justify-between text-sm mt-2">
+                        <span className="text-gray-500">Diskon voucher</span>
+                        <span className="font-medium text-red-600">
+                          −Rp {(voucherResult.discountAmount || 0).toLocaleString("id-ID")}
+                        </span>
+                      </div>
                     )}
-                    <span className="text-5xl font-black text-stone-900 tracking-tighter">
-                      Rp {finalPrice.toLocaleString("id-ID")}
-                    </span>
+                    <div className="flex justify-between items-baseline pt-3 mt-3 border-t border-stone-200">
+                      <span className="font-bold text-sm">Total Pembayaran</span>
+                      <span className="text-2xl font-bold text-stone-900">
+                        Rp {finalPrice.toLocaleString("id-ID")}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
