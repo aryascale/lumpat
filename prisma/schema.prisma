@@ -116,6 +116,8 @@ model EventRegistration {
   phoneNumber    String
   snapToken      String?
   snapUrl        String?
+  voucherCode       String?
+  discountAmount    Int       @default(0)
   tshirtSize     String?
   dateOfBirth    DateTime?
   customData     Json?
@@ -327,4 +329,38 @@ model ManualFinish {
   @@unique([eventId, bib])
   @@index([eventId])
   @@index([epc])
+}
+
+model Voucher {
+  id           String              @id @default(uuid())
+  code         String              @unique
+  discountType String
+  value        Int
+  maxDiscount  Int?
+  quota        Int                 @default(0)
+  usedCount    Int                 @default(0)
+  eventId      String?
+  validFrom    DateTime?
+  validUntil   DateTime?
+  isActive     Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  redemptions  VoucherRedemption[]
+
+  @@index([eventId])
+}
+
+model VoucherRedemption {
+  id             String   @id @default(uuid())
+  voucherId      String
+  orderId        String   @unique
+  email          String
+  name           String
+  eventId        String
+  discountAmount Int
+  createdAt      DateTime @default(now())
+  voucher        Voucher  @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+
+  @@index([voucherId])
+  @@index([email])
 }
