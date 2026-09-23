@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Table, Tag, Button } from 'antd';
 
 interface Voucher {
   id: string;
@@ -153,46 +154,37 @@ export default function VouchersPage() {
         <button className="btn ghost whitespace-nowrap text-xs" onClick={openCreate}>+ Voucher Baru</button>
       </div>
 
-      <div className="card !p-0 overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-200 text-left text-xs uppercase tracking-wider text-gray-500">
-              <th className="px-4 py-3">Kode</th>
-              <th className="px-4 py-3">Diskon</th>
-              <th className="px-4 py-3">Terpakai / Kuota</th>
-              <th className="px-4 py-3">Event</th>
-              <th className="px-4 py-3">Masa Aktif</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Memuat...</td></tr>
-            ) : filtered.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Belum ada voucher</td></tr>
-            ) : filtered.map(v => (
-              <tr key={v.id} className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="px-4 py-3 font-black tracking-wider">{v.code}</td>
-                <td className="px-4 py-3">{discountLabel(v)}</td>
-                <td className="px-4 py-3">{v.usedCount} / {v.quota === 0 ? '∞' : v.quota}</td>
-                <td className="px-4 py-3">{v.eventName || 'Semua Event'}</td>
-                <td className="px-4 py-3">{validityLabel(v)}</td>
-                <td className="px-4 py-3">
-                  <span className={`px-2 py-1 rounded-full text-xs font-bold ${v.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-500'}`}>
-                    {v.isActive ? 'Aktif' : 'Nonaktif'}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right whitespace-nowrap">
-                  <button className="text-blue-600 font-bold text-xs hover:underline mr-3" onClick={() => openHistory(v)}>Riwayat</button>
-                  <button className="text-gray-600 font-bold text-xs hover:underline mr-3" onClick={() => openEdit(v)}>Edit</button>
-                  <button className="text-yellow-600 font-bold text-xs hover:underline mr-3" onClick={() => toggleActive(v)}>{v.isActive ? 'Nonaktifkan' : 'Aktifkan'}</button>
-                  <button className="text-red-600 font-bold text-xs hover:underline" onClick={() => remove(v)}>Hapus</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="card !p-0">
+        <Table
+          size="middle"
+          bordered
+          rowKey="id"
+          loading={loading}
+          dataSource={filtered}
+          pagination={{ pageSize: 10, showSizeChanger: false, hideOnSinglePage: true }}
+          locale={{ emptyText: 'Belum ada voucher' }}
+          columns={[
+            { title: 'Kode', dataIndex: 'code', key: 'code', render: (code: string) => <span className="font-black tracking-wider">{code}</span> },
+            { title: 'Diskon', key: 'discount', render: (_: any, v: Voucher) => discountLabel(v) },
+            { title: 'Terpakai / Kuota', key: 'quota', align: 'center', render: (_: any, v: Voucher) => `${v.usedCount} / ${v.quota === 0 ? '∞' : v.quota}` },
+            { title: 'Event', key: 'event', render: (_: any, v: Voucher) => v.eventName || 'Semua Event' },
+            { title: 'Masa Aktif', key: 'validity', render: (_: any, v: Voucher) => validityLabel(v) },
+            { title: 'Status', key: 'status', align: 'center', render: (_: any, v: Voucher) => <Tag color={v.isActive ? 'green' : 'default'}>{v.isActive ? 'Aktif' : 'Nonaktif'}</Tag> },
+            {
+              title: 'Aksi',
+              key: 'actions',
+              align: 'right',
+              render: (_: any, v: Voucher) => (
+                <>
+                  <Button type="link" size="small" onClick={() => openHistory(v)}>Riwayat</Button>
+                  <Button type="link" size="small" onClick={() => openEdit(v)}>Edit</Button>
+                  <Button type="link" size="small" onClick={() => toggleActive(v)}>{v.isActive ? 'Nonaktifkan' : 'Aktifkan'}</Button>
+                  <Button type="link" size="small" danger onClick={() => remove(v)}>Hapus</Button>
+                </>
+              ),
+            },
+          ]}
+        />
       </div>
 
       {formOpen && (
@@ -264,30 +256,21 @@ export default function VouchersPage() {
           <div className="bg-white rounded-2xl border border-gray-200 shadow-xl w-full max-w-lg p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-black uppercase tracking-tight">Riwayat {historyFor.code}</h2>
             <div className="text-sm text-gray-500">Terpakai {historyFor.usedCount} kali</div>
-            <div className="max-h-80 overflow-y-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 text-left text-xs uppercase tracking-wider text-gray-500">
-                    <th className="py-2">Nama</th>
-                    <th className="py-2">Email</th>
-                    <th className="py-2">Diskon</th>
-                    <th className="py-2">Waktu</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {redemptions.length === 0 ? (
-                    <tr><td colSpan={4} className="py-6 text-center text-gray-400">Belum ada pemakaian</td></tr>
-                  ) : redemptions.map(r => (
-                    <tr key={r.id} className="border-b border-gray-100">
-                      <td className="py-2 font-bold">{r.name}</td>
-                      <td className="py-2 text-gray-500">{r.email}</td>
-                      <td className="py-2">Rp {r.discountAmount.toLocaleString('id-ID')}</td>
-                      <td className="py-2 text-gray-500">{new Date(r.createdAt).toLocaleString('id-ID')}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <Table
+              size="small"
+              bordered
+              rowKey="id"
+              dataSource={redemptions}
+              pagination={false}
+              scroll={{ y: 280 }}
+              locale={{ emptyText: 'Belum ada pemakaian' }}
+              columns={[
+                { title: 'Nama', dataIndex: 'name', key: 'name', render: (name: string) => <span className="font-bold">{name}</span> },
+                { title: 'Email', dataIndex: 'email', key: 'email' },
+                { title: 'Diskon', key: 'discount', align: 'right', render: (_: any, r: Redemption) => `Rp ${r.discountAmount.toLocaleString('id-ID')}` },
+                { title: 'Waktu', key: 'time', render: (_: any, r: Redemption) => <span className="text-gray-500">{new Date(r.createdAt).toLocaleString('id-ID')}</span> },
+              ]}
+            />
             <div className="flex justify-end">
               <button className="btn ghost text-xs" onClick={() => setHistoryFor(null)}>Tutup</button>
             </div>
