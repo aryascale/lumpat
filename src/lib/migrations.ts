@@ -94,7 +94,31 @@ export async function runMigrations() {
     )`);
     console.log('[MIGRATIONS] ✅ VoucherRedemption table ready');
 
-    // Migration 7: voucher snapshot columns on EventRegistration
+    // Migration 7: align voucher tables' collation with legacy tables.
+    // prisma db push creates them with the MySQL 8 default (utf8mb4_0900_ai_ci),
+    // legacy tables use utf8mb4_unicode_ci -> JOIN columns error out with
+    // "Illegal mix of collations". Convert only when they differ.
+    try {
+      const legacyColl: any = await query(
+        "SELECT TABLE_COLLATION as c FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'Event' LIMIT 1"
+      );
+      const target = legacyColl[0]?.c;
+      if (target) {
+        const tables: any = await query(
+          "SELECT TABLE_NAME as t, TABLE_COLLATION as c FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('Voucher', 'VoucherRedemption')"
+        );
+        for (const row of tables) {
+          if (row.c !== target) {
+            await query(`ALTER TABLE \`${row.t}\` CONVERT TO CHARACTER SET utf8mb4 COLLATE \`${target}\``);
+            console.log(`[MIGRATIONS] ✅ ${row.t} collation aligned to ${target}`);
+          }
+        }
+      }
+    } catch (e: any) {
+      console.warn('[MIGRATIONS] Collation align skipped:', e.message);
+    }
+
+    // Migration 8: voucher snapshot columns on EventRegistration
     for (const col of [
       'ALTER TABLE EventRegistration ADD COLUMN voucherCode VARCHAR(64) NULL',
       'ALTER TABLE EventRegistration ADD COLUMN discountAmount INT NOT NULL DEFAULT 0',
@@ -107,7 +131,7 @@ export async function runMigrations() {
       }
     }
 
-    // Migration 8: one redemption per email per voucher (DB-level backstop for the per-email check)
+    // Migration 9: one redemption per email per voucher (DB-level backstop for the per-email check)
     const vrUnique: any = await query(
       "SHOW INDEX FROM VoucherRedemption WHERE Key_name = 'VoucherRedemption_voucherId_email_key'"
     );
