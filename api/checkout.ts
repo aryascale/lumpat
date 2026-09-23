@@ -3,6 +3,7 @@ import { successResponse, errorResponse, parseBody, CORS_HEADERS } from '../src/
 import { logActivity } from '../src/lib/activity-logger';
 import { assignAutoBibsIfEnabled } from '../src/lib/bib-generator';
 import { sendRegistrationConfirmation } from '../src/lib/email-service';
+import { buildOrderId } from '../src/lib/order-id';
 import crypto from 'crypto';
 
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY || '';
@@ -169,7 +170,14 @@ export default async function handler(event: any) {
     const qty = participantsData.length;
     const totalGrossAmount = itemGrossAmount * qty;
 
-    const orderId = `LMPAT-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+    // ponytail: 3-try collision check via SELECT; unique DB index impossible (bulk rows share orderId)
+    let orderId = '';
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const candidate = buildOrderId(categories[0].name);
+      const clash: any = await query('SELECT 1 FROM EventRegistration WHERE orderId = ? LIMIT 1', [candidate]);
+      if (clash.length === 0) { orderId = candidate; break; }
+      if (attempt === 2) orderId = candidate; // accept residual risk rather than fail checkout
+    }
 
     const regIds: string[] = [];
     for (let i = 0; i < participantsData.length; i++) {
