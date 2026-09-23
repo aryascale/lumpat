@@ -79,7 +79,13 @@ export default async function handler(event: any) {
     const grossAmountStr = String(gross_amount);
     const isVerified = verify(grossAmountStr) || verify(grossAmountStr.split('.')[0]);
 
-    if (MIDTRANS_SERVER_KEY && !isVerified) {
+    // Fail closed: no server key = no way to verify signatures, so reject instead of accepting unsigned.
+    if (!MIDTRANS_SERVER_KEY) {
+      console.error('[WEBHOOK-MIDTRANS] MIDTRANS_SERVER_KEY not configured, rejecting notification');
+      return { statusCode: 503, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Payment gateway not configured' }) };
+    }
+
+    if (!isVerified) {
       console.error('[WEBHOOK-MIDTRANS] Signature verification failed for order:', order_id);
       await logActivity('webhook.error', `Signature verification failed for ${order_id}`, 'system', null, { orderId: order_id, received_sig: signature_key });
       return { statusCode: 403, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Invalid signature' }) };
