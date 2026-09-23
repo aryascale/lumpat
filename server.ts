@@ -11,7 +11,6 @@ import { createServer } from 'http';
 import fs from 'fs';
 import { runMigrations } from './src/lib/migrations.js';
 import { initSocket } from './src/lib/socket.js';
-import { recordRequest } from './src/lib/metrics.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,15 +29,6 @@ app.use(cors({
 }));
 app.use(cookieParser());
 app.use(compression());
-
-app.use((req, res, next) => {
-  const start = process.hrtime.bigint();
-  res.on('finish', () => {
-    const durationMs = Number(process.hrtime.bigint() - start) / 1e6;
-    recordRequest({ path: req.path, method: req.method, status: res.statusCode, durationMs });
-  });
-  next();
-});
 
 app.use((req, res, next) => {
   const contentType = req.headers['content-type'] || '';

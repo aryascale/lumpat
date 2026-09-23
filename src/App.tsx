@@ -70,8 +70,6 @@ const RpcPage = lazyReload(() => import("./pages/RpcPage"));
 const ParticipantResultPage = lazyReload(() => import("./pages/ParticipantResultPage"));
 const VerifyPage = lazyReload(() => import("./pages/VerifyPage"));
 const DevicePage = lazyReload(() => import("./pages/DevicePage"));
-const MonitoringPage = lazyReload(() => import("./pages/monitoring/MonitoringPage"));
-
 // Lazy-loaded Admin and Checkpoint modules
 const CheckpointLayout = lazyReload(() => import("./components/checkpoint/CheckpointLayout"));
 const CheckpointDashboard = lazyReload(() => import("./pages/checkpoint/CheckpointDashboard"));
@@ -139,14 +137,6 @@ export default function App() {
             <Route path="/bantuan" element={<SupportTicketPage />} />
             <Route path="/cek-tiket" element={<CheckTicketPage />} />
             <Route path="/tiket-saya" element={<MyTicketsPage />} />
-            <Route
-              path="/monitoring"
-              element={
-                <RoleGuard allowedRoles={["super_admin"]} redirectTo="/admin">
-                  <MonitoringPage />
-                </RoleGuard>
-              }
-            />
 
             <Route
               path="/admin/home"
