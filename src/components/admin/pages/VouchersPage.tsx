@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Table, Tag, Button, message } from 'antd';
+import { Table, Tag, Button, message, InputNumber } from 'antd';
+
+const idFormat = (v: any) => `${v ?? ''}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const idParse = (display: any) => Number(`${display ?? ''}`.replace(/\D/g, '')) || 0;
 
 interface Voucher {
   id: string;
@@ -213,15 +216,22 @@ export default function VouchersPage() {
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{form.discountType === 'percent' ? 'Persen' : 'Nominal (Rp)'}</label>
-                <input className="w-full border border-gray-200 rounded-lg px-3 py-2 mt-1" type="number" min="1" value={form.value}
-                  onChange={(e) => setForm({ ...form, value: e.target.value })} />
+                {form.discountType === 'percent' ? (
+                  <input className="w-full border border-gray-200 rounded-lg px-3 py-2 mt-1" type="number" min="1" max="100" value={form.value}
+                    onChange={(e) => setForm({ ...form, value: e.target.value })} />
+                ) : (
+                  <InputNumber className="w-full mt-1" min={1} value={form.value ? Number(form.value) : undefined}
+                    formatter={idFormat} parser={idParse as any}
+                    onChange={(v) => setForm({ ...form, value: v ? String(v) : '' })} />
+                )}
               </div>
             </div>
             {form.discountType === 'percent' && (
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Diskon Maksimal (Rp, opsional)</label>
-                <input className="w-full border border-gray-200 rounded-lg px-3 py-2 mt-1" type="number" min="1" value={form.maxDiscount}
-                  onChange={(e) => setForm({ ...form, maxDiscount: e.target.value })} />
+                <InputNumber className="w-full mt-1" min={1} value={form.maxDiscount ? Number(form.maxDiscount) : undefined}
+                  formatter={idFormat} parser={idParse as any}
+                  onChange={(v) => setForm({ ...form, maxDiscount: v ? String(v) : '' })} />
               </div>
             )}
             <div>
