@@ -163,46 +163,52 @@ export default function VouchersPage() {
         <button className="btn ghost whitespace-nowrap text-xs" onClick={openCreate}>+ Voucher Baru</button>
       </div>
 
-      <div className="card !p-0 overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-200 text-left text-xs uppercase tracking-wider text-gray-500">
-              <th className="px-4 py-3">Kode</th>
-              <th className="px-4 py-3">Diskon</th>
-              <th className="px-4 py-3">Terpakai / Kuota</th>
-              <th className="px-4 py-3">Event</th>
-              <th className="px-4 py-3">Masa Aktif</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Memuat...</td></tr>
-            ) : filtered.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Belum ada voucher</td></tr>
-            ) : filtered.map(v => (
-              <tr key={v.id} className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="px-4 py-3 font-black tracking-wider">{v.code}</td>
-                <td className="px-4 py-3">{discountLabel(v)}</td>
-                <td className="px-4 py-3">{v.usedCount} / {v.quota === 0 ? '∞' : v.quota}</td>
-                <td className="px-4 py-3">{v.eventName || 'Semua Event'}</td>
-                <td className="px-4 py-3">{validityLabel(v)}</td>
-                <td className="px-4 py-3">
-                  <span className={`px-2 py-1 rounded-full text-xs font-bold ${v.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-500'}`}>
-                    {v.isActive ? 'Aktif' : 'Nonaktif'}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right whitespace-nowrap">
-                  <button className="text-blue-600 font-bold text-xs hover:underline mr-3" onClick={() => openHistory(v)}>Riwayat</button>
-                  <button className="text-gray-600 font-bold text-xs hover:underline mr-3" onClick={() => openEdit(v)}>Edit</button>
-                  <button className="text-yellow-600 font-bold text-xs hover:underline mr-3" onClick={() => toggleActive(v)}>{v.isActive ? 'Nonaktifkan' : 'Aktifkan'}</button>
-                  <button className="text-red-600 font-bold text-xs hover:underline" onClick={() => remove(v)}>Hapus</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="card flex-1 flex flex-col mb-4" style={{ minHeight: 'calc(100vh - 400px)' }}>
+        {loading ? (
+          <div className="text-center py-24 text-gray-400 font-medium">Loading vouchers data...</div>
+        ) : (
+          <div className="flex-1 overflow-auto">
+            <div className="table-wrap">
+              <table className="f1-table compact">
+                <thead>
+                  <tr>
+                    <th>Kode</th>
+                    <th>Diskon</th>
+                    <th>Terpakai / Kuota</th>
+                    <th>Event</th>
+                    <th>Masa Aktif</th>
+                    <th style={{ width: 100 }}>Status</th>
+                    <th style={{ width: 280 }}>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr><td colSpan={7} className="empty py-20">Belum ada voucher</td></tr>
+                  ) : filtered.map(v => (
+                    <tr key={v.id} className="row-hover">
+                      <td className="mono font-bold">{v.code}</td>
+                      <td className="text-xs font-medium">{discountLabel(v)}</td>
+                      <td className="text-xs">{v.usedCount} / {v.quota === 0 ? '∞' : v.quota}</td>
+                      <td className="text-xs font-medium">{v.eventName || 'Semua Event'}</td>
+                      <td className="text-xs">{validityLabel(v)}</td>
+                      <td>
+                        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase ${v.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-500'}`}>
+                          {v.isActive ? 'Aktif' : 'Nonaktif'}
+                        </span>
+                      </td>
+                      <td className="flex gap-2">
+                        <button className="px-2 py-1 bg-blue-500 text-white text-[10px] font-bold uppercase rounded hover:bg-blue-600 transition-colors" onClick={() => openHistory(v)}>Riwayat</button>
+                        <button className="px-2 py-1 bg-stone-600 text-white text-[10px] font-bold uppercase rounded hover:bg-stone-700 transition-colors" onClick={() => openEdit(v)}>Edit</button>
+                        <button className="px-2 py-1 bg-yellow-500 text-white text-[10px] font-bold uppercase rounded hover:bg-yellow-600 transition-colors" onClick={() => toggleActive(v)}>{v.isActive ? 'Nonaktifkan' : 'Aktifkan'}</button>
+                        <button className="px-2 py-1 bg-red-500 text-white text-[10px] font-bold uppercase rounded hover:bg-red-600 transition-colors" onClick={() => remove(v)}>Hapus</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       {formOpen && (
