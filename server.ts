@@ -22,7 +22,12 @@ const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const PROJECT_ROOT = __dirname.endsWith('dist-server') ? path.resolve(__dirname, '..') : __dirname;
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(PROJECT_ROOT, 'uploads');
 
-app.use(cors({ origin: true, credentials: true }));
+const CORS_ORIGINS = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:3000')
+  .split(',').map((o) => o.trim()).filter(Boolean);
+app.use(cors({
+  origin: (origin, cb) => cb(null, !origin || CORS_ORIGINS.includes(origin)),
+  credentials: true,
+}));
 app.use(cookieParser());
 app.use(compression());
 

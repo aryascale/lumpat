@@ -40,13 +40,8 @@ export default async function handler(event: any) {
   try {
     const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
     
-    // PING LOG - TO VERIFY ENDPOINT IS REACHED
-    await query("INSERT INTO ActivityLog (id, action, detail, actor, createdAt) VALUES (?, ?, ?, ?, NOW())", [
-      crypto.randomUUID(),
-      'webhook.ping',
-      `Endpoint hit with method ${event.httpMethod}`,
-      'system'
-    ]);
+    // No DB writes before signature verification
+    console.warn('[WEBHOOK-MIDTRANS] Endpoint hit with method', event.httpMethod);
 
     if (!body) return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Missing body' }) };
 
@@ -56,18 +51,6 @@ export default async function handler(event: any) {
       console.error('[WEBHOOK-MIDTRANS] Missing order_id or signature_key');
       return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Invalid notification' }) };
     }
-
-    // Try to find eventId for this order
-    const registration: any = await query("SELECT eventId FROM EventRegistration WHERE orderId = ? LIMIT 1", [order_id]);
-    const eventId = registration[0]?.eventId || null;
-
-    // Log the incoming request to ActivityLog for debugging
-    await logActivity('webhook.received', `Webhook masuk: Order ${order_id}, Status: ${transaction_status}`, 'system', eventId, { 
-      orderId: order_id, 
-      status: transaction_status, 
-      amount: gross_amount,
-      paymentType: payment_type
-    });
 
     // Robust signature verification
     const verify = (amt: string) => {
@@ -91,6 +74,19 @@ export default async function handler(event: any) {
       return { statusCode: 403, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Invalid signature' }) };
     }
 
+    // Signature is valid — only now may we touch the DB for logging/updates
+    // Try to find eventId for this order
+    const registration: any = await query("SELECT eventId FROM EventRegistration WHERE orderId = ? LIMIT 1", [order_id]);
+    const eventId = registration[0]?.eventId || null;
+
+    // Log the incoming request to ActivityLog for debugging
+    await logActivity('webhook.received', `Webhook masuk: Order ${order_id}, Status: ${transaction_status}`, 'system', eventId, {
+      orderId: order_id,
+      status: transaction_status,
+      amount: gross_amount,
+      paymentType: payment_type
+    });
+
     let paymentStatus = 'pending';
 
     if (transaction_status === 'capture') {
@@ -106,6 +102,15 @@ export default async function handler(event: any) {
     }
 
     const paidAt = paymentStatus === 'settlement' ? 'NOW()' : 'NULL';
+
+    // Idempotency: duplicate settlement notifications must not re-send emails or double-increment inventory
+    if (paymentStatus === 'settlement') {
+      const current: any = await query("SELECT paymentStatus FROM EventRegistration WHERE orderId = ? LIMIT 1", [order_id]);
+      if (current[0]?.paymentStatus === 'settlement') {
+        console.log(`[WEBHOOK-MIDTRANS] Order ${order_id} already settled — acking duplicate notification`);
+        return { statusCode: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'ok' }) };
+      }
+    }
 
     // Update DB
     await query(
