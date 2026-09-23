@@ -3549,15 +3549,12 @@ export default function EventPage() {
                         )}
                       </div>
                       {voucherResult?.valid && (
-                        <div className="text-sm font-bold text-green-700 bg-green-50 border border-green-200 rounded-xl px-4 py-2 flex justify-between">
-                          <span>Voucher diterapkan</span>
-                          <span>-Rp {(voucherResult.discountAmount || 0).toLocaleString("id-ID")}</span>
-                        </div>
+                        <p className="text-sm font-bold text-green-700">
+                          Voucher {voucherCode.trim()} diterapkan — hemat Rp {(voucherResult.discountAmount || 0).toLocaleString("id-ID")}
+                        </p>
                       )}
                       {voucherResult && !voucherResult.valid && (
-                        <div className="text-sm font-bold text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-2">
-                          {voucherResult.reason}
-                        </div>
+                        <p className="text-sm font-medium text-red-600">{voucherResult.reason}</p>
                       )}
                     </div>
                   )}

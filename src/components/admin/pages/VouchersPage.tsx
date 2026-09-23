@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Table, Tag, Button } from 'antd';
+import { Table, Tag, Button, message } from 'antd';
 
 interface Voucher {
   id: string;
@@ -52,7 +52,12 @@ export default function VouchersPage() {
     setLoading(true);
     try {
       const res = await fetch('/api/admin-vouchers');
-      if (res.ok) setVouchers((await res.json()).vouchers || []);
+      if (res.ok) {
+        setVouchers((await res.json()).vouchers || []);
+      } else {
+        console.error('[VOUCHERS] Load failed:', res.status);
+        message.error(`Gagal memuat voucher (${res.status}${res.status === 401 ? ' — login ulang' : ''})`);
+      }
     } finally {
       setLoading(false);
     }
@@ -124,6 +129,7 @@ export default function VouchersPage() {
     setRedemptions([]);
     const res = await fetch(`/api/admin-voucher-redemptions?voucherId=${v.id}`);
     if (res.ok) setRedemptions((await res.json()).redemptions || []);
+    else message.error(`Gagal memuat riwayat (${res.status})`);
   };
 
   const filtered = vouchers.filter(v => !search || v.code.toLowerCase().includes(search.toLowerCase()));
@@ -254,8 +260,10 @@ export default function VouchersPage() {
       {historyFor && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/40 backdrop-blur-sm p-4" onClick={() => setHistoryFor(null)}>
           <div className="bg-white rounded-2xl border border-gray-200 shadow-xl w-full max-w-lg p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-black uppercase tracking-tight">Riwayat {historyFor.code}</h2>
-            <div className="text-sm text-gray-500">Terpakai {historyFor.usedCount} kali</div>
+            <h2 className="text-lg font-bold">Riwayat pemakaian {historyFor.code}</h2>
+            <p className="text-sm text-gray-500 -mt-3">
+              Terpakai {historyFor.usedCount}{historyFor.quota > 0 ? ` dari kuota ${historyFor.quota}` : ' kali'}
+            </p>
             <Table
               size="small"
               bordered
