@@ -60,7 +60,7 @@ export default function VouchersPage() {
 
   useEffect(() => { load(); }, []);
   useEffect(() => {
-    fetch('/api/events?showDrafts=true&includeDeleted=true').then(r=>r.json()).then(data => {
+    fetch('/api/events?showDrafts=true').then(r=>r.json()).then(data => {
       const list = Array.isArray(data) ? data : [];
       setEvents(list.map((e:any)=>({id:e.id,name:e.name})));
     }).catch(()=>{});
