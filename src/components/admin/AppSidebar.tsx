@@ -161,6 +161,12 @@ const fullMenuItems: MenuItem[] = [
     path: '/admin/payments',
   },
   {
+    key: 'vouchers',
+    label: 'Vouchers',
+    icon: <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5a1.99 1.99 0 01.83 3.806L8.83 8.806A1.99 1.99 0 018 9H3m4 8v3m0-3H3m4 0h.01M13 21v-3m0 3h-2m2 0h4a2 2 0 002-2V5a2 2 0 00-2-2h-6.5a1 1 0 00-.7.3l-8 8a1 1 0 000 1.4l5.8 5.8a1 1 0 00.7.3H13z" /></svg>,
+    path: '/admin/vouchers',
+  },
+  {
     key: 'tickets',
     label: 'Tickets',
     icon: <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
@@ -190,10 +196,10 @@ export const buildAdminMenuItems = (role?: string): MenuItem[] => {
   const normalizedRole = normalizeUserRole(role);
 
   const allowedByRole: Record<string, string[]> = {
-    super_admin: ['overview', 'events', 'payments', 'tickets', 'users', 'activity-logs', 'monitoring'],
+    super_admin: ['overview', 'events', 'payments', 'vouchers', 'tickets', 'users', 'activity-logs', 'monitoring'],
     event_admin: ['overview', 'events', 'tickets', 'activity-logs'],
     scan_admin: ['tickets', 'activity-logs'],
-    payment_admin: ['overview', 'payments', 'activity-logs'],
+    payment_admin: ['overview', 'payments', 'vouchers', 'activity-logs'],
     user: [],
   };
 
