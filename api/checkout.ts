@@ -4,6 +4,7 @@ import { logActivity } from '../src/lib/activity-logger';
 import { assignAutoBibsIfEnabled } from '../src/lib/bib-generator';
 import { sendRegistrationConfirmation } from '../src/lib/email-service';
 import { buildOrderId } from '../src/lib/order-id';
+import { validateVoucher, settleVoucherRedemption } from '../src/lib/voucher';
 import crypto from 'crypto';
 
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY || '';
@@ -21,7 +22,7 @@ export default async function handler(event: any) {
     const body = parseBody(event);
     if (!body) return errorResponse('Missing request body', 400);
 
-    let { eventId, categoryId, email, customData, bulkParticipants, name, phoneNumber, gender, bloodType, emergencyName, emergencyPhone, tshirtSize, bibName, notes, dateOfBirth } = body;
+    let { eventId, categoryId, email, customData, bulkParticipants, name, phoneNumber, gender, bloodType, emergencyName, emergencyPhone, tshirtSize, bibName, notes, dateOfBirth, voucherCode } = body;
 
     if (!eventId || !categoryId || !email) {
       return errorResponse('eventId, categoryId, and email are required', 400);
@@ -170,6 +171,14 @@ export default async function handler(event: any) {
     const qty = participantsData.length;
     const totalGrossAmount = itemGrossAmount * qty;
 
+    let discountAmount = 0;
+    if (voucherCode) {
+      const check = await validateVoucher(String(voucherCode), eventId, totalGrossAmount, email);
+      if (check.valid === false) return errorResponse(check.reason, 400);
+      discountAmount = check.discountAmount;
+    }
+    const finalAmount = totalGrossAmount - discountAmount;
+
     // ponytail: 3-try collision check via SELECT; unique DB index impossible (bulk rows share orderId)
     let orderId = '';
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -185,19 +194,25 @@ export default async function handler(event: any) {
         const regId = crypto.randomUUID();
         regIds.push(regId);
         await query(
-          `INSERT INTO EventRegistration 
-            (id, eventId, categoryId, email, name, phoneNumber, gender, bloodType, emergencyName, emergencyPhone, tshirtSize, bibName, notes, orderId, grossAmount, dateOfBirth, customData, paymentStatus, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW(), NOW())`,
-          [regId, eventId, categoryId, email, p.name, p.phoneNumber, p.gender, p.bloodType || null, p.emergencyName || null, p.emergencyPhone || null, p.tshirtSize || null, p.bibName || null, p.notes || null, orderId, itemGrossAmount, p.dateOfBirth || null, p.customData ? JSON.stringify(p.customData) : null]
+          `INSERT INTO EventRegistration
+            (id, eventId, categoryId, email, name, phoneNumber, gender, bloodType, emergencyName, emergencyPhone, tshirtSize, bibName, notes, orderId, grossAmount, dateOfBirth, customData, voucherCode, discountAmount, paymentStatus, createdAt, updatedAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW(), NOW())`,
+          [regId, eventId, categoryId, email, p.name, p.phoneNumber, p.gender, p.bloodType || null, p.emergencyName || null, p.emergencyPhone || null, p.tshirtSize || null, p.bibName || null, p.notes || null, orderId, itemGrossAmount, p.dateOfBirth || null, p.customData ? JSON.stringify(p.customData) : null, String(voucherCode || '').trim().toUpperCase() || null, discountAmount]
         );
     }
 
-    if (totalGrossAmount === 0) {
+    if (finalAmount === 0) {
       for (const regId of regIds) {
         await query(
           "UPDATE EventRegistration SET paymentStatus = 'settlement', paidAt = NOW(), updatedAt = NOW() WHERE id = ?",
           [regId]
         );
+      }
+
+      try {
+        await settleVoucherRedemption(orderId);
+      } catch (e) {
+        console.error('[CHECKOUT] Error settling voucher:', e);
       }
 
       // Auto-generate BIB for free events
@@ -231,7 +246,7 @@ export default async function handler(event: any) {
       }
 
       await logActivity('registration.created', `${primaryParticipant.name} (+${qty-1} others) mendaftar ke event (Gratis)`, email, eventId, { orderId, totalGrossAmount, category: categories[0].name });
-      return successResponse({ orderId, grossAmount: totalGrossAmount, registration: { id: regIds[0] }, message: 'Registrasi gratis berhasil', isFree: true });
+      return successResponse({ orderId, grossAmount: finalAmount, discountAmount, registration: { id: regIds[0] }, message: 'Registrasi gratis berhasil', isFree: true });
     }
 
     if (!MIDTRANS_SERVER_KEY) {
@@ -240,16 +255,18 @@ export default async function handler(event: any) {
     }
 
     const snapPayload = {
-      transaction_details: { order_id: orderId, gross_amount: totalGrossAmount },
+      transaction_details: { order_id: orderId, gross_amount: finalAmount },
       customer_details: {
         first_name: primaryParticipant.name || 'Participant',
         email: email,
         phone: primaryParticipant.phoneNumber || '0000000000',
       },
-      item_details: [
-        { id: categoryId, price: categoryPrice, quantity: qty, name: `${events[0].name} - ${categories[0].name}`.substring(0, 50) },
-        ...(bibExtraCharge > 0 ? [{ id: 'bib-custom', price: bibExtraCharge, quantity: qty, name: `Custom BIB Name` }] : []),
-      ],
+      item_details: discountAmount > 0
+        ? [{ id: categoryId, price: finalAmount, quantity: 1, name: `${events[0].name} - ${categories[0].name} (setelah diskon voucher)`.substring(0, 50) }]
+        : [
+            { id: categoryId, price: categoryPrice, quantity: qty, name: `${events[0].name} - ${categories[0].name}`.substring(0, 50) },
+            ...(bibExtraCharge > 0 ? [{ id: 'bib-custom', price: bibExtraCharge, quantity: qty, name: `Custom BIB Name` }] : []),
+          ],
     };
 
     const authString = Buffer.from(`${MIDTRANS_SERVER_KEY}:`).toString('base64');
@@ -280,9 +297,14 @@ export default async function handler(event: any) {
 
     await logActivity('registration.created', `${primaryParticipant.name} (+${qty-1} others) mendaftar ke ${events[0].name} - ${categories[0].name}`, email, eventId, { orderId, totalGrossAmount, category: categories[0].name });
 
+    if (voucherCode) {
+      await logActivity('voucher.applied', `Voucher ${String(voucherCode).toUpperCase()} dipakai untuk ${orderId} (diskon Rp ${discountAmount.toLocaleString('id-ID')})`, email, eventId, { orderId, voucherCode: String(voucherCode).toUpperCase(), discountAmount });
+    }
+
     return successResponse({
       orderId,
-      grossAmount: totalGrossAmount,
+      grossAmount: finalAmount,
+      discountAmount,
       snapToken,
       snapUrl,
       registration: { id: regIds[0] },
