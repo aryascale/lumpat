@@ -107,6 +107,25 @@ export async function runMigrations() {
       }
     }
 
+    // Migration 8: one redemption per email per voucher (DB-level backstop for the per-email check)
+    const vrUnique: any = await query(
+      "SHOW INDEX FROM VoucherRedemption WHERE Key_name = 'VoucherRedemption_voucherId_email_key'"
+    );
+    if (vrUnique.length === 0) {
+      console.log('[MIGRATIONS] Creating unique index VoucherRedemption_voucherId_email_key...');
+      try {
+        await query('CREATE UNIQUE INDEX `VoucherRedemption_voucherId_email_key` ON `VoucherRedemption`(`voucherId`, `email`)');
+        console.log('[MIGRATIONS] ✅ Unique index created');
+      } catch (e: any) {
+        if (e.code === 'ER_DUP_ENTRY') {
+          // Duplicate historical rows (none expected — feature unreleased); skip rather than crash startup.
+          console.warn('[MIGRATIONS] ⚠️ Duplicate (voucherId, email) rows in VoucherRedemption, skipping unique index:', e.message);
+        } else {
+          throw e;
+        }
+      }
+    }
+
     console.log('[MIGRATIONS] All migrations complete ✅');
   } catch (error: any) {
     console.error('[MIGRATIONS] Error (non-fatal):', error.message);

@@ -311,6 +311,6 @@ export default async function handler(event: any) {
     });
   } catch (error: any) {
     console.error('[CHECKOUT] Error:', error);
-    return errorResponse(error.message || 'Internal server error');
+    return errorResponse('Terjadi kesalahan, silakan coba lagi', 500);
   }
 }

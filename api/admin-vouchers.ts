@@ -64,18 +64,31 @@ export default async function handler(event: any) {
 
     if (event.httpMethod === 'PATCH') {
       if (!body.id) return errorResponse('id is required', 400);
+      const existing: any = await query('SELECT discountType, value FROM Voucher WHERE id = ? LIMIT 1', [body.id]);
+      if (existing.length === 0) return errorResponse('Voucher tidak ditemukan', 404);
       const sets: string[] = [];
       const params: any[] = [];
+      const MAX_INT = 2_000_000_000;
       const num = (v: any, name: string, min: number) => {
         const n = Number(v);
         if (!Number.isInteger(n) || n < min) throw new Error(`${name} harus angka bulat >= ${min}`);
+        if (n > MAX_INT) throw new Error(`${name} maksimal ${MAX_INT}`);
         return n;
       };
       try {
-        if (body.value !== undefined) { sets.push('value = ?'); params.push(num(body.value, 'value', 1)); }
+        if (body.value !== undefined) {
+          if (existing[0].discountType === 'percent' && Number(body.value) > 100) throw new Error('percent maksimal 100');
+          sets.push('value = ?'); params.push(num(body.value, 'value', 1));
+        }
         if (body.maxDiscount !== undefined) { sets.push('maxDiscount = ?'); params.push(body.maxDiscount == null ? null : num(body.maxDiscount, 'maxDiscount', 1)); }
         if (body.quota !== undefined) { sets.push('quota = ?'); params.push(num(body.quota, 'quota', 0)); }
-        if (body.eventId !== undefined) { sets.push('eventId = ?'); params.push(body.eventId || null); }
+        if (body.eventId !== undefined) {
+          if (body.eventId) {
+            const ev: any = await query('SELECT id FROM Event WHERE id = ? LIMIT 1', [body.eventId]);
+            if (ev.length === 0) return errorResponse('Event tidak ditemukan', 404);
+          }
+          sets.push('eventId = ?'); params.push(body.eventId || null);
+        }
         if (body.validFrom !== undefined) { sets.push('validFrom = ?'); params.push(parseDate(body.validFrom)); }
         if (body.validUntil !== undefined) { sets.push('validUntil = ?'); params.push(parseDate(body.validUntil)); }
         if (body.isActive !== undefined) { sets.push('isActive = ?'); params.push(!!body.isActive); }
