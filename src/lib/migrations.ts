@@ -60,6 +60,53 @@ export async function runMigrations() {
       if (!e.message?.includes('Duplicate')) throw e;
     }
 
+    // Migration 5: Voucher table
+    await query(`CREATE TABLE IF NOT EXISTS Voucher (
+      id VARCHAR(36) PRIMARY KEY,
+      code VARCHAR(64) NOT NULL UNIQUE,
+      discountType VARCHAR(16) NOT NULL,
+      value INT NOT NULL,
+      maxDiscount INT NULL,
+      quota INT NOT NULL DEFAULT 0,
+      usedCount INT NOT NULL DEFAULT 0,
+      eventId VARCHAR(36) NULL,
+      validFrom DATETIME(3) NULL,
+      validUntil DATETIME(3) NULL,
+      isActive BOOLEAN NOT NULL DEFAULT TRUE,
+      createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      updatedAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+      INDEX Voucher_eventId_idx (eventId)
+    )`);
+    console.log('[MIGRATIONS] ✅ Voucher table ready');
+
+    // Migration 6: VoucherRedemption table (usage history)
+    await query(`CREATE TABLE IF NOT EXISTS VoucherRedemption (
+      id VARCHAR(36) PRIMARY KEY,
+      voucherId VARCHAR(36) NOT NULL,
+      orderId VARCHAR(64) NOT NULL UNIQUE,
+      email VARCHAR(255) NOT NULL,
+      name VARCHAR(255) NOT NULL,
+      eventId VARCHAR(36) NOT NULL,
+      discountAmount INT NOT NULL,
+      createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      INDEX VoucherRedemption_voucherId_idx (voucherId),
+      INDEX VoucherRedemption_email_idx (email)
+    )`);
+    console.log('[MIGRATIONS] ✅ VoucherRedemption table ready');
+
+    // Migration 7: voucher snapshot columns on EventRegistration
+    for (const col of [
+      'ALTER TABLE EventRegistration ADD COLUMN voucherCode VARCHAR(64) NULL',
+      'ALTER TABLE EventRegistration ADD COLUMN discountAmount INT NOT NULL DEFAULT 0',
+    ]) {
+      try {
+        await query(col);
+        console.log(`[MIGRATIONS] ✅ ${col.split('ADD COLUMN ')[1]} added`);
+      } catch (e: any) {
+        if (!e.message?.includes('Duplicate column name')) throw e;
+      }
+    }
+
     console.log('[MIGRATIONS] All migrations complete ✅');
   } catch (error: any) {
     console.error('[MIGRATIONS] Error (non-fatal):', error.message);
