@@ -92,7 +92,7 @@ export default function VouchersPage() {
         validFrom: form.validFrom || null,
         validUntil: form.validUntil || null,
       };
-      if (form.discountType === 'percent' && form.maxDiscount) payload.maxDiscount = Number(form.maxDiscount);
+      payload.maxDiscount = form.maxDiscount ? Number(form.maxDiscount) : null;
       const res = editing
         ? await fetch('/api/admin-vouchers', { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: editing.id, ...payload }) })
         : await fetch('/api/admin-vouchers', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ code: form.code, ...payload }) });
