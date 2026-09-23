@@ -19,6 +19,6 @@ export function formatWibTimestamp(now: Date = new Date()): string {
 }
 
 export function buildOrderId(categoryName: string, now: Date = new Date()): string {
-  const rand = String(Math.floor(Math.random() * 100000)).padStart(5, '0');
+  const rand = String(Math.floor(Math.random() * 100000000)).padStart(8, '0');
   return `LMPT-${slugCategory(categoryName)}-${formatWibTimestamp(now)}-${rand}`;
 }

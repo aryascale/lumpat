@@ -16,9 +16,9 @@ test('formatWibTimestamp is HHMM+DDMMYYYY in WIB', () => {
   assert.equal(formatWibTimestamp(new Date('2026-09-22T17:00:00Z')), '000023092026');
 });
 
-test('buildOrderId matches LMPT-{CAT}-{TS}-{5digits}', () => {
+test('buildOrderId matches LMPT-{CAT}-{TS}-{8digits}', () => {
   const id = buildOrderId('10K TNI/POLRI', new Date('2026-09-22T09:58:00Z'));
-  assert.match(id, /^LMPT-10KTNIPOLRI-165822092026-\d{5}$/);
+  assert.match(id, /^LMPT-10KTNIPOLRI-165822092026-\d{8}$/);
   assert.ok(id.length <= 50);
 });
 

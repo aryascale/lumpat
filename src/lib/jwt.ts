@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-for-dev-only-change-me';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error('JWT_SECRET is not set — refusing to start with forgeable tokens');
 
 export type UserRole = 'super_admin' | 'event_admin' | 'scan_admin' | 'payment_admin' | 'user';
 

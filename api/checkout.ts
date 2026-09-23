@@ -179,6 +179,16 @@ export default async function handler(event: any) {
     }
     const finalAmount = totalGrossAmount - discountAmount;
 
+    // Free path settles immediately; block client retries that would INSERT duplicate settled registrations
+    // (the non-bulk guard above is skipped for allowBulkNoOtp events)
+    if (finalAmount === 0) {
+      const dupSettled: any = await query(
+        "SELECT 1 FROM EventRegistration WHERE email = ? AND eventId = ? AND paymentStatus = 'settlement' LIMIT 1",
+        [email, eventId]
+      );
+      if (dupSettled.length > 0) return errorResponse('Email ini sudah terdaftar di event ini', 400);
+    }
+
     // ponytail: 3-try collision check via SELECT; unique DB index impossible (bulk rows share orderId)
     let orderId = '';
     for (let attempt = 0; attempt < 3; attempt++) {
