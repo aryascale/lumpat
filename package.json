@@ -21,7 +21,8 @@
     "db:reset": "bash scripts/db-reset.sh",
     "docker:dev": "docker compose -f docker/docker-compose.yml up -d --build",
     "seed:dev": "tsx scripts/seed-dev.ts",
-    "smoke": "node scripts/smoke-test.mjs"
+    "smoke": "node scripts/smoke-test.mjs",
+    "test": "tsx --test src/lib/__tests__/order-id.test.ts src/lib/__tests__/voucher.test.ts"
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
