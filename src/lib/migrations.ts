@@ -7,6 +7,27 @@ import { query } from './db';
 export async function runMigrations() {
   console.log('[MIGRATIONS] Running startup migrations...');
 
+  // ponytail: app container can boot while MySQL is still warming up (cold deploy);
+  // retry connection errors instead of silently skipping migrations until next boot
+  const isConnError = (msg: string) =>
+    /ECONNREFUSED|ETIMEDOUT|ER_BAD_DB_ERROR|PROTOCOL_CONNECTION|handshake|Connection lost/i.test(msg || '');
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    try {
+      await runMigrationsOnce();
+      return;
+    } catch (error: any) {
+      if (attempt < 5 && isConnError(error?.message)) {
+        console.warn(`[MIGRATIONS] DB not ready (attempt ${attempt}/5), retrying in 5s...`);
+        await new Promise((r) => setTimeout(r, 5000));
+        continue;
+      }
+      console.error('[MIGRATIONS] Error (non-fatal):', error?.message);
+      return;
+    }
+  }
+}
+
+async function runMigrationsOnce() {
   try {
     // Migration 1: Drop unique constraint on email+eventId to allow bulk registrations
     const indexes: any = await query(
@@ -152,6 +173,6 @@ export async function runMigrations() {
 
     console.log('[MIGRATIONS] All migrations complete ✅');
   } catch (error: any) {
-    console.error('[MIGRATIONS] Error (non-fatal):', error.message);
+    throw error; // surfaced to runMigrations' retry / non-fatal handling
   }
 }
