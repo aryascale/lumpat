@@ -549,6 +549,7 @@ export default function EventPage() {
         }),
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal memeriksa voucher");
       setVoucherResult(data.valid ? { valid: true, discountAmount: data.discountAmount } : { valid: false, reason: data.reason });
     } catch {
       setVoucherResult({ valid: false, reason: "Gagal memeriksa voucher" });
@@ -3520,19 +3521,32 @@ export default function EventPage() {
                     </div>
                   </div>
 
-                  {/* Voucher */}
+                  {/* Promotion code */}
                   {totalPrice > 0 && (
-                    <div className="mb-4 space-y-2">
+                    <div className="mb-4 bg-white border border-stone-200 rounded-2xl p-4 space-y-2">
+                      <span className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">
+                        Promotion code
+                      </span>
                       <div className="flex gap-2">
                         <input
                           value={voucherCode}
-                          onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
-                          placeholder="Kode voucher (opsional)"
+                          onChange={(e) => {
+                            setVoucherCode(e.target.value.toUpperCase());
+                            setVoucherResult(null);
+                          }}
+                          placeholder="ABC123"
                           className="flex-1 border border-stone-200 rounded-xl px-4 py-3 text-sm font-bold uppercase tracking-wider focus:outline-none focus:border-stone-400"
                         />
-                        <Button size="large" loading={voucherLoading} onClick={applyVoucher}>
-                          Terapkan
-                        </Button>
+                        {voucherCode.trim() && (
+                          <Button
+                            size="large"
+                            loading={voucherLoading}
+                            onClick={applyVoucher}
+                            className="shrink-0"
+                          >
+                            Redeem
+                          </Button>
+                        )}
                       </div>
                       {voucherResult?.valid && (
                         <div className="text-sm font-bold text-green-700 bg-green-50 border border-green-200 rounded-xl px-4 py-2 flex justify-between">
