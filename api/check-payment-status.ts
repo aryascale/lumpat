@@ -2,6 +2,7 @@ import { query } from '../src/lib/db';
 import { successResponse, errorResponse, parseBody, CORS_HEADERS } from '../src/lib/api-utils';
 import { logActivity } from '../src/lib/activity-logger';
 import { assignAutoBibsIfEnabled } from '../src/lib/bib-generator';
+import { settleVoucherRedemption } from '../src/lib/voucher';
 import { sendRegistrationConfirmation } from '../src/lib/email-service';
 
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY || '';
@@ -89,6 +90,12 @@ export default async function handler(event: any) {
 
       // 5. If settled, run post-payment actions (BIB, email, inventory)
       if (paymentStatus === 'settlement') {
+        try {
+          await settleVoucherRedemption(orderId);
+        } catch (e) {
+          console.error('[CHECK-PAYMENT] Error settling voucher:', e);
+        }
+
         try {
           await assignAutoBibsIfEnabled(orderId);
         } catch (e) {

@@ -3,6 +3,7 @@ import { successResponse, errorResponse, CORS_HEADERS } from '../src/lib/api-uti
 import { logActivity } from '../src/lib/activity-logger';
 import { createBackup } from '../src/lib/backup';
 import { assignAutoBibsIfEnabled } from '../src/lib/bib-generator';
+import { settleVoucherRedemption } from '../src/lib/voucher';
 import { requireRole } from '../src/lib/jwt';
 
 export default async function handler(event: any) {
@@ -44,6 +45,8 @@ export default async function handler(event: any) {
       } catch (e) {
         console.error('[ADMIN-SETTLE] Error generating BIBs:', e);
       }
+
+      await settleVoucherRedemption(orderId);
 
       const { sendRegistrationConfirmation } = await import('../src/lib/email-service');
       await sendRegistrationConfirmation(regRes[0]);

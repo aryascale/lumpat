@@ -4,6 +4,7 @@ import { logActivity } from '../src/lib/activity-logger';
 import { sendRegistrationConfirmation } from '../src/lib/email-service';
 import { createBackup } from '../src/lib/backup';
 import { assignAutoBibsIfEnabled } from '../src/lib/bib-generator';
+import { settleVoucherRedemption } from '../src/lib/voucher';
 import crypto from 'crypto';
 
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY || '';
@@ -128,6 +129,12 @@ export default async function handler(event: any) {
 
       // Send Confirmation Email and Assign BIBs if settlement
       if (paymentStatus === 'settlement') {
+        try {
+          await settleVoucherRedemption(order_id);
+        } catch (e) {
+          console.error('[WEBHOOK-MIDTRANS] Error settling voucher:', e);
+        }
+
         try {
           await assignAutoBibsIfEnabled(order_id);
         } catch (e) {
