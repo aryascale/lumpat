@@ -21,7 +21,7 @@ export default async function handler(event: any) {
 
     // Total Revenue (only from settlement)
     const revenueResult: any = await query(
-      `SELECT SUM(grossAmount) as total FROM EventRegistration ${whereClause} AND paymentStatus = 'settlement'`,
+      `SELECT SUM(grossAmount - discountAmount) as total FROM EventRegistration ${whereClause} AND paymentStatus = 'settlement'`,
       params
     );
     const totalRevenue = revenueResult[0]?.total || 0;

@@ -35,7 +35,7 @@ export default async function handler(event: any) {
         SUM(CASE WHEN paymentStatus = 'settlement' THEN 1 ELSE 0 END) as paid,
         SUM(CASE WHEN paymentStatus = 'pending' THEN 1 ELSE 0 END) as pending,
         SUM(CASE WHEN paymentStatus IN ('cancel', 'expire') THEN 1 ELSE 0 END) as failed,
-        SUM(CASE WHEN paymentStatus = 'settlement' THEN grossAmount ELSE 0 END) as totalRevenue
+        SUM(CASE WHEN paymentStatus = 'settlement' THEN grossAmount - discountAmount ELSE 0 END) as totalRevenue
        FROM EventRegistration ${eventId ? 'WHERE eventId = ?' : ''}`,
       eventId ? [eventId] : []
     );
