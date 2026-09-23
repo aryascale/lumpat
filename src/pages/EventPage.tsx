@@ -469,6 +469,14 @@ export default function EventPage() {
   const [otpCode, setOtpCode] = useState("");
   const [otpLoading, setOtpLoading] = useState(false);
 
+  const [voucherCode, setVoucherCode] = useState("");
+  const [voucherResult, setVoucherResult] = useState<{
+    valid: boolean;
+    discountAmount?: number;
+    reason?: string;
+  } | null>(null);
+  const [voucherLoading, setVoucherLoading] = useState(false);
+
   const [downloadImage, setDownloadImage] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -513,6 +521,41 @@ export default function EventPage() {
   const bibExtraCharge = regForm.bibName ? event?.bibCustomPrice || 0 : 0;
   const totalPrice =
     ((selectedCategoryDetail?.price || 0) + bibExtraCharge) * bulkQty;
+
+  // Voucher preview is only valid for the current total — reset when it changes
+  useEffect(() => {
+    setVoucherResult(null);
+  }, [totalPrice, regForm.email]);
+
+  const finalPrice = voucherResult?.valid
+    ? totalPrice - (voucherResult.discountAmount || 0)
+    : totalPrice;
+
+  const applyVoucher = async () => {
+    if (!voucherCode.trim()) {
+      message.error("Masukkan kode voucher terlebih dahulu");
+      return;
+    }
+    setVoucherLoading(true);
+    try {
+      const res = await fetch("/api/voucher/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: voucherCode,
+          eventId: event?.id,
+          totalAmount: totalPrice,
+          email: regForm.email,
+        }),
+      });
+      const data = await res.json();
+      setVoucherResult(data.valid ? { valid: true, discountAmount: data.discountAmount } : { valid: false, reason: data.reason });
+    } catch {
+      setVoucherResult({ valid: false, reason: "Gagal memeriksa voucher" });
+    } finally {
+      setVoucherLoading(false);
+    }
+  };
 
   const handleCheckout = async () => {
     if (!regForm.categoryId) {
@@ -598,6 +641,7 @@ export default function EventPage() {
           eventId: event?.id,
           ...regForm,
           bulkParticipants: participantsToSend,
+          voucherCode: voucherResult?.valid ? voucherCode.trim().toUpperCase() : undefined,
         }),
       });
       const data = await res.json();
@@ -3476,12 +3520,45 @@ export default function EventPage() {
                     </div>
                   </div>
 
+                  {/* Voucher */}
+                  {totalPrice > 0 && (
+                    <div className="mb-4 space-y-2">
+                      <div className="flex gap-2">
+                        <input
+                          value={voucherCode}
+                          onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
+                          placeholder="Kode voucher (opsional)"
+                          className="flex-1 border border-stone-200 rounded-xl px-4 py-3 text-sm font-bold uppercase tracking-wider focus:outline-none focus:border-stone-400"
+                        />
+                        <Button size="large" loading={voucherLoading} onClick={applyVoucher}>
+                          Terapkan
+                        </Button>
+                      </div>
+                      {voucherResult?.valid && (
+                        <div className="text-sm font-bold text-green-700 bg-green-50 border border-green-200 rounded-xl px-4 py-2 flex justify-between">
+                          <span>Voucher diterapkan</span>
+                          <span>-Rp {(voucherResult.discountAmount || 0).toLocaleString("id-ID")}</span>
+                        </div>
+                      )}
+                      {voucherResult && !voucherResult.valid && (
+                        <div className="text-sm font-bold text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-2">
+                          {voucherResult.reason}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="p-8 rounded-2xl flex flex-col items-center border border-stone-200 bg-stone-50/50 shadow-sm">
                     <span className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] mb-2">
                       Total Pembayaran
                     </span>
+                    {voucherResult?.valid && (
+                      <span className="text-lg font-bold text-stone-400 line-through mb-1">
+                        Rp {totalPrice.toLocaleString("id-ID")}
+                      </span>
+                    )}
                     <span className="text-5xl font-black text-stone-900 tracking-tighter">
-                      Rp {totalPrice.toLocaleString("id-ID")}
+                      Rp {finalPrice.toLocaleString("id-ID")}
                     </span>
                   </div>
                 </div>
@@ -3509,7 +3586,7 @@ export default function EventPage() {
                     onClick={handleCheckout}
                     className="w-full sm:w-auto px-8 font-bold uppercase tracking-widest text-xs h-14"
                   >
-                    {totalPrice <= 0 ? "Daftar Sekarang" : "Bayar Sekarang"}
+                    {finalPrice <= 0 ? "Daftar Sekarang" : "Bayar Sekarang"}
                   </Button>
                 </div>
               </div>
