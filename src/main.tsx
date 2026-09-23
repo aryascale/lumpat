@@ -13,7 +13,20 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'dummy-client-
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ReactLenis root>
+    <ReactLenis
+      root
+      options={{
+        // antd modals/dropdowns scroll natively — without this Lenis
+        // hijacks wheel/touch and nested lists (e.g. category Select) can't scroll
+        prevent: (node) =>
+          node.classList.contains("ant-modal") ||
+          node.classList.contains("ant-drawer") ||
+          node.classList.contains("ant-select-dropdown") ||
+          node.classList.contains("ant-dropdown") ||
+          node.classList.contains("ant-popover") ||
+          node.classList.contains("ant-picker-dropdown"),
+      }}
+    >
       <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
         <BrowserRouter>
           <AuthProvider>
