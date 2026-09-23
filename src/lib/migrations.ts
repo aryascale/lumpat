@@ -118,7 +118,8 @@ async function runMigrationsOnce() {
     // Migration 7: align voucher tables' collation with legacy tables.
     // prisma db push creates them with the MySQL 8 default (utf8mb4_0900_ai_ci),
     // legacy tables use utf8mb4_unicode_ci -> JOIN columns error out with
-    // "Illegal mix of collations". Convert only when they differ.
+    // "Illegal mix of collations". The FK prisma adds (voucherId -> Voucher.id)
+    // blocks CONVERT while the sides differ, so: drop FK -> convert -> recreate.
     try {
       const legacyColl: any = await query(
         "SELECT TABLE_COLLATION as c FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'Event' LIMIT 1"
@@ -128,11 +129,19 @@ async function runMigrationsOnce() {
         const tables: any = await query(
           "SELECT TABLE_NAME as t, TABLE_COLLATION as c FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('Voucher', 'VoucherRedemption')"
         );
-        for (const row of tables) {
-          if (row.c !== target) {
-            await query(`ALTER TABLE \`${row.t}\` CONVERT TO CHARACTER SET utf8mb4 COLLATE \`${target}\``);
-            console.log(`[MIGRATIONS] ✅ ${row.t} collation aligned to ${target}`);
+        const mismatched = tables.filter((r: any) => r.c !== target);
+        if (mismatched.length > 0) {
+          try {
+            await query('ALTER TABLE VoucherRedemption DROP FOREIGN KEY `VoucherRedemption_voucherId_fkey`');
+          } catch {
+            // FK absent (raw-SQL path) — nothing to drop
           }
+          for (const r of mismatched) {
+            await query(`ALTER TABLE \`${r.t}\` CONVERT TO CHARACTER SET utf8mb4 COLLATE \`${target}\``);
+            console.log(`[MIGRATIONS] ✅ ${r.t} collation aligned to ${target}`);
+          }
+          await query('ALTER TABLE VoucherRedemption ADD CONSTRAINT `VoucherRedemption_voucherId_fkey` FOREIGN KEY (`voucherId`) REFERENCES `Voucher`(`id`) ON DELETE CASCADE');
+          console.log('[MIGRATIONS] ✅ VoucherRedemption FK recreated');
         }
       }
     } catch (e: any) {
