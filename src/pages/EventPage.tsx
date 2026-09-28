@@ -8,7 +8,7 @@ import CategorySection from "../components/CategorySection";
 import LeaderboardTable, { LeaderRow } from "../components/LeaderboardTable";
 import InteractiveRouteMap from "../components/InteractiveRouteMap";
 import Navbar from "../components/Navbar";
-import { message, Modal, Select, Button, Input } from "antd";
+import { message, Modal, Button } from "antd";
 import {
   loadMasterParticipants,
   loadTimesMap,
@@ -18,7 +18,6 @@ import { LS_DATA_VERSION } from "../lib/config";
 import parseTimeToMs, { extractTimeOfDay, formatDuration, buildOverrideFromFinishDate } from "../lib/time";
 import type { MasterParticipant } from "../lib/data";
 import { useLiveTiming } from "../hooks/useLiveTiming";
-import getUnicodeFlagIcon from "country-flag-icons/unicode";
 import * as Flags3x2 from "country-flag-icons/react/3x2";
 
 // Windows has no flag emoji font — render SVG flags instead of the unicode ones.
@@ -31,13 +30,12 @@ const emojiToCode = (emoji: string): string | null => {
   return String.fromCharCode(65 + a, 65 + b);
 };
 
-const FlagImg = ({ emoji, name }: { emoji?: string; name?: string }) => {
+export const FlagImg = ({ emoji, name }: { emoji?: string; name?: string }) => {
   const code = emojiToCode(emoji || "");
   const Flag = code ? (Flags3x2 as any)[code] : null;
   if (!Flag) return null;
   return <Flag className="inline-block w-[18px] h-[13px] mr-1.5 align-[-1px] shadow-sm" title={name} />;
 };
-import { getData } from "country-list";
 import { useAuth, normalizeUserRole } from "../contexts/AuthContext";
 
 function formatLocalTime(ms: number, tzOffset: number, includeMs = true): string {
@@ -125,24 +123,6 @@ interface CategoryDetail {
   distanceKm?: number | null;
 }
 
-interface RegistrationField {
-  id: string;
-  label: string;
-  type: string;
-  required: boolean;
-  options: string | null;
-  order: number;
-}
-
-interface TshirtStock {
-  id: string;
-  size: string;
-  quota: number;
-  sold: number;
-  width?: string;
-  height?: string;
-}
-
 interface Banner {
   id: string;
   imageUrl: string;
@@ -193,7 +173,7 @@ function parseDob(dobStr: string): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
-function calculateAgeOnRaceDay(
+export function calculateAgeOnRaceDay(
   dobStr: string,
   raceDateStr: string,
 ): number | null {
@@ -232,7 +212,7 @@ export function parseAgeBrackets(raw: any): AgeBracket[] {
   return parsed.length > 0 ? parsed : DEFAULT_AGE_BRACKETS;
 }
 
-function getAgeCategory(
+export function getAgeCategory(
   age: number | null,
   brackets: AgeBracket[] = DEFAULT_AGE_BRACKETS,
 ): string {
@@ -315,8 +295,6 @@ export default function EventPage() {
     [],
   );
 
-  const [registerModalOpen, setRegisterModalOpen] = useState(false);
-  const [registering, setRegistering] = useState(false);
   const [registeredParticipants, setRegisteredParticipants] = useState<any[]>(
     [],
   );
@@ -331,14 +309,6 @@ export default function EventPage() {
     );
   }, [event?.categories, categoryDetails]);
 
-  const [customFields, setCustomFields] = useState<RegistrationField[]>([]);
-  const [tshirtInventory, setTshirtInventory] = useState<TshirtStock[]>([]);
-  const [bulkQty, setBulkQty] = useState(1);
-  const [activeTabIdx, setActiveTabIdx] = useState(0);
-  const [bulkParticipants, setBulkParticipants] = useState<
-    Record<string, string>[]
-  >([{}]);
-  const [currentStep, setCurrentStep] = useState(1);
   const [scrollY, setScrollY] = useState(0);
   const [regDetailOpen, setRegDetailOpen] = useState(false);
   const [regDetailParticipant, setRegDetailParticipant] = useState<any>(null);
@@ -349,9 +319,6 @@ export default function EventPage() {
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scanValidResult, setScanValidResult] = useState<any | null>(null);
   const [scanErrorResult, setScanErrorResult] = useState<string | null>(null);
-  const [tncModalOpen, setTncModalOpen] = useState(false);
-  const [tncAgreed, setTncAgreed] = useState(false);
-  const [dataAgreed, setDataAgreed] = useState(false);
   const scannerStateRef = useRef({
     isPaused: false,
     timeoutId: null as any,
@@ -465,48 +432,8 @@ export default function EventPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Registration form state
-
-  const [regForm, setRegForm] = useState({
-    categoryId: "",
-    name: "",
-    email: "",
-    phoneNumber: "",
-    gender: "",
-    bloodType: "",
-    emergencyName: "",
-    emergencyPhone: "",
-    tshirtSize: "",
-    bibName: "",
-    notes: "",
-    dateOfBirth: "",
-  });
-
-  const [emailVerified, setEmailVerified] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpCode, setOtpCode] = useState("");
-  const [otpLoading, setOtpLoading] = useState(false);
-
-  const [voucherCode, setVoucherCode] = useState("");
-  const [voucherResult, setVoucherResult] = useState<{
-    valid: boolean;
-    discountAmount?: number;
-    reason?: string;
-  } | null>(null);
-  const [voucherLoading, setVoucherLoading] = useState(false);
-
   const [downloadImage, setDownloadImage] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
-
-  const updateRegForm = (field: string, value: string) => {
-    setRegForm((prev) => ({ ...prev, [field]: value }));
-    // Reset verification if email changes
-    if (field === "email" && emailVerified) {
-      setEmailVerified(false);
-      setOtpSent(false);
-      setOtpCode("");
-    }
-  };
 
   const fetchRegisteredParticipants = async (eventId: string) => {
     try {
@@ -533,223 +460,39 @@ export default function EventPage() {
     }
   };
 
-  const selectedCategoryDetail = categoryDetails.find(
-    (c) => c.id === regForm.categoryId,
-  );
-  const bibExtraCharge = regForm.bibName ? event?.bibCustomPrice || 0 : 0;
-  const totalPrice =
-    ((selectedCategoryDetail?.price || 0) + bibExtraCharge) * bulkQty;
-
-  // Voucher preview is only valid for the current total — reset when it changes
+  // Post-payment return: order_id in the URL means the user just came back
+  // from checkout — poll the payment and confirm via toast + list refresh.
+  const orderIdParam = searchParams.get("order_id");
   useEffect(() => {
-    setVoucherResult(null);
-  }, [totalPrice, regForm.email]);
-
-  const finalPrice = voucherResult?.valid
-    ? totalPrice - (voucherResult.discountAmount || 0)
-    : totalPrice;
-
-  const applyVoucher = async () => {
-    if (!voucherCode.trim()) {
-      message.error("Masukkan kode voucher terlebih dahulu");
-      return;
-    }
-    setVoucherLoading(true);
-    try {
-      const res = await fetch("/api/voucher/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code: voucherCode,
-          eventId: event?.id,
-          totalAmount: totalPrice,
-          email: regForm.email,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Gagal memeriksa voucher");
-      setVoucherResult(data.valid ? { valid: true, discountAmount: data.discountAmount } : { valid: false, reason: data.reason });
-    } catch {
-      setVoucherResult({ valid: false, reason: "Gagal memeriksa voucher" });
-    } finally {
-      setVoucherLoading(false);
-    }
-  };
-
-  const handleCheckout = async () => {
-    if (!regForm.categoryId) {
-      message.error("Pilih kategori terlebih dahulu");
-      return;
-    }
-    if (!emailVerified && !event?.content?.allowBulkNoOtp) {
-      message.error("Silakan verifikasi email kamu terlebih dahulu.");
-      return;
-    }
-
-    // Check if required custom fields are filled for all participants
-    for (let i = 0; i < bulkQty; i++) {
-      const p = bulkParticipants[i] || {};
-
-      // Check required
-      const missingFields = customFields.filter((f) => f.required && !p[f.id]);
-      if (missingFields.length > 0) {
-        setActiveTabIdx(i);
-        message.error(
-          `Pelanggan ${i + 1}: Harap isi kolom: ${missingFields.map((f) => f.label).join(", ")}`,
-        );
-        return;
-      }
-
-      // Check format for custom email and phone
-      for (const field of customFields) {
-        const val = p[field.id];
-        if (val) {
-          if (field.type === "email") {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(val)) {
-              setActiveTabIdx(i);
-              message.error(
-                `Pelanggan ${i + 1}: Format email pada '${field.label}' tidak valid`,
-              );
-              return;
-            }
-          }
-          if (field.type === "tel") {
-            const telRegex = /^[0-9+\-\s()]+$/;
-            if (!telRegex.test(val)) {
-              setActiveTabIdx(i);
-              message.error(
-                `Pelanggan ${i + 1}: Nomor telepon pada '${field.label}' hanya boleh berisi angka, +, -, dan spasi`,
-              );
-              return;
-            }
-          }
-        }
-      }
-    }
-
-    setRegistering(true);
-    try {
-      const participantsToSend = bulkParticipants.slice(0, bulkQty).map((p) => {
-        const mappedCustomData: Record<string, string> = {};
-        Object.keys(p).forEach((fieldId) => {
-          if (fieldId === "Age Category") {
-            mappedCustomData["Age Category"] = p[fieldId];
+    if (!event?.id || !orderIdParam) return;
+    let alive = true;
+    const delays = [1000, 4000, 8000, 15000, 25000];
+    let i = 0;
+    (async () => {
+      while (alive) {
+        try {
+          const res = await fetch("/api/check-payment-status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderId: orderIdParam }),
+          });
+          const result = await res.json();
+          if (result?.status === "settlement") {
+            message.success("Pembayaran berhasil dikonfirmasi! Kamu terdaftar.");
+            fetchRegisteredParticipants(event.id);
             return;
           }
-          const field = customFields.find((f) => f.id === fieldId);
-          if (field) {
-            mappedCustomData[field.label] = p[fieldId];
-          }
-        });
-        return {
-          ...regForm,
-          tshirtSize: p.tshirtSize,
-          bibName: p.bibName,
-          customData:
-            Object.keys(mappedCustomData).length > 0
-              ? mappedCustomData
-              : undefined,
-        };
-      });
-
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          eventId: event?.id,
-          ...regForm,
-          bulkParticipants: participantsToSend,
-          voucherCode: voucherResult?.valid ? voucherCode.trim().toUpperCase() : undefined,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        message.error(data.error || "Gagal checkout");
-        return;
+          if (result?.status === "cancel" || result?.status === "expire") return;
+        } catch {}
+        if (i >= delays.length - 1) return;
+        await new Promise((r) => setTimeout(r, delays[i]));
+        i++;
       }
-      if (data.isFree) {
-        message.success("Registrasi berhasil! (Gratis)");
-        setRegisterModalOpen(false);
-        if (event?.id) fetchRegisteredParticipants(event.id);
-        return;
-      }
-
-      if (data.snapToken && (window as any).snap) {
-        const pollPaymentStatus = async (oid: string, maxRetries = 10) => {
-          console.log(`[POLL] Starting payment polling for orderId: ${oid}`);
-          if (!oid) {
-            console.error("[POLL] orderId is empty!");
-            return;
-          }
-          const delays = [
-            500, 2000, 3000, 5000, 5000, 8000, 8000, 10000, 15000, 20000,
-          ];
-          for (let i = 0; i < maxRetries; i++) {
-            await new Promise((r) => setTimeout(r, delays[i] || 10000));
-            try {
-              console.log(`[POLL] Attempt ${i + 1}/${maxRetries} for ${oid}`);
-              const res = await fetch("/api/check-payment-status", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ orderId: oid }),
-              });
-              const result = await res.json();
-              console.log(`[POLL] Response:`, result);
-              if (result?.status === "settlement") {
-                message.success("Pembayaran berhasil dikonfirmasi!");
-                if (event?.id) fetchRegisteredParticipants(event.id);
-                return;
-              }
-              if (result?.error) {
-                console.error(`[POLL] API error: ${result.error}`);
-              }
-              if (result?.status === "cancel" || result?.status === "expire") {
-                console.log(`[POLL] Terminal status: ${result.status}`);
-                return;
-              }
-            } catch (e) {
-              console.error("[POLL] Fetch error:", e);
-            }
-          }
-          console.log(`[POLL] Max retries reached for ${oid}`);
-        };
-
-        (window as any).snap.pay(data.snapToken, {
-          onSuccess: () => {
-            message.success("Pembayaran berhasil! Kamu terdaftar.");
-            setRegisterModalOpen(false);
-            if (event?.id) fetchRegisteredParticipants(event.id);
-            pollPaymentStatus(data.orderId);
-          },
-          onPending: () => {
-            message.info("Menunggu pembayaran...");
-            setRegisterModalOpen(false);
-            if (event?.id) fetchRegisteredParticipants(event.id);
-            pollPaymentStatus(data.orderId);
-          },
-          onError: () => {
-            message.error("Pembayaran gagal");
-            if (event?.id) fetchRegisteredParticipants(event.id);
-          },
-          onClose: () => {
-            message.info("Popup pembayaran ditutup");
-            if (event?.id) fetchRegisteredParticipants(event.id);
-            pollPaymentStatus(data.orderId);
-          },
-        });
-      } else {
-        message.success(
-          "Registrasi berhasil disimpan (Midtrans belum dikonfigurasi)",
-        );
-        setRegisterModalOpen(false);
-      }
-    } catch (err) {
-      message.error("Terjadi kesalahan");
-    } finally {
-      setRegistering(false);
-    }
-  };
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [event?.id, orderIdParam]);
 
   // Load event info
   useEffect(() => {
@@ -763,38 +506,6 @@ export default function EventPage() {
           setEvent(eventData);
           fetchRegisteredParticipants(eventData.id);
           fetchCategoryDetails(eventData.id);
-
-          // Load custom fields
-          try {
-            const fieldsRes = await fetch(
-              `/api/registration-fields?eventId=${eventData.id}`,
-            );
-            if (fieldsRes.ok) {
-              const fieldsData = await fieldsRes.json();
-              const fetchedFields = fieldsData.fields || [];
-              const transformedFields = fetchedFields.map((f: any) => {
-                if (
-                  f.label.trim() === "Nationality" &&
-                  f.type !== "nationality"
-                ) {
-                  return { ...f, type: "nationality" };
-                }
-                return f;
-              });
-              setCustomFields(transformedFields);
-            }
-          } catch {}
-
-          // Load tshirt inventory
-          try {
-            const invRes = await fetch(
-              `/api/tshirt-inventory?eventId=${eventData.id}`,
-            );
-            if (invRes.ok) {
-              const invData = await invRes.json();
-              setTshirtInventory(invData.inventory || []);
-            }
-          } catch {}
         } else {
           setState({ status: "error", msg: "Event tidak ditemukan" });
         }
@@ -803,99 +514,6 @@ export default function EventPage() {
       }
     })();
   }, [slug]);
-
-  // Load Midtrans Snap Script
-  useEffect(() => {
-    const clientKey = import.meta.env.VITE_MIDTRANS_CLIENT_KEY;
-    if (!clientKey) {
-      console.warn(
-        "VITE_MIDTRANS_CLIENT_KEY is missing. Midtrans will not load.",
-      );
-      return;
-    }
-
-    const scriptId = "midtrans-snap-script";
-    if (!document.getElementById(scriptId)) {
-      const script = document.createElement("script");
-      script.id = scriptId;
-      script.src =
-        import.meta.env.VITE_MIDTRANS_IS_PRODUCTION === "true"
-          ? "https://app.midtrans.com/snap/snap.js"
-          : "https://app.sandbox.midtrans.com/snap/snap.js";
-      script.setAttribute("data-client-key", clientKey);
-      script.async = true;
-      document.body.appendChild(script);
-    }
-  }, []);
-
-  const handleSendOtp = async () => {
-    if (!regForm.email) {
-      message.error("Masukkan alamat email terlebih dahulu");
-      return;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(regForm.email)) {
-      message.error("Format email tidak valid");
-      return;
-    }
-
-    const sendCountKey = `otp_send_count_${regForm.email}`;
-    const sendCount = parseInt(localStorage.getItem(sendCountKey) || "0", 10);
-    if (sendCount >= 2) {
-      message.error(
-        "Batas pengiriman OTP harian tercapai untuk email ini di browser Anda.",
-      );
-      return;
-    }
-
-    setOtpLoading(true);
-    try {
-      const res = await fetch("/api/send-email-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: regForm.email }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        localStorage.setItem(sendCountKey, (sendCount + 1).toString());
-        setOtpSent(true);
-        message.success(data.message || "Kode verifikasi telah dikirim");
-      } else {
-        message.error(data.error || "Gagal mengirim kode verifikasi");
-      }
-    } catch (err) {
-      message.error("Terjadi kesalahan saat mengirim kode");
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    if (!otpCode || otpCode.length !== 6) {
-      message.error("Masukkan 6 digit kode verifikasi");
-      return;
-    }
-
-    setOtpLoading(true);
-    try {
-      const res = await fetch("/api/verify-email-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: regForm.email, code: otpCode }),
-      });
-      const data = await res.json();
-      if (res.ok && data.verified) {
-        setEmailVerified(true);
-        message.success(data.message || "Email berhasil diverifikasi");
-      } else {
-        message.error(data.error || "Kode verifikasi salah atau expired");
-      }
-    } catch (err) {
-      message.error("Terjadi kesalahan saat verifikasi kode");
-    } finally {
-      setOtpLoading(false);
-    }
-  };
 
   // Load banners
   useEffect(() => {
@@ -1967,7 +1585,7 @@ export default function EventPage() {
                   </button>
                 ) : (
                   <button
-                    onClick={() => setRegisterModalOpen(true)}
+                    onClick={() => navigate(`/event/${slug}/daftar`)}
                     className="mt-3 md:mt-6 bg-white text-black mix-blend-difference font-bold py-2 md:py-3 px-6 md:px-10 rounded-full uppercase tracking-widest text-[10px] md:text-xs transition-transform hover:scale-105 cursor-pointer mx-auto md:mx-0 block md:inline-block shadow-[0_0_15px_rgba(255,255,255,0.3)]"
                   >
                     Daftar Sekarang →
@@ -2080,7 +1698,7 @@ export default function EventPage() {
                                     ev.preventDefault();
                                     
                                     if (btn.classList.contains('rp-badge') || btn.classList.contains('rp-coming') || btn.classList.contains('rp-submit-btn')) {
-                                      setRegisterModalOpen(true);
+                                      navigate(`/event/${slug}/daftar`);
                                       return;
                                     }
 
@@ -2116,7 +1734,7 @@ export default function EventPage() {
                             );
                             if (btn) {
                               ev.preventDefault();
-                              setRegisterModalOpen(true);
+                              navigate(`/event/${slug}/daftar`);
                             }
                           }}
                         />
@@ -2802,848 +2420,15 @@ export default function EventPage() {
           new Date(event.eventDate).setHours(0, 0, 0, 0) <
             new Date().setHours(0, 0, 0, 0)
         ) && (
-          <div
-            className="fixed bottom-6 right-6 z-50 mix-blend-difference"
-            style={{ display: registerModalOpen ? "none" : "block" }}
-          >
+          <div className="fixed bottom-6 right-6 z-50 mix-blend-difference">
             <button
-              onClick={() => setRegisterModalOpen(true)}
+              onClick={() => navigate(`/event/${slug}/daftar`)}
               className="bg-white text-black font-bold py-3 px-6 rounded-full uppercase tracking-widest text-[10px] transition-transform hover:scale-105 cursor-pointer"
             >
               Daftar →
             </button>
           </div>
         )}
-
-        <Modal
-          title={null}
-          open={registerModalOpen}
-          onCancel={() => {
-            setRegisterModalOpen(false);
-            setCurrentStep(1);
-          }}
-          width={720}
-          footer={null}
-          className="registration-wizard"
-          centered
-          styles={{ body: { maxHeight: "70vh", overflowY: "auto" } }}
-        >
-          <div className="p-2 sm:p-6">
-            {/* Progress Header */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-black uppercase tracking-tighter mb-6 text-center">
-                Pendaftaran Event
-              </h2>
-              <div className="flex items-center justify-between relative px-4">
-                {/* Background Line */}
-                <div className="absolute left-8 right-8 top-4 h-[2px] bg-gray-200 -z-10"></div>
-                {/* Active Line */}
-                <div
-                  className="absolute left-8 top-4 h-[2px] bg-stone-300 -z-10 transition-all duration-500 overflow-hidden"
-                  style={{
-                    width:
-                      currentStep === 1
-                        ? "0%"
-                        : currentStep === 2
-                          ? "50%"
-                          : "calc(100% - 4rem)",
-                  }}
-                >
-                  {currentStep < 3 && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_2s_infinite]"></div>
-                  )}
-                </div>
-
-                {/* Step 1 */}
-                <div className="flex flex-col items-center gap-2 bg-white relative">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${currentStep === 1 ? "bg-stone-800 text-white ring-4 ring-stone-200 scale-110 shadow-lg" : currentStep > 1 ? "bg-stone-800 text-white" : "bg-gray-400 text-white"}`}
-                  >
-                    {currentStep > 1 ? "✓" : "1"}
-                  </div>
-                  <span
-                    className={`text-[11px] font-bold ${currentStep >= 1 ? "text-stone-900" : "text-gray-500"}`}
-                  >
-                    Data Diri
-                  </span>
-                </div>
-
-                {/* Step 2 */}
-                <div className="flex flex-col items-center gap-2 bg-white relative">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${currentStep === 2 ? "bg-stone-800 text-white ring-4 ring-stone-200 scale-110 shadow-lg" : currentStep > 2 ? "bg-stone-800 text-white" : "bg-gray-400 text-white"}`}
-                  >
-                    {currentStep > 2 ? "✓" : "2"}
-                  </div>
-                  <span
-                    className={`text-[11px] font-bold ${currentStep >= 2 ? "text-stone-900" : "text-gray-500"}`}
-                  >
-                    Konfirmasi
-                  </span>
-                </div>
-
-                {/* Step 3 */}
-                <div className="flex flex-col items-center gap-2 bg-white relative">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${currentStep === 3 ? "bg-stone-800 text-white ring-4 ring-stone-200 scale-110 shadow-lg" : "bg-gray-400 text-white"}`}
-                  >
-                    3
-                  </div>
-                  <span
-                    className={`text-[11px] font-bold ${currentStep >= 3 ? "text-stone-900" : "text-gray-500"}`}
-                  >
-                    Pembayaran
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Step 1: Category & Email */}
-            {currentStep === 1 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="bg-stone-50 p-6 rounded-2xl border border-stone-200">
-                  <h3 className="text-lg font-black mb-4">1. Pilih Kategori</h3>
-                  <Select
-                    className="w-full"
-                    size="large"
-                    virtual={false}
-                    getPopupContainer={(triggerNode) => triggerNode.parentNode}
-                    placeholder="Pilih Kategori Perlombaan"
-                    value={regForm.categoryId || undefined}
-                    onChange={(val) => {
-                      updateRegForm("categoryId", val);
-                      setBulkQty(1);
-                      setBulkParticipants([{}]);
-                    }}
-                    options={categoryDetails
-                      .filter((c) => c.quota === 0 || c.sold < c.quota)
-                      .filter((c) => !c.isClosed)
-                      .map((c) => ({
-                        label: `${c.name} - Rp ${c.price.toLocaleString("id-ID")}${c.quota > 0 ? ` (${c.quota - c.sold} slot)` : ""}`,
-                        value: c.id,
-                      }))}
-                  />
-                </div>
-
-                <div className="bg-stone-50 p-6 rounded-2xl border border-stone-200">
-                  <h3 className="text-lg font-black mb-4">
-                    2.{" "}
-                    {event?.content?.allowBulkNoOtp
-                      ? "Alamat Email"
-                      : "Verifikasi Email"}
-                  </h3>
-                  <p className="text-sm text-gray-500 mb-4">
-                    {event?.content?.allowBulkNoOtp
-                      ? "Masukkan alamat email Anda untuk keperluan tiket dan informasi."
-                      : "Kode OTP akan dikirimkan ke email Anda untuk validasi pendaftaran."}
-                  </p>
-
-                  <div className="flex flex-col sm:flex-row gap-3 items-center">
-                    <div className="relative flex-1 w-full">
-                      <Input
-                        placeholder="email@example.com"
-                        type="email"
-                        size="large"
-                        className="w-full"
-                        value={regForm.email}
-                        onChange={(e) => updateRegForm("email", e.target.value)}
-                        disabled={
-                          (emailVerified && !event?.content?.allowBulkNoOtp) ||
-                          otpLoading
-                        }
-                      />
-                      <p className="text-xs text-amber-600 mt-1.5 flex items-center gap-1">
-                        <svg
-                          className="w-3.5 h-3.5 shrink-0"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 9v2m0 4h.01"
-                          />
-                        </svg>
-                        *Pastikan alamat email benar, tiket akan dikirim ke
-                        email ini.
-                      </p>
-                    </div>
-                    {!event?.content?.allowBulkNoOtp && (
-                      <>
-                        {!emailVerified ? (
-                          <Button
-                            size="large"
-                            type={otpSent ? "default" : "primary"}
-                            onClick={handleSendOtp}
-                            loading={otpLoading}
-                            disabled={
-                              !regForm.email || !regForm.email.includes("@")
-                            }
-                            className="w-full sm:w-auto"
-                          >
-                            {otpSent ? "Kirim Ulang" : "Kirim Kode"}
-                          </Button>
-                        ) : (
-                          <div className="flex items-center gap-1.5 bg-white px-4 py-2 rounded-lg border border-stone-200 text-xs font-black text-green-600 shadow-sm whitespace-nowrap uppercase tracking-widest">
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={3}
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                            Terverifikasi
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-
-                  {!event?.content?.allowBulkNoOtp &&
-                    otpSent &&
-                    !emailVerified && (
-                      <div className="mt-4 pt-4 border-t border-gray-200">
-                        <p className="text-xs font-bold text-gray-500 uppercase mb-2">
-                          Masukkan 6 Digit OTP
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-3">
-                          <Input
-                            placeholder="000000"
-                            size="large"
-                            className="text-center font-mono tracking-[0.5em] text-xl"
-                            maxLength={6}
-                            value={otpCode}
-                            onChange={(e) =>
-                              setOtpCode(e.target.value.replace(/[^0-9]/g, ""))
-                            }
-                          />
-                          <Button
-                            type="primary"
-                            danger
-                            size="large"
-                            onClick={handleVerifyOtp}
-                            loading={otpLoading}
-                            disabled={otpCode.length !== 6}
-                            className="w-full sm:w-auto"
-                          >
-                            Verifikasi
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                </div>
-
-                <div className="flex justify-end pt-4">
-                  <Button
-                    type="primary"
-                    danger
-                    size="large"
-                    className="w-full sm:w-auto px-8 font-bold uppercase tracking-widest text-xs h-14"
-                    disabled={
-                      !regForm.categoryId ||
-                      (!event?.content?.allowBulkNoOtp && !emailVerified) ||
-                      (event?.content?.allowBulkNoOtp &&
-                        (!regForm.email || !regForm.email.includes("@")))
-                    }
-                    onClick={() => setCurrentStep(2)}
-                  >
-                    Selanjutnya
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Step 2: Custom Dynamic Fields */}
-            {currentStep === 2 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
-                <div className="bg-stone-50 p-6 rounded-2xl border border-stone-200">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                    <div className="flex flex-col">
-                      <h3 className="text-lg font-black">Data Peserta</h3>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2.5 py-1 rounded-md border border-blue-200">
-                          {categoryDetails.find(
-                            (c) => c.id === regForm.categoryId,
-                          )?.name || ""}
-                        </span>
-                        {bulkParticipants[activeTabIdx]?.["Age Category"] && (
-                          <span className="text-xs font-bold bg-purple-100 text-purple-700 px-2.5 py-1 rounded-md border border-purple-200 shadow-sm animate-in zoom-in duration-300">
-                            {bulkParticipants[activeTabIdx]["Age Category"]}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {event?.content?.allowBulkNoOtp && (
-                      <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-lg border border-stone-200">
-                        <span className="font-bold text-xs text-stone-500 uppercase">
-                          Qty
-                        </span>
-                        <Select
-                          size="small"
-                          bordered={false}
-                          virtual={false}
-                          getPopupContainer={(triggerNode) =>
-                            triggerNode.parentNode
-                          }
-                          value={bulkQty}
-                          onChange={(val) => {
-                            setBulkQty(val);
-                            setBulkParticipants((prev) => {
-                              const updated = [...prev];
-                              while (updated.length < val) updated.push({});
-                              return updated;
-                            });
-                            if (activeTabIdx >= val) setActiveTabIdx(val - 1);
-                          }}
-                          options={(() => {
-                            const selectedCat = categoryDetails.find(
-                              (c) => c.id === regForm.categoryId,
-                            );
-                            const available = selectedCat
-                              ? selectedCat.quota > 0
-                                ? selectedCat.quota - selectedCat.sold
-                                : 10
-                              : 10;
-                            const max = Math.min(10, available);
-                            return Array.from(
-                              { length: max },
-                              (_, i) => i + 1,
-                            ).map((v) => ({ label: v.toString(), value: v }));
-                          })()}
-                          className="w-16"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {bulkQty > 1 && (
-                    <div className="flex overflow-x-auto gap-2 mb-6 pb-2 border-b border-stone-100">
-                      {Array.from({ length: bulkQty }).map((_, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => setActiveTabIdx(idx)}
-                          className={`px-4 py-2 text-xs font-bold whitespace-nowrap rounded-lg transition-colors ${activeTabIdx === idx ? "bg-blue-500 text-white" : "bg-stone-100 text-stone-500 hover:bg-stone-200"}`}
-                        >
-                          PELANGGAN {idx + 1}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {customFields.length === 0 && tshirtInventory.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      Admin belum mengatur kolom pendaftaran untuk event ini.
-                      <br />
-                      Klik Lanjut Pembayaran untuk meneruskan pesanan.
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {customFields.map((field) => (
-                        <div
-                          key={field.id}
-                          className={
-                            field.type === "textarea" ? "md:col-span-2" : ""
-                          }
-                        >
-                          <label className="block text-xs font-bold text-gray-700 mb-1">
-                            {field.label}{" "}
-                            {field.required ? (
-                              <span className="text-red-500">*</span>
-                            ) : null}
-                          </label>
-
-                          {field.type === "dropdown" ? (
-                            <Select
-                              className="w-full"
-                              size="large"
-                              virtual={false}
-                              getPopupContainer={(triggerNode) =>
-                                triggerNode.parentNode
-                              }
-                              placeholder={`Pilih ${field.label}`}
-                              value={
-                                bulkParticipants[activeTabIdx]?.[field.id] ||
-                                undefined
-                              }
-                              onChange={(val) =>
-                                setBulkParticipants((prev) => {
-                                  const updated = [...prev];
-                                  updated[activeTabIdx] = {
-                                    ...updated[activeTabIdx],
-                                    [field.id]: val,
-                                  };
-                                  return updated;
-                                })
-                              }
-                              options={(field.options
-                                ? field.options.split(",")
-                                : []
-                              ).map((opt) => ({
-                                label: opt.trim(),
-                                value: opt.trim(),
-                              }))}
-                            />
-                          ) : field.type === "nationality" ? (
-                            <Select
-                              showSearch
-                              className="w-full"
-                              size="large"
-                              virtual={false}
-                              getPopupContainer={(triggerNode) =>
-                                triggerNode.parentNode
-                              }
-                              placeholder={`Pilih ${field.label}`}
-                              filterOption={(input, option) =>
-                                String(option?.value || "")
-                                  .toLowerCase()
-                                  .includes(input.toLowerCase())
-                              }
-                              value={
-                                bulkParticipants[activeTabIdx]?.[field.id] ||
-                                undefined
-                              }
-                              onChange={(val) =>
-                                setBulkParticipants((prev) => {
-                                  const updated = [...prev];
-                                  updated[activeTabIdx] = {
-                                    ...updated[activeTabIdx],
-                                    [field.id]: val,
-                                  };
-                                  return updated;
-                                })
-                              }
-                              options={getData().map((c) => {
-                                const icon = getUnicodeFlagIcon(c.code);
-                                return {
-                                  label: (
-                                    <span>
-                                      <FlagImg emoji={icon} name={c.name} />
-                                      {c.name}
-                                    </span>
-                                  ),
-                                  value: `${icon} ${c.name}`,
-                                };
-                              })}
-                            />
-                          ) : field.type === "textarea" ? (
-                            <Input.TextArea
-                              rows={3}
-                              placeholder={`Masukkan ${field.label}`}
-                              value={
-                                bulkParticipants[activeTabIdx]?.[field.id] || ""
-                              }
-                              onChange={(e) =>
-                                setBulkParticipants((prev) => {
-                                  const updated = [...prev];
-                                  updated[activeTabIdx] = {
-                                    ...updated[activeTabIdx],
-                                    [field.id]: e.target.value,
-                                  };
-                                  return updated;
-                                })
-                              }
-                            />
-                          ) : (
-                            <Input
-                              size="large"
-                              type={field.type === "nik" ? "text" : field.type}
-                              inputMode={
-                                field.type === "nik" ? "numeric" : undefined
-                              }
-                              pattern={
-                                field.type === "nik" ? "[0-9]*" : undefined
-                              }
-                              maxLength={field.type === "nik" ? 16 : undefined}
-                              placeholder={`Masukkan ${field.label}`}
-                              value={
-                                bulkParticipants[activeTabIdx]?.[field.id] || ""
-                              }
-                              onChange={(e) => {
-                                if (field.type === "nik") {
-                                  const val = e.target.value.replace(/\D/g, "");
-                                  setBulkParticipants((prev) => {
-                                    const updated = [...prev];
-                                    updated[activeTabIdx] = {
-                                      ...updated[activeTabIdx],
-                                      [field.id]: val,
-                                    };
-                                    return updated;
-                                  });
-                                } else {
-                                  setBulkParticipants((prev) => {
-                                    const updated = [...prev];
-                                    updated[activeTabIdx] = {
-                                      ...updated[activeTabIdx],
-                                      [field.id]: e.target.value,
-                                    };
-
-                                    // Auto Assign Age Category based on DOB
-                                    const labelLower =
-                                      field.label.toLowerCase();
-                                    if (
-                                      field.type === "date" ||
-                                      labelLower.includes("date of birth") ||
-                                      labelLower.includes("tanggal lahir") ||
-                                      labelLower === "dob"
-                                    ) {
-                                      const age = calculateAgeOnRaceDay(
-                                        e.target.value,
-                                        event?.eventDate || "",
-                                      );
-                                      const category = getAgeCategory(age, ageBrackets);
-                                      if (category) {
-                                        updated[activeTabIdx]["Age Category"] =
-                                          category;
-                                      } else {
-                                        delete updated[activeTabIdx][
-                                          "Age Category"
-                                        ];
-                                      }
-                                    }
-
-                                    return updated;
-                                  });
-                                }
-                              }}
-                            />
-                          )}
-                        </div>
-                      ))}
-
-                      {tshirtInventory.length > 0 && (
-                        <div className="md:col-span-2 mt-4 pt-4 border-t border-stone-200">
-                          <label className="block text-xs font-bold text-gray-700 mb-2">
-                            Ukuran Kaos / Jersey{" "}
-                            <span className="text-red-500">*</span>
-                          </label>
-                          <Select
-                            className="w-full mb-3"
-                            size="large"
-                            virtual={false}
-                            getPopupContainer={(triggerNode) =>
-                              triggerNode.parentNode
-                            }
-                            placeholder="Pilih Ukuran"
-                            value={
-                              bulkParticipants[activeTabIdx]?.["tshirtSize"] ||
-                              undefined
-                            }
-                            onChange={(val) =>
-                              setBulkParticipants((prev) => {
-                                const updated = [...prev];
-                                updated[activeTabIdx] = {
-                                  ...updated[activeTabIdx],
-                                  tshirtSize: val,
-                                };
-                                return updated;
-                              })
-                            }
-                            options={tshirtInventory.map((t) => {
-                              const selectedCount = bulkParticipants.filter(
-                                (p, i) =>
-                                  i !== activeTabIdx && p.tshirtSize === t.size,
-                              ).length;
-                              const remaining =
-                                t.quota - t.sold - selectedCount;
-                              return {
-                                label: `${t.size} ${t.quota > 0 ? (remaining <= 0 ? "(Habis)" : `(${remaining} tersisa)`) : ""}`,
-                                value: t.size,
-                                disabled: t.quota > 0 && remaining <= 0,
-                              };
-                            })}
-                          />
-                          <div className="mt-4">
-                            <div className="flex items-center gap-2 mb-3">
-                              <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
-                                Size Chart Guide
-                              </span>
-                              <div className="h-[1px] flex-1 bg-stone-100"></div>
-                            </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                              {tshirtInventory.map((t, idx) => (
-                                <div
-                                  key={idx}
-                                  className="bg-stone-50/50 border border-stone-100 rounded-xl p-3 flex flex-col items-center justify-center transition-all hover:border-red-200 hover:bg-white group"
-                                >
-                                  <span className="text-lg font-black text-stone-900 mb-1 group-hover:text-red-600 transition-colors">
-                                    {t.size}
-                                  </span>
-                                  <div className="flex flex-col items-center text-[10px] text-stone-500 font-medium uppercase tracking-tighter">
-                                    <span>W: {t.width || "-"} cm</span>
-                                    <span>H: {t.height || "-"} cm</span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                            <p className="text-[9px] text-stone-400 mt-3 italic text-center">
-                              * Ukuran dalam centimeter (cm). Toleransi ukuran
-                              ±1-2cm.
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {(() => {
-                  const tncUrls =
-                    event?.content?.tncUrls ||
-                    (event?.content?.tncUrl ? [event.content.tncUrl] : []);
-                  if (tncUrls.length > 0) {
-                    return (
-                      <div className="w-full flex flex-col gap-3 bg-white p-4 rounded-xl border border-stone-200 mb-6 shadow-sm">
-                        <div className="flex items-start gap-3">
-                          <input
-                            type="checkbox"
-                            className="w-5 h-5 accent-emerald-500 cursor-pointer mt-0.5"
-                            checked={tncAgreed}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setTncModalOpen(true);
-                              } else {
-                                setTncAgreed(false);
-                              }
-                            }}
-                          />
-                          <span className="text-sm font-medium text-stone-600 leading-relaxed">
-                            Saya telah membaca dan menyetujui seluruh{" "}
-                            <button
-                              className="text-emerald-600 font-bold hover:underline"
-                              onClick={() => setTncModalOpen(true)}
-                            >
-                              Syarat dan Ketentuan
-                            </button>{" "}
-                            perlombaan ini.
-                          </span>
-                        </div>
-                        <div className="flex items-start gap-3">
-                          <input
-                            type="checkbox"
-                            className="w-5 h-5 accent-emerald-500 cursor-pointer mt-0.5"
-                            checked={dataAgreed}
-                            onChange={(e) => setDataAgreed(e.target.checked)}
-                          />
-                          <span className="text-sm font-medium text-stone-600 leading-relaxed">
-                            Saya menyatakan bahwa seluruh data yang saya isi
-                            adalah benar, valid, dan dapat
-                            dipertanggungjawabkan.
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
-
-                <div className="flex flex-col-reverse sm:flex-row justify-between gap-4">
-                  <Button
-                    size="large"
-                    onClick={() => setCurrentStep(1)}
-                    className="w-full sm:w-auto h-14"
-                  >
-                    Kembali
-                  </Button>
-                  <div className="w-full sm:w-[320px]">
-                    <button
-                      className="w-full h-14 bg-[#10b981] hover:bg-[#059669] text-white font-bold rounded-full transition-all duration-300 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:-translate-y-0.5 active:translate-y-0 uppercase tracking-widest text-sm"
-                      onClick={() => {
-                        for (let i = 0; i < bulkQty; i++) {
-                          const p = bulkParticipants[i] || {};
-                          const missing = customFields.filter(
-                            (f) => f.required && !p[f.id],
-                          );
-                          if (tshirtInventory.length > 0 && !p["tshirtSize"]) {
-                            missing.push({
-                              label: "Ukuran Kaos / Jersey",
-                            } as any);
-                          }
-                          if (missing.length > 0) {
-                            setActiveTabIdx(i);
-                            message.error(
-                              `Pelanggan ${i + 1}: Harap isi: ${missing.map((f) => f.label).join(", ")}`,
-                            );
-                            return;
-                          }
-
-                          const nikFields = customFields.filter(
-                            (f) => f.type === "nik",
-                          );
-                          for (const nf of nikFields) {
-                            const val = p[nf.id];
-                            if (val) {
-                              if (!/^\d+$/.test(val)) {
-                                setActiveTabIdx(i);
-                                message.error(
-                                  `Pelanggan ${i + 1}: Format ${nf.label} salah. Harus berupa angka.`,
-                                );
-                                return;
-                              }
-                              if (val !== "0" && val.length < 12) {
-                                setActiveTabIdx(i);
-                                message.error(
-                                  `Pelanggan ${i + 1}: ${nf.label} harus diisi 0 (WNA) atau minimal 12 digit.`,
-                                );
-                                return;
-                              }
-                            }
-                          }
-                        }
-
-                        const tncUrls =
-                          event?.content?.tncUrls ||
-                          (event?.content?.tncUrl
-                            ? [event.content.tncUrl]
-                            : []);
-                        if (tncUrls.length > 0) {
-                          if (!tncAgreed || !dataAgreed) {
-                            message.error(
-                              "Anda harus menyetujui seluruh Syarat dan Ketentuan serta validitas data terlebih dahulu.",
-                            );
-                            return;
-                          }
-                        }
-
-                        setCurrentStep(3);
-                      }}
-                    >
-                      Lanjut Pembayaran
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: Summary & Payment */}
-            {currentStep === 3 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
-                <div className="bg-white p-6 rounded-lg border border-stone-200">
-                  <h3 className="text-base font-bold mb-4">Ringkasan Pendaftaran</h3>
-
-                  <div className="space-y-3 pb-4 border-b border-stone-200">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Event</span>
-                      <span className="font-medium">{event?.name}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Kategori</span>
-                      <span className="font-medium">{selectedCategoryDetail?.name}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Email</span>
-                      <span className="font-medium">{regForm.email}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Jumlah Peserta</span>
-                      <span className="font-medium">{bulkQty} orang</span>
-                    </div>
-                  </div>
-
-                  {/* Voucher */}
-                  {totalPrice > 0 && (
-                    <div className="py-4 border-b border-stone-200">
-                      <div className="flex gap-2">
-                        <input
-                          value={voucherCode}
-                          onChange={(e) => {
-                            setVoucherCode(e.target.value.toUpperCase());
-                            setVoucherResult(null);
-                          }}
-                          placeholder="Masukkan kode voucher"
-                          className="flex-1 border border-stone-200 rounded-md px-3 h-10 text-sm uppercase tracking-wide focus:outline-none focus:border-stone-500"
-                        />
-                        {voucherCode.trim() && (
-                          <Button loading={voucherLoading} onClick={applyVoucher} className="shrink-0">
-                            Terapkan
-                          </Button>
-                        )}
-                      </div>
-                      {voucherResult?.valid && (
-                        <p className="text-xs text-green-600 mt-2">
-                          Voucher {voucherCode.trim()} berhasil dipakai.
-                        </p>
-                      )}
-                      {voucherResult && !voucherResult.valid && (
-                        <p className="text-xs text-red-600 mt-2">{voucherResult.reason}</p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Rincian pembayaran */}
-                  <div className="pt-4">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Subtotal</span>
-                      <span className="font-medium">Rp {totalPrice.toLocaleString("id-ID")}</span>
-                    </div>
-                    {voucherResult?.valid && (
-                      <div className="flex justify-between text-sm mt-2">
-                        <span className="text-gray-500">Diskon voucher</span>
-                        <span className="font-medium text-red-600">
-                          −Rp {(voucherResult.discountAmount || 0).toLocaleString("id-ID")}
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex justify-between items-baseline pt-3 mt-3 border-t border-stone-200">
-                      <span className="font-bold text-sm">Total Pembayaran</span>
-                      <span className="text-2xl font-bold text-stone-900">
-                        Rp {finalPrice.toLocaleString("id-ID")}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="py-2 flex items-center justify-center mt-2 mb-2">
-                  <div className="text-sm font-bold text-center text-stone-500">
-                    {event?.content?.checkoutWarningText ||
-                      "Pastikan data dan kategori yang Anda pilih sudah sesuai."}
-                  </div>
-                </div>
-
-                <div className="flex flex-col-reverse sm:flex-row justify-between pt-2 gap-4">
-                  <Button
-                    size="large"
-                    onClick={() => setCurrentStep(2)}
-                    className="w-full sm:w-auto h-14"
-                  >
-                    Kembali
-                  </Button>
-                  <Button
-                    type="primary"
-                    danger
-                    size="large"
-                    loading={registering}
-                    onClick={handleCheckout}
-                    className="w-full sm:w-auto px-8 font-bold uppercase tracking-widest text-xs h-14"
-                  >
-                    {finalPrice <= 0 ? "Daftar Sekarang" : "Bayar Sekarang"}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            <div className="mt-8 pt-6 border-t border-stone-200 text-center">
-              <p className="text-sm text-gray-500">
-                Ada kendala saat mendaftar?{" "}
-                <a
-                  href={`/bantuan?eventId=${event?.id}`}
-                  className="text-stone-900 font-bold hover:underline"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Lapor di sini
-                </a>
-              </p>
-            </div>
-          </div>
-        </Modal>
 
         {/* QR Scanner Modal */}
         {scannerOpen && (
@@ -3776,102 +2561,6 @@ export default function EventPage() {
             )}
           </div>
         )}
-
-        <Modal
-          title={<div className="font-black text-xl">Syarat dan Ketentuan</div>}
-          open={tncModalOpen}
-          onCancel={() => setTncModalOpen(false)}
-          styles={{ body: { maxHeight: "70vh", overflowY: "auto" } }}
-          footer={
-            <div className="flex justify-end pt-4 border-t border-stone-200 mt-4">
-              <Button
-                type="primary"
-                size="large"
-                className="bg-emerald-500 hover:bg-emerald-600 font-bold border-none"
-                onClick={async () => {
-                  setTncAgreed(true);
-                  setTncModalOpen(false);
-                  try {
-                    await fetch("/api/client-logs", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        action: "TNC_AGREED",
-                        detail: `Peserta telah membaca/scroll dan menyetujui Syarat & Ketentuan. Waktu (Local): ${new Date().toLocaleString("id-ID")}`,
-                        metadata: {
-                          userEmail: regForm.email || "guest",
-                          eventId: event?.id || "",
-                        },
-                      }),
-                    });
-                  } catch (err) {
-                    console.error("Failed to log TNC agreement", err);
-                  }
-                }}
-              >
-                Setuju & Lanjutkan
-              </Button>
-            </div>
-          }
-          width={800}
-          centered
-        >
-          <div className="flex flex-col h-[70vh]">
-            {(() => {
-              const tncUrls =
-                event?.content?.tncUrls ||
-                (event?.content?.tncUrl ? [event.content.tncUrl] : []);
-              return (
-                <>
-                  {tncUrls.length > 0 && (
-                    <div
-                      className="w-full flex-1 overflow-y-auto bg-stone-50 rounded-xl border border-stone-200 p-2 relative flex flex-col gap-4"
-                      style={{ WebkitOverflowScrolling: "touch" }}
-                    >
-                      {tncUrls.map((url: string, idx: number) => (
-                        <iframe
-                          key={idx}
-                          src={`${url}#toolbar=0`}
-                          className="w-full min-h-[50vh] rounded-lg border-0 shadow-sm"
-                        />
-                      ))}
-                    </div>
-                  )}
-                  {tncUrls.length > 0 && (
-                    <div className="mt-3 text-center">
-                      <p className="text-xs text-stone-500">
-                        Anda harus menyetujui syarat & ketentuan di atas sebelum
-                        melanjutkan pendaftaran.
-                      </p>
-                      <div className="flex flex-wrap gap-2 justify-center mt-3">
-                        {tncUrls.map((url: string, idx: number) => (
-                          <a
-                            key={idx}
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-block px-4 py-2 bg-stone-800 text-white text-xs font-bold rounded-lg hover:bg-stone-900 transition-colors"
-                          >
-                            Buka Dokumen {tncUrls.length > 1 ? idx + 1 : "T&C"}
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {tncUrls.length === 0 && (
-                    <div className="flex-1 flex items-center justify-center">
-                      <p className="text-stone-400 italic">
-                        Belum ada dokumen Syarat dan Ketentuan.
-                      </p>
-                    </div>
-                  )}
-                </>
-              );
-            })()}
-          </div>
-        </Modal>
-
-
 
         <style>{`
           .event-page {
