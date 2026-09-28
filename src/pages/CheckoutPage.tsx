@@ -500,9 +500,13 @@ export default function CheckoutPage() {
               className="flex-1 border-2 border-stone-200 rounded-xl px-3 h-11 text-sm uppercase tracking-wide bg-white focus:outline-none focus:border-stone-800"
             />
             {voucherCode.trim() && (
-              <Button loading={voucherLoading} onClick={applyVoucher} className="shrink-0 h-11">
-                Terapkan
-              </Button>
+              <button
+                onClick={applyVoucher}
+                disabled={voucherLoading}
+                className="shrink-0 h-11 px-5 rounded-xl border-2 border-stone-200 font-bold text-sm hover:border-stone-900 transition-colors disabled:opacity-40 bg-white"
+              >
+                {voucherLoading ? "..." : "Terapkan"}
+              </button>
             )}
           </div>
           {voucherResult?.valid && (
@@ -662,16 +666,13 @@ export default function CheckoutPage() {
                           />
                         </div>
                         {!allowBulkNoOtp && !emailVerified && (
-                          <Button
-                            size="large"
-                            type="primary"
+                          <button
                             onClick={handleSendOtp}
-                            loading={otpLoading}
-                            disabled={!email || !email.includes("@")}
-                            className="w-full sm:w-auto"
+                            disabled={otpLoading || !email || !email.includes("@")}
+                            className="w-full sm:w-auto h-12 px-6 rounded-xl border-2 border-stone-200 font-bold text-sm hover:border-stone-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 bg-white"
                           >
-                            {otpSent ? "Kirim Ulang" : "Kirim Kode"}
-                          </Button>
+                            {otpLoading ? "Mengirim..." : otpSent ? "Kirim Ulang" : "Kirim Kode"}
+                          </button>
                         )}
                         {!allowBulkNoOtp && emailVerified && (
                           <span className="flex items-center gap-1.5 bg-emerald-50 px-4 rounded-xl border border-emerald-200 text-xs font-black text-green-600 whitespace-nowrap">
@@ -698,16 +699,13 @@ export default function CheckoutPage() {
                             value={otpCode}
                             onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, ""))}
                           />
-                          <Button
-                            type="primary"
-                            size="large"
+                          <button
                             onClick={handleVerifyOtp}
-                            loading={otpLoading}
-                            disabled={otpCode.length !== 6}
-                            className="w-full sm:w-auto"
+                            disabled={otpLoading || otpCode.length !== 6}
+                            className="w-full sm:w-auto h-12 px-8 rounded-xl bg-stone-950 text-white font-bold uppercase tracking-widest text-xs hover:bg-stone-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                           >
-                            Verifikasi
-                          </Button>
+                            {otpLoading ? "Memeriksa..." : "Verifikasi"}
+                          </button>
                         </div>
                       </div>
                     )}
