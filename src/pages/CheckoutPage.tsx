@@ -1061,20 +1061,6 @@ export default function CheckoutPage() {
                     </p>
                   </div>
                 </SectionCard>
-
-                <div className="text-center pt-2">
-                  <p className="text-sm text-stone-500">
-                    Ada kendala saat mendaftar?{" "}
-                    <a
-                      href={`/bantuan?eventId=${event?.id}`}
-                      className="text-stone-900 font-bold hover:underline"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Lapor di sini
-                    </a>
-                  </p>
-                </div>
               </div>
 
               {/* Right — sticky order summary */}
