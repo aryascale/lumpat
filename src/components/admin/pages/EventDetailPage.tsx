@@ -3866,6 +3866,100 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                           + Tambah Email Submission ({mails.length}/2)
                         </button>
                       )}
+
+                      {/* Reminder H-3 before closing */}
+                      <div className="border-t border-gray-100 pt-3 mt-4">
+                        <div className="text-sm font-bold text-gray-700 mb-2">Reminder H-3 Sebelum Closing</div>
+                        <input
+                          type="date"
+                          className="search w-full mb-3"
+                          value={eventData?.content?.submissionCloseAt || ''}
+                          onChange={(e) =>
+                            setEventData({
+                              ...eventData,
+                              content: { ...(eventData?.content || {}), submissionCloseAt: e.target.value },
+                            })
+                          }
+                        />
+                        <div className="text-xs text-gray-500 mb-3">
+                          Tanggal closing submission. Kalau kosong, pakai tanggal event. Reminder terkirim otomatis
+                          3 hari sebelum closing ke semua peserta lunas — sekali saja.
+                        </div>
+                        {(() => {
+                          const reminder = eventData?.content?.submissionReminder || {};
+                          const setReminder = (patch: any) =>
+                            setEventData({
+                              ...eventData,
+                              content: {
+                                ...(eventData?.content || {}),
+                                submissionReminder: { ...reminder, ...patch },
+                              },
+                            });
+                          return (
+                            <>
+                              <label className="flex items-center gap-2 mb-3 cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  className="w-4 h-4"
+                                  checked={!!reminder.enabled}
+                                  onChange={(e) =>
+                                    setReminder(
+                                      e.target.checked
+                                        ? {
+                                            enabled: true,
+                                            subject: 'Pengingat: Upload Hasil Lari - [event]',
+                                            message:
+                                              'Halo Kak [nama],\n\nIni pengingat dari kami — masa upload hasil lari [event] akan segera berakhir dalam 3 hari.\n\nMohon agar data aktivitas/hasil lari diunggah langsung melalui tautan formulir yang telah kami sediakan, agar data Kakak dapat diverifikasi oleh sistem kami.\n\nKlik tautan upload di bawah ini. Terima kasih atas kerja samanya.',
+                                            linkLabel: 'Upload Your Strava Public Link Here',
+                                            linkUrl: 'https://lumpat.online/event/virtual-run-submission?tab=Home',
+                                          }
+                                        : { ...reminder, enabled: false }
+                                    )
+                                  }
+                                />
+                                <span className="text-sm font-bold text-gray-700">Aktifkan reminder H-3</span>
+                                {reminder.sentAt && (
+                                  <span className="text-xs text-green-600 font-bold">
+                                    ✓ Terkirim {new Date(reminder.sentAt).toLocaleString('id-ID')}
+                                  </span>
+                                )}
+                              </label>
+                              {reminder.enabled && (
+                                <div className="border border-gray-200 rounded-lg p-3 space-y-2">
+                                  <input
+                                    type="text"
+                                    className="search w-full"
+                                    placeholder="Subject email"
+                                    value={reminder.subject || ''}
+                                    onChange={(e) => setReminder({ subject: e.target.value })}
+                                  />
+                                  <textarea
+                                    className="search w-full"
+                                    rows={6}
+                                    placeholder="Isi reminder (mendukung [nama], [event], [kategori])"
+                                    value={reminder.message || ''}
+                                    onChange={(e) => setReminder({ message: e.target.value })}
+                                  />
+                                  <input
+                                    type="text"
+                                    className="search w-full"
+                                    placeholder="Label tombol"
+                                    value={reminder.linkLabel || ''}
+                                    onChange={(e) => setReminder({ linkLabel: e.target.value })}
+                                  />
+                                  <input
+                                    type="text"
+                                    className="search w-full"
+                                    placeholder="URL tujuan tombol"
+                                    value={reminder.linkUrl || ''}
+                                    onChange={(e) => setReminder({ linkUrl: e.target.value })}
+                                  />
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </div>
                     </>
                   );
                 })()}
