@@ -3906,12 +3906,14 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
                                     setReminder(
                                       e.target.checked
                                         ? {
+                                            // Prefill only empty fields — admin edits survive re-toggling
                                             enabled: true,
-                                            subject: 'Pengingat: Upload Hasil Lari - [event]',
+                                            subject: reminder.subject || 'Pengingat: Upload Hasil Lari - [event]',
                                             message:
+                                              reminder.message ||
                                               'Halo Kak [nama],\n\nIni pengingat dari kami — masa upload hasil lari [event] akan segera berakhir dalam 3 hari.\n\nMohon agar data aktivitas/hasil lari diunggah langsung melalui tautan formulir yang telah kami sediakan, agar data Kakak dapat diverifikasi oleh sistem kami.\n\nKlik tautan upload di bawah ini. Terima kasih atas kerja samanya.',
-                                            linkLabel: 'Upload Your Strava Public Link Here',
-                                            linkUrl: 'https://lumpat.online/event/virtual-run-submission?tab=Home',
+                                            linkLabel: reminder.linkLabel || 'Upload Your Strava Public Link Here',
+                                            linkUrl: reminder.linkUrl || 'https://lumpat.online/event/virtual-run-submission?tab=Home',
                                           }
                                         : { ...reminder, enabled: false }
                                     )
