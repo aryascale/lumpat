@@ -605,29 +605,9 @@ export default function CheckoutPage() {
           </div>
         ) : (
           <>
-            {/* Mobile summary accordion */}
-            <details className="lg:hidden max-w-2xl mx-auto lg:mx-0 bg-stone-50 border border-stone-200 rounded-2xl mb-6">
-              <summary className="flex items-center justify-between cursor-pointer p-4 list-none [&::-webkit-details-marker]:hidden">
-                <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">
-                  Ringkasan Order
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-stone-900 tabular-nums">
-                    Rp {finalPrice.toLocaleString("id-ID")}
-                  </span>
-                  <svg className="w-4 h-4 text-stone-400 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </span>
-              </summary>
-              <div className="px-4 pb-4">
-                <OrderSummary />
-              </div>
-            </details>
-
             <div className="grid lg:grid-cols-[1fr_380px] gap-6 lg:gap-8 items-start">
               {/* Left — form sections */}
-              <div className="space-y-4 max-w-2xl mx-auto lg:mx-0 lg:max-w-none w-full">
+              <div className="space-y-4 max-w-2xl mx-auto lg:mx-0 lg:max-w-none w-full min-w-0">
                 <h1 className="text-xl sm:text-2xl font-black uppercase tracking-tighter mb-2">
                   Pendaftaran
                 </h1>
@@ -798,7 +778,7 @@ export default function CheckoutPage() {
 
                     {/* Participant tabs */}
                     {bulkQty > 1 && (
-                      <div className="flex overflow-x-auto gap-2 pb-2 border-b border-stone-100">
+                      <div className="flex flex-wrap gap-2 pb-3 border-b border-stone-100">
                         {Array.from({ length: bulkQty }).map((_, idx) => (
                           <button
                             key={idx}
@@ -1068,8 +1048,8 @@ export default function CheckoutPage() {
                 </SectionCard>
               </div>
 
-              {/* Right — sticky order summary */}
-              <aside className="hidden lg:block">
+              {/* Order summary — below the form on mobile, sticky sidebar on desktop */}
+              <aside className="w-full max-w-2xl mx-auto lg:mx-0 lg:max-w-none min-w-0">
                 <div className="bg-stone-50 border border-stone-200 rounded-2xl p-6 lg:sticky lg:top-8">
                   <h2 className="text-[10px] font-black uppercase tracking-widest text-stone-500 mb-4">
                     Ringkasan Order
