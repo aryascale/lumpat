@@ -1,7 +1,7 @@
 import { query } from '../src/lib/db';
 import { CORS_HEADERS } from '../src/lib/api-utils';
 import { logActivity } from '../src/lib/activity-logger';
-import { sendRegistrationConfirmation } from '../src/lib/email-service';
+import { sendRegistrationConfirmation, sendSubmissionEmails } from '../src/lib/email-service';
 import { createBackup } from '../src/lib/backup';
 import { assignAutoBibsIfEnabled } from '../src/lib/bib-generator';
 import { settleVoucherRedemption } from '../src/lib/voucher';
@@ -154,6 +154,7 @@ export default async function handler(event: any) {
 
         for (const reg of regRes) {
           await sendRegistrationConfirmation(reg);
+          await sendSubmissionEmails(reg);
 
           // Increment t-shirt inventory sold count
           if (reg.tshirtSize) {
