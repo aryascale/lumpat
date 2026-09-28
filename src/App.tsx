@@ -76,13 +76,11 @@ const DevicePage = lazyReload(() => import("./pages/DevicePage"));
 const CheckpointLayout = lazyReload(() => import("./components/checkpoint/CheckpointLayout"));
 const CheckpointDashboard = lazyReload(() => import("./pages/checkpoint/CheckpointDashboard"));
 const AdminLayout = lazyReload(() => import("./components/admin/AdminLayout"));
-const OverviewPageWrapper = lazyReload(() => import("./components/admin/wrappers").then(m => ({ default: m.OverviewPageWrapper })));
 const EventsPageWrapper = lazyReload(() => import("./components/admin/wrappers").then(m => ({ default: m.EventsPageWrapper })));
 const BannersPageWrapper = lazyReload(() => import("./components/admin/wrappers").then(m => ({ default: m.BannersPageWrapper })));
 const PaymentsPage = lazyReload(() => import("./components/admin/pages/PaymentsPage"));
 const VouchersPage = lazyReload(() => import("./components/admin/pages/VouchersPage"));
 const ActivityLogsPage = lazyReload(() => import("./components/admin/pages/ActivityLogsPage"));
-const TicketsPage = lazyReload(() => import("./components/admin/pages/TicketsPage"));
 const UsersPage = lazyReload(() => import("./components/admin/pages/UsersPage"));
 
 function PageLoader() {
@@ -179,12 +177,10 @@ export default function App() {
               }
             >
               <Route index element={<Navigate to="events" replace />} />
-              <Route path="overview" element={<OverviewPageWrapper />} />
               <Route path="events" element={<EventsPageWrapper />} />
               <Route path="banners" element={<BannersPageWrapper />} />
               <Route path="payments" element={<PaymentsPage />} />
               <Route path="vouchers" element={<VouchersPage />} />
-              <Route path="tickets" element={<TicketsPage />} />
               <Route
                 path="users"
                 element={

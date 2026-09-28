@@ -74,9 +74,11 @@ export default async function handler(event: any) {
       }
     }
 
+    // LIMIT/OFFSET inlined as sanitized ints — mysql2 prepared statements
+    // choke on parameterized LIMIT (caused the 500 on this endpoint)
     const logs: any = await query(
-      `SELECT * FROM ActivityLog ${where} ORDER BY createdAt DESC LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
+      `SELECT * FROM ActivityLog ${where} ORDER BY createdAt DESC LIMIT ${limit} OFFSET ${offset}`,
+      params
     );
 
     const countResult: any = await query(
