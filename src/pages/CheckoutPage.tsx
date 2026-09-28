@@ -605,7 +605,7 @@ export default function CheckoutPage() {
           </div>
         ) : (
           <>
-            <div className="grid lg:grid-cols-[1fr_380px] gap-6 lg:gap-8 items-start">
+            <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-start">
               {/* Left — form sections */}
               <div className="space-y-4 max-w-2xl mx-auto lg:mx-0 lg:max-w-none w-full min-w-0">
                 <h1 className="text-xl sm:text-2xl font-black uppercase tracking-tighter mb-2">
@@ -805,7 +805,7 @@ export default function CheckoutPage() {
                         {customFields.map((field) => (
                           <div
                             key={field.id}
-                            className={field.type === "textarea" ? "md:col-span-2" : ""}
+                            className={`min-w-0 ${field.type === "textarea" ? "md:col-span-2" : ""}`}
                           >
                             <label className="block text-xs font-bold text-stone-700 mb-1.5">
                               {field.label}{" "}
@@ -856,6 +856,7 @@ export default function CheckoutPage() {
                             ) : field.type === "textarea" ? (
                               <Input.TextArea
                                 rows={3}
+                                className="w-full min-w-0"
                                 placeholder={`Masukkan ${field.label}`}
                                 value={bulkParticipants[activeTabIdx]?.[field.id] || ""}
                                 onChange={(e) => setParticipantField(field.id, e.target.value)}
@@ -863,6 +864,7 @@ export default function CheckoutPage() {
                             ) : (
                               <Input
                                 size="large"
+                                className="w-full min-w-0"
                                 type={field.type === "nik" ? "text" : field.type}
                                 inputMode={field.type === "nik" ? "numeric" : undefined}
                                 pattern={field.type === "nik" ? "[0-9]*" : undefined}
