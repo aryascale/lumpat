@@ -11,6 +11,7 @@ import { createServer } from 'http';
 import fs from 'fs';
 import { runMigrations } from './src/lib/migrations.js';
 import { initSocket } from './src/lib/socket.js';
+import { startSubmissionReminderScheduler } from './src/lib/submission-reminder.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -140,4 +141,6 @@ httpServer.listen(PORT, async () => {
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   // Run database migrations on startup
   await runMigrations();
+  // Hourly H-3 virtual run submission reminders
+  startSubmissionReminderScheduler();
 });

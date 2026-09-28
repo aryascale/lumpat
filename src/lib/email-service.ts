@@ -162,6 +162,77 @@ export async function sendRegistrationConfirmation(reg: any) {
 
 export const DEFAULT_SUBMISSION_LINK = 'https://lumpat.online/event/virtual-run-submission?tab=Home';
 
+const fillPlaceholders = (s: string, reg: any) => String(s || '')
+  .replace(/\[nama\]/gi, reg.name || 'Kak')
+  .replace(/\[event\]/gi, reg.eventName || '')
+  .replace(/\[kategori\]/gi, reg.categoryName || '');
+
+/** Shared branded email: black header + rose event strip + paragraphs + big CTA button. */
+async function sendBrandedLinkEmail(opts: {
+  to: string;
+  subject: string;
+  eventName: string;
+  badge: string;
+  title: string;
+  message: string;
+  reg: any;
+  linkUrl: string;
+  linkLabel: string;
+}) {
+  const fromAddress = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@lumpat.id';
+  const paragraphs = fillPlaceholders(opts.message, opts.reg)
+    .split(/\n+/)
+    .map((p: string) => p.trim())
+    .filter(Boolean);
+  const linkUrl = opts.linkUrl || DEFAULT_SUBMISSION_LINK;
+  const linkLabel = opts.linkLabel || 'Upload Your Strava Public Link Here';
+
+  await transporter.sendMail({
+    from: fromAddress,
+    to: opts.to,
+    subject: fillPlaceholders(opts.subject, opts.reg) || opts.subject,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+        <div style="max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+
+          <div style="background: #000000; padding: 40px 30px; text-align: center;">
+            <div style="display: inline-block; background: #e11d48; padding: 4px 12px; font-size: 10px; font-weight: 900; color: white; letter-spacing: 2px; text-transform: uppercase; border-radius: 4px; margin-bottom: 15px;">${opts.badge}</div>
+            <h1 style="color: white; margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -0.02em;">${opts.title}</h1>
+          </div>
+
+          <div style="background: #e11d48; padding: 12px 30px; text-align: center;">
+            <span style="color: white; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">${opts.eventName || ''}</span>
+          </div>
+
+          <div style="padding: 40px 30px;">
+            ${paragraphs.map((p: string) => `<p style="margin: 0 0 16px 0; font-size: 14px; color: #4b5563; line-height: 1.7;">${p}</p>`).join('')}
+
+            <div style="margin-top: 30px; text-align: center;">
+              <a href="${linkUrl}" style="display: inline-block; background: #000000; color: white; padding: 16px 30px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">${linkLabel}</a>
+            </div>
+
+            <p style="margin: 25px 0 0 0; font-size: 11px; color: #9ca3af; text-align: center; word-break: break-all;">
+              Jika tombol tidak berfungsi, salin tautan ini: <br/>${linkUrl}
+            </p>
+          </div>
+
+          <div style="background: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #f3f4f6;">
+            <p style="font-size: 12px; color: #9ca3af; margin: 0;">Lumpat &copy; ${new Date().getFullYear()}. All rights reserved.</p>
+            <p style="font-size: 11px; color: #d1d5db; margin: 10px 0 0 0;">Email ini dikirim secara otomatis oleh sistem Lumpat.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+  });
+}
+
 /**
  * Virtual run submission emails — admin-configured per event via
  * event.content.submissionEmails (max 2). Sent together with the
@@ -178,67 +249,43 @@ export async function sendSubmissionEmails(reg: any) {
     const emails: any[] = Array.isArray(content?.submissionEmails) ? content.submissionEmails : [];
     if (emails.length === 0) return;
 
-    const fromAddress = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@lumpat.id';
-    const fill = (s: string) => String(s || '')
-      .replace(/\[nama\]/gi, reg.name || 'Kak')
-      .replace(/\[event\]/gi, reg.eventName || '')
-      .replace(/\[kategori\]/gi, reg.categoryName || '');
-
     for (const mail of emails) {
       if (!mail?.message) continue;
-      const linkUrl = mail.linkUrl || DEFAULT_SUBMISSION_LINK;
-      const linkLabel = mail.linkLabel || 'Upload Your Strava Public Link Here';
-      const paragraphs = fill(mail.message)
-        .split(/\n+/)
-        .map((p: string) => p.trim())
-        .filter(Boolean);
-
-      await transporter.sendMail({
-        from: fromAddress,
+      await sendBrandedLinkEmail({
         to: reg.email,
-        subject: fill(mail.subject) || `Upload Hasil Lari - ${reg.eventName}`,
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          </head>
-          <body style="margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-            <div style="max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-
-              <div style="background: #000000; padding: 40px 30px; text-align: center;">
-                <div style="display: inline-block; background: #e11d48; padding: 4px 12px; font-size: 10px; font-weight: 900; color: white; letter-spacing: 2px; text-transform: uppercase; border-radius: 4px; margin-bottom: 15px;">SUBMISSION</div>
-                <h1 style="color: white; margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -0.02em;">Upload Hasil Lari</h1>
-              </div>
-
-              <div style="background: #e11d48; padding: 12px 30px; text-align: center;">
-                <span style="color: white; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">${reg.eventName || ''}</span>
-              </div>
-
-              <div style="padding: 40px 30px;">
-                ${paragraphs.map((p: string) => `<p style="margin: 0 0 16px 0; font-size: 14px; color: #4b5563; line-height: 1.7;">${p}</p>`).join('')}
-
-                <div style="margin-top: 30px; text-align: center;">
-                  <a href="${linkUrl}" style="display: inline-block; background: #000000; color: white; padding: 16px 30px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">${linkLabel}</a>
-                </div>
-
-                <p style="margin: 25px 0 0 0; font-size: 11px; color: #9ca3af; text-align: center; word-break: break-all;">
-                  Jika tombol tidak berfungsi, salin tautan ini: <br/>${linkUrl}
-                </p>
-              </div>
-
-              <div style="background: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #f3f4f6;">
-                <p style="font-size: 12px; color: #9ca3af; margin: 0;">Lumpat &copy; ${new Date().getFullYear()}. All rights reserved.</p>
-                <p style="font-size: 11px; color: #d1d5db; margin: 10px 0 0 0;">Email ini dikirim secara otomatis oleh sistem Lumpat.</p>
-              </div>
-            </div>
-          </body>
-          </html>
-        `,
+        subject: mail.subject || `Upload Hasil Lari - ${reg.eventName}`,
+        eventName: reg.eventName,
+        badge: 'SUBMISSION',
+        title: 'Upload Hasil Lari',
+        message: mail.message,
+        reg,
+        linkUrl: mail.linkUrl,
+        linkLabel: mail.linkLabel,
       });
     }
   } catch (error) {
     console.error('[EMAIL-SERVICE] Failed to send submission emails:', error);
+  }
+}
+
+/** H-3 closing reminder for virtual runs — fired by the scheduler in submission-reminder.ts. */
+export async function sendSubmissionReminder(reg: any, reminder: any) {
+  try {
+    if (!reg?.email) return { success: false };
+    await sendBrandedLinkEmail({
+      to: reg.email,
+      subject: reminder.subject || `Pengingat: Upload Hasil Lari - ${reg.eventName}`,
+      eventName: reg.eventName,
+      badge: 'REMINDER',
+      title: 'Segera Upload Hasil Lari',
+      message: reminder.message,
+      reg,
+      linkUrl: reminder.linkUrl,
+      linkLabel: reminder.linkLabel,
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('[EMAIL-SERVICE] Failed to send submission reminder:', error);
+    return { success: false, error };
   }
 }
