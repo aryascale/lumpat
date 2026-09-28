@@ -138,8 +138,8 @@ export default function UserEventPage() {
   const sorted = [...filtered].sort((a, b) => {
     const done = (e: any) => (e.status === "completed" ? 1 : 0);
     if (done(a) !== done(b)) return done(a) - done(b);
-    const ad = new Date(a.eventDate).getTime();
-    const bd = new Date(b.eventDate).getTime();
+    const ad = new Date(a.eventDate || 0).getTime();
+    const bd = new Date(b.eventDate || 0).getTime();
     return done(a) === 1 ? bd - ad : ad - bd;
   });
 
