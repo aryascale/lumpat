@@ -133,9 +133,19 @@ export default function UserEventPage() {
     setTimeout(() => navigate(`/event/${slug}`), 800);
   };
 
+  // Sort: active (upcoming/ongoing) events always on top — closest eventDate
+  // first; completed events sink to the bottom, newest finish first.
+  const sorted = [...filtered].sort((a, b) => {
+    const done = (e: any) => (e.status === "completed" ? 1 : 0);
+    if (done(a) !== done(b)) return done(a) - done(b);
+    const ad = new Date(a.eventDate).getTime();
+    const bd = new Date(b.eventDate).getTime();
+    return done(a) === 1 ? bd - ad : ad - bd;
+  });
+
   // Pagination slicing
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const paginatedEvents = filtered.slice(
+  const totalPages = Math.ceil(sorted.length / itemsPerPage);
+  const paginatedEvents = sorted.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
