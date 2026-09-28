@@ -30,9 +30,37 @@ export default async function handler(event: any) {
 
     if (existing.length === 0) return errorResponse('Order not found', 404);
 
+    // Order summary for the payment status page (display only — never block the status flow)
+    let order: any;
+    try {
+      const orderRes: any = await query(
+        `SELECT e.name AS eventName, e.slug AS eventSlug, c.name AS categoryName,
+                COUNT(er.id) AS participantCount,
+                SUM(er.grossAmount) - MAX(COALESCE(er.discountAmount, 0)) AS total
+         FROM EventRegistration er
+         JOIN Event e ON er.eventId = e.id
+         JOIN Category c ON er.categoryId = c.id
+         WHERE er.orderId = ?
+         GROUP BY e.id, e.slug, c.name
+         LIMIT 1`,
+        [orderId]
+      );
+      if (orderRes[0]) {
+        order = {
+          eventName: orderRes[0].eventName,
+          eventSlug: orderRes[0].eventSlug,
+          categoryName: orderRes[0].categoryName,
+          participantCount: Number(orderRes[0].participantCount),
+          total: Number(orderRes[0].total || 0),
+        };
+      }
+    } catch (e) {
+      console.error('[CHECK-PAYMENT] Error building order summary:', e);
+    }
+
     // If already settled, no need to check Midtrans
     if (existing[0].paymentStatus === 'settlement') {
-      return successResponse({ status: 'settlement', message: 'Pembayaran sudah dikonfirmasi sebelumnya.' });
+      return successResponse({ status: 'settlement', order, message: 'Pembayaran sudah dikonfirmasi sebelumnya.' });
     }
 
     // 2. Query Midtrans API directly for transaction status
@@ -127,9 +155,10 @@ export default async function handler(event: any) {
       }
     }
 
-    return successResponse({ 
-      status: paymentStatus, 
-      message: paymentStatus === 'settlement' ? 'Pembayaran berhasil dikonfirmasi!' : `Status: ${paymentStatus}` 
+    return successResponse({
+      status: paymentStatus,
+      order,
+      message: paymentStatus === 'settlement' ? 'Pembayaran berhasil dikonfirmasi!' : `Status: ${paymentStatus}`
     });
   } catch (error: any) {
     console.error('[CHECK-PAYMENT] Error:', error);

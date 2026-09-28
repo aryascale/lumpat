@@ -63,6 +63,8 @@ const UserEventPage = lazyReload(() => import("./pages/UserEventPage"));
 const HomePage = lazyReload(() => import("./pages/HomePage"));
 const CreateEventPage = lazyReload(() => import("./pages/CreateEventPage"));
 const EventPage = lazyReload(() => import("./pages/EventPage"));
+const CheckoutPage = lazyReload(() => import("./pages/CheckoutPage"));
+const PaymentStatusPage = lazyReload(() => import("./pages/PaymentStatusPage"));
 const SupportTicketPage = lazyReload(() => import("./pages/SupportTicketPage"));
 const CheckTicketPage = lazyReload(() => import("./pages/CheckTicketPage"));
 const MyTicketsPage = lazyReload(() => import("./pages/MyTicketsPage"));
@@ -155,6 +157,8 @@ export default function App() {
               }
             />
             <Route path="/event/:slug" element={<EventPage />} />
+            <Route path="/event/:slug/daftar" element={<CheckoutPage />} />
+            <Route path="/payment/status" element={<PaymentStatusPage />} />
             <Route path="/event/:slug/participant/:epc" element={<ParticipantResultPage />} />
             <Route
               path="/rpc/:slug"
