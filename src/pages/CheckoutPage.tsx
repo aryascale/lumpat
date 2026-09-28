@@ -805,7 +805,7 @@ export default function CheckoutPage() {
                         {customFields.map((field) => (
                           <div
                             key={field.id}
-                            className={`min-w-0 ${field.type === "textarea" ? "md:col-span-2" : ""}`}
+                            className={`min-w-0 overflow-hidden ${field.type === "textarea" ? "md:col-span-2" : ""}`}
                           >
                             <label className="block text-xs font-bold text-stone-700 mb-1.5">
                               {field.label}{" "}

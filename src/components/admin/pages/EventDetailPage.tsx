@@ -3765,6 +3765,114 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
             </div>
 
             <div className="admin-cutoff border-t border-gray-100 pt-6">
+              <div className="label">Email Submission (Virtual Run)</div>
+              <div className="tools">
+                {(() => {
+                  const newSubMail = () => ({
+                    subject: 'Upload Hasil Lari - [event]',
+                    message: 'Halo Kak [nama],\n\nTerima kasih atas konfirmasinya.\n\nMohon agar data aktivitas/hasil lari diunggah langsung melalui tautan formulir yang telah kami sediakan sebelumnya, bukan dengan melampirkan tautan Strava via balasan email ini. Hal ini diperlukan agar data Kakak dapat diverifikasi secara otomatis oleh sistem kami.\n\nKlik tautan upload di bawah ini. Terima kasih atas kerja samanya.',
+                    linkLabel: 'Upload Your Strava Public Link Here',
+                    linkUrl: 'https://lumpat.online/event/virtual-run-submission?tab=Home',
+                  });
+                  const mails: any[] = eventData?.content?.submissionEmails || [];
+                  const setMails = (next: any[]) =>
+                    setEventData({
+                      ...eventData,
+                      content: { ...(eventData?.content || {}), submissionEmails: next },
+                    });
+
+                  return (
+                    <>
+                      <label className="flex items-center gap-2 mb-3 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4"
+                          checked={mails.length > 0}
+                          onChange={(e) => setMails(e.target.checked ? [newSubMail()] : [])}
+                        />
+                        <span className="text-sm font-bold text-gray-700">
+                          Kirim email submission otomatis saat pembayaran berhasil
+                        </span>
+                      </label>
+                      <div className="text-xs text-gray-500 mb-3">
+                        Placeholder yang didukung: <code>[nama]</code>, <code>[event]</code>, <code>[kategori]</code>. Maksimal 2 email.
+                      </div>
+
+                      {mails.map((m: any, idx: number) => (
+                        <div key={idx} className="border border-gray-200 rounded-lg p-3 space-y-2 mb-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-black uppercase tracking-wider text-gray-500">
+                              Email {idx + 1}
+                            </span>
+                            <button
+                              className="text-red-500 font-bold text-xs hover:underline"
+                              onClick={() => setMails(mails.filter((_: any, i: number) => i !== idx))}
+                            >
+                              ✕ Hapus
+                            </button>
+                          </div>
+                          <input
+                            type="text"
+                            className="search w-full"
+                            placeholder="Subject email"
+                            value={m.subject || ''}
+                            onChange={(e) => {
+                              const next = [...mails];
+                              next[idx] = { ...m, subject: e.target.value };
+                              setMails(next);
+                            }}
+                          />
+                          <textarea
+                            className="search w-full"
+                            rows={7}
+                            placeholder="Isi email (mendukung [nama], [event], [kategori])"
+                            value={m.message || ''}
+                            onChange={(e) => {
+                              const next = [...mails];
+                              next[idx] = { ...m, message: e.target.value };
+                              setMails(next);
+                            }}
+                          />
+                          <input
+                            type="text"
+                            className="search w-full"
+                            placeholder="Label tombol (contoh: Upload Your Strava Public Link Here)"
+                            value={m.linkLabel || ''}
+                            onChange={(e) => {
+                              const next = [...mails];
+                              next[idx] = { ...m, linkLabel: e.target.value };
+                              setMails(next);
+                            }}
+                          />
+                          <input
+                            type="text"
+                            className="search w-full"
+                            placeholder="URL tujuan tombol"
+                            value={m.linkUrl || ''}
+                            onChange={(e) => {
+                              const next = [...mails];
+                              next[idx] = { ...m, linkUrl: e.target.value };
+                              setMails(next);
+                            }}
+                          />
+                        </div>
+                      ))}
+
+                      {mails.length > 0 && mails.length < 2 && (
+                        <button
+                          className="text-xs text-blue-600 font-bold hover:underline"
+                          onClick={() => setMails([...mails, newSubMail()])}
+                        >
+                          + Tambah Email Submission ({mails.length}/2)
+                        </button>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+
+            <div className="admin-cutoff border-t border-gray-100 pt-6">
               <div className="label">Syarat & Ketentuan (T&C)</div>
               <div className="tools">
                 <div className="mb-4">

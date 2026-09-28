@@ -2,7 +2,7 @@ import { query } from '../src/lib/db';
 import { successResponse, errorResponse, parseBody, CORS_HEADERS } from '../src/lib/api-utils';
 import { logActivity } from '../src/lib/activity-logger';
 import { assignAutoBibsIfEnabled } from '../src/lib/bib-generator';
-import { sendRegistrationConfirmation } from '../src/lib/email-service';
+import { sendRegistrationConfirmation, sendSubmissionEmails } from '../src/lib/email-service';
 import { buildOrderId } from '../src/lib/order-id';
 import { validateVoucher, settleVoucherRedemption } from '../src/lib/voucher';
 import crypto from 'crypto';
@@ -244,6 +244,7 @@ export default async function handler(event: any) {
         );
         for (const reg of regRes) {
           await sendRegistrationConfirmation(reg);
+          await sendSubmissionEmails(reg);
           if (reg.tshirtSize) {
             await query(
               'UPDATE TshirtInventory SET sold = sold + 1 WHERE eventId = ? AND size = ?',

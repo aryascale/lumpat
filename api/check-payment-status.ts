@@ -3,7 +3,7 @@ import { successResponse, errorResponse, parseBody, CORS_HEADERS } from '../src/
 import { logActivity } from '../src/lib/activity-logger';
 import { assignAutoBibsIfEnabled } from '../src/lib/bib-generator';
 import { settleVoucherRedemption } from '../src/lib/voucher';
-import { sendRegistrationConfirmation } from '../src/lib/email-service';
+import { sendRegistrationConfirmation, sendSubmissionEmails } from '../src/lib/email-service';
 
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY || '';
 const MIDTRANS_IS_PRODUCTION = process.env.MIDTRANS_IS_PRODUCTION === 'true';
@@ -142,6 +142,7 @@ export default async function handler(event: any) {
 
           for (const reg of regRes) {
             await sendRegistrationConfirmation(reg);
+            await sendSubmissionEmails(reg);
             if (reg.tshirtSize) {
               await query(
                 'UPDATE TshirtInventory SET sold = sold + 1 WHERE eventId = ? AND size = ?',
