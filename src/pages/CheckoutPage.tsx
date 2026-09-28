@@ -606,13 +606,18 @@ export default function CheckoutPage() {
         ) : (
           <>
             {/* Mobile summary accordion */}
-            <details className="lg:hidden bg-stone-50 border border-stone-200 rounded-2xl mb-6">
-              <summary className="flex items-center justify-between cursor-pointer p-4 list-none">
+            <details className="lg:hidden max-w-2xl mx-auto lg:mx-0 bg-stone-50 border border-stone-200 rounded-2xl mb-6">
+              <summary className="flex items-center justify-between cursor-pointer p-4 list-none [&::-webkit-details-marker]:hidden">
                 <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">
                   Ringkasan Order
                 </span>
-                <span className="text-sm font-bold text-stone-900 tabular-nums">
-                  Rp {finalPrice.toLocaleString("id-ID")}
+                <span className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-stone-900 tabular-nums">
+                    Rp {finalPrice.toLocaleString("id-ID")}
+                  </span>
+                  <svg className="w-4 h-4 text-stone-400 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </span>
               </summary>
               <div className="px-4 pb-4">
@@ -620,10 +625,10 @@ export default function CheckoutPage() {
               </div>
             </details>
 
-            <div className="grid lg:grid-cols-[1fr_380px] gap-8 items-start">
+            <div className="grid lg:grid-cols-[1fr_380px] gap-6 lg:gap-8 items-start">
               {/* Left — form sections */}
-              <div className="space-y-4">
-                <h1 className="text-2xl font-black uppercase tracking-tighter mb-2">
+              <div className="space-y-4 max-w-2xl mx-auto lg:mx-0 lg:max-w-none w-full">
+                <h1 className="text-xl sm:text-2xl font-black uppercase tracking-tighter mb-2">
                   Pendaftaran
                 </h1>
 
@@ -698,7 +703,7 @@ export default function CheckoutPage() {
 
                     <div className="flex justify-end pt-2">
                       <button
-                        className="bg-stone-950 text-white rounded-xl h-12 px-8 font-bold uppercase tracking-widest text-xs hover:bg-stone-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="w-full sm:w-auto bg-stone-950 text-white rounded-xl h-12 px-8 font-bold uppercase tracking-widest text-xs hover:bg-stone-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         disabled={!contactComplete}
                         onClick={() => {
                           setOpenSection(2);
@@ -981,7 +986,7 @@ export default function CheckoutPage() {
 
                     <div className="flex justify-end pt-2">
                       <button
-                        className="bg-stone-950 text-white rounded-xl h-12 px-8 font-bold uppercase tracking-widest text-xs hover:bg-stone-800 transition-colors"
+                        className="w-full sm:w-auto bg-stone-950 text-white rounded-xl h-12 px-8 font-bold uppercase tracking-widest text-xs hover:bg-stone-800 transition-colors"
                         onClick={goToPayment}
                       >
                         Lanjut Pembayaran
