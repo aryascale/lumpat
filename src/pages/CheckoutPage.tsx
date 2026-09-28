@@ -723,7 +723,7 @@ export default function CheckoutPage() {
                         className="w-full"
                         size="large"
                         virtual={false}
-                        getPopupContainer={(triggerNode) => triggerNode.parentNode}
+                        getPopupContainer={() => document.body}
                         placeholder="Pilih Kategori Perlombaan"
                         value={categoryId || undefined}
                         onChange={(val) => {
@@ -748,7 +748,7 @@ export default function CheckoutPage() {
                         <Select
                           size="small"
                           virtual={false}
-                          getPopupContainer={(triggerNode) => triggerNode.parentNode}
+                          getPopupContainer={() => document.body}
                           value={bulkQty}
                           onChange={(val) => {
                             setBulkQty(val);
@@ -817,7 +817,7 @@ export default function CheckoutPage() {
                                 className="w-full"
                                 size="large"
                                 virtual={false}
-                                getPopupContainer={(triggerNode) => triggerNode.parentNode}
+                                getPopupContainer={() => document.body}
                                 placeholder={`Pilih ${field.label}`}
                                 value={bulkParticipants[activeTabIdx]?.[field.id] || undefined}
                                 onChange={(val) => setParticipantField(field.id, val)}
@@ -831,7 +831,7 @@ export default function CheckoutPage() {
                                 className="w-full"
                                 size="large"
                                 virtual={false}
-                                getPopupContainer={(triggerNode) => triggerNode.parentNode}
+                                getPopupContainer={() => document.body}
                                 placeholder={`Pilih ${field.label}`}
                                 filterOption={(input, option) =>
                                   String(option?.value || "")
@@ -916,7 +916,7 @@ export default function CheckoutPage() {
                               className="w-full mb-3"
                               size="large"
                               virtual={false}
-                              getPopupContainer={(triggerNode) => triggerNode.parentNode}
+                              getPopupContainer={() => document.body}
                               placeholder="Pilih Ukuran"
                               value={bulkParticipants[activeTabIdx]?.["tshirtSize"] || undefined}
                               onChange={(val) => setParticipantField("tshirtSize", val)}
