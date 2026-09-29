@@ -32,7 +32,7 @@ const fmtDate = (s: string) => new Date(s).toLocaleDateString('id-ID', { day: 'n
 
 export default function EmailBlastPage() {
   // Step 1 — audience
-  const [events, setEvents] = useState<{ id: string; name: string }[]>([]);
+  const [events, setEvents] = useState<{ id: string; name: string; eventDate: string | null }[]>([]);
   const [eventId, setEventId] = useState('');
   const [categories, setCategories] = useState<string[]>([]);
   const [category, setCategory] = useState('');
@@ -75,9 +75,11 @@ export default function EmailBlastPage() {
     loadQuota();
     loadHistory();
     fetch('/api/events?showDrafts=true').then(r => r.json()).then(data => {
-      const list = Array.isArray(data) ? data : [];
-      setEvents(list.map((e: any) => ({ id: e.id, name: e.name })));
-      if (list.length > 0) setEventId(list[0].id);
+      const list: any[] = Array.isArray(data) ? data : [];
+      // API sorts by createdAt — we want the event that runs latest as default
+      const sorted = [...list].sort((a, b) => new Date(b.eventDate || 0).getTime() - new Date(a.eventDate || 0).getTime());
+      setEvents(sorted.map(e => ({ id: e.id, name: e.name, eventDate: e.eventDate || null })));
+      if (sorted.length > 0) setEventId(sorted[0].id);
     }).catch(() => {});
   }, [loadQuota, loadHistory]);
 
@@ -239,7 +241,7 @@ export default function EmailBlastPage() {
             placeholder="Pilih event"
             value={eventId || undefined}
             onChange={setEventId}
-            options={events.map(e => ({ value: e.id, label: e.name }))}
+            options={events.map(e => ({ value: e.id, label: e.eventDate ? `${e.name} · ${fmtDate(e.eventDate)}` : e.name }))}
             showSearch
             optionFilterProp="label"
           />
