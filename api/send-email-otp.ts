@@ -1,6 +1,7 @@
 import { query } from '../src/lib/db';
 import { successResponse, errorResponse, parseBody, CORS_HEADERS } from '../src/lib/api-utils';
 import { resolveFrom } from '../src/lib/email-service';
+import { getEmailQuota, recordEmailSend } from '../src/lib/email-quota';
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 
@@ -25,6 +26,12 @@ export default async function handler(event: any) {
     const email = body.email.trim().toLowerCase();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) return errorResponse('Invalid email format', 400);
+
+    // Email quota guard — OTP mails fail silently once the SMTP cap hits
+    const quota = await getEmailQuota();
+    if (quota.nearFull) {
+      return errorResponse('Sistem email sedang penuh untuk hari ini. Silakan coba lagi besok.', 429);
+    }
 
     // Rate limit: max 5 OTP requests per email in last hour
     const recentOtps: any = await query(
@@ -66,6 +73,7 @@ export default async function handler(event: any) {
         </div>
       `,
     });
+    await recordEmailSend('otp');
 
     return successResponse({ message: 'Kode verifikasi telah dikirim ke email kamu.', sent: true });
   } catch (error: any) {

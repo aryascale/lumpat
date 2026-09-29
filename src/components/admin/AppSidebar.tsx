@@ -155,6 +155,12 @@ const fullMenuItems: MenuItem[] = [
     path: '/admin/payments',
   },
   {
+    key: 'email-blast',
+    label: 'Email Blast',
+    icon: <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+    path: '/admin/email-blast',
+  },
+  {
     key: 'vouchers',
     label: 'Vouchers',
     icon: <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5a1.99 1.99 0 01.83 3.806L8.83 8.806A1.99 1.99 0 018 9H3m4 8v3m0-3H3m4 0h.01M13 21v-3m0 3h-2m2 0h4a2 2 0 002-2V5a2 2 0 00-2-2h-6.5a1 1 0 00-.7.3l-8 8a1 1 0 000 1.4l5.8 5.8a1 1 0 00.7.3H13z" /></svg>,
@@ -178,7 +184,7 @@ export const buildAdminMenuItems = (role?: string): MenuItem[] => {
   const normalizedRole = normalizeUserRole(role);
 
   const allowedByRole: Record<string, string[]> = {
-    super_admin: ['events', 'payments', 'vouchers', 'users', 'activity-logs'],
+    super_admin: ['events', 'payments', 'email-blast', 'vouchers', 'users', 'activity-logs'],
     event_admin: ['events', 'activity-logs'],
     scan_admin: ['activity-logs'],
     payment_admin: ['payments', 'vouchers', 'activity-logs'],

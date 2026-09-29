@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import QRCode from 'qrcode';
+import { recordEmailSend } from './email-quota';
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
@@ -180,6 +181,7 @@ QR code check-in terlampir sebagai gambar (tunjukkan saat pengambilan Race Pack)
         </html>
       `,
     });
+    await recordEmailSend('confirmation');
     return { success: true };
   } catch (error) {
     console.error('[EMAIL-SERVICE] Failed to send email:', error);
@@ -194,8 +196,8 @@ const fillPlaceholders = (s: string, reg: any) => String(s || '')
   .replace(/\[event\]/gi, reg.eventName || '')
   .replace(/\[kategori\]/gi, reg.categoryName || '');
 
-/** Shared branded email: black header + rose event strip + paragraphs + big CTA button. */
-async function sendBrandedLinkEmail(opts: {
+/** Shared branded email: black header + rose event strip + paragraphs + optional big CTA button. */
+export async function sendBrandedLinkEmail(opts: {
   to: string;
   subject: string;
   eventName: string;
@@ -211,7 +213,8 @@ async function sendBrandedLinkEmail(opts: {
     .split(/\n+/)
     .map((p: string) => p.trim())
     .filter(Boolean);
-  const linkUrl = opts.linkUrl || DEFAULT_SUBMISSION_LINK;
+  // A link is optional — generic blasts (refund info, announcements) may not have one.
+  const linkUrl = opts.linkUrl || '';
   const linkLabel = opts.linkLabel || 'Upload Your Strava Public Link Here';
 
   await transporter.sendMail({
@@ -219,10 +222,10 @@ async function sendBrandedLinkEmail(opts: {
     to: opts.to,
     subject: fillPlaceholders(opts.subject, opts.reg) || opts.subject,
     headers: { 'Auto-Submitted': 'auto-generated' },
-    text: `${fillPlaceholders(opts.message, opts.reg)}
+    text: `${fillPlaceholders(opts.message, opts.reg)}${linkUrl ? `
 
 ${linkLabel}:
-${linkUrl}
+${linkUrl}` : ''}
 
 — Lumpat`,
     html: `
@@ -247,13 +250,14 @@ ${linkUrl}
           <div style="padding: 40px 30px;">
             ${paragraphs.map((p: string) => `<p style="margin: 0 0 16px 0; font-size: 14px; color: #4b5563; line-height: 1.7;">${p}</p>`).join('')}
 
+            ${linkUrl ? `
             <div style="margin-top: 30px; text-align: center;">
               <a href="${linkUrl}" style="display: inline-block; background: #000000; color: white; padding: 16px 30px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">${linkLabel}</a>
             </div>
 
             <p style="margin: 25px 0 0 0; font-size: 11px; color: #9ca3af; text-align: center; word-break: break-all;">
               Jika tombol tidak berfungsi, salin tautan ini: <br/>${linkUrl}
-            </p>
+            </p>` : ''}
           </div>
 
           <div style="background: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #f3f4f6;">
@@ -293,9 +297,10 @@ export async function sendSubmissionEmails(reg: any) {
         title: 'Upload Hasil Lari',
         message: mail.message,
         reg,
-        linkUrl: mail.linkUrl,
+        linkUrl: mail.linkUrl || DEFAULT_SUBMISSION_LINK,
         linkLabel: mail.linkLabel,
       });
+      await recordEmailSend('submission');
     }
   } catch (error) {
     console.error('[EMAIL-SERVICE] Failed to send submission emails:', error);
@@ -314,9 +319,10 @@ export async function sendSubmissionReminder(reg: any, reminder: any) {
       title: 'Segera Upload Hasil Lari',
       message: reminder.message,
       reg,
-      linkUrl: reminder.linkUrl,
+      linkUrl: reminder.linkUrl || DEFAULT_SUBMISSION_LINK,
       linkLabel: reminder.linkLabel,
     });
+    await recordEmailSend('reminder');
     return { success: true };
   } catch (error) {
     console.error('[EMAIL-SERVICE] Failed to send submission reminder:', error);

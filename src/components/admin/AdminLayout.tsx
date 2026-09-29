@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined, LogoutOutlined, CloseOutlined, SafetyOutlined } from '@ant-design/icons';
+import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined, LogoutOutlined, CloseOutlined, SafetyOutlined, BellOutlined } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import AppSidebar, { buildAdminMenuItems } from './AppSidebar';
 import { useAuth, normalizeUserRole, getRoleLabel } from '../../contexts/AuthContext';
@@ -12,6 +12,7 @@ export default function AdminLayout() {
   const [pass, setPass] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [emailQuota, setEmailQuota] = useState<{ used: number; limit: number; remaining: number; nearFull: boolean } | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { user: authUser, loading: authLoading, refreshUser, logout } = useAuth();
@@ -62,6 +63,24 @@ export default function AdminLayout() {
       setMobileMenuOpen(false);
     }
   }, [navigate]);
+
+  // Email quota watch — bell warning when the SMTP daily cap is close
+  useEffect(() => {
+    if (!isAdmin) return;
+    let alive = true;
+    const check = async () => {
+      try {
+        const res = await fetch('/api/admin-email-quota');
+        if (res.ok && alive) setEmailQuota(await res.json());
+      } catch {}
+    };
+    check();
+    const timer = setInterval(check, 5 * 60 * 1000);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, [isAdmin]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -251,6 +270,23 @@ export default function AdminLayout() {
 
           {/* User Menu */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {emailQuota?.nearFull && (
+              <div className="dropdown dropdown-end">
+                <div tabIndex={0} role="button" className="relative w-9 h-9 flex items-center justify-center rounded-full text-amber-600 hover:bg-amber-50 cursor-pointer">
+                  <BellOutlined style={{ fontSize: '18px' }} />
+                  <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                </div>
+                <div tabIndex={0} className="dropdown-content bg-white rounded-xl z-50 w-72 p-4 shadow-lg border border-amber-200 mt-1 text-left">
+                  <p className="text-sm font-bold text-amber-700 mb-1">⚠️ Kuota Email Hampir Penuh</p>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    {emailQuota.used}/{emailQuota.limit} email terkirim dalam 24 jam terakhir.
+                    Pendaftaran baru sementara dihentikan otomatis sampai kuota terbebas,
+                    supaya tidak ada peserta bayar tanpa menerima email tiket.
+                  </p>
+                  <p className="text-[10px] text-gray-400 mt-2">Diperbarui otomatis setiap 5 menit</p>
+                </div>
+              </div>
+            )}
             <div className={`hidden sm:flex items-center gap-2 rounded-full px-2.5 py-1.5 border font-medium text-xs uppercase tracking-[0.12em] ${
               activeRole === 'super_admin' ? 'bg-purple-50 border-purple-200 text-purple-700' :
               activeRole === 'event_admin' ? 'bg-blue-50 border-blue-200 text-blue-700' :

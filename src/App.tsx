@@ -82,6 +82,7 @@ const PaymentsPage = lazyReload(() => import("./components/admin/pages/PaymentsP
 const VouchersPage = lazyReload(() => import("./components/admin/pages/VouchersPage"));
 const ActivityLogsPage = lazyReload(() => import("./components/admin/pages/ActivityLogsPage"));
 const UsersPage = lazyReload(() => import("./components/admin/pages/UsersPage"));
+const EmailBlastPage = lazyReload(() => import("./components/admin/pages/EmailBlastPage"));
 
 function PageLoader() {
   return (
@@ -186,6 +187,14 @@ export default function App() {
                 element={
                   <RoleGuard allowedRoles={['super_admin']} redirectTo="/admin/events">
                     <UsersPage />
+                  </RoleGuard>
+                }
+              />
+              <Route
+                path="email-blast"
+                element={
+                  <RoleGuard allowedRoles={['super_admin']} redirectTo="/admin/events">
+                    <EmailBlastPage />
                   </RoleGuard>
                 }
               />
