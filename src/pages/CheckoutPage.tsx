@@ -3,7 +3,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { message, Modal, Select, Button, Input } from "antd";
+import { message, Modal, Select, Button, Input, DatePicker } from "antd";
+import dayjs from "dayjs";
 import { getData } from "country-list";
 import getUnicodeFlagIcon from "country-flag-icons/unicode";
 import {
@@ -853,6 +854,40 @@ export default function CheckoutPage() {
                                   };
                                 })}
                               />
+                            ) : field.type === "date" ? (
+                              <DatePicker
+                                className="w-full"
+                                size="large"
+                                inputReadOnly
+                                getPopupContainer={() => document.body}
+                                placeholder={`Pilih ${field.label}`}
+                                value={
+                                  bulkParticipants[activeTabIdx]?.[field.id]
+                                    ? dayjs(bulkParticipants[activeTabIdx][field.id])
+                                    : null
+                                }
+                                onChange={(d) => {
+                                  const val = d ? d.format("YYYY-MM-DD") : "";
+                                  setParticipantField(field.id, val);
+
+                                  // Auto-assign Age Category from DOB
+                                  const age = calculateAgeOnRaceDay(
+                                    val,
+                                    event?.eventDate || "",
+                                  );
+                                  const category = getAgeCategory(age, ageBrackets);
+                                  setBulkParticipants((prev) => {
+                                    const updated = [...prev];
+                                    updated[activeTabIdx] = { ...updated[activeTabIdx] };
+                                    if (category) {
+                                      updated[activeTabIdx]["Age Category"] = category;
+                                    } else {
+                                      delete updated[activeTabIdx]["Age Category"];
+                                    }
+                                    return updated;
+                                  });
+                                }}
+                              />
                             ) : field.type === "textarea" ? (
                               <Input.TextArea
                                 rows={3}
@@ -881,7 +916,6 @@ export default function CheckoutPage() {
                                   // Auto-assign Age Category from DOB
                                   const labelLower = field.label.toLowerCase();
                                   if (
-                                    field.type === "date" ||
                                     labelLower.includes("date of birth") ||
                                     labelLower.includes("tanggal lahir") ||
                                     labelLower === "dob"
