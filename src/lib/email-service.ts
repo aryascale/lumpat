@@ -13,9 +13,22 @@ const transporter = nodemailer.createTransport({
 
 const BASE_URL = process.env.BASE_URL || 'https://lumpat.online';
 
+/**
+ * Consumer Gmail SMTP always sends as the authenticated account — a From on
+ * another domain fails SPF/DKIM alignment and lands in spam. Only honor
+ * SMTP_FROM on transactional providers (Brevo/Resend/etc with verified domains).
+ */
+export function resolveFrom(): string {
+  const host = (process.env.SMTP_HOST || 'smtp.gmail.com').toLowerCase();
+  const user = process.env.SMTP_USER || '';
+  const from = process.env.SMTP_FROM || '';
+  const addr = host.includes('gmail') ? (user || from) : (from || user);
+  return addr ? `"Lumpat" <${addr}>` : '"Lumpat" <noreply@lumpat.id>';
+}
+
 export async function sendRegistrationConfirmation(reg: any) {
   try {
-    const fromAddress = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@lumpat.id';
+    const fromAddress = resolveFrom();
     const eventDateStr = new Date(reg.eventDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
     // Generate QR Code as base64 data URI
@@ -33,6 +46,20 @@ export async function sendRegistrationConfirmation(reg: any) {
       from: fromAddress,
       to: reg.email,
       subject: `Konfirmasi Pendaftaran: ${reg.eventName}`,
+      headers: { 'Auto-Submitted': 'auto-generated' },
+      text: `Halo ${reg.name},
+
+Pendaftaran Anda sudah terkonfirmasi.
+
+Event: ${reg.eventName}
+Kategori: ${reg.categoryName}
+Tanggal: ${eventDateStr}
+Order ID: ${reg.orderId}
+
+Cek status pendaftaran: ${verifyUrl}
+QR code check-in terlampir sebagai gambar (tunjukkan saat pengambilan Race Pack).
+
+— Lumpat`,
       attachments: [
         {
           filename: 'qr-code.png',
@@ -179,7 +206,7 @@ async function sendBrandedLinkEmail(opts: {
   linkUrl: string;
   linkLabel: string;
 }) {
-  const fromAddress = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@lumpat.id';
+  const fromAddress = resolveFrom();
   const paragraphs = fillPlaceholders(opts.message, opts.reg)
     .split(/\n+/)
     .map((p: string) => p.trim())
@@ -191,6 +218,13 @@ async function sendBrandedLinkEmail(opts: {
     from: fromAddress,
     to: opts.to,
     subject: fillPlaceholders(opts.subject, opts.reg) || opts.subject,
+    headers: { 'Auto-Submitted': 'auto-generated' },
+    text: `${fillPlaceholders(opts.message, opts.reg)}
+
+${linkLabel}:
+${linkUrl}
+
+— Lumpat`,
     html: `
       <!DOCTYPE html>
       <html>
