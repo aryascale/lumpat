@@ -5,6 +5,7 @@ import { assignAutoBibsIfEnabled } from '../src/lib/bib-generator';
 import { sendRegistrationConfirmation, sendSubmissionEmails } from '../src/lib/email-service';
 import { buildOrderId } from '../src/lib/order-id';
 import { validateVoucher, settleVoucherRedemption } from '../src/lib/voucher';
+import { getEmailQuota } from '../src/lib/email-quota';
 import crypto from 'crypto';
 
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY || '';
@@ -21,6 +22,13 @@ export default async function handler(event: any) {
   try {
     const body = parseBody(event);
     if (!body) return errorResponse('Missing request body', 400);
+
+    // Email quota guard — past the cap the SMTP account blocks entirely and
+    // registrants would pay without ever receiving their ticket email
+    const quota = await getEmailQuota();
+    if (quota.nearFull) {
+      return errorResponse('Pendaftaran untuk hari ini sedang penuh. Silakan coba lagi besok.', 429);
+    }
 
     let { eventId, categoryId, email, customData, bulkParticipants, name, phoneNumber, gender, bloodType, emergencyName, emergencyPhone, tshirtSize, bibName, notes, dateOfBirth, voucherCode } = body;
 

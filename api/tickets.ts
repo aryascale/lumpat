@@ -1,4 +1,5 @@
 import { query } from '../src/lib/db';
+import { recordEmailSend } from '../src/lib/email-quota';
 import nodemailer from 'nodemailer';
 
 // Configure nodemailer
@@ -48,6 +49,7 @@ async function sendTicketEmail(email: string, name: string, ticketNumber: string
       subject: `[LUMPAT] Tiket ${ticketNumber} - ${subject}`,
       html,
     });
+    await recordEmailSend('ticket');
   } catch (error) {
     console.error('Error sending email:', error);
   }
