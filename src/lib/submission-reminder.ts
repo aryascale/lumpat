@@ -49,6 +49,8 @@ export async function runSubmissionReminders(): Promise<void> {
       for (const reg of regs) {
         const res = await sendSubmissionReminder(reg, reminder);
         if (res?.success) sent++;
+        // Pace sends — consumer SMTP flags bursts as spam
+        await new Promise((r) => setTimeout(r, 500));
       }
 
       // Stamp sentAt (read-modify-write of content; single server process)

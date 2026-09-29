@@ -1,5 +1,6 @@
 import { query } from '../src/lib/db';
 import { successResponse, errorResponse, parseBody, CORS_HEADERS } from '../src/lib/api-utils';
+import { resolveFrom } from '../src/lib/email-service';
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 
@@ -45,7 +46,7 @@ export default async function handler(event: any) {
     );
 
     // Send email
-    const fromAddress = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@lumpat.id';
+    const fromAddress = resolveFrom();
     await transporter.sendMail({
       from: fromAddress,
       to: email,
