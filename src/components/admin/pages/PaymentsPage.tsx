@@ -6,6 +6,7 @@ interface Payment {
   eventName: string;
   eventId: string;
   categoryName: string;
+  categoryId: string;
   name: string;
   email: string;
   phoneNumber: string;
@@ -38,10 +39,12 @@ export default function PaymentsPage() {
   const [eventFilter, setEventFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [events, setEvents] = useState<{id:string;name:string}[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<{ id?: string; name: string; price?: number }[]>([]);
   const [search, setSearch] = useState('');
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [editCategoryId, setEditCategoryId] = useState('');
+  const [savingCategory, setSavingCategory] = useState(false);
 
   useEffect(() => {
     fetch('/api/events?showDrafts=true').then(r=>r.json()).then(data => {
@@ -56,7 +59,7 @@ export default function PaymentsPage() {
       loadPayments();
       setCategoryFilter('');
       fetch(`/api/categories?eventId=${eventFilter}`).then(r=>r.json()).then(data => {
-        const cats = (data.categories || []).map((c:any) => typeof c === 'string' ? c : c.name);
+        const cats = (data.categories || []).map((c:any) => (typeof c === 'string' ? { name: c } : c));
         setCategories(cats);
       }).catch(()=>setCategories([]));
     }
@@ -80,6 +83,9 @@ export default function PaymentsPage() {
       setLoading(false);
     }
   };
+
+  // Reset the category picker whenever a new row's detail modal opens
+  useEffect(() => { setEditCategoryId(''); }, [selectedPayment]);
 
   const statusColor = (status: string) => {
     switch (status) {
@@ -185,7 +191,7 @@ export default function PaymentsPage() {
               onChange={(e) => setCategoryFilter(e.target.value)}
             >
               <option value="">Semua Kategori</option>
-              {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+              {categories.map(cat => <option key={cat.id || cat.name} value={cat.name}>{cat.name}</option>)}
             </select>
           )}
           </div>
@@ -517,7 +523,50 @@ export default function PaymentsPage() {
               </div>
               <div>
                 <div className="text-[10px] uppercase font-black text-gray-400">Kategori</div>
-                <div className="text-sm font-bold">{selectedPayment.categoryName}</div>
+                <div className="flex gap-2 items-center">
+                  <select
+                    className="search flex-1"
+                    value={editCategoryId || selectedPayment.categoryId || ''}
+                    onChange={(e) => setEditCategoryId(e.target.value)}
+                  >
+                    {categories.map(cat => (
+                      <option key={cat.id || cat.name} value={cat.id || cat.name}>
+                        {cat.name}{cat.price ? ` — Rp ${Number(cat.price).toLocaleString('id-ID')}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    className="btn sm whitespace-nowrap"
+                    disabled={!editCategoryId || editCategoryId === selectedPayment.categoryId || savingCategory}
+                    onClick={async () => {
+                      setSavingCategory(true);
+                      try {
+                        const res = await fetch('/api/admin-update-category', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ orderId: selectedPayment.orderId, categoryId: editCategoryId })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (res.ok) {
+                          alert(data.message || 'Kategori diperbarui');
+                          setDetailsModalOpen(false);
+                          loadPayments();
+                        } else {
+                          alert(data.message || 'Gagal memperbarui kategori');
+                        }
+                      } catch {
+                        alert('Gagal memperbarui kategori');
+                      } finally {
+                        setSavingCategory(false);
+                      }
+                    }}
+                  >
+                    {savingCategory ? '...' : 'Simpan'}
+                  </button>
+                </div>
+                <div className="text-[10px] text-gray-400 mt-1">
+                  Amount otomatis mengikuti harga kategori baru &amp; QR scan peserta ikut berubah.
+                </div>
               </div>
               <div>
                 <div className="text-[10px] uppercase font-black text-gray-400">Amount</div>
