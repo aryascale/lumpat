@@ -63,6 +63,7 @@ export default async function handler(event: any) {
           eventName: r.eventName,
           eventId: r.eventId,
           categoryName: r.categoryName,
+          categoryId: r.categoryId,
           name: r.name,
           email: r.email,
           phoneNumber: r.phoneNumber,
