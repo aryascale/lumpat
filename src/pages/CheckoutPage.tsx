@@ -52,6 +52,24 @@ interface TshirtStock {
   height?: string;
 }
 
+// Map custom field labels -> autocomplete tokens so browsers fill the right
+// inputs. Without these, Chrome heuristics treat "Emergency Contact Name" as a
+// name field and overwrite participant names from the browser autofill profile.
+// Unmapped custom fields get "off" — never let autofill guess.
+function autocompleteFor(field: RegistrationField): string {
+  const l = field.label.toLowerCase();
+  if (field.type === "nik" || /instagram|blood|emergency|club|komunitas/.test(l)) return "off";
+  if (/first name|nama depan/.test(l)) return "given-name";
+  if (/last name|nama belakang/.test(l)) return "family-name";
+  if (/full name|nama lengkap|^name$|^nama$/.test(l)) return "name";
+  if (/phone|telp|whatsapp|nomor hp|no hp/.test(l)) return "tel";
+  if (/email/.test(l)) return "email";
+  if (/birth|lahir/.test(l)) return "bday";
+  if (/gender|kelamin/.test(l)) return "sex";
+  if (/address|alamat/.test(l)) return "street-address";
+  return "off";
+}
+
 function SectionCard({
   n,
   title,
@@ -458,8 +476,25 @@ export default function CheckoutPage() {
   const tncUrls =
     event?.content?.tncUrls || (event?.content?.tncUrl ? [event.content.tncUrl] : []);
 
+  // Display name of the first participant (for the section summary) — surfaces
+  // autofill mistakes before submit, the name is what goes on ticket/certificate.
+  const firstParticipantName = (() => {
+    const p = bulkParticipants[0] || {};
+    const get = (re: RegExp) => {
+      const f = customFields.find((x) => re.test(x.label.toLowerCase()));
+      return f ? p[f.id] || "" : "";
+    };
+    return (
+      get(/full name|nama lengkap|^name$|^nama$/) ||
+      `${get(/first name|nama depan/)} ${get(/last name|nama belakang/)}`.trim()
+    );
+  })();
+
   // ---------- Order summary (sidebar + mobile accordion share this) ----------
-  const OrderSummary = () => (
+  // Plain JSX variable, NOT a component: an inline component gets a new type on
+  // every render, so React remounts this subtree and the voucher input loses
+  // focus after each keystroke (the "can only type 1 char" bug).
+  const orderSummary = (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
@@ -606,6 +641,25 @@ export default function CheckoutPage() {
           </div>
         ) : (
           <>
+            {/* Mobile summary accordion — at the top so the voucher input sits
+                above the pay button, not buried below it */}
+            <details className="lg:hidden max-w-2xl mx-auto bg-stone-50 border border-stone-200 rounded-2xl mb-6">
+              <summary className="flex items-center justify-between cursor-pointer p-4 list-none [&::-webkit-details-marker]:hidden">
+                <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+                  Ringkasan Order
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-stone-900 tabular-nums">
+                    Rp {finalPrice.toLocaleString("id-ID")}
+                  </span>
+                  <svg className="w-4 h-4 text-stone-400 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </span>
+              </summary>
+              <div className="px-4 pb-4">{orderSummary}</div>
+            </details>
+
             <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-start">
               {/* Left — form sections */}
               <div className="space-y-4 max-w-2xl mx-auto lg:mx-0 lg:max-w-none w-full min-w-0">
@@ -709,7 +763,7 @@ export default function CheckoutPage() {
                   }
                   summary={
                     openSection !== 2 && selectedCategoryDetail
-                      ? `${selectedCategoryDetail.name} · ${bulkQty} peserta`
+                      ? `${firstParticipantName ? `${firstParticipantName} · ` : ""}${selectedCategoryDetail.name}${bulkQty > 1 ? ` · ${bulkQty} peserta` : ""}`
                       : undefined
                   }
                   onOpen={() => setOpenSection(2)}
@@ -892,6 +946,7 @@ export default function CheckoutPage() {
                               <Input.TextArea
                                 rows={3}
                                 className="w-full min-w-0"
+                                autoComplete="off"
                                 placeholder={`Masukkan ${field.label}`}
                                 value={bulkParticipants[activeTabIdx]?.[field.id] || ""}
                                 onChange={(e) => setParticipantField(field.id, e.target.value)}
@@ -900,6 +955,8 @@ export default function CheckoutPage() {
                               <Input
                                 size="large"
                                 className="w-full min-w-0"
+                                name={field.id}
+                                autoComplete={autocompleteFor(field)}
                                 type={field.type === "nik" ? "text" : field.type}
                                 inputMode={field.type === "nik" ? "numeric" : undefined}
                                 pattern={field.type === "nik" ? "[0-9]*" : undefined}
@@ -1084,13 +1141,13 @@ export default function CheckoutPage() {
                 </SectionCard>
               </div>
 
-              {/* Order summary — below the form on mobile, sticky sidebar on desktop */}
-              <aside className="w-full max-w-2xl mx-auto lg:mx-0 lg:max-w-none min-w-0">
+              {/* Right — sticky order summary (desktop only, mobile uses the accordion above) */}
+              <aside className="hidden lg:block">
                 <div className="bg-stone-50 border border-stone-200 rounded-2xl p-6 lg:sticky lg:top-8">
                   <h2 className="text-[10px] font-black uppercase tracking-widest text-stone-500 mb-4">
                     Ringkasan Order
                   </h2>
-                  <OrderSummary />
+                  {orderSummary}
                 </div>
               </aside>
             </div>
