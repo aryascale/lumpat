@@ -522,13 +522,13 @@ export default function CheckoutPage() {
                 setVoucherResult(null);
               }}
               placeholder="Kode voucher"
-              className="flex-1 border-2 border-stone-200 rounded-xl px-3 h-11 text-sm uppercase tracking-wide bg-white focus:outline-none focus:border-stone-800"
+              className="flex-1 min-w-0 border-2 border-stone-200 rounded-xl px-3 h-11 text-base uppercase tracking-wide bg-white focus:outline-none focus:border-stone-800"
             />
             {voucherCode.trim() && (
               <button
                 onClick={applyVoucher}
                 disabled={voucherLoading}
-                className="shrink-0 h-11 px-5 rounded-xl border-2 border-stone-200 font-bold text-sm hover:border-stone-900 transition-colors disabled:opacity-40 bg-white"
+                className="shrink-0 h-11 px-4 rounded-xl border-2 border-stone-200 font-bold text-base hover:border-stone-900 transition-colors disabled:opacity-40 bg-white"
               >
                 {voucherLoading ? "..." : "Terapkan"}
               </button>
