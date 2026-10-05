@@ -641,25 +641,6 @@ export default function CheckoutPage() {
           </div>
         ) : (
           <>
-            {/* Mobile summary accordion — at the top so the voucher input sits
-                above the pay button, not buried below it */}
-            <details className="lg:hidden max-w-2xl mx-auto bg-stone-50 border border-stone-200 rounded-2xl mb-6">
-              <summary className="flex items-center justify-between cursor-pointer p-4 list-none [&::-webkit-details-marker]:hidden">
-                <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">
-                  Ringkasan Order
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-stone-900 tabular-nums">
-                    Rp {finalPrice.toLocaleString("id-ID")}
-                  </span>
-                  <svg className="w-4 h-4 text-stone-400 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </span>
-              </summary>
-              <div className="px-4 pb-4">{orderSummary}</div>
-            </details>
-
             <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-start">
               {/* Left — form sections */}
               <div className="space-y-4 max-w-2xl mx-auto lg:mx-0 lg:max-w-none w-full min-w-0">
@@ -1076,6 +1057,12 @@ export default function CheckoutPage() {
                   onOpen={() => setOpenSection(3)}
                 >
                   <div className="space-y-5">
+                    {/* Mobile: order summary (incl. voucher input) lives here in
+                        the payment step, right above the pay button — desktop
+                        keeps the sticky sidebar instead */}
+                    <div className="lg:hidden bg-stone-50 border border-stone-200 rounded-xl p-4">
+                      {orderSummary}
+                    </div>
                     {tncUrls.length > 0 && (
                       <div className="space-y-3 bg-stone-50 p-4 rounded-xl border border-stone-200">
                         <div className="flex items-start gap-3">
