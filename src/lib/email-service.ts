@@ -174,6 +174,7 @@ QR code check-in terlampir sebagai gambar (tunjukkan saat pengambilan Race Pack)
             <!-- Footer -->
             <div style="background: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #f3f4f6;">
               <p style="font-size: 12px; color: #9ca3af; margin: 0;">Lumpat &copy; ${new Date().getFullYear()}. All rights reserved.</p>
+              <p style="font-size: 11px; color: #6b7280; margin: 10px 0 0 0;">Butuh bantuan? Hubungi Lumpat: <a href="https://wa.me/6285110513220" style="color: #6b7280; text-decoration: none;">+62 851-1051-3220</a> (WhatsApp)</p>
               <p style="font-size: 11px; color: #d1d5db; margin: 10px 0 0 0;">Email ini dikirim secara otomatis oleh sistem Lumpat.</p>
             </div>
           </div>
@@ -262,6 +263,7 @@ ${linkUrl}` : ''}
 
           <div style="background: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #f3f4f6;">
             <p style="font-size: 12px; color: #9ca3af; margin: 0;">Lumpat &copy; ${new Date().getFullYear()}. All rights reserved.</p>
+            <p style="font-size: 11px; color: #6b7280; margin: 10px 0 0 0;">Butuh bantuan? Hubungi Lumpat: <a href="https://wa.me/6285110513220" style="color: #6b7280; text-decoration: none;">+62 851-1051-3220</a> (WhatsApp)</p>
             <p style="font-size: 11px; color: #d1d5db; margin: 10px 0 0 0;">Email ini dikirim secara otomatis oleh sistem Lumpat.</p>
           </div>
         </div>

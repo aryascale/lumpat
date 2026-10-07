@@ -799,9 +799,9 @@ export default function CheckoutPage() {
                             const available = selectedCategoryDetail
                               ? selectedCategoryDetail.quota > 0
                                 ? selectedCategoryDetail.quota - selectedCategoryDetail.sold
-                                : 10
-                              : 10;
-                            const max = Math.min(10, available);
+                                : 50
+                              : 50;
+                            const max = Math.min(50, available);
                             return Array.from({ length: max }, (_, i) => i + 1).map((v) => ({
                               label: v.toString(),
                               value: v,
