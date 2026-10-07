@@ -814,12 +814,12 @@ export default function CheckoutPage() {
 
                     {/* Participant tabs */}
                     {bulkQty > 1 && (
-                      <div className="flex flex-wrap gap-2 pb-3 border-b border-stone-100">
+                      <div className="flex gap-2 pb-3 border-b border-stone-100 overflow-x-auto">
                         {Array.from({ length: bulkQty }).map((_, idx) => (
                           <button
                             key={idx}
                             onClick={() => setActiveTabIdx(idx)}
-                            className={`px-4 py-2 text-xs font-bold whitespace-nowrap rounded-lg transition-colors ${
+                            className={`shrink-0 px-4 py-2 text-xs font-bold whitespace-nowrap rounded-lg transition-colors ${
                               activeTabIdx === idx
                                 ? "bg-stone-950 text-white"
                                 : "bg-stone-100 text-stone-500 hover:bg-stone-200"
