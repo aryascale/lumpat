@@ -397,10 +397,10 @@ export default function CheckoutPage() {
             }
           }
           if (field.type === "tel") {
-            const telRegex = /^[0-9+\-\s()]+$/;
-            if (!telRegex.test(val)) {
+            const telRegex = /^\+?\d+$/;
+            if (!telRegex.test(String(val).replace(/[\s\-().]/g, ""))) {
               setActiveTabIdx(i);
-              message.error(`Peserta ${i + 1}: Nomor telepon pada '${field.label}' hanya boleh berisi angka, +, -, dan spasi`);
+              message.error(`Peserta ${i + 1}: Format nomor telepon pada '${field.label}' tidak valid`);
               return;
             }
           }
