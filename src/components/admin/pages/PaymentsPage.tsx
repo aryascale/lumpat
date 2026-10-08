@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth, normalizeUserRole } from '../../../contexts/AuthContext';
 
 interface Payment {
   id: string;
@@ -32,6 +33,9 @@ interface Summary {
 }
 
 export default function PaymentsPage() {
+  const { user } = useAuth();
+  // Event admins manage registrations but never see money figures
+  const canSeeRevenue = ['super_admin', 'payment_admin'].includes(normalizeUserRole(user?.role));
   const [payments, setPayments] = useState<Payment[]>([]);
   const [summary, setSummary] = useState<Summary>({ total: 0, paid: 0, pending: 0, failed: 0, totalRevenue: 0 });
   const [loading, setLoading] = useState(true);
@@ -137,10 +141,12 @@ export default function PaymentsPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-4 md:mb-6">
-        <div className="bg-white border border-gray-200 rounded-lg p-3 md:p-4 shadow-sm">
-          <div className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total Revenue</div>
-          <div className="text-base md:text-2xl font-black text-gray-900">Rp {(summary.totalRevenue || 0).toLocaleString('id-ID')}</div>
-        </div>
+        {canSeeRevenue && (
+          <div className="bg-white border border-gray-200 rounded-lg p-3 md:p-4 shadow-sm">
+            <div className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total Revenue</div>
+            <div className="text-base md:text-2xl font-black text-gray-900">Rp {(summary.totalRevenue || 0).toLocaleString('id-ID')}</div>
+          </div>
+        )}
         <div className="bg-white border border-gray-200 rounded-lg p-3 md:p-4 shadow-sm">
           <div className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Paid</div>
           <div className="text-base md:text-2xl font-black text-gray-900">{summary.paid || 0}</div>
@@ -228,7 +234,7 @@ export default function PaymentsPage() {
               ]);
               
               const customKeysArray = Array.from(customKeys).filter(k => !Array.from(allKnownKeys).some(ak => ak.toLowerCase() === k.toLowerCase()));
-              const headers = ['Order ID','Status','Tanggal Daftar','Nama','Email','No HP','Tanggal Lahir','Gender','Nationality','T-Shirt Size','BIB Name','BIB Number','Event','Kategori','Gross Amount',...customKeysArray].map(escapeCsv);
+              const headers = ['Order ID','Status','Tanggal Daftar','Nama','Email','No HP','Tanggal Lahir','Gender','Nationality','T-Shirt Size','BIB Name','BIB Number','Event','Kategori',...(canSeeRevenue ? ['Gross Amount'] : []),...customKeysArray].map(escapeCsv);
               
               const csvData = filtered.map(p => {
                 // Case-insensitive lookup in customData
@@ -267,7 +273,7 @@ export default function PaymentsPage() {
                   p.bibNumber || '',
                   p.eventName || '',
                   p.categoryName || '',
-                  p.grossAmount
+                  ...(canSeeRevenue ? [p.grossAmount] : [])
                 ].map(escapeCsv);
                 
                 customKeysArray.forEach(k => { 
@@ -289,6 +295,33 @@ export default function PaymentsPage() {
           >
             Export CSV
           </button>
+          <button
+            className="btn ghost whitespace-nowrap w-full sm:w-auto text-xs"
+            style={{ color: '#dc2626', borderColor: '#fecaca' }}
+            onClick={async () => {
+              if (!eventFilter) return alert('Pilih event dulu');
+              const evName = events.find(e => e.id === eventFilter)?.name || 'event ini';
+              if (!confirm(`Hapus PERMANEN SEMUA registrasi di "${evName}" (${summary.total} data)?\nTotal peserta terdaftar event ini akan jadi 0. Tidak bisa dikembalikan.`)) return;
+              try {
+                const res = await fetch('/api/admin-delete-payment', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ eventId: eventFilter, all: true })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok) {
+                  alert(data.message || 'Semua registrasi dihapus permanen');
+                  loadPayments();
+                } else {
+                  alert(data.error || 'Gagal menghapus registrasi');
+                }
+              } catch {
+                alert('Gagal menghapus registrasi');
+              }
+            }}
+          >
+            Hard Delete Semua ({summary.total || 0})
+          </button>
         </div>
       </div>
 
@@ -308,7 +341,7 @@ export default function PaymentsPage() {
                       <th>Nama</th>
                       <th>Event</th>
                       <th>Kategori</th>
-                      <th style={{ width: 120 }}>Amount</th>
+                      {canSeeRevenue && <th style={{ width: 120 }}>Amount</th>}
                       <th style={{ width: 100 }}>Status</th>
                       <th style={{ width: 100 }}>Metode</th>
                       <th style={{ width: 120 }}>Tanggal</th>
@@ -317,7 +350,7 @@ export default function PaymentsPage() {
                   </thead>
                   <tbody>
                     {currentPayments.length === 0 ? (
-                      <tr><td colSpan={9} className="empty py-20">Tidak ada transaksi ditemukan</td></tr>
+                      <tr><td colSpan={canSeeRevenue ? 9 : 8} className="empty py-20">Tidak ada transaksi ditemukan</td></tr>
                     ) : (
                       currentPayments.map(p => (
                         <tr key={p.id} className="row-hover">
@@ -334,7 +367,7 @@ export default function PaymentsPage() {
                           </td>
                           <td className="text-xs font-medium">{p.eventName}</td>
                           <td className="text-xs">{p.categoryName}</td>
-                          <td className="mono text-right font-bold text-sm">Rp {p.grossAmount.toLocaleString('id-ID')}</td>
+                          {canSeeRevenue && <td className="mono text-right font-bold text-sm">Rp {p.grossAmount.toLocaleString('id-ID')}</td>}
                           <td>
                             <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase ${statusColor(p.paymentStatus)}`}>
                               {statusLabel(p.paymentStatus)}
@@ -377,7 +410,7 @@ export default function PaymentsPage() {
                               </button>
                             )}
                             {p.paymentStatus !== 'deleted' && (
-                              <button 
+                              <button
                                 className="px-2 py-1 bg-red-100 text-red-600 border border-red-200 text-[10px] font-bold uppercase rounded hover:bg-red-200 transition-colors"
                                 onClick={async () => {
                                   if (confirm(`Yakin ingin melakukan soft-delete peserta ${p.name}? (Data tidak akan muncul di halaman publik)`)) {
@@ -400,6 +433,29 @@ export default function PaymentsPage() {
                                 Delete
                               </button>
                             )}
+                            <button
+                              className="px-2 py-1 bg-red-600 text-white text-[10px] font-bold uppercase rounded hover:bg-red-700 transition-colors"
+                              title="Hapus permanen dari database"
+                              onClick={async () => {
+                                if (confirm(`Hapus PERMANEN peserta ${p.name}? Data tidak bisa dikembalikan dan total terdaftar event akan berkurang.`)) {
+                                  try {
+                                    const res = await fetch('/api/admin-delete-payment', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ orderId: p.orderId, hard: true })
+                                    });
+                                    if (res.ok) {
+                                      alert('Registrasi dihapus permanen');
+                                      loadPayments();
+                                    }
+                                  } catch (e) {
+                                    alert('Gagal menghapus permanen');
+                                  }
+                                }
+                              }}
+                            >
+                              Hard Del
+                            </button>
                           </td>
                         </tr>
                       ))
@@ -426,7 +482,7 @@ export default function PaymentsPage() {
                       </div>
                       <div className="text-xs text-gray-600 mb-1">{p.categoryName}</div>
                       <div className="flex justify-between items-center text-sm">
-                        <span className="font-mono font-bold text-xs">Rp {p.grossAmount.toLocaleString('id-ID')}</span>
+                        {canSeeRevenue && <span className="font-mono font-bold text-xs">Rp {p.grossAmount.toLocaleString('id-ID')}</span>}
                         <span className="text-gray-400 text-[10px]">{new Date(p.createdAt).toLocaleDateString('id-ID')}</span>
                       </div>
                       <div className="flex gap-2 mt-2 pt-2 border-t border-gray-100">
@@ -437,6 +493,7 @@ export default function PaymentsPage() {
                         {p.paymentStatus !== 'deleted' && (
                           <button className="flex-1 px-2 py-1.5 bg-red-100 text-red-600 border border-red-200 text-[10px] font-bold uppercase rounded" onClick={async () => { if(confirm(`Yakin ingin soft-delete peserta ${p.name}?`)){try{const r=await fetch('/api/admin-delete-payment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:p.orderId})});if(r.ok){alert('Peserta di-soft-delete');loadPayments();}}catch{alert('Gagal');}} }}>Delete</button>
                         )}
+                        <button className="flex-1 px-2 py-1.5 bg-red-600 text-white text-[10px] font-bold uppercase rounded" onClick={async () => { if(confirm(`Hapus PERMANEN ${p.name}? Tidak bisa dikembalikan.`)){try{const r=await fetch('/api/admin-delete-payment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:p.orderId,hard:true})});if(r.ok){alert('Dihapus permanen');loadPayments();}}catch{alert('Gagal');}} }}>Hard Del</button>
                       </div>
                     </div>
                   ))
@@ -568,10 +625,12 @@ export default function PaymentsPage() {
                   Amount otomatis mengikuti harga kategori baru &amp; QR scan peserta ikut berubah.
                 </div>
               </div>
-              <div>
-                <div className="text-[10px] uppercase font-black text-gray-400">Amount</div>
-                <div className="text-sm font-bold font-mono">Rp {selectedPayment.grossAmount.toLocaleString('id-ID')}</div>
-              </div>
+              {canSeeRevenue && (
+                <div>
+                  <div className="text-[10px] uppercase font-black text-gray-400">Amount</div>
+                  <div className="text-sm font-bold font-mono">Rp {selectedPayment.grossAmount.toLocaleString('id-ID')}</div>
+                </div>
+              )}
               <div>
                 <div className="text-[10px] uppercase font-black text-gray-400">Metode Bayar</div>
                 <div className="text-sm uppercase font-bold">{selectedPayment.paymentMethod || '-'}</div>

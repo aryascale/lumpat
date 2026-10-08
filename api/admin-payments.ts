@@ -6,7 +6,7 @@ export default async function handler(event: any) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
   if (event.httpMethod !== 'GET') return errorResponse('Method not allowed', 405);
 
-  const auth = requireRole(event, ['super_admin', 'payment_admin']);
+  const auth = requireRole(event, ['super_admin', 'payment_admin', 'event_admin']);
   if (!auth.allowed) return errorResponse(auth.message, auth.statusCode);
 
   try {
@@ -80,7 +80,12 @@ export default async function handler(event: any) {
           customData: mappedCustomData,
         };
       }),
-      summary: summary[0] || { total: 0, paid: 0, pending: 0, failed: 0, totalRevenue: 0 },
+      summary: (() => {
+        const s = summary[0] || { total: 0, paid: 0, pending: 0, failed: 0, totalRevenue: 0 };
+        // Event admins manage registrations but must not see money figures
+        if (auth.role === 'event_admin') s.totalRevenue = 0;
+        return s;
+      })(),
     });
   } catch (error: any) {
     console.error('[ADMIN-PAYMENTS] Error:', error);
