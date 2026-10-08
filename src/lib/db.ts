@@ -28,3 +28,25 @@ export async function query(sql: string, params: any[] = []): Promise<any[]> {
   const [rows] = await pool.execute(sql, params);
   return rows as any[];
 }
+
+/** UPDATE/DELETE — returns affectedRows, for compare-and-set guards. */
+export async function exec(sql: string, params: any[] = []): Promise<number> {
+  const [result] = await pool.execute(sql, params);
+  return (result as any).affectedRows ?? 0;
+}
+
+/** Run fn inside a transaction on one pooled connection; q is connection-bound. */
+export async function withTx<T>(fn: (q: (sql: string, params?: any[]) => Promise<any>) => Promise<T>): Promise<T> {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    const out = await fn((sql, params = []) => conn.execute(sql, params).then(([r]: any) => r));
+    await conn.commit();
+    return out;
+  } catch (e) {
+    await conn.rollback().catch(() => {});
+    throw e;
+  } finally {
+    conn.release();
+  }
+}

@@ -1,10 +1,8 @@
-import { query } from '../src/lib/db';
+import { query, exec } from '../src/lib/db';
 import { CORS_HEADERS } from '../src/lib/api-utils';
 import { logActivity } from '../src/lib/activity-logger';
-import { sendRegistrationConfirmation, sendSubmissionEmails } from '../src/lib/email-service';
 import { createBackup } from '../src/lib/backup';
-import { assignAutoBibsIfEnabled } from '../src/lib/bib-generator';
-import { settleVoucherRedemption } from '../src/lib/voucher';
+import { runSettlementSideEffects } from '../src/lib/settlement';
 import crypto from 'crypto';
 
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY || '';
@@ -101,7 +99,6 @@ export default async function handler(event: any) {
       paymentStatus = 'pending';
     }
 
-    const paidAt = paymentStatus === 'settlement' ? 'NOW()' : 'NULL';
 
     // Idempotency: duplicate settlement notifications must not re-send emails or double-increment inventory
     if (paymentStatus === 'settlement') {
@@ -112,13 +109,23 @@ export default async function handler(event: any) {
       }
     }
 
-    // Update DB
-    await query(
-      `UPDATE EventRegistration SET paymentStatus = ?, paymentMethod = ?, paidAt = ${paidAt === 'NOW()' ? 'NOW()' : 'NULL'}, updatedAt = NOW() WHERE orderId = ?`,
-      [paymentStatus, payment_type || null, order_id]
-    );
+    // Update DB. Settlement uses compare-and-set so only the request that
+    // flips pending→settlement runs side effects — duplicate notifications or
+    // a racing manual settle can't double-email or double-count inventory.
+    let newlySettled = false;
+    if (paymentStatus === 'settlement') {
+      newlySettled = (await exec(
+        "UPDATE EventRegistration SET paymentStatus = 'settlement', paymentMethod = ?, paidAt = NOW(), updatedAt = NOW() WHERE orderId = ? AND paymentStatus != 'settlement'",
+        [payment_type || null, order_id]
+      )) > 0;
+    } else {
+      await query(
+        `UPDATE EventRegistration SET paymentStatus = ?, paymentMethod = ?, paidAt = NULL, updatedAt = NOW() WHERE orderId = ?`,
+        [paymentStatus, payment_type || null, order_id]
+      );
+    }
 
-    console.log(`[WEBHOOK-MIDTRANS] Order ${order_id} -> ${paymentStatus} (${payment_type})`);
+    console.log(`[WEBHOOK-MIDTRANS] Order ${order_id} -> ${paymentStatus} (${payment_type})${newlySettled ? ' [newly settled]' : ''}`);
 
     // Fetch details for logging and email
     const regRes: any = await query(
@@ -138,34 +145,13 @@ export default async function handler(event: any) {
       const actionKey = actionMap[paymentStatus] || 'payment.update';
       await logActivity(actionKey, `Pembayaran ${paymentStatus} untuk ${primaryReg.name} (+${regRes.length - 1} others) (${order_id})`, primaryReg.email, primaryReg.eventId, { orderId: order_id, paymentStatus, paymentType: payment_type });
 
-      // Send Confirmation Email and Assign BIBs if settlement
-      if (paymentStatus === 'settlement') {
-        try {
-          await settleVoucherRedemption(order_id);
-        } catch (e) {
-          console.error('[WEBHOOK-MIDTRANS] Error settling voucher:', e);
-        }
-
-        try {
-          await assignAutoBibsIfEnabled(order_id);
-        } catch (e) {
-          console.error('[WEBHOOK-MIDTRANS] Error generating BIBs:', e);
-        }
-
-        for (const reg of regRes) {
-          await sendRegistrationConfirmation(reg);
-          await sendSubmissionEmails(reg);
-
-          // Increment t-shirt inventory sold count
-          if (reg.tshirtSize) {
-            await query(
-              'UPDATE TshirtInventory SET sold = sold + 1 WHERE eventId = ? AND size = ?',
-              [reg.eventId, reg.tshirtSize]
-            );
-          }
-        }
-        // Auto-backup after successful payment
-        try { await createBackup('payment'); } catch (e) { console.error('[BACKUP] Failed:', e); }
+      // Post-settlement work (BIB, voucher, emails, inventory, backup) runs in
+      // the background — ack Midtrans immediately instead of holding the
+      // webhook for 2×N SMTP roundtrips
+      if (newlySettled) {
+        runSettlementSideEffects(order_id)
+          .then(() => createBackup('payment'))
+          .catch((e) => console.error('[WEBHOOK-MIDTRANS] Background settlement failed:', e));
       }
     }
     return { statusCode: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'ok' }) };

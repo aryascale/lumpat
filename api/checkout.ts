@@ -1,10 +1,9 @@
-import { query } from '../src/lib/db';
+import { query, exec, withTx } from '../src/lib/db';
 import { successResponse, errorResponse, parseBody, CORS_HEADERS } from '../src/lib/api-utils';
 import { logActivity } from '../src/lib/activity-logger';
-import { assignAutoBibsIfEnabled } from '../src/lib/bib-generator';
-import { sendRegistrationConfirmation, sendSubmissionEmails } from '../src/lib/email-service';
+import { runSettlementSideEffects } from '../src/lib/settlement';
 import { buildOrderId } from '../src/lib/order-id';
-import { validateVoucher, settleVoucherRedemption } from '../src/lib/voucher';
+import { validateVoucher } from '../src/lib/voucher';
 import { getEmailQuota } from '../src/lib/email-quota';
 import crypto from 'crypto';
 
@@ -207,62 +206,43 @@ export default async function handler(event: any) {
     }
 
     const regIds: string[] = [];
-    for (let i = 0; i < participantsData.length; i++) {
+    // Authoritative quota reservation: row lock + count that includes pending
+    // orders (same policy as vouchers — abandoned pendings expire out of the
+    // count automatically). Closes the concurrent-checkout oversell race and
+    // accounts for bulk qty, which the old pre-check ignored.
+    await withTx(async (q) => {
+      await q('SELECT id FROM Category WHERE id = ? FOR UPDATE', [categoryId]);
+      if (catQuota > 0) {
+        const soldRows: any = await q(
+          `SELECT COUNT(*) as sold FROM EventRegistration WHERE categoryId = ? AND eventId = ? AND paymentStatus IN ('settlement', 'pending')`,
+          [categoryId, eventId]
+        );
+        if (Number(soldRows[0]?.sold || 0) + qty > catQuota) {
+          throw Object.assign(new Error('Kuota kategori ini sudah habis (Sold Out)'), { statusCode: 400 });
+        }
+      }
+      for (let i = 0; i < participantsData.length; i++) {
         const p = participantsData[i];
         const regId = crypto.randomUUID();
         regIds.push(regId);
-        await query(
+        await q(
           `INSERT INTO EventRegistration
             (id, eventId, categoryId, email, name, phoneNumber, gender, bloodType, emergencyName, emergencyPhone, tshirtSize, bibName, notes, orderId, grossAmount, dateOfBirth, customData, voucherCode, discountAmount, paymentStatus, createdAt, updatedAt)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW(), NOW())`,
           [regId, eventId, categoryId, email, p.name, p.phoneNumber, p.gender, p.bloodType || null, p.emergencyName || null, p.emergencyPhone || null, p.tshirtSize || null, p.bibName || null, p.notes || null, orderId, itemGrossAmount, p.dateOfBirth || null, p.customData ? JSON.stringify(p.customData) : null, String(voucherCode || '').trim().toUpperCase() || null, discountAmount]
         );
-    }
+      }
+    });
 
     if (finalAmount === 0) {
-      for (const regId of regIds) {
-        await query(
-          "UPDATE EventRegistration SET paymentStatus = 'settlement', paidAt = NOW(), updatedAt = NOW() WHERE id = ?",
-          [regId]
-        );
-      }
-
-      try {
-        await settleVoucherRedemption(orderId);
-      } catch (e) {
-        console.error('[CHECKOUT] Error settling voucher:', e);
-      }
-
-      // Auto-generate BIB for free events
-      try {
-        await assignAutoBibsIfEnabled(orderId);
-      } catch (e) {
-        console.error('[CHECKOUT] Error generating BIBs for free event:', e);
-      }
-
-      // Send confirmation email + update tshirt inventory for free events
-      try {
-        const regRes: any = await query(
-          `SELECT er.*, e.name as eventName, e.eventDate, c.name as categoryName 
-           FROM EventRegistration er
-           JOIN Event e ON er.eventId = e.id
-           JOIN Category c ON er.categoryId = c.id
-           WHERE er.orderId = ?`,
-          [orderId]
-        );
-        for (const reg of regRes) {
-          await sendRegistrationConfirmation(reg);
-          await sendSubmissionEmails(reg);
-          if (reg.tshirtSize) {
-            await query(
-              'UPDATE TshirtInventory SET sold = sold + 1 WHERE eventId = ? AND size = ?',
-              [reg.eventId, reg.tshirtSize]
-            );
-          }
-        }
-      } catch (e) {
-        console.error('[CHECKOUT] Error sending email for free event:', e);
-      }
+      // Compare-and-set flip so a racing webhook/poll/admin-settle can't double-run side effects
+      await exec(
+        "UPDATE EventRegistration SET paymentStatus = 'settlement', paidAt = NOW(), updatedAt = NOW() WHERE orderId = ? AND paymentStatus != 'settlement'",
+        [orderId]
+      );
+      // Emails are 2 SMTP roundtrips per participant — run in the background so
+      // bulk free registrations respond instantly instead of hanging for minutes
+      runSettlementSideEffects(orderId).catch((e) => console.error('[CHECKOUT] background settlement failed:', e));
 
       await logActivity('registration.created', `${primaryParticipant.name} (+${qty-1} others) mendaftar ke event (Gratis)`, email, eventId, { orderId, totalGrossAmount, category: categories[0].name });
       return successResponse({ orderId, grossAmount: finalAmount, discountAmount, registration: { id: regIds[0] }, message: 'Registrasi gratis berhasil', isFree: true });
@@ -329,6 +309,7 @@ export default async function handler(event: any) {
       registration: { id: regIds[0] },
     });
   } catch (error: any) {
+    if (error?.statusCode) return errorResponse(error.message, error.statusCode);
     console.error('[CHECKOUT] Error:', error);
     return errorResponse('Terjadi kesalahan, silakan coba lagi', 500);
   }
