@@ -365,3 +365,42 @@ model VoucherRedemption {
   @@index([voucherId])
   @@index([email])
 }
+
+// Created via raw SQL by api/admin-email-blast.ts + src/lib/email-quota.ts.
+// Declared here so `prisma db push` stops dropping them as "extra" tables
+// (api/ layer talks raw SQL, ids are UUID() from the DB, not @default).
+model EmailSendLog {
+  id        String   @id @db.VarChar(191)
+  kind      String?  @db.VarChar(64)
+  createdAt DateTime @default(dbgenerated("(CURRENT_TIMESTAMP(3))")) @db.DateTime(3)
+
+  @@index([createdAt])
+}
+
+model EmailBlast {
+  id        String   @id @db.VarChar(191)
+  eventId   String?  @db.VarChar(191)
+  eventName String?  @db.VarChar(255)
+  subject   String   @db.VarChar(255)
+  badge     String?  @db.VarChar(64)
+  title     String?  @db.VarChar(255)
+  message   String   @db.Text
+  linkUrl   String?  @db.VarChar(500)
+  linkLabel String?  @db.VarChar(255)
+  createdBy String?  @db.VarChar(255)
+  createdAt DateTime @default(dbgenerated("(CURRENT_TIMESTAMP(3))")) @db.DateTime(3)
+}
+
+model EmailBlastRecipient {
+  id             String    @id @db.VarChar(191)
+  blastId        String    @db.VarChar(191)
+  registrationId String    @db.VarChar(191)
+  name           String?   @db.VarChar(255)
+  email          String    @db.VarChar(255)
+  categoryName   String?   @db.VarChar(255)
+  status         String    @default("pending") @db.VarChar(16)
+  sentAt         DateTime? @db.DateTime(3)
+
+  @@unique([blastId, registrationId])
+  @@index([blastId, status])
+}
