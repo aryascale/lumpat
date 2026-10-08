@@ -1812,7 +1812,7 @@ export default function EventPage() {
                   <span className="text-stone-500 text-sm font-medium">
                     {
                       registeredParticipants.filter(
-                        (p) => p.paymentStatus === "settlement",
+                        (p) => p.paymentStatus === "settlement" && !p.category?.isHidden,
                       ).length
                     }{" "}
                     Terdaftar
