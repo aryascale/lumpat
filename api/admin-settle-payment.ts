@@ -10,7 +10,7 @@ export default async function handler(event: any) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
   if (event.httpMethod !== 'POST') return errorResponse('Method not allowed', 405);
 
-  const auth = requireRole(event, ['super_admin', 'payment_admin']);
+  const auth = requireRole(event, ['super_admin', 'payment_admin', 'event_admin']);
   if (!auth.allowed) return errorResponse(auth.message, auth.statusCode);
 
   try {
@@ -29,13 +29,13 @@ export default async function handler(event: any) {
       return errorResponse('Registration not found', 404);
     }
 
-    // Fetch details to send email
+    // Fetch details to send email — all participants of the order (bulk = N rows)
     const regRes: any = await query(
-      `SELECT er.*, e.name as eventName, e.eventDate, c.name as categoryName 
+      `SELECT er.*, e.name as eventName, e.eventDate, c.name as categoryName
        FROM EventRegistration er
        JOIN Event e ON er.eventId = e.id
        JOIN Category c ON er.categoryId = c.id
-       WHERE er.orderId = ? LIMIT 1`,
+       WHERE er.orderId = ?`,
       [orderId]
     );
 
@@ -48,8 +48,19 @@ export default async function handler(event: any) {
 
       await settleVoucherRedemption(orderId);
 
-      const { sendRegistrationConfirmation } = await import('../src/lib/email-service');
-      await sendRegistrationConfirmation(regRes[0]);
+      // Same per-participant follow-up as the Midtrans webhook: ticket email,
+      // submission emails, and tshirt inventory per row
+      const { sendRegistrationConfirmation, sendSubmissionEmails } = await import('../src/lib/email-service');
+      for (const reg of regRes) {
+        await sendRegistrationConfirmation(reg);
+        await sendSubmissionEmails(reg);
+        if (reg.tshirtSize) {
+          await query(
+            'UPDATE TshirtInventory SET sold = sold + 1 WHERE eventId = ? AND size = ?',
+            [reg.eventId, reg.tshirtSize]
+          );
+        }
+      }
     }
 
     // Log the manual action
