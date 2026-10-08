@@ -1,9 +1,8 @@
-import { query } from '../src/lib/db';
+import { query, exec } from '../src/lib/db';
 import { successResponse, errorResponse, CORS_HEADERS } from '../src/lib/api-utils';
 import { logActivity } from '../src/lib/activity-logger';
 import { createBackup } from '../src/lib/backup';
-import { assignAutoBibsIfEnabled } from '../src/lib/bib-generator';
-import { settleVoucherRedemption } from '../src/lib/voucher';
+import { runSettlementSideEffects } from '../src/lib/settlement';
 import { requireRole } from '../src/lib/jwt';
 
 export default async function handler(event: any) {
@@ -19,17 +18,19 @@ export default async function handler(event: any) {
 
     if (!orderId) return errorResponse('Order ID is required', 400);
 
-    // Update status to settlement manually
-    const result: any = await query(
-      `UPDATE EventRegistration SET paymentStatus = 'settlement', paidAt = NOW(), updatedAt = NOW() WHERE orderId = ?`,
+    // Compare-and-set: only the path that flips the status runs side effects,
+    // so a webhook/poll arriving at the same time can't double anything
+    const flipped = await exec(
+      "UPDATE EventRegistration SET paymentStatus = 'settlement', paidAt = NOW(), updatedAt = NOW() WHERE orderId = ? AND paymentStatus != 'settlement'",
       [orderId]
     );
-
-    if (result.affectedRows === 0) {
-      return errorResponse('Registration not found', 404);
+    if (flipped === 0) {
+      const current: any = await query('SELECT paymentStatus FROM EventRegistration WHERE orderId = ? LIMIT 1', [orderId]);
+      if (current.length === 0) return errorResponse('Registration not found', 404);
+      return successResponse({ message: 'Pembayaran sudah diselesaikan sebelumnya (oleh webhook/polling)' });
     }
 
-    // Fetch details to send email — all participants of the order (bulk = N rows)
+    // Fetch details for the activity log
     const regRes: any = await query(
       `SELECT er.*, e.name as eventName, e.eventDate, c.name as categoryName
        FROM EventRegistration er
@@ -39,35 +40,15 @@ export default async function handler(event: any) {
       [orderId]
     );
 
-    if (regRes.length > 0) {
-      try {
-        await assignAutoBibsIfEnabled(orderId);
-      } catch (e) {
-        console.error('[ADMIN-SETTLE] Error generating BIBs:', e);
-      }
-
-      await settleVoucherRedemption(orderId);
-
-      // Same per-participant follow-up as the Midtrans webhook: ticket email,
-      // submission emails, and tshirt inventory per row
-      const { sendRegistrationConfirmation, sendSubmissionEmails } = await import('../src/lib/email-service');
-      for (const reg of regRes) {
-        await sendRegistrationConfirmation(reg);
-        await sendSubmissionEmails(reg);
-        if (reg.tshirtSize) {
-          await query(
-            'UPDATE TshirtInventory SET sold = sold + 1 WHERE eventId = ? AND size = ?',
-            [reg.eventId, reg.tshirtSize]
-          );
-        }
-      }
-    }
+    // Emails are 2 SMTP roundtrips per participant — background them so the
+    // admin isn't staring at a spinner for bulk orders
+    runSettlementSideEffects(orderId)
+      .then(() => createBackup('manual_settle'))
+      .catch((e) => console.error('[ADMIN-SETTLE] Background settlement failed:', e));
 
     // Log the manual action
     const eventId = regRes[0]?.eventId || null;
     await logActivity('payment.manual_settle', `Penyelesaian pembayaran manual untuk ${orderId}`, 'admin', eventId, { orderId });
-
-    try { await createBackup('manual_settle'); } catch (e) { console.error('[BACKUP] Failed:', e); }
 
     return successResponse({ message: 'Pembayaran berhasil diselesaikan secara manual' });
   } catch (error: any) {

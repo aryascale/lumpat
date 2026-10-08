@@ -1,9 +1,7 @@
-import { query } from '../src/lib/db';
+import { query, exec } from '../src/lib/db';
 import { successResponse, errorResponse, parseBody, CORS_HEADERS } from '../src/lib/api-utils';
 import { logActivity } from '../src/lib/activity-logger';
-import { assignAutoBibsIfEnabled } from '../src/lib/bib-generator';
-import { settleVoucherRedemption } from '../src/lib/voucher';
-import { sendRegistrationConfirmation, sendSubmissionEmails } from '../src/lib/email-service';
+import { runSettlementSideEffects } from '../src/lib/settlement';
 
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY || '';
 const MIDTRANS_IS_PRODUCTION = process.env.MIDTRANS_IS_PRODUCTION === 'true';
@@ -100,59 +98,36 @@ export default async function handler(event: any) {
       paymentStatus = 'expire';
     }
 
-    // 4. If status changed, update our DB
+    // 4. If status changed, update our DB. Settlement uses compare-and-set so
+    // only the poll/webhook/manual-settle that flips the status runs the side
+    // effects — no double emails or double inventory under races.
     if (paymentStatus !== existing[0].paymentStatus) {
-      const paidAt = paymentStatus === 'settlement' ? 'NOW()' : 'NULL';
-      await query(
-        `UPDATE EventRegistration SET paymentStatus = ?, paymentMethod = ?, paidAt = ${paidAt === 'NOW()' ? 'NOW()' : 'NULL'}, updatedAt = NOW() WHERE orderId = ?`,
-        [paymentStatus, payment_type || null, orderId]
-      );
+      let newlySettled = false;
+      if (paymentStatus === 'settlement') {
+        newlySettled = (await exec(
+          "UPDATE EventRegistration SET paymentStatus = 'settlement', paymentMethod = ?, paidAt = NOW(), updatedAt = NOW() WHERE orderId = ? AND paymentStatus != 'settlement'",
+          [payment_type || null, orderId]
+        )) > 0;
+      } else {
+        await query(
+          `UPDATE EventRegistration SET paymentStatus = ?, paymentMethod = ?, paidAt = NULL, updatedAt = NOW() WHERE orderId = ?`,
+          [paymentStatus, payment_type || null, orderId]
+        );
+      }
 
       await logActivity(
-        'payment.status_check', 
-        `Status pembayaran ${orderId} diperbarui ke ${paymentStatus} (via client polling)`, 
-        'system', 
-        existing[0].eventId, 
+        'payment.status_check',
+        `Status pembayaran ${orderId} diperbarui ke ${paymentStatus} (via client polling)`,
+        'system',
+        existing[0].eventId,
         { orderId, oldStatus: existing[0].paymentStatus, newStatus: paymentStatus }
       );
 
-      // 5. If settled, run post-payment actions (BIB, email, inventory)
-      if (paymentStatus === 'settlement') {
-        try {
-          await settleVoucherRedemption(orderId);
-        } catch (e) {
-          console.error('[CHECK-PAYMENT] Error settling voucher:', e);
-        }
-
-        try {
-          await assignAutoBibsIfEnabled(orderId);
-        } catch (e) {
-          console.error('[CHECK-PAYMENT] Error generating BIBs:', e);
-        }
-
-        try {
-          const regRes: any = await query(
-            `SELECT er.*, e.name as eventName, e.eventDate, c.name as categoryName 
-             FROM EventRegistration er
-             JOIN Event e ON er.eventId = e.id
-             JOIN Category c ON er.categoryId = c.id
-             WHERE er.orderId = ?`,
-            [orderId]
-          );
-
-          for (const reg of regRes) {
-            await sendRegistrationConfirmation(reg);
-            await sendSubmissionEmails(reg);
-            if (reg.tshirtSize) {
-              await query(
-                'UPDATE TshirtInventory SET sold = sold + 1 WHERE eventId = ? AND size = ?',
-                [reg.eventId, reg.tshirtSize]
-              );
-            }
-          }
-        } catch (e) {
-          console.error('[CHECK-PAYMENT] Error post-settlement:', e);
-        }
+      // 5. Post-settlement work (BIB, voucher, emails, inventory) runs in the
+      // background — this endpoint is polled by the participant's browser, it
+      // must answer immediately instead of waiting 2×N SMTP roundtrips
+      if (newlySettled) {
+        runSettlementSideEffects(orderId).catch((e) => console.error('[CHECK-PAYMENT] Background settlement failed:', e));
       }
     }
 
