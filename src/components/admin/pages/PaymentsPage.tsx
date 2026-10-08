@@ -140,13 +140,7 @@ export default function PaymentsPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-4 md:mb-6">
-        {canSeeRevenue && (
-          <div className="bg-white border border-gray-200 rounded-lg p-3 md:p-4 shadow-sm">
-            <div className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total Revenue</div>
-            <div className="text-base md:text-2xl font-black text-gray-900">Rp {(summary.totalRevenue || 0).toLocaleString('id-ID')}</div>
-          </div>
-        )}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">
         <div className="bg-white border border-gray-200 rounded-lg p-3 md:p-4 shadow-sm">
           <div className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Paid</div>
           <div className="text-base md:text-2xl font-black text-gray-900">{summary.paid || 0}</div>
