@@ -10,7 +10,7 @@ export default async function handler(event: any) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS_HEADERS, body: '' };
   if (event.httpMethod !== 'POST') return errorResponse('Method not allowed', 405);
 
-  const auth = requireRole(event, ['super_admin', 'payment_admin']);
+  const auth = requireRole(event, ['super_admin', 'payment_admin', 'event_admin']);
   if (!auth.allowed) return errorResponse(auth.message, auth.statusCode);
 
   try {

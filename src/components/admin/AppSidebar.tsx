@@ -185,7 +185,7 @@ export const buildAdminMenuItems = (role?: string): MenuItem[] => {
 
   const allowedByRole: Record<string, string[]> = {
     super_admin: ['events', 'payments', 'email-blast', 'vouchers', 'users', 'activity-logs'],
-    event_admin: ['events', 'activity-logs'],
+    event_admin: ['events', 'payments', 'activity-logs'],
     scan_admin: ['activity-logs'],
     payment_admin: ['payments', 'vouchers', 'activity-logs'],
     user: [],
