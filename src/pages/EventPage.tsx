@@ -2000,11 +2000,7 @@ export default function EventPage() {
                       </tbody>
                     </table>
                   </div>
-                ) : (
-                  <p className="text-stone-500">
-                    Belum ada peserta yang terdaftar atau ditemukan.
-                  </p>
-                );
+                ) : null;
               })()}
 
               <div className="mt-6 pt-4 border-t border-stone-100 flex items-center gap-2">
