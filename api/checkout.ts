@@ -39,7 +39,7 @@ export default async function handler(event: any) {
       ? bulkParticipants 
       : [{ name, email, phoneNumber, gender, bloodType, emergencyName, emergencyPhone, tshirtSize, bibName, notes, dateOfBirth, customData }];
 
-    const events: any = await query('SELECT id, name, bibCustomPrice, content FROM Event WHERE id = ? LIMIT 1', [eventId]);
+    const events: any = await query('SELECT id, name, slug, bibCustomPrice, content FROM Event WHERE id = ? LIMIT 1', [eventId]);
     if (events.length === 0) return errorResponse('Event not found', 404);
 
     // Get field definitions to find "Name" field
@@ -253,12 +253,21 @@ export default async function handler(event: any) {
       return successResponse({ orderId, grossAmount: totalGrossAmount, registration: { id: regIds[0] }, message: 'Midtrans not configured. Registration saved as pending.' });
     }
 
+    // Deterministic post-payment landing: the event's Registered tab with
+    // order_id in the URL (same as the free path) — EventPage polls it and
+    // toasts confirmation. Without this, Midtrans uses the dashboard finish
+    // URL, which lands on the generic payment-status page.
+    const origin = (event.headers?.origin as string) || `https://${event.headers?.host}`;
+
     const snapPayload = {
       transaction_details: { order_id: orderId, gross_amount: finalAmount },
       customer_details: {
         first_name: primaryParticipant.name || 'Participant',
         email: email,
         phone: primaryParticipant.phoneNumber || '0000000000',
+      },
+      callbacks: {
+        finish: `${origin}/event/${events[0].slug}?tab=Registered&order_id=${orderId}`,
       },
       item_details: discountAmount > 0
         ? [{ id: categoryId, price: finalAmount, quantity: 1, name: `${events[0].name} - ${categories[0].name} (setelah diskon voucher)`.substring(0, 50) }]
