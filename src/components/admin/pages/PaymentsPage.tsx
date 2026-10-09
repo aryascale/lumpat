@@ -289,33 +289,6 @@ export default function PaymentsPage() {
           >
             Export CSV
           </button>
-          <button
-            className="btn ghost whitespace-nowrap w-full sm:w-auto text-xs"
-            style={{ color: '#dc2626', borderColor: '#fecaca' }}
-            onClick={async () => {
-              if (!eventFilter) return alert('Pilih event dulu');
-              const evName = events.find(e => e.id === eventFilter)?.name || 'event ini';
-              if (!confirm(`Hapus PERMANEN SEMUA registrasi di "${evName}" (${summary.total} data)?\nTotal peserta terdaftar event ini akan jadi 0. Tidak bisa dikembalikan.`)) return;
-              try {
-                const res = await fetch('/api/admin-delete-payment', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ eventId: eventFilter, all: true })
-                });
-                const data = await res.json().catch(() => ({}));
-                if (res.ok) {
-                  alert(data.message || 'Semua registrasi dihapus permanen');
-                  loadPayments();
-                } else {
-                  alert(data.error || 'Gagal menghapus registrasi');
-                }
-              } catch {
-                alert('Gagal menghapus registrasi');
-              }
-            }}
-          >
-            Hard Delete Semua ({summary.total || 0})
-          </button>
         </div>
       </div>
 
@@ -427,29 +400,6 @@ export default function PaymentsPage() {
                                 Delete
                               </button>
                             )}
-                            <button
-                              className="px-2 py-1 bg-red-600 text-white text-[10px] font-bold uppercase rounded hover:bg-red-700 transition-colors"
-                              title="Hapus permanen dari database"
-                              onClick={async () => {
-                                if (confirm(`Hapus PERMANEN peserta ${p.name}? Data tidak bisa dikembalikan dan total terdaftar event akan berkurang.`)) {
-                                  try {
-                                    const res = await fetch('/api/admin-delete-payment', {
-                                      method: 'POST',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ orderId: p.orderId, hard: true })
-                                    });
-                                    if (res.ok) {
-                                      alert('Registrasi dihapus permanen');
-                                      loadPayments();
-                                    }
-                                  } catch (e) {
-                                    alert('Gagal menghapus permanen');
-                                  }
-                                }
-                              }}
-                            >
-                              Hard Del
-                            </button>
                           </td>
                         </tr>
                       ))
@@ -487,7 +437,6 @@ export default function PaymentsPage() {
                         {p.paymentStatus !== 'deleted' && (
                           <button className="flex-1 px-2 py-1.5 bg-red-100 text-red-600 border border-red-200 text-[10px] font-bold uppercase rounded" onClick={async () => { if(confirm(`Yakin ingin soft-delete peserta ${p.name}?`)){try{const r=await fetch('/api/admin-delete-payment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:p.orderId})});if(r.ok){alert('Peserta di-soft-delete');loadPayments();}}catch{alert('Gagal');}} }}>Delete</button>
                         )}
-                        <button className="flex-1 px-2 py-1.5 bg-red-600 text-white text-[10px] font-bold uppercase rounded" onClick={async () => { if(confirm(`Hapus PERMANEN ${p.name}? Tidak bisa dikembalikan.`)){try{const r=await fetch('/api/admin-delete-payment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:p.orderId,hard:true})});if(r.ok){alert('Dihapus permanen');loadPayments();}}catch{alert('Gagal');}} }}>Hard Del</button>
                       </div>
                     </div>
                   ))

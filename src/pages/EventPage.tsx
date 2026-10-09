@@ -1809,14 +1809,6 @@ export default function EventPage() {
                   <h2 className="text-2xl font-black uppercase tracking-tighter">
                     Peserta Terdaftar
                   </h2>
-                  <span className="text-stone-500 text-sm font-medium">
-                    {
-                      registeredParticipants.filter(
-                        (p) => p.paymentStatus === "settlement" && !p.category?.isHidden,
-                      ).length
-                    }{" "}
-                    Terdaftar
-                  </span>
                 </div>
                 <div className="relative w-full sm:w-80 shrink-0">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
