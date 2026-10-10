@@ -27,10 +27,10 @@ export default async function handler(event: any) {
   }
 
   try {
-    const { code, eventId, totalAmount, email } = parseBody(event);
+    const { code, eventId, totalAmount, email, categoryId } = parseBody(event);
     if (!code || !eventId) return errorResponse('code and eventId are required', 400);
 
-    const check = await validateVoucher(String(code), eventId, Number(totalAmount) || 0, email);
+    const check = await validateVoucher(String(code), eventId, Number(totalAmount) || 0, email, categoryId || null);
     if (check.valid === false) return successResponse({ valid: false, reason: check.reason });
 
     return successResponse({

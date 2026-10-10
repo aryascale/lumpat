@@ -180,6 +180,21 @@ async function runMigrationsOnce() {
       }
     }
 
+    // Migration 10: voucher minimum purchase + category restriction
+    // (separate statements — MariaDB DDL isn't atomic, one combined ALTER could
+    // add minPurchase then fail on categoryIds and leave a half state)
+    for (const col of [
+      'ALTER TABLE Voucher ADD COLUMN minPurchase INT NULL',
+      'ALTER TABLE Voucher ADD COLUMN categoryIds JSON NULL',
+    ]) {
+      try {
+        await query(col);
+        console.log(`[MIGRATIONS] ✅ ${col.split('ADD COLUMN ')[1]} added`);
+      } catch (e: any) {
+        if (!e.message?.includes('Duplicate column name')) throw e;
+      }
+    }
+
     console.log('[MIGRATIONS] All migrations complete ✅');
   } catch (error: any) {
     throw error; // surfaced to runMigrations' retry / non-fatal handling

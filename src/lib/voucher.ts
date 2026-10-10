@@ -13,6 +13,22 @@ export function calculateDiscount(
   return Math.max(0, Math.min(d, total));
 }
 
+// Voucher.categoryIds is a JSON column — the driver may hand it over as a raw
+// string or an already-parsed array depending on adapter, so accept both.
+// NULL/[] = no category restriction.
+export function normalizeCategoryIds(raw: any): string[] {
+  if (Array.isArray(raw)) return raw.map(String);
+  if (typeof raw === 'string' && raw.trim()) {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.map(String) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 export type VoucherCheck =
   | { valid: true; voucher: any; discountAmount: number; finalAmount: number }
   | { valid: false; reason: string };
@@ -22,7 +38,7 @@ const GENERIC_INVALID = 'Kode voucher tidak valid atau tidak dapat digunakan';
 
 // ponytail: validity window compared in JS from DATETIME values; day-granularity is fine,
 // move checks into SQL with NOW() if minute-precision across server timezones ever matters
-export async function validateVoucher(code: string, eventId: string, total: number, email?: string): Promise<VoucherCheck> {
+export async function validateVoucher(code: string, eventId: string, total: number, email?: string, categoryId?: string | null): Promise<VoucherCheck> {
   const norm = String(code || '').trim().toUpperCase();
   const normEmail = email?.trim().toLowerCase();
   if (!norm) return { valid: false, reason: GENERIC_INVALID };
@@ -34,6 +50,17 @@ export async function validateVoucher(code: string, eventId: string, total: numb
   if (v.validFrom && new Date(v.validFrom) > new Date()) return { valid: false, reason: GENERIC_INVALID };
   if (v.validUntil && new Date(v.validUntil) < new Date()) return { valid: false, reason: GENERIC_INVALID };
   if (v.eventId && v.eventId !== eventId) return { valid: false, reason: GENERIC_INVALID };
+  // Scope failures speak up (admin's call): a user can act on "wrong category" /
+  // "spend more", unlike quota/expiry which stay generic.
+  const catIds = normalizeCategoryIds(v.categoryIds);
+  if (catIds.length > 0 && (!categoryId || !catIds.includes(String(categoryId)))) {
+    const names: any = await query(
+      `SELECT name FROM Category WHERE id IN (${catIds.map(() => '?').join(',')}) ORDER BY name`,
+      catIds,
+    );
+    const label = names.map((r: any) => r.name).join(', ');
+    return { valid: false, reason: `Voucher hanya berlaku untuk kategori ${label || 'tertentu'}` };
+  }
   if (v.quota > 0) {
     // Count in-flight pending orders too, so concurrent checkouts can't overshoot quota.
     // Rows later moving to expire/cancel/settlement drop out of this count automatically — no release logic needed.
@@ -46,6 +73,10 @@ export async function validateVoucher(code: string, eventId: string, total: numb
     if (v.usedCount + Number(pending[0]?.cnt || 0) >= v.quota) return { valid: false, reason: GENERIC_INVALID };
   }
   if (total <= 0) return { valid: false, reason: GENERIC_INVALID };
+  // Gross total (before discount, incl. bib extra) must clear the minimum.
+  if (v.minPurchase && v.minPurchase > 0 && total < v.minPurchase) {
+    return { valid: false, reason: `Minimum pembelian Rp ${Number(v.minPurchase).toLocaleString('id-ID')} untuk voucher ini` };
+  }
   if (normEmail) {
     // Settled redemptions + pending orders, both case-insensitive (emails stored lowercased at settle).
     const used: any = await query(

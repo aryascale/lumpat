@@ -337,6 +337,8 @@ model Voucher {
   discountType String
   value        Int
   maxDiscount  Int?
+  minPurchase  Int?
+  categoryIds  Json?
   quota        Int                 @default(0)
   usedCount    Int                 @default(0)
   eventId      String?

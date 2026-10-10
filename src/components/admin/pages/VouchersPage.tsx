@@ -10,6 +10,9 @@ interface Voucher {
   discountType: 'nominal' | 'percent';
   value: number;
   maxDiscount: number | null;
+  minPurchase: number | null;
+  categoryIds: string[] | null;
+  categoryNames?: string[];
   quota: number;
   usedCount: number;
   eventId: string | null;
@@ -33,8 +36,10 @@ const emptyForm = {
   discountType: 'nominal' as 'nominal' | 'percent',
   value: '',
   maxDiscount: '',
+  minPurchase: '',
   quota: '0',
   eventId: '',
+  categoryIds: [] as string[],
   validFrom: '',
   validUntil: '',
 };
@@ -50,6 +55,15 @@ export default function VouchersPage() {
   const [saving, setSaving] = useState(false);
   const [historyFor, setHistoryFor] = useState<Voucher | null>(null);
   const [redemptions, setRedemptions] = useState<Redemption[]>([]);
+  const [catOptions, setCatOptions] = useState<{id:string;name:string}[]>([]);
+
+  const loadCats = (eventId: string) => {
+    setCatOptions([]);
+    if (!eventId) return;
+    fetch(`/api/categories?eventId=${eventId}`).then(r => r.json()).then(d =>
+      setCatOptions(((d.categories || []) as any[]).map(c => ({ id: c.id, name: c.name })))
+    ).catch(() => {});
+  };
 
   const load = async () => {
     setLoading(true);
@@ -82,11 +96,14 @@ export default function VouchersPage() {
       discountType: v.discountType,
       value: String(v.value),
       maxDiscount: v.maxDiscount ? String(v.maxDiscount) : '',
+      minPurchase: v.minPurchase ? String(v.minPurchase) : '',
       quota: String(v.quota),
       eventId: v.eventId || '',
+      categoryIds: v.categoryIds || [],
       validFrom: v.validFrom ? v.validFrom.slice(0, 10) : '',
       validUntil: v.validUntil ? v.validUntil.slice(0, 10) : '',
     });
+    loadCats(v.eventId || '');
     setFormOpen(true);
   };
 
@@ -102,6 +119,9 @@ export default function VouchersPage() {
         validUntil: form.validUntil || null,
       };
       payload.maxDiscount = form.maxDiscount ? Number(form.maxDiscount) : null;
+      payload.minPurchase = form.minPurchase ? Number(form.minPurchase) : null;
+      // Category restriction requires an event scope; empty list = all categories
+      payload.categoryIds = form.eventId ? form.categoryIds : [];
       const res = editing
         ? await fetch('/api/admin-vouchers', { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: editing.id, ...payload }) })
         : await fetch('/api/admin-vouchers', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ code: form.code, ...payload }) });
@@ -149,6 +169,13 @@ export default function VouchersPage() {
     return `${f || '...'} – ${u || '...'}`;
   };
 
+  const termsLabel = (v: Voucher) => {
+    const parts: string[] = [];
+    if (v.minPurchase) parts.push(`Min Rp ${v.minPurchase.toLocaleString('id-ID')}`);
+    if (v.categoryNames && v.categoryNames.length > 0) parts.push(v.categoryNames.join(', '));
+    return parts.length > 0 ? parts.join(' · ') : '—';
+  };
+
   return (
     <div className="flex flex-col">
       <div className="header-row mb-4 md:mb-6">
@@ -174,6 +201,7 @@ export default function VouchersPage() {
                   <tr>
                     <th>Kode</th>
                     <th>Diskon</th>
+                    <th>Syarat</th>
                     <th>Terpakai / Kuota</th>
                     <th>Event</th>
                     <th>Masa Aktif</th>
@@ -183,11 +211,12 @@ export default function VouchersPage() {
                 </thead>
                 <tbody>
                   {filtered.length === 0 ? (
-                    <tr><td colSpan={7} className="empty py-20">Belum ada voucher</td></tr>
+                    <tr><td colSpan={8} className="empty py-20">Belum ada voucher</td></tr>
                   ) : filtered.map(v => (
                     <tr key={v.id} className="row-hover">
                       <td className="mono font-bold">{v.code}</td>
                       <td className="text-xs font-medium">{discountLabel(v)}</td>
+                      <td className="text-xs text-gray-500">{termsLabel(v)}</td>
                       <td className="text-xs">{v.usedCount} / {v.quota === 0 ? '∞' : v.quota}</td>
                       <td className="text-xs font-medium">{v.eventName || 'Semua Event'}</td>
                       <td className="text-xs">{validityLabel(v)}</td>
@@ -249,19 +278,48 @@ export default function VouchersPage() {
                   onChange={(v) => setForm({ ...form, maxDiscount: v ? String(v) : '' })} />
               </div>
             )}
-            <div>
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Kuota (0 = unlimited)</label>
-              <input className="w-full border border-gray-200 rounded-lg px-3 py-2 mt-1" type="number" min="0" value={form.quota}
-                onChange={(e) => setForm({ ...form, quota: e.target.value })} />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Kuota (0 = unlimited)</label>
+                <input className="w-full border border-gray-200 rounded-lg px-3 py-2 mt-1" type="number" min="0" value={form.quota}
+                  onChange={(e) => setForm({ ...form, quota: e.target.value })} />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Min. Belanja (Rp, opsional)</label>
+                <InputNumber className="w-full mt-1" min={0} value={form.minPurchase ? Number(form.minPurchase) : undefined}
+                  formatter={idFormat} parser={idParse as any}
+                  onChange={(v) => setForm({ ...form, minPurchase: v ? String(v) : '' })} />
+              </div>
             </div>
             <div>
               <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Event (kosong = semua)</label>
               <select className="w-full border border-gray-200 rounded-lg px-3 py-2 mt-1" value={form.eventId}
-                onChange={(e) => setForm({ ...form, eventId: e.target.value })}>
+                onChange={(e) => { setForm({ ...form, eventId: e.target.value, categoryIds: [] }); loadCats(e.target.value); }}>
                 <option value="">Semua Event</option>
                 {events.map(ev => <option key={ev.id} value={ev.id}>{ev.name}</option>)}
               </select>
             </div>
+            {form.eventId && (
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Berlaku untuk Kategori (kosong = semua)</label>
+                {catOptions.length === 0 ? (
+                  <p className="text-xs text-gray-400 mt-1">Tidak ada kategori di event ini</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {catOptions.map(c => {
+                      const on = form.categoryIds.includes(c.id);
+                      return (
+                        <button type="button" key={c.id}
+                          className={`px-3 py-1 rounded-full border text-xs font-bold transition-colors ${on ? 'bg-stone-800 text-white border-stone-800' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}
+                          onClick={() => setForm({ ...form, categoryIds: on ? form.categoryIds.filter(id => id !== c.id) : [...form.categoryIds, c.id] })}>
+                          {c.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Berlaku Dari</label>
