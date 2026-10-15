@@ -9,10 +9,13 @@ export const CORS_HEADERS = {
   'Expires': '0',
 };
 
+// Fresh object per response: handlers may attach Set-Cookie to result.headers
+// (auth-login/google/register). Sharing one CORS_HEADERS object here leaked the
+// last logged-in user's session cookie onto EVERY subsequent API response.
 export function successResponse(data: any, statusCode = 200) {
   return {
     statusCode,
-    headers: CORS_HEADERS,
+    headers: { ...CORS_HEADERS },
     body: JSON.stringify(data),
   };
 }
@@ -20,7 +23,7 @@ export function successResponse(data: any, statusCode = 200) {
 export function errorResponse(message: string, statusCode = 500) {
   return {
     statusCode,
-    headers: CORS_HEADERS,
+    headers: { ...CORS_HEADERS },
     body: JSON.stringify({ error: message }),
   };
 }
