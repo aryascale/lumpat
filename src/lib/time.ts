@@ -5,6 +5,13 @@ export default function parseTimeToMs(raw: string, tzOffset?: number): {
   if (!raw) return { ms: null, raw };
   const str = raw.trim();
 
+  // Real ISO-8601 with explicit timezone (…Z or …±HH:MM): epoch is unambiguous, so
+  // parse directly — never re-apply tzOffset (it double-shifts UTC values like manualStartTime).
+  if (/(?:Z|[+-]\d{2}:?\d{2})$/.test(str)) {
+    const ms = Date.parse(str);
+    if (!Number.isNaN(ms)) return { ms, raw };
+  }
+
   const dtMatch = str.match(
     /(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?/
   );

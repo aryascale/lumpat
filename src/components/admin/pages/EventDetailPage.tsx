@@ -31,17 +31,17 @@ interface Banner {
 }
 
 // Helper function for timestamp formatting
-function formatNowAsTimestamp(): string {
-  const d = new Date();
+// Convert a UTC ISO string (from the API) to local "YYYY-MM-DD HH:MM:SS.mmm",
+// so the Manual Start field shows the saved local time instead of raw UTC.
+function isoToLocalTimestamp(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
   const pad = (n: number, len = 2) => String(n).padStart(len, "0");
-  const Y = d.getFullYear();
-  const M = pad(d.getMonth() + 1);
-  const D = pad(d.getDate());
-  const h = pad(d.getHours());
-  const m = pad(d.getMinutes());
-  const s = pad(d.getSeconds());
-  const ms = pad(d.getMilliseconds(), 3);
-  return `${Y}-${M}-${D} ${h}:${m}:${s}.${ms}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`;
+}
+
+function formatNowAsTimestamp(): string {
+  return isoToLocalTimestamp(new Date().toISOString());
 }
 
 export default function EventDetailPage({ eventId, eventSlug, eventName, onBack }: EventDetailPageProps) {
@@ -234,7 +234,9 @@ export default function EventDetailPage({ eventId, eventSlug, eventName, onBack 
           const mRes = await fetch(`/api/manual-start?eventId=${eventId}`);
           if (mRes.ok) {
             const mData = await mRes.json();
-            setManualStartTime(mData.manualStartTime || "");
+            // GET returns UTC ISO — normalize to local timestamp so the field shows
+            // what was saved (e.g. 12:00, not 05:00) and Save Time on the loaded value works.
+            setManualStartTime(mData.manualStartTime ? isoToLocalTimestamp(mData.manualStartTime) : "");
           }
         } catch (e) { }
       }
