@@ -121,9 +121,6 @@ function CircularMedalSVG({
           <div className="text-red-500 font-black text-lg uppercase tracking-widest">
             {statusLabel === "DNF" ? "Did Not Finish" : statusLabel === "DNS" ? "Did Not Start" : "Disqualified"}
           </div>
-          <p className="text-slate-400 text-xs mt-1 max-w-[220px] leading-relaxed">
-            Waktu terlampaui batas cut-off atau status tidak selesai.
-          </p>
         </div>
       </div>
     );
