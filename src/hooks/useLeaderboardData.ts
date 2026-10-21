@@ -106,6 +106,7 @@ export function useLeaderboardData(eventId: string) {
 
         // Load runner status map from API
         const dqMap: Record<string, boolean> = {};
+        const dqReasonMap: Record<string, string> = {};
         const dnsMap: Record<string, boolean> = {};
         const dnfMap: Record<string, boolean> = {};
         const hiddenMap: Record<string, boolean> = {};
@@ -117,7 +118,10 @@ export function useLeaderboardData(eventId: string) {
             const statusData = await statusRes.json();
             if (Array.isArray(statusData)) {
               statusData.forEach((s: any) => {
-                if (s.isDQ) dqMap[s.epc] = true;
+                if (s.isDQ) {
+                  dqMap[s.epc] = true;
+                  if (s.dqReason) dqReasonMap[s.epc] = s.dqReason;
+                }
                 if (s.isDNS) dnsMap[s.epc] = true;
                 if (s.isDNF) dnfMap[s.epc] = true;
                 if (s.isHidden) hiddenMap[s.epc] = true;
@@ -530,6 +534,8 @@ export function useLeaderboardData(eventId: string) {
                     : formatDuration(total!),
             penaltyMs: penMs,
             epc: p.epc,
+            isDQ,
+            dqReason: isDQ ? (dqReasonMap[p.epc] || null) : null,
             latestCp: latestCpStr,
             laps: (currentEvent as any)?.isLoopMode ? lapsDisplay : matchedLaps,
           });

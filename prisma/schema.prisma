@@ -246,6 +246,7 @@ model RunnerStatus {
   epc       String
   bib       String?
   isDQ      Boolean  @default(false)
+  dqReason  String?
   isDNS     Boolean  @default(false)
   isDNF     Boolean  @default(false)
   isHidden  Boolean  @default(false)

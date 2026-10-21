@@ -17,6 +17,8 @@ export type LeaderRow = {
   totalTimeDisplay: string;
   penaltyMs?: number;
   epc: string;
+  isDQ?: boolean;
+  dqReason?: string | null;
   laps?: { label: string; timeDisplay: string; isDuration?: boolean }[];
   latestCp?: string;
   distanceKm?: number | null;

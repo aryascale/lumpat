@@ -180,6 +180,14 @@ async function runMigrationsOnce() {
       }
     }
 
+    // Migration 10: dqReason column on RunnerStatus
+    try {
+      await query("ALTER TABLE RunnerStatus ADD COLUMN dqReason TEXT NULL AFTER isDQ");
+      console.log('[MIGRATIONS] ✅ RunnerStatus.dqReason added');
+    } catch (e: any) {
+      if (!e.message?.includes('Duplicate column name')) throw e;
+    }
+
     console.log('[MIGRATIONS] All migrations complete ✅');
   } catch (error: any) {
     throw error; // surfaced to runMigrations' retry / non-fatal handling

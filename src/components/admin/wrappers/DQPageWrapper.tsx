@@ -1,16 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useEvent } from '../../../contexts/EventContext';
 import { loadMasterParticipants, loadTimesMap } from '../../../lib/data';
 import parseTimeToMs, { extractTimeOfDay, formatDuration } from '../../../lib/time';
 import type { LeaderRow } from '../../LeaderboardTable';
 import DQPage from '../pages/DQPage';
 
-
-
 export default function DQPageWrapper() {
   const { currentEvent, loading: eventLoading } = useEvent();
   const [allRows, setAllRows] = useState<LeaderRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const eventId = currentEvent?.id || 'default';
 
@@ -22,8 +20,7 @@ export default function DQPageWrapper() {
 
     const loadData = async () => {
       try {
-        setLoading(true);
-        console.log('[DQPageWrapper] Loading data for eventId:', eventId);
+        setInitialLoading(true);
 
         const master = await loadMasterParticipants(eventId);
         const startMap = await loadTimesMap("start", eventId);
@@ -31,7 +28,7 @@ export default function DQPageWrapper() {
 
         // Use timing from event (per-event database) instead of localStorage
         const cutoffMs = currentEvent?.cutoffMs ?? null;
-        
+
         const dqMap: Record<string, boolean> = {};
         try {
           const statusRes = await fetch(`/api/runner-status?eventId=${eventId}`);
@@ -44,6 +41,7 @@ export default function DQPageWrapper() {
             }
           }
         } catch {}
+
         const catStartRaw: Record<string, string> = (currentEvent?.categoryStartTimes as Record<string, string>) ?? {};
 
         // Load penalty map from API
@@ -81,8 +79,8 @@ export default function DQPageWrapper() {
         function buildOverrideFromFinishDate(finishMs: number, timeStr: string): number | null {
           if (!timeStr) return null;
           if (timeStr.includes(" ") || timeStr.includes("T")) {
-             const parsed = parseTimeToMs(timeStr);
-             if (parsed && parsed.ms) return parsed.ms;
+            const parsed = parseTimeToMs(timeStr);
+            if (parsed && parsed.ms) return parsed.ms;
           }
           const m = timeStr.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?(?:[:\.](\d{1,3}))?/);
           if (!m) return null;
@@ -164,31 +162,32 @@ export default function DQPageWrapper() {
           });
         });
 
-        const overallFinal = baseRows;
-
-        setAllRows(overallFinal);
-        setLoading(false);
+        setAllRows(baseRows);
+        setInitialLoading(false);
       } catch (error) {
         console.error('Failed to load DQ page data:', error);
         setAllRows([]);
-        setLoading(false);
+        setInitialLoading(false);
       }
     };
 
     loadData();
   }, [eventId, eventLoading]);
 
-  const handleConfigChanged = () => {
-    // Trigger refresh
-    window.location.reload();
-  };
+  // Bump localStorage version so the public leaderboard picks up changes
+  const handleConfigChanged = useCallback(() => {
+    try {
+      localStorage.setItem('lumpat_data_version', String(Date.now()));
+    } catch {}
+  }, []);
 
-  const handleDataVersionBump = () => {
-    const { LS_DATA_VERSION } = require('../../../lib/config');
-    localStorage.setItem(LS_DATA_VERSION, String(Date.now()));
-  };
+  const handleDataVersionBump = useCallback(() => {
+    try {
+      localStorage.setItem('lumpat_data_version', String(Date.now()));
+    } catch {}
+  }, []);
 
-  if (eventLoading || loading) {
+  if (eventLoading || initialLoading) {
     return <div className="text-center py-8">Loading data...</div>;
   }
 

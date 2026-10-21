@@ -637,8 +637,8 @@ export default function EventPage() {
           loadTimesMap("start", event.id, tzOffset),
           loadTimesMap("finish", event.id, tzOffset),
           loadCheckpointTimesMap(event.id),
-          fetchJsonArray(`/api/runner-status?eventId=${event.id}`),
-          fetchJsonArray(`/api/penalty?eventId=${event.id}`),
+          fetchJsonArray(`/api/runner-status?eventId=${event.id}&_t=${Date.now()}`),
+          fetchJsonArray(`/api/penalty?eventId=${event.id}&_t=${Date.now()}`),
           fetchJsonArray(`/api/manual-start-bib?eventId=${event.id}&_t=${Date.now()}`),
           fetchJsonArray(`/api/manual-finish-bib?eventId=${event.id}&_t=${Date.now()}`),
         ]);
@@ -651,12 +651,16 @@ export default function EventPage() {
 
         // Runner status map
         const dqMap: Record<string, boolean> = {};
+        const dqReasonMap: Record<string, string> = {};
         const dnsMap: Record<string, boolean> = {};
         const dnfMap: Record<string, boolean> = {};
         const hiddenMap: Record<string, boolean> = {};
         if (Array.isArray(statusData)) {
           statusData.forEach((s: any) => {
-            if (s.isDQ) dqMap[s.epc] = true;
+            if (s.isDQ) {
+              dqMap[s.epc] = true;
+              if (s.dqReason) dqReasonMap[s.epc] = s.dqReason;
+            }
             if (s.isDNS) dnsMap[s.epc] = true;
             if (s.isDNF) dnfMap[s.epc] = true;
             if (s.isHidden) hiddenMap[s.epc] = true;
@@ -924,6 +928,8 @@ export default function EventPage() {
                   totalTimeDisplay: isDQ ? "DSQ" : isDNS ? "DNS" : manualDNF ? "DNF" : isDNF ? "DNF" : formatDuration(total),
                   penaltyMs: penMs,
                   epc: p.epc,
+                  isDQ,
+                  dqReason: isDQ ? (dqReasonMap[p.epc] || null) : null,
                   laps: lapsDisplay,
                   distanceKm: categoryDetails.find((c) => c.name === (p.category || resolvedCategoryKey))?.distanceKm ?? null,
                 });
@@ -988,6 +994,8 @@ export default function EventPage() {
                 totalTimeMs: 0,
                 totalTimeDisplay: isDQ ? "DSQ" : isDNS ? "DNS" : manualDNF ? "DNF" : statusText,
                 epc: p.epc,
+                isDQ,
+                dqReason: isDQ ? (dqReasonMap[p.epc] || null) : null,
                 distanceKm: categoryDetails.find((c) => c.name === (p.category || resolvedCategoryKey))?.distanceKm ?? null,
               });
             };
@@ -1158,6 +1166,8 @@ export default function EventPage() {
                     : formatDuration(total),
               penaltyMs: penMs,
               epc: p.epc,
+              isDQ,
+              dqReason: isDQ ? (dqReasonMap[p.epc] || null) : null,
               laps: matchedLaps,
               distanceKm: categoryDetails.find((c) => c.name === (p.category || resolvedCategoryKey))?.distanceKm ?? null,
             });
@@ -1393,6 +1403,8 @@ export default function EventPage() {
       gender: row.gender,
       category: row.category,
       ageCategory: row.ageCategory,
+      isDQ: (row as any).isDQ,
+      dqReason: (row as any).dqReason,
       startTimeRaw: row.startTimeRaw ?? "-",
       finishTimeRaw: row.finishTimeRaw,
       totalTimeDisplay: row.totalTimeDisplay,
