@@ -58,6 +58,20 @@ export default async function handler(event: any) {
 
     return errorResponse('Method not allowed', 405);
   } catch (error: any) {
+    if (error?.message?.includes("Unknown column 'dqReason'")) {
+      console.warn('[RUNNER_STATUS] Column dqReason missing in DB, running auto-migration and retrying...');
+      try {
+        await query("ALTER TABLE RunnerStatus ADD COLUMN dqReason TEXT NULL AFTER isDQ");
+        // Retry the handler once after column is created
+        return await handler({ ...event, _retried: true });
+      } catch (migrationErr: any) {
+        if (!migrationErr?.message?.includes('Duplicate column name')) {
+          console.error('[RUNNER_STATUS] Auto-migration failed:', migrationErr);
+        } else {
+          return await handler({ ...event, _retried: true });
+        }
+      }
+    }
     console.error('[RUNNER_STATUS] Error:', error);
     return errorResponse(error.message || 'Internal server error');
   }

@@ -100,11 +100,13 @@ function CircularMedalSVG({
   status,
   category,
   reason,
+  isMobile,
 }: {
   rank: number | null | undefined;
   status?: string;
   category?: string;
   reason?: string | null;
+  isMobile?: boolean;
 }) {
   const isDnf = status === "DNF" || status === "DNS" || status === "DSQ";
 
@@ -116,7 +118,7 @@ function CircularMedalSVG({
       : defaultText;
 
     return (
-      <div className="flex flex-col items-center justify-center p-6 bg-[#111827]/60 rounded-3xl border border-red-500/20 backdrop-blur-md shadow-2xl"
+      <div className={`flex flex-col items-center justify-center ${isMobile ? "p-5 pb-6" : "p-6"} bg-[#111827]/60 rounded-3xl border border-red-500/20 backdrop-blur-md shadow-2xl`}
         style={{ animation: "medalFloat 3s ease-in-out infinite" }}>
         <div className="relative w-28 h-28 rounded-full bg-gradient-to-br from-red-600 via-rose-700 to-red-900 flex items-center justify-center border-4 border-red-500/80 shadow-[0_10px_25px_rgba(239,68,68,0.4)]">
           <div className="absolute inset-0.5 rounded-full bg-gradient-to-t from-transparent via-white/10 to-white/30 pointer-events-none" />
@@ -128,7 +130,7 @@ function CircularMedalSVG({
           <div className="text-red-500 font-black text-lg uppercase tracking-widest">
             {statusLabel === "DNF" ? "Did Not Finish" : statusLabel === "DNS" ? "Did Not Start" : "Disqualified"}
           </div>
-          <p className="text-slate-400 text-xs mt-1 max-w-[260px] leading-relaxed break-words">
+          <p className={`text-slate-300 text-xs ${isMobile ? "mt-2.5 max-w-[280px] px-3" : "mt-1 max-w-[260px]"} leading-relaxed break-words`}>
             {displayText}
           </p>
         </div>
@@ -321,6 +323,13 @@ export default function ParticipantResultPage() {
   }, [initialModalData]);
 
   const modalData = participantData;
+  const isDnf =
+    modalData?.isDQ ||
+    modalData?.isDNF ||
+    modalData?.isDNS ||
+    modalData?.totalTimeDisplay === "DSQ" ||
+    modalData?.totalTimeDisplay === "DNF" ||
+    modalData?.totalTimeDisplay === "DNS";
 
   const { events } = useEvent();
   const eventObj = events.find((e) => e.id === eventId || e.slug === slug);
@@ -537,7 +546,7 @@ export default function ParticipantResultPage() {
         {/* ── MOBILE TOP SECTION (Hidden on desktop) ── */}
         <div className="block md:hidden">
           {/* Dark Header Banner containing Medal */}
-          <div className="relative w-full h-[280px] bg-[#0c0d12] pt-[72px] flex items-center justify-center">
+          <div className={`relative w-full ${isDnf ? "h-[340px]" : "h-[280px]"} bg-[#0c0d12] pt-[72px] flex items-center justify-center`}>
             {/* Background Container to clip parallax/cover */}
             <div className="absolute inset-0 overflow-hidden">
               {coverImageUrl ? (
@@ -574,12 +583,13 @@ export default function ParticipantResultPage() {
             </button>
 
             {/* Medal */}
-            <div className="relative z-10 scale-[0.85] transform -translate-y-5">
+            <div className={`relative z-10 scale-[0.85] transform ${isDnf ? "-translate-y-7" : "-translate-y-5"}`}>
               <CircularMedalSVG
                 rank={modalData.categoryRank ?? modalData.overallRank}
                 status={modalData.totalTimeDisplay}
                 category={modalData.category}
                 reason={modalData.dqReason}
+                isMobile={true}
               />
             </div>
 

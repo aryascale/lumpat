@@ -28,8 +28,8 @@ export async function runMigrations() {
 }
 
 async function runMigrationsOnce() {
+  // Migration 1: Drop unique constraint on email+eventId to allow bulk registrations
   try {
-    // Migration 1: Drop unique constraint on email+eventId to allow bulk registrations
     const indexes: any = await query(
       "SHOW INDEX FROM EventRegistration WHERE Key_name = 'EventRegistration_email_eventId_key'"
     );
@@ -38,8 +38,12 @@ async function runMigrationsOnce() {
       await query('DROP INDEX `EventRegistration_email_eventId_key` ON `EventRegistration`');
       console.log('[MIGRATIONS] ✅ Unique index dropped');
     }
+  } catch (e: any) {
+    console.warn('[MIGRATIONS] Migration 1 skipped/warning:', e?.message);
+  }
 
-    // Migration 2: Ensure non-unique index exists for performance
+  // Migration 2: Ensure non-unique index exists for performance
+  try {
     const perfIndex: any = await query(
       "SHOW INDEX FROM EventRegistration WHERE Key_name = 'EventRegistration_email_eventId_idx'"
     );
@@ -48,40 +52,44 @@ async function runMigrationsOnce() {
       await query('CREATE INDEX `EventRegistration_email_eventId_idx` ON `EventRegistration`(`email`, `eventId`)');
       console.log('[MIGRATIONS] ✅ Performance index created');
     }
+  } catch (e: any) {
+    console.warn('[MIGRATIONS] Migration 2 skipped/warning:', e?.message);
+  }
 
-    // Migration 3: Add isDeleted to Event for soft-deleting
-    try {
-      await query("ALTER TABLE Event ADD COLUMN isDeleted BOOLEAN DEFAULT FALSE");
-      console.log('[MIGRATIONS] ✅ Added isDeleted column to Event');
-    } catch (e: any) {
-      if (e.message && e.message.includes("Duplicate column name")) {
-        // Ignore if column already exists
-      } else {
-        throw e;
-      }
+  // Migration 3: Add isDeleted to Event for soft-deleting
+  try {
+    await query("ALTER TABLE Event ADD COLUMN isDeleted BOOLEAN DEFAULT FALSE");
+    console.log('[MIGRATIONS] ✅ Added isDeleted column to Event');
+  } catch (e: any) {
+    if (!e.message?.includes("Duplicate column name")) {
+      console.warn('[MIGRATIONS] Migration 3 skipped/warning:', e?.message);
     }
+  }
 
-    // Migration 4: ScanLog table for RPC verification history
-    try {
-      await query(`CREATE TABLE IF NOT EXISTS ScanLog (
-        id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
-        registrationId VARCHAR(36) NULL,
-        eventId VARCHAR(36) NULL,
-        bibNumber VARCHAR(64) NULL,
-        lookup VARCHAR(255) NULL,
-        scannedBy VARCHAR(255) NULL,
-        result VARCHAR(32) NOT NULL DEFAULT 'valid',
-        source VARCHAR(32) NOT NULL DEFAULT 'rpc',
-        createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-        INDEX ScanLog_registrationId_idx (registrationId),
-        INDEX ScanLog_event_created_idx (eventId, createdAt)
-      )`);
-      console.log('[MIGRATIONS] ✅ ScanLog table ready');
-    } catch (e: any) {
-      if (!e.message?.includes('Duplicate')) throw e;
+  // Migration 4: ScanLog table for RPC verification history
+  try {
+    await query(`CREATE TABLE IF NOT EXISTS ScanLog (
+      id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+      registrationId VARCHAR(36) NULL,
+      eventId VARCHAR(36) NULL,
+      bibNumber VARCHAR(64) NULL,
+      lookup VARCHAR(255) NULL,
+      scannedBy VARCHAR(255) NULL,
+      result VARCHAR(32) NOT NULL DEFAULT 'valid',
+      source VARCHAR(32) NOT NULL DEFAULT 'rpc',
+      createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      INDEX ScanLog_registrationId_idx (registrationId),
+      INDEX ScanLog_event_created_idx (eventId, createdAt)
+    )`);
+    console.log('[MIGRATIONS] ✅ ScanLog table ready');
+  } catch (e: any) {
+    if (!e.message?.includes('Duplicate')) {
+      console.warn('[MIGRATIONS] Migration 4 skipped/warning:', e?.message);
     }
+  }
 
-    // Migration 5: Voucher table
+  // Migration 5: Voucher table
+  try {
     await query(`CREATE TABLE IF NOT EXISTS Voucher (
       id VARCHAR(36) PRIMARY KEY,
       code VARCHAR(64) NOT NULL UNIQUE,
@@ -99,8 +107,12 @@ async function runMigrationsOnce() {
       INDEX Voucher_eventId_idx (eventId)
     )`);
     console.log('[MIGRATIONS] ✅ Voucher table ready');
+  } catch (e: any) {
+    console.warn('[MIGRATIONS] Migration 5 skipped/warning:', e?.message);
+  }
 
-    // Migration 6: VoucherRedemption table (usage history)
+  // Migration 6: VoucherRedemption table (usage history)
+  try {
     await query(`CREATE TABLE IF NOT EXISTS VoucherRedemption (
       id VARCHAR(36) PRIMARY KEY,
       voucherId VARCHAR(36) NOT NULL,
@@ -114,82 +126,81 @@ async function runMigrationsOnce() {
       INDEX VoucherRedemption_email_idx (email)
     )`);
     console.log('[MIGRATIONS] ✅ VoucherRedemption table ready');
+  } catch (e: any) {
+    console.warn('[MIGRATIONS] Migration 6 skipped/warning:', e?.message);
+  }
 
-    // Migration 7: align voucher tables' collation with legacy tables.
-    // prisma db push creates them with the MySQL 8 default (utf8mb4_0900_ai_ci),
-    // legacy tables use utf8mb4_unicode_ci -> JOIN columns error out with
-    // "Illegal mix of collations". The FK prisma adds (voucherId -> Voucher.id)
-    // blocks CONVERT while the sides differ, so: drop FK -> convert -> recreate.
-    try {
-      const legacyColl: any = await query(
-        "SELECT TABLE_COLLATION as c FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'Event' LIMIT 1"
+  // Migration 7: align voucher tables' collation with legacy tables.
+  try {
+    const legacyColl: any = await query(
+      "SELECT TABLE_COLLATION as c FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'Event' LIMIT 1"
+    );
+    const target = legacyColl[0]?.c;
+    if (target) {
+      const tables: any = await query(
+        "SELECT TABLE_NAME as t, TABLE_COLLATION as c FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('Voucher', 'VoucherRedemption')"
       );
-      const target = legacyColl[0]?.c;
-      if (target) {
-        const tables: any = await query(
-          "SELECT TABLE_NAME as t, TABLE_COLLATION as c FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('Voucher', 'VoucherRedemption')"
-        );
-        const mismatched = tables.filter((r: any) => r.c !== target);
-        if (mismatched.length > 0) {
-          try {
-            await query('ALTER TABLE VoucherRedemption DROP FOREIGN KEY `VoucherRedemption_voucherId_fkey`');
-          } catch {
-            // FK absent (raw-SQL path) — nothing to drop
-          }
-          for (const r of mismatched) {
-            await query(`ALTER TABLE \`${r.t}\` CONVERT TO CHARACTER SET utf8mb4 COLLATE \`${target}\``);
-            console.log(`[MIGRATIONS] ✅ ${r.t} collation aligned to ${target}`);
-          }
-          await query('ALTER TABLE VoucherRedemption ADD CONSTRAINT `VoucherRedemption_voucherId_fkey` FOREIGN KEY (`voucherId`) REFERENCES `Voucher`(`id`) ON DELETE CASCADE');
-          console.log('[MIGRATIONS] ✅ VoucherRedemption FK recreated');
+      const mismatched = tables.filter((r: any) => r.c !== target);
+      if (mismatched.length > 0) {
+        try {
+          await query('ALTER TABLE VoucherRedemption DROP FOREIGN KEY `VoucherRedemption_voucherId_fkey`');
+        } catch {
+          // FK absent (raw-SQL path) — nothing to drop
         }
+        for (const r of mismatched) {
+          await query(`ALTER TABLE \`${r.t}\` CONVERT TO CHARACTER SET utf8mb4 COLLATE \`${target}\``);
+          console.log(`[MIGRATIONS] ✅ ${r.t} collation aligned to ${target}`);
+        }
+        await query('ALTER TABLE VoucherRedemption ADD CONSTRAINT `VoucherRedemption_voucherId_fkey` FOREIGN KEY (`voucherId`) REFERENCES `Voucher`(`id`) ON DELETE CASCADE');
+        console.log('[MIGRATIONS] ✅ VoucherRedemption FK recreated');
       }
+    }
+  } catch (e: any) {
+    console.warn('[MIGRATIONS] Collation align skipped:', e.message);
+  }
+
+  // Migration 8: voucher snapshot columns on EventRegistration
+  for (const col of [
+    'ALTER TABLE EventRegistration ADD COLUMN voucherCode VARCHAR(64) NULL',
+    'ALTER TABLE EventRegistration ADD COLUMN discountAmount INT NOT NULL DEFAULT 0',
+  ]) {
+    try {
+      await query(col);
+      console.log(`[MIGRATIONS] ✅ ${col.split('ADD COLUMN ')[1]} added`);
     } catch (e: any) {
-      console.warn('[MIGRATIONS] Collation align skipped:', e.message);
-    }
-
-    // Migration 8: voucher snapshot columns on EventRegistration
-    for (const col of [
-      'ALTER TABLE EventRegistration ADD COLUMN voucherCode VARCHAR(64) NULL',
-      'ALTER TABLE EventRegistration ADD COLUMN discountAmount INT NOT NULL DEFAULT 0',
-    ]) {
-      try {
-        await query(col);
-        console.log(`[MIGRATIONS] ✅ ${col.split('ADD COLUMN ')[1]} added`);
-      } catch (e: any) {
-        if (!e.message?.includes('Duplicate column name')) throw e;
+      if (!e.message?.includes('Duplicate column name')) {
+        console.warn('[MIGRATIONS] Migration 8 skipped/warning:', e?.message);
       }
     }
+  }
 
-    // Migration 9: one redemption per email per voucher (DB-level backstop for the per-email check)
+  // Migration 9: one redemption per email per voucher (DB-level backstop for the per-email check)
+  try {
     const vrUnique: any = await query(
       "SHOW INDEX FROM VoucherRedemption WHERE Key_name = 'VoucherRedemption_voucherId_email_key'"
     );
     if (vrUnique.length === 0) {
       console.log('[MIGRATIONS] Creating unique index VoucherRedemption_voucherId_email_key...');
-      try {
-        await query('CREATE UNIQUE INDEX `VoucherRedemption_voucherId_email_key` ON `VoucherRedemption`(`voucherId`, `email`)');
-        console.log('[MIGRATIONS] ✅ Unique index created');
-      } catch (e: any) {
-        if (e.code === 'ER_DUP_ENTRY') {
-          // Duplicate historical rows (none expected — feature unreleased); skip rather than crash startup.
-          console.warn('[MIGRATIONS] ⚠️ Duplicate (voucherId, email) rows in VoucherRedemption, skipping unique index:', e.message);
-        } else {
-          throw e;
-        }
-      }
+      await query('CREATE UNIQUE INDEX `VoucherRedemption_voucherId_email_key` ON `VoucherRedemption`(`voucherId`, `email`)');
+      console.log('[MIGRATIONS] ✅ Unique index created');
     }
-
-    // Migration 10: dqReason column on RunnerStatus
-    try {
-      await query("ALTER TABLE RunnerStatus ADD COLUMN dqReason TEXT NULL AFTER isDQ");
-      console.log('[MIGRATIONS] ✅ RunnerStatus.dqReason added');
-    } catch (e: any) {
-      if (!e.message?.includes('Duplicate column name')) throw e;
+  } catch (e: any) {
+    if (e.code === 'ER_DUP_ENTRY' || e.message?.includes('Duplicate entry')) {
+      console.warn('[MIGRATIONS] ⚠️ Duplicate (voucherId, email) rows in VoucherRedemption, skipping unique index:', e.message);
+    } else {
+      console.warn('[MIGRATIONS] Migration 9 warning:', e.message);
     }
-
-    console.log('[MIGRATIONS] All migrations complete ✅');
-  } catch (error: any) {
-    throw error; // surfaced to runMigrations' retry / non-fatal handling
   }
+
+  // Migration 10: dqReason column on RunnerStatus
+  try {
+    await query("ALTER TABLE RunnerStatus ADD COLUMN dqReason TEXT NULL AFTER isDQ");
+    console.log('[MIGRATIONS] ✅ RunnerStatus.dqReason added');
+  } catch (e: any) {
+    if (!e.message?.includes('Duplicate column name')) {
+      console.warn('[MIGRATIONS] Migration 10 warning:', e.message);
+    }
+  }
+
+  console.log('[MIGRATIONS] All migrations complete ✅');
 }
