@@ -158,6 +158,24 @@ export default function LeaderboardTable({
     );
   }, [q, rankedRows]);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  // Reset to page 1 whenever filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [q, genderFilter, ageCategoryFilter]);
+
+  const totalItems = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / (pageSize > 0 ? pageSize : 1)));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+
+  const paginatedRows = useMemo(() => {
+    if (pageSize === -1) return filtered;
+    const start = (safeCurrentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, safeCurrentPage, pageSize]);
+
   const podiums = useMemo(() => {
     if (q) return [];
 
@@ -215,7 +233,8 @@ export default function LeaderboardTable({
         })
         .filter((p) => p.top3.length > 0);
     } else {
-      return [{ title: "Champions", top3: buildTop3(filteredForPodium) }];
+      const top3 = buildTop3(filteredForPodium);
+      return top3.length > 0 ? [{ title: "Champions", top3 }] : [];
     }
   }, [q, rows, categories, genderFilter, ageCategoryFilter]);
 
@@ -697,7 +716,7 @@ export default function LeaderboardTable({
                 <div></div>
               </div>
 
-              {filtered.map((r) => {
+              {paginatedRows.map((r) => {
                 const pos = r.rank ?? "-";
                 const isSpecial =
                   r.totalTimeDisplay === "DNF" || r.totalTimeDisplay === "DSQ";
@@ -973,6 +992,103 @@ export default function LeaderboardTable({
               )}
             </div>
           </div>
+
+          {/* Pagination Controls */}
+          {totalItems > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 pb-2 border-t border-slate-200 text-sm text-slate-500 font-medium">
+              <div className="flex items-center gap-2">
+                <span>
+                  Showing{" "}
+                  <strong className="text-slate-800">
+                    {pageSize === -1 ? 1 : (safeCurrentPage - 1) * pageSize + 1}
+                  </strong>{" "}
+                  to{" "}
+                  <strong className="text-slate-800">
+                    {pageSize === -1
+                      ? totalItems
+                      : Math.min(safeCurrentPage * pageSize, totalItems)}
+                  </strong>{" "}
+                  of <strong className="text-slate-800">{totalItems}</strong> participants
+                </span>
+                <select
+                  className="ml-2 px-2 py-1 text-xs border border-slate-200 rounded-lg bg-white text-slate-700 font-semibold focus:outline-none cursor-pointer"
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value={25}>25 / page</option>
+                  <option value={50}>50 / page</option>
+                  <option value={100}>100 / page</option>
+                  <option value={250}>250 / page</option>
+                </select>
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1.5 flex-wrap justify-center">
+                  <button
+                    disabled={safeCurrentPage === 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all ${
+                      safeCurrentPage === 1
+                        ? "border-slate-100 text-slate-300 cursor-not-allowed"
+                        : "border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer"
+                    }`}
+                  >
+                    Prev
+                  </button>
+
+                  {(() => {
+                    const pages: (number | string)[] = [];
+                    if (totalPages <= 7) {
+                      for (let i = 1; i <= totalPages; i++) pages.push(i);
+                    } else {
+                      pages.push(1);
+                      if (safeCurrentPage > 3) pages.push("...");
+                      const start = Math.max(2, safeCurrentPage - 1);
+                      const end = Math.min(totalPages - 1, safeCurrentPage + 1);
+                      for (let i = start; i <= end; i++) pages.push(i);
+                      if (safeCurrentPage < totalPages - 2) pages.push("...");
+                      pages.push(totalPages);
+                    }
+
+                    return pages.map((p, idx) =>
+                      typeof p === "string" ? (
+                        <span key={`ellipsis-${idx}`} className="px-1 text-slate-300 font-bold">
+                          ...
+                        </span>
+                      ) : (
+                        <button
+                          key={p}
+                          onClick={() => setCurrentPage(p)}
+                          className={`min-w-[32px] h-8 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            safeCurrentPage === p
+                              ? "bg-red-600 text-white shadow-sm font-black"
+                              : "border border-slate-200 text-slate-700 hover:bg-slate-50"
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      )
+                    );
+                  })()}
+
+                  <button
+                    disabled={safeCurrentPage === totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all ${
+                      safeCurrentPage === totalPages
+                        ? "border-slate-100 text-slate-300 cursor-not-allowed"
+                        : "border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer"
+                    }`}
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
     </div>

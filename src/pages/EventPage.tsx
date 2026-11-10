@@ -248,6 +248,14 @@ function resolveRegistrationAgeCategory(
   return getAgeCategory(age, brackets);
 }
 
+const normCat = (s: string) =>
+  String(s || "")
+    .trim()
+    .toLowerCase()
+    .replace(/(\d+)\s*km?\b/gi, "$1k")
+    .replace(/-/g, " ")
+    .replace(/\s+/g, " ");
+
 export default function EventPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -299,20 +307,102 @@ export default function EventPage() {
     [],
   );
   const [categoryDetails, setCategoryDetails] = useState<CategoryDetail[]>([]);
+  const [masterParticipants, setMasterParticipants] = useState<any[]>([]);
+  const visibleEventCategoriesRef = useRef<string[]>([]);
 
   const visibleEventCategories = useMemo(() => {
     const hiddenNames = new Set(
-      categoryDetails.filter((c) => c.isHidden).map((c) => c.name)
+      categoryDetails
+        .filter((c) => c.isHidden)
+        .map((c) => normCat(c.name))
     );
-    return (event?.categories || []).filter(
-      (catName) => !hiddenNames.has(catName)
-    );
-  }, [event?.categories, categoryDetails]);
+
+    // 1. Configured categories from categoryDetails or event.categories
+    const configured: string[] = [];
+    if (categoryDetails && categoryDetails.length > 0) {
+      categoryDetails.forEach((c) => {
+        if (c.name && !configured.includes(c.name)) configured.push(c.name);
+      });
+    } else if (event?.categories && event.categories.length > 0) {
+      event.categories.forEach((name: string) => {
+        if (name && !configured.includes(name)) configured.push(name);
+      });
+    }
+
+    // 2. Categories from master participants (e.g. uploaded timing CSV)
+    // Filter out malformed CSV fragments (e.g. unquoted comma in names like "Amd.Par., S.M")
+    const fromMaster: string[] = [];
+    if (masterParticipants && masterParticipants.length > 0) {
+      const masterCatCounts = new Map<string, number>();
+      masterParticipants.forEach((p) => {
+        const cat = (p.category || p.sourceCategoryKey || "").trim();
+        if (cat) masterCatCounts.set(cat, (masterCatCounts.get(cat) || 0) + 1);
+      });
+
+      masterCatCounts.forEach((count, cat) => {
+        const isLikelyRaceCategory =
+          count > 1 || /\b\d+\s*(?:k|km|m)\b|marathon|run|trail|walk/i.test(cat);
+        if (isLikelyRaceCategory && !fromMaster.includes(cat)) {
+          fromMaster.push(cat);
+        }
+      });
+    }
+
+    // 3. Categories from registered participants
+    const fromReg: string[] = [];
+    if (registeredParticipants && registeredParticipants.length > 0) {
+      registeredParticipants.forEach((p) => {
+        const cat = (p.category?.name || "").trim();
+        if (cat && !fromReg.includes(cat)) {
+          fromReg.push(cat);
+        }
+      });
+    }
+
+    // Combine all unique categories, keeping configured order first
+    const combined: string[] = [];
+    const seenNorm = new Set<string>();
+
+    const addCat = (catName: string, isConfigured = false) => {
+      const trimmed = catName.trim();
+      const norm = normCat(trimmed);
+      if (!trimmed || seenNorm.has(norm) || hiddenNames.has(norm)) return;
+
+      // If this category comes from imported data, check if an admin configured category already covers it
+      if (!isConfigured) {
+        const alreadyCovered = configured.some((c) => {
+          const nc = normCat(c);
+          if (nc === norm) return true;
+          const reg1 = new RegExp(`(?:^|\\s)${norm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\s|$)`, "i");
+          const reg2 = new RegExp(`(?:^|\\s)${nc.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\s|$)`, "i");
+          return reg1.test(nc) || reg2.test(norm);
+        });
+        if (alreadyCovered) return;
+      }
+
+      seenNorm.add(norm);
+      combined.push(trimmed);
+    };
+
+    configured.forEach((c) => addCat(c, true));
+    fromMaster.forEach((c) => addCat(c, false));
+    fromReg.forEach((c) => addCat(c, false));
+
+    // Return previous reference if categories haven't changed to prevent circular render loops
+    const prev = visibleEventCategoriesRef.current;
+    if (
+      prev.length === combined.length &&
+      prev.every((val, idx) => val === combined[idx])
+    ) {
+      return prev;
+    }
+    visibleEventCategoriesRef.current = combined;
+    return combined;
+  }, [event?.categories, categoryDetails, masterParticipants, registeredParticipants]);
 
   const [scrollY, setScrollY] = useState(0);
   const [regDetailOpen, setRegDetailOpen] = useState(false);
   const [regDetailParticipant, setRegDetailParticipant] = useState<any>(null);
-  const [masterParticipants, setMasterParticipants] = useState<any[]>([]);
   const [homepageBlobUrl, setHomepageBlobUrl] = useState<string | null>(null);
   const [regSearchTerm, setRegSearchTerm] = useState("");
 
@@ -643,7 +733,15 @@ export default function EventPage() {
           fetchJsonArray(`/api/manual-finish-bib?eventId=${event.id}&_t=${Date.now()}`),
         ]);
 
-        setMasterParticipants(master.all);
+        setMasterParticipants((prev) => {
+          if (
+            prev.length === master.all.length &&
+            prev[0]?.epc === master.all[0]?.epc
+          ) {
+            return prev;
+          }
+          return master.all;
+        });
         setCheckpointMap(cpMap);
 
         // Use timing from event (per-event database) instead of localStorage
@@ -777,8 +875,11 @@ export default function EventPage() {
             // Try word boundary match (e.g., "10k" matches "10k laki-laki" but not "110k")
             const partial = adminCategories.find((c) => {
               const nc = normCat(c);
-              const regex = new RegExp(`(?:^|\\s)${nc}(?:\\s|$)`, "i");
-              return regex.test(normCatStr);
+              const escapedCat = normCatStr.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+              const escapedNc = nc.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+              const catInAdmin = new RegExp(`(?:^|\\s)${escapedCat}(?:\\s|$)`, "i").test(nc);
+              const adminInCat = new RegExp(`(?:^|\\s)${escapedNc}(?:\\s|$)`, "i").test(normCatStr);
+              return catInAdmin || adminInCat;
             });
             if (partial) return partial;
 
@@ -1268,9 +1369,24 @@ export default function EventPage() {
         const catMap: Record<string, LeaderRow[]> = {};
         visibleEventCategories.forEach((catKey) => {
           const list = overallFinal.filter(
-            (r) => normCat(r.sourceCategoryKey) === normCat(catKey),
+            (r) =>
+              normCat(r.sourceCategoryKey) === normCat(catKey) ||
+              normCat(r.category) === normCat(catKey)
           );
           catMap[catKey] = list;
+        });
+
+        // Also ensure any category present on runners is represented in catMap
+        overallFinal.forEach((r) => {
+          const cat = r.category || r.sourceCategoryKey;
+          if (cat && !catMap[cat]) {
+            const list = overallFinal.filter(
+              (row) =>
+                normCat(row.sourceCategoryKey) === normCat(cat) ||
+                normCat(row.category) === normCat(cat)
+            );
+            catMap[cat] = list;
+          }
         });
 
         setOverall(overallFinal);
@@ -2207,26 +2323,39 @@ export default function EventPage() {
             activeTab !== "Registered" &&
             activeTab !== "Results" &&
             activeTab !== "Route" &&
-            activeTab !== "Gallery" && (
-              <div className="space-y-8">
-                {/* Gallery is now in its own tab */}
-
-                {!((byCategory as any)[activeTab] || []).some(
-                  (r: any) => r.rank != null && r.rank <= 3,
-                ) && (
-                  <RaceClock
-                    cutoffMs={event?.cutoffMs}
-                    categoryStartTimes={event?.categoryStartTimes}
-                    manualStartTime={(event as any)?.manualStartTime}
+            activeTab !== "Gallery" && (() => {
+              const activeCatRows =
+                (byCategory as any)[activeTab] ||
+                Object.entries(byCategory).find(([k]) => {
+                  const nk = normCat(k);
+                  const na = normCat(activeTab);
+                  if (nk === na) return true;
+                  const reg1 = new RegExp(`(?:^|\\s)${na.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\s|$)`, "i");
+                  const reg2 = new RegExp(`(?:^|\\s)${nk.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\s|$)`, "i");
+                  return reg1.test(nk) || reg2.test(na);
+                })?.[1] ||
+                [];
+              const hasPodium = activeCatRows.some(
+                (r: any) => r.rank != null && r.rank <= 3
+              );
+              return (
+                <div className="space-y-8">
+                  {/* Gallery is now in its own tab */}
+                  {!hasPodium && (
+                    <RaceClock
+                      cutoffMs={event?.cutoffMs}
+                      categoryStartTimes={event?.categoryStartTimes}
+                      manualStartTime={(event as any)?.manualStartTime}
+                    />
+                  )}
+                  <CategorySection
+                    categoryKey={activeTab}
+                    rows={activeCatRows}
+                    onSelect={onSelectParticipant}
                   />
-                )}
-                <CategorySection
-                  categoryKey={activeTab}
-                  rows={(byCategory as any)[activeTab] || []}
-                  onSelect={onSelectParticipant}
-                />
-              </div>
-            )}
+                </div>
+              );
+            })()}
 
           {activeTab === "Route" && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">

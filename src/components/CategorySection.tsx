@@ -11,7 +11,7 @@ export default function CategorySection({
   rows: LeaderRow[];
   onSelect?: (row: LeaderRow) => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
   const rankedRows = useMemo(() => {
     const finishers = rows.filter(
