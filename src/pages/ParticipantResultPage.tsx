@@ -112,10 +112,9 @@ function CircularMedalSVG({
 
   if (isDnf) {
     const statusLabel = status || "DNF";
-    const defaultText = "Waktu terlampaui batas cut-off atau status tidak selesai.";
     const displayText = (statusLabel === "DSQ" && reason?.trim())
       ? reason.trim()
-      : defaultText;
+      : "";
 
     return (
       <div className={`flex flex-col items-center justify-center ${isMobile ? "p-5 pb-6" : "p-6"} bg-[#111827]/60 rounded-3xl border border-red-500/20 backdrop-blur-md shadow-2xl`}
@@ -130,9 +129,11 @@ function CircularMedalSVG({
           <div className="text-red-500 font-black text-lg uppercase tracking-widest">
             {statusLabel === "DNF" ? "Did Not Finish" : statusLabel === "DNS" ? "Did Not Start" : "Disqualified"}
           </div>
-          <p className={`text-slate-300 text-xs ${isMobile ? "mt-2.5 max-w-[280px] px-3" : "mt-1 max-w-[260px]"} leading-relaxed break-words`}>
-            {displayText}
-          </p>
+          {displayText && (
+            <p className={`text-slate-300 text-xs ${isMobile ? "mt-2.5 max-w-[280px] px-3" : "mt-1 max-w-[260px]"} leading-relaxed break-words`}>
+              {displayText}
+            </p>
+          )}
         </div>
       </div>
     );

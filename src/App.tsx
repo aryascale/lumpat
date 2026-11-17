@@ -80,6 +80,7 @@ const EventsPageWrapper = lazyReload(() => import("./components/admin/wrappers")
 const BannersPageWrapper = lazyReload(() => import("./components/admin/wrappers").then(m => ({ default: m.BannersPageWrapper })));
 const PaymentsPage = lazyReload(() => import("./components/admin/pages/PaymentsPage"));
 const VouchersPage = lazyReload(() => import("./components/admin/pages/VouchersPage"));
+const VoucherFormPage = lazyReload(() => import("./components/admin/pages/VoucherFormPage"));
 const ActivityLogsPage = lazyReload(() => import("./components/admin/pages/ActivityLogsPage"));
 const UsersPage = lazyReload(() => import("./components/admin/pages/UsersPage"));
 const EmailBlastPage = lazyReload(() => import("./components/admin/pages/EmailBlastPage"));
@@ -182,6 +183,8 @@ export default function App() {
               <Route path="banners" element={<BannersPageWrapper />} />
               <Route path="payments" element={<PaymentsPage />} />
               <Route path="vouchers" element={<VouchersPage />} />
+              <Route path="vouchers/new" element={<VoucherFormPage />} />
+              <Route path="vouchers/:id/edit" element={<VoucherFormPage />} />
               <Route
                 path="users"
                 element={

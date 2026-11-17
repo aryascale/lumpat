@@ -214,9 +214,10 @@ export default function CheckoutPage() {
   const totalPrice = (selectedCategoryDetail?.price || 0) * bulkQty;
 
   // Voucher preview is only valid for the current total — reset when it changes
+  // (categoryId too: two categories can share a price, and scope checks differ)
   useEffect(() => {
     setVoucherResult(null);
-  }, [totalPrice, email]);
+  }, [totalPrice, email, categoryId]);
 
   const finalPrice = voucherResult?.valid
     ? totalPrice - (voucherResult.discountAmount || 0)
@@ -304,6 +305,7 @@ export default function CheckoutPage() {
           eventId: event?.id,
           totalAmount: totalPrice,
           email,
+          categoryId,
         }),
       });
       const data = await res.json();
