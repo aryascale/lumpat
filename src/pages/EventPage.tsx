@@ -1513,6 +1513,26 @@ export default function EventPage() {
     const ageIndex = sortedAge.findIndex((r) => r.epc === row.epc);
     const ageRank = ageIndex !== -1 ? ageIndex + 1 : null;
 
+    const lapCheckpointTimes =
+      row.laps
+        ?.filter((lap) => {
+          const l = lap.label.toUpperCase().trim();
+          return (
+            l !== "START" &&
+            l !== "FINISH" &&
+            l !== "START/FINISH" &&
+            l !== "START / FINISH" &&
+            lap.timeDisplay &&
+            lap.timeDisplay !== "-"
+          );
+        })
+        .map((lap) => lap.timeDisplay) || [];
+
+    const checkpointTimes =
+      lapCheckpointTimes.length > 0
+        ? lapCheckpointTimes
+        : (checkpointMap.get(row.epc) || []);
+
     const data = {
       name: row.name,
       bib: row.bib,
@@ -1524,7 +1544,7 @@ export default function EventPage() {
       startTimeRaw: row.startTimeRaw ?? "-",
       finishTimeRaw: row.finishTimeRaw,
       totalTimeDisplay: row.totalTimeDisplay,
-      checkpointTimes: checkpointMap.get(row.epc) || [],
+      checkpointTimes,
       penaltyMs: row.penaltyMs || 0,
       totalTimeMs: row.totalTimeMs,
       overallRank,
