@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { motion, AnimatePresence, useInView } from "framer-motion";
 import { useLenis } from "lenis/react";
 
 const SHOWCASE_DATA = [
@@ -110,6 +110,8 @@ export default function ReferenceShowcase() {
   const current = SHOWCASE_DATA[activeIndex] || SHOWCASE_DATA[0];
   const [scrollY, setScrollY] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+  const inView = useInView(sectionRef, { margin: "200px 0px 200px 0px" });
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -133,16 +135,18 @@ export default function ReferenceShowcase() {
     setActiveIndex((prev) => (prev - 1 + SHOWCASE_DATA.length) % SHOWCASE_DATA.length);
   }, []);
 
-  // Auto-play timer to cycle slides every 5 seconds
+  // Auto-play timer to cycle slides every 5 seconds (paused when offscreen/hidden)
   useEffect(() => {
     const timer = setInterval(() => {
+      if (document.hidden || !inView) return;
       goNext();
     }, 5000);
     return () => clearInterval(timer);
-  }, [activeIndex, goNext]);
+  }, [activeIndex, goNext, inView]);
 
   return (
     <section
+      ref={sectionRef}
       className="relative w-full overflow-hidden bg-[#F3F4F6]"
       style={{ minHeight: "90vh" }}
       id="reference-showcase"
@@ -414,9 +418,9 @@ export default function ReferenceShowcase() {
             </motion.div>
           </AnimatePresence>
 
-          {/* Decorative gray circle */}
+          {/* Decorative gray circle (floats only while visible) */}
           <motion.div
-            animate={{ y: [0, -8, 0] }}
+            animate={inView ? { y: [0, -8, 0] } : { y: 0 }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
             className="absolute right-[12%] bottom-[22%] w-9 h-9 md:w-12 md:h-12 rounded-full bg-stone-300/50 hidden md:block z-5"
           />

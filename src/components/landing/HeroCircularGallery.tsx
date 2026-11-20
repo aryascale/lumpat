@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { motion, useScroll, useTransform, useInView } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
 const GALLERY_IMAGES = [
@@ -59,6 +59,8 @@ export default function HeroCircularGallery() {
   const [phase, setPhase] = useState<Phase>("init");
   const [isMobile, setIsMobile] = useState(false);
   const [isPulledUp, setIsPulledUp] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+  const inView = useInView(sectionRef, { margin: "100px 0px 100px 0px" });
 
   // ─── Deterministic splash offsets (never re-generated) ───
   const splashSeeds = useMemo(() => generateSplashSeeds(TOTAL_CARDS), []);
@@ -111,6 +113,7 @@ export default function HeroCircularGallery() {
     if (phase === "init") return;
 
     const interval = setInterval(() => {
+      if (document.hidden || !inView) return;
       setPhase((prev) => (prev === "circle" ? "splash" : "circle"));
     }, PHASE_DURATION_MS);
 
@@ -131,6 +134,7 @@ export default function HeroCircularGallery() {
 
   return (
     <section
+      ref={sectionRef}
       id="hero-gallery"
       className="relative w-full overflow-hidden flex items-center justify-center"
       style={{
