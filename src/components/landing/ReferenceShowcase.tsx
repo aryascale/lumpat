@@ -121,6 +121,8 @@ export default function ReferenceShowcase() {
   }, []);
 
   useLenis((lenis) => {
+    // skip per-frame re-renders while section is offscreen
+    if (!inView) return;
     setScrollY(lenis.scroll);
   });
 

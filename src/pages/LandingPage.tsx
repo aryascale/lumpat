@@ -49,6 +49,7 @@ export default function LandingPage() {
   // Rotate ecosystem carousel every 3.5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
+      if (document.hidden) return;
       setActiveEcosystem((prev) => (prev + 1) % 5);
     }, 3500);
     return () => clearInterval(interval);
