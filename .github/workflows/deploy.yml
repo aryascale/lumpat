@@ -1,0 +1,51 @@
+name: deploy
+
+on:
+  push:
+    branches: [staging, prod]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "deploy target"
+        type: choice
+        options: [staging, prod]
+        default: staging
+
+# staging & prod share one checkout on the VPS — never deploy both at once
+concurrency:
+  group: lumpat-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Resolve target
+        id: target
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "target=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "target=${{ inputs.target }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup deploy key
+        run: |
+          install -m 600 -D /dev/null ~/.ssh/id_ed25519
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+
+      - name: Deploy ${{ steps.target.outputs.target }} (198)
+        run: |
+          ssh -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 \
+              -i ~/.ssh/id_ed25519 root@72.61.214.198 "deploy-${{ steps.target.outputs.target }}"
+
+      - name: Smoke test
+        run: |
+          if [ "${{ steps.target.outputs.target }}" = "prod" ]; then
+            URL=https://lumpat.online
+          else
+            URL=https://stagginglumpat.online
+          fi
+          sleep 10
+          curl -sf -m 30 --output /dev/null "$URL" && echo "$URL OK"
