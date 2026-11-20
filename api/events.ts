@@ -94,6 +94,7 @@ export default async function handler(req: any) {
           `SELECT * FROM Category WHERE eventId = ? ${!showDrafts ? 'AND isHidden = false' : ''} ORDER BY \`order\` ASC`,
           [events[0].id]
         );
+        events[0]._categories = categories.map((c: any) => c.name);
         const formatted = formatEvent(events[0]);
         eventsCache.set(cacheKey, { data: formatted, timestamp: now });
         return successResponse(formatted);

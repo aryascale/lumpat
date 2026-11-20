@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { calculateDiscount } from '../voucher.ts';
+import { calculateDiscount, normalizeCategoryIds } from '../voucher.ts';
 
 test('nominal discount clamps to total', () => {
   assert.equal(calculateDiscount('nominal', 25000, null, 100000), 25000);
@@ -21,4 +21,13 @@ test('percent discount respects maxDiscount cap', () => {
 
 test('zero total yields zero discount', () => {
   assert.equal(calculateDiscount('percent', 50, null, 0), 0);
+});
+
+test('normalizeCategoryIds handles raw JSON column in every driver shape', () => {
+  assert.deepEqual(normalizeCategoryIds('["a","b"]'), ['a', 'b']); // string from driver
+  assert.deepEqual(normalizeCategoryIds(['a', 1]), ['a', '1']); // pre-parsed, coerced to string
+  assert.deepEqual(normalizeCategoryIds(null), []);
+  assert.deepEqual(normalizeCategoryIds('[]'), []);
+  assert.deepEqual(normalizeCategoryIds('not json'), []);
+  assert.deepEqual(normalizeCategoryIds('{"x":1}'), []); // valid JSON, not an array
 });

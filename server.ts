@@ -89,7 +89,8 @@ const apiHandler = async (req: any, res: any) => {
     if (!fs.existsSync(apiFilePath)) {
       return res.status(404).json({ error: `Endpoint not found: ${req.path}` });
     }
-    const fileUrl = pathToFileURL(apiFilePath).href;
+    const mtime = fs.statSync(apiFilePath).mtimeMs;
+    const fileUrl = `${pathToFileURL(apiFilePath).href}?t=${mtime}`;
     const apiModule = await import(fileUrl);
     const handler = apiModule.default;
 

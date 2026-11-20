@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import Navbar from "../components/Navbar";
 import { useEvent } from "../contexts/EventContext";
 import { renderCertificatePNG, downloadDataUrl } from "../lib/certificate";
-import { calculatePace } from "../lib/time";
+import { calculatePace, formatDuration } from "../lib/time";
 
 // ─── Custom interlocking dual shape background for Rank Cards (UTMB-style) ─────
 function CardBgSVG({ id, variant }: { accentColor?: string; id: string; variant: "A" | "B" }) {
@@ -99,17 +99,25 @@ function CircularMedalSVG({
   rank,
   status,
   category,
+  reason,
+  isMobile,
 }: {
   rank: number | null | undefined;
   status?: string;
   category?: string;
+  reason?: string | null;
+  isMobile?: boolean;
 }) {
   const isDnf = status === "DNF" || status === "DNS" || status === "DSQ";
 
   if (isDnf) {
     const statusLabel = status || "DNF";
+    const displayText = (statusLabel === "DSQ" && reason?.trim())
+      ? reason.trim()
+      : "";
+
     return (
-      <div className="flex flex-col items-center justify-center p-6 bg-[#111827]/60 rounded-3xl border border-red-500/20 backdrop-blur-md shadow-2xl"
+      <div className={`flex flex-col items-center justify-center ${isMobile ? "p-5 pb-6" : "p-6"} bg-[#111827]/60 rounded-3xl border border-red-500/20 backdrop-blur-md shadow-2xl`}
         style={{ animation: "medalFloat 3s ease-in-out infinite" }}>
         <div className="relative w-28 h-28 rounded-full bg-gradient-to-br from-red-600 via-rose-700 to-red-900 flex items-center justify-center border-4 border-red-500/80 shadow-[0_10px_25px_rgba(239,68,68,0.4)]">
           <div className="absolute inset-0.5 rounded-full bg-gradient-to-t from-transparent via-white/10 to-white/30 pointer-events-none" />
@@ -121,6 +129,11 @@ function CircularMedalSVG({
           <div className="text-red-500 font-black text-lg uppercase tracking-widest">
             {statusLabel === "DNF" ? "Did Not Finish" : statusLabel === "DNS" ? "Did Not Start" : "Disqualified"}
           </div>
+          {displayText && (
+            <p className={`text-slate-300 text-xs ${isMobile ? "mt-2.5 max-w-[280px] px-3" : "mt-1 max-w-[260px]"} leading-relaxed break-words`}>
+              {displayText}
+            </p>
+          )}
         </div>
       </div>
     );
@@ -303,11 +316,78 @@ export default function ParticipantResultPage() {
     );
   }
 
-  const { modalData, eventId, eventName } = state;
+  const { modalData: initialModalData, eventId, eventName } = state;
+  const [participantData, setParticipantData] = useState(initialModalData);
+
+  useEffect(() => {
+    setParticipantData(initialModalData);
+  }, [initialModalData]);
+
+  const modalData = participantData;
+  const isDnf =
+    modalData?.isDQ ||
+    modalData?.isDNF ||
+    modalData?.isDNS ||
+    modalData?.totalTimeDisplay === "DSQ" ||
+    modalData?.totalTimeDisplay === "DNF" ||
+    modalData?.totalTimeDisplay === "DNS";
 
   const { events } = useEvent();
   const eventObj = events.find((e) => e.id === eventId || e.slug === slug);
   const [banners, setBanners] = useState<any[]>([]);
+
+  // Always fetch latest runner status from API to guarantee status and dqReason are fresh on reload or updates
+  const targetEventId = eventId || eventObj?.id;
+  useEffect(() => {
+    if (!targetEventId || !epc) return;
+
+    const fetchStatus = () => {
+      fetch(`/api/runner-status?eventId=${targetEventId}&_t=${Date.now()}`)
+        .then((res) => (res.ok ? res.json() : []))
+        .then((statusList) => {
+          if (!Array.isArray(statusList)) return;
+          const myStatus = statusList.find((s: any) => s.epc === epc || s.bib === epc);
+          setParticipantData((prev: any) => {
+            if (!prev) return prev;
+            const isDQ = myStatus ? !!myStatus.isDQ : false;
+            const dqReason = myStatus && isDQ ? (myStatus.dqReason || null) : null;
+            const isDNS = myStatus ? !!myStatus.isDNS : false;
+            const isDNF = myStatus ? !!myStatus.isDNF : false;
+
+            let totalTimeDisplay = prev.totalTimeDisplay;
+            if (isDQ) {
+              totalTimeDisplay = "DSQ";
+            } else if (isDNS) {
+              totalTimeDisplay = "DNS";
+            } else if (isDNF) {
+              totalTimeDisplay = "DNF";
+            } else if (prev.totalTimeDisplay === "DSQ" || prev.totalTimeDisplay === "DNS") {
+              totalTimeDisplay = prev.totalTimeMs > 0 ? formatDuration(prev.totalTimeMs) : "-";
+            }
+
+            return {
+              ...prev,
+              isDQ,
+              dqReason,
+              isDNS,
+              isDNF,
+              totalTimeDisplay,
+            };
+          });
+        })
+        .catch((err) => console.error("Failed to load runner status:", err));
+    };
+
+    fetchStatus();
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "lumpat_data_version") {
+        fetchStatus();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [targetEventId, epc]);
 
   useEffect(() => {
     if (!eventId) return;
@@ -467,7 +547,7 @@ export default function ParticipantResultPage() {
         {/* ── MOBILE TOP SECTION (Hidden on desktop) ── */}
         <div className="block md:hidden">
           {/* Dark Header Banner containing Medal */}
-          <div className="relative w-full h-[280px] bg-[#0c0d12] pt-[72px] flex items-center justify-center">
+          <div className={`relative w-full ${isDnf ? "h-[340px]" : "h-[280px]"} bg-[#0c0d12] pt-[72px] flex items-center justify-center`}>
             {/* Background Container to clip parallax/cover */}
             <div className="absolute inset-0 overflow-hidden">
               {coverImageUrl ? (
@@ -504,11 +584,13 @@ export default function ParticipantResultPage() {
             </button>
 
             {/* Medal */}
-            <div className="relative z-10 scale-[0.85] transform -translate-y-5">
+            <div className={`relative z-10 scale-[0.85] transform ${isDnf ? "-translate-y-7" : "-translate-y-5"}`}>
               <CircularMedalSVG
                 rank={modalData.categoryRank ?? modalData.overallRank}
                 status={modalData.totalTimeDisplay}
                 category={modalData.category}
+                reason={modalData.dqReason}
+                isMobile={true}
               />
             </div>
 
@@ -739,6 +821,7 @@ export default function ParticipantResultPage() {
                   rank={modalData.categoryRank ?? modalData.overallRank}
                   status={modalData.totalTimeDisplay}
                   category={modalData.category}
+                  reason={modalData.dqReason}
                 />
               </div>
             </motion.div>
@@ -1173,6 +1256,13 @@ export default function ParticipantResultPage() {
                   { label: "Age Category", value: modalData.ageCategory?.trim() || "-", mono: false },
                   { label: "Start Time", value: modalData.startTimeRaw || "-", mono: true },
                   { label: "Finish Time", value: modalData.finishTimeRaw || "-", mono: true },
+                  ...(modalData.totalTimeDisplay === "DSQ" && modalData.dqReason
+                    ? [{
+                      label: "Alasan DSQ",
+                      value: modalData.dqReason,
+                      mono: false,
+                    }]
+                    : []),
                   ...(modalData.penaltyMs > 0
                     ? [{
                       label: "Penalty",

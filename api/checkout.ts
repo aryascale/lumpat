@@ -180,7 +180,7 @@ export default async function handler(event: any) {
 
     let discountAmount = 0;
     if (voucherCode) {
-      const check = await validateVoucher(String(voucherCode), eventId, totalGrossAmount, email);
+      const check = await validateVoucher(String(voucherCode), eventId, totalGrossAmount, email, categoryId);
       if (check.valid === false) return errorResponse(check.reason, 400);
       discountAmount = check.discountAmount;
     }
